@@ -1,4 +1,7 @@
 <Solution>
+  <Folder Name="/samples/">
+    <Project Path="samples/Modulus.AdminTemplate.Blazor/Modulus.AdminTemplate.Blazor.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/Modulus.AspNetCore.Mvc/Modulus.AspNetCore.Mvc.csproj" />
     <Project Path="src/Modulus.Blazor/Modulus.Blazor.csproj" />

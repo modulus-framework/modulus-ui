@@ -1,17 +1,12 @@
-@inherits Card
+@using AntDesign
 
-<Card @attributes="AdditionalAttributes" Title="@Title" Bordered="@Bordered" Hoverable="@Hoverable" Loading="@Loading" Class="@Class" Style="@Style">
-    @if (Extra is not null)
-    {
-        <Extra>@Extra</Extra>
-    }
-    @ChildContent
+<Card @attributes="AdditionalAttributes" Bordered="@Bordered" Hoverable="@Hoverable" Loading="@Loading" Class="@Class" Style="@Style">
+    <ChildContent>
+        @ChildContent
+    </ChildContent>
 </Card>
 
 @code {
-    [Parameter]
-    public string? Title { get; set; }
-
     [Parameter]
     public bool Bordered { get; set; } = true;
 
@@ -26,9 +21,6 @@
 
     [Parameter]
     public string? Style { get; set; }
-
-    [Parameter]
-    public RenderFragment? Extra { get; set; }
 
     [Parameter]
     public RenderFragment? ChildContent { get; set; }

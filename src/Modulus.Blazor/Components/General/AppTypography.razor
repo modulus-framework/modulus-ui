@@ -1,4 +1,4 @@
-@* Text, Title, Paragraph variants *@
+@using AntDesign
 
 @if (Variant == "text")
 {
@@ -21,10 +21,10 @@ else if (Variant == "paragraph")
 
 @code {
     [Parameter]
-    public string Variant { get; set; } = "text"; // "text" | "title" | "paragraph"
+    public string Variant { get; set; } = "text";
 
     [Parameter]
-    public int Level { get; set; } = 1; // 1-5 for titles
+    public int Level { get; set; } = 1;
 
     [Parameter]
     public bool Mark { get; set; }

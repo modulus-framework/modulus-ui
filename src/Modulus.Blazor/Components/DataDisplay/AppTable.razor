@@ -1,24 +1,16 @@
-@inherits Table
+@using AntDesign
+@typeparam TItem
 
-<Table @attributes="AdditionalAttributes" DataSource="@DataSource" Bordered="@Bordered" Striped="@Striped" Size="@Size" Pagination="@Pagination" Loading="@Loading" Class="@Class" Style="@Style">
+<Table TItem="TItem" @attributes="AdditionalAttributes" Bordered="@Bordered" Striped="@Striped" Loading="@Loading" Class="@Class" Style="@Style">
     @ChildContent
 </Table>
 
 @code {
     [Parameter]
-    public IEnumerable<object>? DataSource { get; set; }
-
-    [Parameter]
     public bool Bordered { get; set; }
 
     [Parameter]
     public bool Striped { get; set; }
-
-    [Parameter]
-    public string? Size { get; set; } // "small" | "middle" | "large"
-
-    [Parameter]
-    public PaginationOptions? Pagination { get; set; }
 
     [Parameter]
     public bool Loading { get; set; }
@@ -34,11 +26,4 @@
 
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
-}
-
-public class PaginationOptions
-{
-    public int PageSize { get; set; } = 10;
-    public bool ShowSizeChanger { get; set; }
-    public bool ShowQuickJumper { get; set; }
 }
