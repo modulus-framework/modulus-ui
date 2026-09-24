@@ -1,0 +1,123 @@
+@inherits Button
+
+<Button @attributes="AdditionalAttributes"
+    Type="@(Type.HasValue ? Type.Value : ButtonType.Default)"
+    Size="@(Size ?? ButtonSize.Middle)"
+    Shape="@(Shape ?? ButtonShape.Default)"
+    Danger="@Danger"
+    Loading="@Loading"
+    Disabled="@Disabled"
+    Href="@Href"
+    Target="@Target"
+    HtmlType="@HtmlType"
+    Block="@Block"
+    Ghost="@Ghost"
+    OnClick="@OnClick"
+    Class="@Class"
+    Style="@Style">
+    @ChildContent
+</Button>
+
+@code {
+    /// <summary>
+    /// Button type: ButtonType.Primary | ButtonType.Default | ButtonType.Dashed | ButtonType.Text | ButtonType.Link
+    /// </summary>
+    [Parameter]
+    public ButtonType? Type { get; set; }
+
+    /// <summary>
+    /// Button size: ButtonSize.Large | ButtonSize.Middle | ButtonSize.Small
+    /// </summary>
+    [Parameter]
+    public ButtonSize? Size { get; set; }
+
+    /// <summary>
+    /// Button shape: ButtonShape.Circle | ButtonShape.Round | ButtonShape.Default
+    /// </summary>
+    [Parameter]
+    public ButtonShape? Shape { get; set; }
+
+    /// <summary>
+    /// Danger state (red color)
+    /// </summary>
+    [Parameter]
+    public bool Danger { get; set; }
+
+    /// <summary>
+    /// Loading state with spinner
+    /// </summary>
+    [Parameter]
+    public bool Loading { get; set; }
+
+    /// <summary>
+    /// Icon name (string, e.g. "search", "plus")
+    /// </summary>
+    [Parameter]
+    public string? Icon { get; set; }
+
+    /// <summary>
+    /// Button is disabled
+    /// </summary>
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    /// <summary>
+    /// Link destination
+    /// </summary>
+    [Parameter]
+    public string? Href { get; set; }
+
+    /// <summary>
+    /// Link target (_blank, _self, etc.)
+    /// </summary>
+    [Parameter]
+    public string? Target { get; set; }
+
+    /// <summary>
+    /// HTML button type (button, submit, reset)
+    /// </summary>
+    [Parameter]
+    public string? HtmlType { get; set; }
+
+    /// <summary>
+    /// Full width button
+    /// </summary>
+    [Parameter]
+    public bool Block { get; set; }
+
+    /// <summary>
+    /// Ghost style (transparent background)
+    /// </summary>
+    [Parameter]
+    public bool Ghost { get; set; }
+
+    /// <summary>
+    /// Child content / button text
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Additional CSS classes
+    /// </summary>
+    [Parameter]
+    public string? Class { get; set; }
+
+    /// <summary>
+    /// Inline styles
+    /// </summary>
+    [Parameter]
+    public string? Style { get; set; }
+
+    /// <summary>
+    /// Click handler
+    /// </summary>
+    [Parameter]
+    public EventCallback<MouseEventArgs> OnClick { get; set; }
+
+    /// <summary>
+    /// Capture unmatched attributes (new antd params)
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

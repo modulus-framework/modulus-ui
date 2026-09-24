@@ -1,0 +1,68 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<ConfigProvider>
+    @if (DesignTokens is not null)
+    {
+        <DesignTokens Value="@DesignTokens" />
+    }
+    @ChildContent
+</ConfigProvider>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public ModulusThemeOptions? Options { get; set; }
+
+    private ModulusDesignTokens? DesignTokens;
+    private IJSObjectReference? jsModule;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Options ??= new ModulusThemeOptions();
+
+        // Initialize theme from local storage or settings
+        var themeValue = await JS.InvokeAsync<string?>("localStorage.getItem", "modulus-theme-dark");
+        var isDark = themeValue == "true";
+
+        DesignTokens = new ModulusDesignTokens
+        {
+            IsDark = isDark,
+            Options = Options
+        };
+
+        jsModule = await JS.InvokeAsync<IJSObjectReference>(
+            "import", "./modulus-interop.js");
+
+        if (jsModule is not null)
+        {
+            await jsModule.InvokeVoidAsync("initTheme", isDark);
+        }
+    }
+
+    public async Task ToggleDarkMode(bool isDark)
+    {
+        DesignTokens = new ModulusDesignTokens
+        {
+            IsDark = isDark,
+            Options = Options
+        };
+
+        await JS.InvokeVoidAsync("localStorage.setItem", "modulus-theme-dark", isDark.ToString());
+
+        if (jsModule is not null)
+        {
+            await jsModule.InvokeVoidAsync("toggleTheme", isDark);
+        }
+
+        StateHasChanged();
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (jsModule is not null)
+            await jsModule.DisposeAsync();
+    }
+}

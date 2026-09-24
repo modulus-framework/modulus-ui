@@ -1,0 +1,52 @@
+is_global = true
+build_property.TargetFramework = net10.0
+build_property.TargetFrameworkIdentifier = .NETCoreApp
+build_property.TargetFrameworkVersion = v10.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = 
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property.EntryPointFilePath = 
+build_property._SupportedPlatformList = Linux,macOS,Windows,browser
+build_property.RootNamespace = Modulus.Blazor
+build_property.RootNamespace = Modulus.Blazor
+build_property.ProjectDir = /home/azimmahmud/projects/ui_template/src/Modulus.Blazor/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.RazorLangVersion = 10.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = /home/azimmahmud/projects/ui_template/src/Modulus.Blazor
+build_property._RazorSourceGeneratorDebug = 
+build_property.EffectiveAnalysisLevelStyle = 10.0
+build_property.EnableCodeStyleSeverity = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/General/AppButton.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9HZW5lcmFsL0FwcEJ1dHRvbi5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/_Imports.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9fSW1wb3J0cy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Core/Theme/DarkModeToggle.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29yZS9UaGVtZS9EYXJrTW9kZVRvZ2dsZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Core/Theme/DesignTokens.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29yZS9UaGVtZS9EZXNpZ25Ub2tlbnMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Core/Theme/ThemeProvider.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29yZS9UaGVtZS9UaGVtZVByb3ZpZGVyLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Core/_Imports.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29yZS9fSW1wb3J0cy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/_Imports.razor]
+build_metadata.AdditionalFiles.TargetPath = X0ltcG9ydHMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 

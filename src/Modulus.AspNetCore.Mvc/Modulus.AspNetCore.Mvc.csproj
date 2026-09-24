@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Modulus.Ui.Abstractions\Modulus.Ui.Abstractions.csproj" />
+    <ProjectReference Include="..\Modulus.Ui.Assets\Modulus.Ui.Assets.csproj" />
+  </ItemGroup>
+
+
+
+</Project>
