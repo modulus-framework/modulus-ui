@@ -1,0 +1,64 @@
+@* Text, Title, Paragraph variants *@
+
+@if (Variant == "text")
+{
+    <Text @attributes="AdditionalAttributes" Mark="@Mark" Code="@Code" Underline="@Underline" Deleted="@Deleted" Strong="@Strong" Italic="@Italic" Disabled="@Disabled" Class="@Class" Style="@Style">
+        @ChildContent
+    </Text>
+}
+else if (Variant == "title")
+{
+    <Title Level="@Level" Mark="@Mark" Code="@Code" Underline="@Underline" Deleted="@Deleted" Strong="@Strong" Italic="@Italic" Class="@Class" Style="@Style">
+        @ChildContent
+    </Title>
+}
+else if (Variant == "paragraph")
+{
+    <Paragraph @attributes="AdditionalAttributes" Mark="@Mark" Code="@Code" Underline="@Underline" Deleted="@Deleted" Strong="@Strong" Italic="@Italic" Disabled="@Disabled" Ellipsis="@Ellipsis" Class="@Class" Style="@Style">
+        @ChildContent
+    </Paragraph>
+}
+
+@code {
+    [Parameter]
+    public string Variant { get; set; } = "text"; // "text" | "title" | "paragraph"
+
+    [Parameter]
+    public int Level { get; set; } = 1; // 1-5 for titles
+
+    [Parameter]
+    public bool Mark { get; set; }
+
+    [Parameter]
+    public bool Code { get; set; }
+
+    [Parameter]
+    public bool Underline { get; set; }
+
+    [Parameter]
+    public bool Deleted { get; set; }
+
+    [Parameter]
+    public bool Strong { get; set; }
+
+    [Parameter]
+    public bool Italic { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public bool Ellipsis { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public string? Style { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

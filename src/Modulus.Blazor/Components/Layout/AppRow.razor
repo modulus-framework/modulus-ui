@@ -1,0 +1,31 @@
+@inherits GridRow
+
+<GridRow @attributes="AdditionalAttributes" Gutter="@Gutter" Justify="@Justify" Align="@Align" Wrap="@Wrap" Class="@Class" Style="@Style">
+    @ChildContent
+</GridRow>
+
+@code {
+    [Parameter]
+    public int? Gutter { get; set; }
+
+    [Parameter]
+    public string? Justify { get; set; } // "start" | "end" | "center" | "space-between" | "space-around"
+
+    [Parameter]
+    public string? Align { get; set; } // "top" | "middle" | "bottom"
+
+    [Parameter]
+    public bool Wrap { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public string? Style { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

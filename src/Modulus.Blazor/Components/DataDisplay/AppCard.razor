@@ -1,0 +1,38 @@
+@inherits Card
+
+<Card @attributes="AdditionalAttributes" Title="@Title" Bordered="@Bordered" Hoverable="@Hoverable" Loading="@Loading" Class="@Class" Style="@Style">
+    @if (Extra is not null)
+    {
+        <Extra>@Extra</Extra>
+    }
+    @ChildContent
+</Card>
+
+@code {
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public bool Bordered { get; set; } = true;
+
+    [Parameter]
+    public bool Hoverable { get; set; }
+
+    [Parameter]
+    public bool Loading { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public string? Style { get; set; }
+
+    [Parameter]
+    public RenderFragment? Extra { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

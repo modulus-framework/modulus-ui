@@ -1,0 +1,28 @@
+@inherits Tabs
+
+<Tabs @attributes="AdditionalAttributes" Centered="@Centered" Animated="@Animated" Closable="@Closable" Class="@Class" Style="@Style">
+    @ChildContent
+</Tabs>
+
+@code {
+    [Parameter]
+    public bool Centered { get; set; }
+
+    [Parameter]
+    public bool Animated { get; set; } = true;
+
+    [Parameter]
+    public bool Closable { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public string? Style { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

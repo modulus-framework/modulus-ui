@@ -1,0 +1,49 @@
+@inherits GridCol
+
+<GridCol @attributes="AdditionalAttributes" Xs="@Xs" Sm="@Sm" Md="@Md" Lg="@Lg" Xl="@Xl" Xxl="@Xxl" Span="@Span" Offset="@Offset" Pull="@Pull" Push="@Push" Class="@Class" Style="@Style">
+    @ChildContent
+</GridCol>
+
+@code {
+    [Parameter]
+    public int? Xs { get; set; }
+
+    [Parameter]
+    public int? Sm { get; set; }
+
+    [Parameter]
+    public int? Md { get; set; }
+
+    [Parameter]
+    public int? Lg { get; set; }
+
+    [Parameter]
+    public int? Xl { get; set; }
+
+    [Parameter]
+    public int? Xxl { get; set; }
+
+    [Parameter]
+    public int? Span { get; set; } = 12; // 1-24
+
+    [Parameter]
+    public int? Offset { get; set; }
+
+    [Parameter]
+    public int? Pull { get; set; }
+
+    [Parameter]
+    public int? Push { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public string? Style { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

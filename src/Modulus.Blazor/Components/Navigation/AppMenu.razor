@@ -1,0 +1,34 @@
+@inherits Menu
+
+<Menu @attributes="AdditionalAttributes" Mode="@Mode" SelectedKeys="@SelectedKeys" Theme="@Theme" Inlined="@Inlined" Collapsed="@Collapsed" Class="@Class" Style="@Style">
+    @ChildContent
+</Menu>
+
+@code {
+    [Parameter]
+    public string? Mode { get; set; } // "vertical" | "horizontal" | "inline"
+
+    [Parameter]
+    public IList<string>? SelectedKeys { get; set; }
+
+    [Parameter]
+    public string? Theme { get; set; } // "light" | "dark"
+
+    [Parameter]
+    public bool Inlined { get; set; }
+
+    [Parameter]
+    public bool Collapsed { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public string? Style { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}

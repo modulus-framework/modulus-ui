@@ -1,0 +1,44 @@
+@inherits Table
+
+<Table @attributes="AdditionalAttributes" DataSource="@DataSource" Bordered="@Bordered" Striped="@Striped" Size="@Size" Pagination="@Pagination" Loading="@Loading" Class="@Class" Style="@Style">
+    @ChildContent
+</Table>
+
+@code {
+    [Parameter]
+    public IEnumerable<object>? DataSource { get; set; }
+
+    [Parameter]
+    public bool Bordered { get; set; }
+
+    [Parameter]
+    public bool Striped { get; set; }
+
+    [Parameter]
+    public string? Size { get; set; } // "small" | "middle" | "large"
+
+    [Parameter]
+    public PaginationOptions? Pagination { get; set; }
+
+    [Parameter]
+    public bool Loading { get; set; }
+
+    [Parameter]
+    public string? Class { get; set; }
+
+    [Parameter]
+    public string? Style { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+}
+
+public class PaginationOptions
+{
+    public int PageSize { get; set; } = 10;
+    public bool ShowSizeChanger { get; set; }
+    public bool ShowQuickJumper { get; set; }
+}
