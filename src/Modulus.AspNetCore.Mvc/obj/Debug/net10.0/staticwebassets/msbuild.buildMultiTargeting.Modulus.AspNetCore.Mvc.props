@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../build/Modulus.AspNetCore.Mvc.props" />
-</Project>

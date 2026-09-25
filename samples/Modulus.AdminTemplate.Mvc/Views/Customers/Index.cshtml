@@ -22,25 +22,26 @@
             </app-table-head>
             <app-table-body>
                 @if (Model != null)
-{
-    @foreach (var customer in Model)
                 {
-                    <tr>
-                        <td>@customer.Id</td>
-                        <td>@customer.Name</td>
-                        <td>@customer.Email</td>
-                        <td>@customer.Phone</td>
-                        <td>@customer.City</td>
-                        <td>
-                            <span class="badge @(customer.Status == "active" ? "bg-success" : "bg-danger")">
-                                @customer.Status
-                            </span>
-                        </td>
-                        <td>
-                            <a href="/Customers/Edit/@customer.Id" class="ant-btn ant-btn-primary ant-btn-sm">Edit</a>
-                            <a href="/Customers/Delete/@customer.Id" class="ant-btn ant-btn-dangerous ant-btn-sm" onclick="return confirm('Delete?')">Delete</a>
-                        </td>
-                    </tr>
+                    @foreach (var customer in Model)
+                    {
+                        <tr>
+                            <td>@customer.Id</td>
+                            <td>@customer.Name</td>
+                            <td>@customer.Email</td>
+                            <td>@customer.Phone</td>
+                            <td>@customer.City</td>
+                            <td>
+                                <span class="badge @(customer.Status == "active" ? "bg-success" : "bg-danger")">
+                                    @customer.Status
+                                </span>
+                            </td>
+                            <td>
+                                <a href="/Customers/Edit/@customer.Id" class="ant-btn ant-btn-primary ant-btn-sm">Edit</a>
+                                <a href="/Customers/Delete/@customer.Id" class="ant-btn ant-btn-dangerous ant-btn-sm" onclick="return confirm('Delete?')">Delete</a>
+                            </td>
+                        </tr>
+                    }
                 }
             </app-table-body>
         </app-table>

@@ -1,8 +1,0 @@
-/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/obj/Debug/net10.0/EmbeddedAttribute.cs
-/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/obj/Debug/net10.0/ValidatableTypeAttribute.cs
-/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/obj/Debug/net10.0/Modulus.Blazor.csproj.AssemblyReference.cache
-/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/obj/Debug/net10.0/rpswa.dswa.cache.json
-/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/obj/Debug/net10.0/Modulus.Blazor.GeneratedMSBuildEditorConfig.editorconfig
-/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/obj/Debug/net10.0/Modulus.Blazor.AssemblyInfoInputs.cache
-/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/obj/Debug/net10.0/Modulus.Blazor.AssemblyInfo.cs
-/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/obj/Debug/net10.0/Modulus.Blazor.csproj.CoreCompileInputs.cache

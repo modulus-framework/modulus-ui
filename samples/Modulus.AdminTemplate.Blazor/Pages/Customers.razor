@@ -1,4 +1,4 @@
-@page "/customers"
+@page "/customers" 
 @using AntDesign
 @using Modulus.Blazor.Components.General
 @using Modulus.Blazor.Components.Layout
@@ -8,32 +8,49 @@
 @using Modulus.Blazor.Components.Feedback
 @using Modulus.Blazor.Components.Pro
 @using Modulus.Ui.Abstractions
-@using Modulus.AdminTemplate.Blazor.Models
+@using Modulus.AdminTemplate.Blazor.Models 
 
 <PageTitle>Customers</PageTitle>
 
 <div class="customers-container">
     <AppTypography Variant="title" Level="1">Customers</AppTypography>
 
-    <ProTable TItem="Customer" Title="Customer List" DataSource="@customers" PageSize="10"
-        OnRequest="@HandleTableRequest" OnEdit="@HandleEdit" OnDelete="@HandleDelete" OnAdd="@HandleAdd"
-        Class="mt-24">
-        <PropertyColumn Property="c => c.Id" Title="ID" Width="80" />
-        <PropertyColumn Property="c => c.Name" Title="Name" />
-        <PropertyColumn Property="c => c.Email" Title="Email" />
-        <PropertyColumn Property="c => c.Phone" Title="Phone" />
-        <PropertyColumn Property="c => c.City" Title="City" />
-        <PropertyColumn Property="c => c.Status" Title="Status">
-            @if (context.Status == "active")
-            {
-                <Tag Color="green">Active</Tag>
-            }
-            else
-            {
-                <Tag Color="red">Inactive</Tag>
-            }
-        </PropertyColumn>
-    </ProTable>
+    <AppCard Title="Customer List" Class="mt-24">
+        <table class="ant-table ant-table-striped" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="width: 80px;">ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>City</th>
+                        <th>Status</th>
+                        <th style="width: 150px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var customer in customers)
+                    {
+                        <tr>
+                            <td>@customer.Id</td>
+                            <td>@customer.Name</td>
+                            <td>@customer.Email</td>
+                            <td>@customer.Phone</td>
+                            <td>@customer.City</td>
+                            <td>
+                                <span class="@(customer.Status == "active" ? "ant-tag ant-tag-success" : "ant-tag ant-tag-error")">
+                                    @(customer.Status == "active" ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td>
+                                <button class="ant-btn ant-btn-primary ant-btn-sm" @onclick="@(() => HandleEdit(customer))">Edit</button>
+                                <button class="ant-btn ant-btn-dangerous ant-btn-sm" style="margin-left: 8px;" @onclick="@(() => HandleDelete(customer))">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+    </AppCard>
 
     @if (selectedCustomer != null)
     {
@@ -82,11 +99,6 @@
         };
     }
 
-    private async Task HandleTableRequest(ProTableRequest request)
-    {
-        // Server-side filtering would go here
-        await Task.CompletedTask;
-    }
 
     private void HandleEdit(Customer customer)
     {

@@ -1,31 +1,23 @@
 @using AntDesign
+@using System.Diagnostics.CodeAnalysis
 
 @if (Variant == "text")
 {
-    <Text Mark="@Mark" Code="@Code" Underline="@Underline" Deleted="@Deleted" Strong="@Strong" Italic="@Italic" Disabled="@Disabled" Class="@Class" Style="@Style">
-        @if (ChildContent != null)
-        {
-            @ChildContent
-        }
-    </Text>
+    <AntDesign.Typography.Text Mark="@Mark" Code="@Code" Underline="@Underline" Deleted="@Deleted" Strong="@Strong" Italic="@Italic" Disabled="@Disabled" Class="@Class" Style="@Style">
+        @ChildContent
+    </AntDesign.Typography.Text>
 }
 else if (Variant == "title")
 {
-    <Title Level="@Level" Mark="@Mark" Code="@Code" Underline="@Underline" Deleted="@Deleted" Strong="@Strong" Italic="@Italic" Class="@Class" Style="@Style">
-        @if (ChildContent != null)
-        {
-            @ChildContent
-        }
-    </Title>
+    <AntDesign.Typography.Title Level="@Level" Mark="@Mark" Code="@Code" Underline="@Underline" Deleted="@Deleted" Strong="@Strong" Italic="@Italic" Class="@Class" Style="@Style">
+        @ChildContent
+    </AntDesign.Typography.Title>
 }
 else
 {
-    <Paragraph Mark="@Mark" Code="@Code" Underline="@Underline" Deleted="@Deleted" Strong="@Strong" Italic="@Italic" Disabled="@Disabled" Ellipsis="@Ellipsis" Class="@Class" Style="@Style">
-        @if (ChildContent != null)
-        {
-            @ChildContent
-        }
-    </Paragraph>
+    <AntDesign.Typography.Paragraph Mark="@Mark" Code="@Code" Underline="@Underline" Deleted="@Deleted" Strong="@Strong" Italic="@Italic" Disabled="@Disabled" Ellipsis="@Ellipsis" Class="@Class" Style="@Style">
+        @ChildContent
+    </AntDesign.Typography.Paragraph>
 }
 
 @code {

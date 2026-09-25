@@ -10,7 +10,7 @@
 
 <div class="admin-shell">
     <header class="admin-header">
-        <AppRow Gutter="16" Wrap="false" Align="middle" Class="w-100 h-100 px-24">
+        <AppRow Gutter="16" Wrap="false" Class="w-100 h-100 px-24" Style="align-items: center;">
             <AppCol Span="4" Class="d-flex align-items-center">
                 <h1 class="logo">Modulus</h1>
             </AppCol>
@@ -25,7 +25,7 @@
 
     <div class="admin-body">
         <aside class="admin-sider">
-            <AppMenu Mode="vertical" Theme="@(isDark ? "dark" : "light")" Collapsed="@sidebarCollapsed">
+            <AppMenu Collapsed="@sidebarCollapsed">
                 <MenuItem Key="dashboard" Icon="dashboard">
                     <NavLink href="/dashboard" Match="NavLinkMatch.All">Dashboard</NavLink>
                 </MenuItem>

@@ -1,11 +1,3 @@
-/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/Modulus.AspNetCore.Mvc.csproj.AssemblyReference.cache
-/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/rpswa.dswa.cache.json
-/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/Modulus.AspNetCore.Mvc.GeneratedMSBuildEditorConfig.editorconfig
-/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/Modulus.AspNetCore.Mvc.AssemblyInfoInputs.cache
-/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/Modulus.AspNetCore.Mvc.AssemblyInfo.cs
-/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/Modulus.AspNetCore.Mvc.csproj.CoreCompileInputs.cache
-/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/Modulus.AspNetCore.Mvc.RazorAssemblyInfo.cache
-/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/Modulus.AspNetCore.Mvc.RazorAssemblyInfo.cs
 /home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/bin/Release/net10.0/Modulus.Ui.Assets.staticwebassets.runtime.json
 /home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/bin/Release/net10.0/Modulus.Ui.Assets.staticwebassets.endpoints.json
 /home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/bin/Release/net10.0/Modulus.AspNetCore.Mvc.staticwebassets.runtime.json
@@ -17,6 +9,14 @@
 /home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/bin/Release/net10.0/Modulus.Ui.Assets.dll
 /home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/bin/Release/net10.0/Modulus.Ui.Abstractions.pdb
 /home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/bin/Release/net10.0/Modulus.Ui.Assets.pdb
+/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/Modulus.AspNetCore.Mvc.csproj.AssemblyReference.cache
+/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/rpswa.dswa.cache.json
+/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/Modulus.AspNetCore.Mvc.GeneratedMSBuildEditorConfig.editorconfig
+/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/Modulus.AspNetCore.Mvc.AssemblyInfoInputs.cache
+/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/Modulus.AspNetCore.Mvc.AssemblyInfo.cs
+/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/Modulus.AspNetCore.Mvc.csproj.CoreCompileInputs.cache
+/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/Modulus.AspNetCore.Mvc.RazorAssemblyInfo.cache
+/home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/Modulus.AspNetCore.Mvc.RazorAssemblyInfo.cs
 /home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/rjimswa.dswa.cache.json
 /home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/rjsmrazor.dswa.cache.json
 /home/azimmahmud/projects/ui_template/src/Modulus.AspNetCore.Mvc/obj/Release/net10.0/rjsmcshtml.dswa.cache.json
