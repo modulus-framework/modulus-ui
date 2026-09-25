@@ -1,0 +1,45 @@
+@using AntDesign
+@using Modulus.Ui.Abstractions
+
+<Modal Title="@Title" Visible="@Visible" OnOk="@OnOk" OnCancel="@OnCancel" DestroyOnClose="true" Width="@Width">
+    <ProForm Model="@Model" Fields="@Fields" FormLayout="@FormLayout" OnFinish="@OnFormFinish" />
+</Modal>
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; }
+
+    [Parameter]
+    public string? Title { get; set; } = "Form";
+
+    [Parameter]
+    public object? Model { get; set; }
+
+    [Parameter]
+    public List<ProFormField> Fields { get; set; } = new();
+
+    [Parameter]
+    public string FormLayout { get; set; } = "vertical";
+
+    [Parameter]
+    public string Width { get; set; } = "520px";
+
+    [Parameter]
+    public EventCallback<object> OnFormSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private async Task OnFormFinish(object formData)
+    {
+        if (OnFormSubmit.HasDelegate)
+        {
+            await OnFormSubmit.InvokeAsync(formData);
+        }
+    }
+
+    private async Task OnOk()
+    {
+        // Form will auto-submit via OnFormFinish
+    }
+}

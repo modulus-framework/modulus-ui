@@ -1,0 +1,41 @@
+@using AntDesign
+@using Modulus.Ui.Abstractions
+
+<Drawer Title="@Title" Visible="@Visible" OnClose="@OnClose" Width="@Width" DestroyOnClose="true">
+    <ProForm Model="@Model" Fields="@Fields" FormLayout="@FormLayout" OnFinish="@OnFormFinish" />
+</Drawer>
+
+@code {
+    [Parameter]
+    public bool Visible { get; set; }
+
+    [Parameter]
+    public string? Title { get; set; } = "Form";
+
+    [Parameter]
+    public object? Model { get; set; }
+
+    [Parameter]
+    public List<ProFormField> Fields { get; set; } = new();
+
+    [Parameter]
+    public string FormLayout { get; set; } = "vertical";
+
+    [Parameter]
+    public int Width { get; set; } = 520;
+
+    [Parameter]
+    public EventCallback<object> OnFormSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private async Task OnFormFinish(object formData)
+    {
+        if (OnFormSubmit.HasDelegate)
+        {
+            await OnFormSubmit.InvokeAsync(formData);
+        }
+        await OnClose.InvokeAsync();
+    }
+}

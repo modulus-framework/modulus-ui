@@ -87,6 +87,26 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9OYXZpZ2F0aW9uL0FwcFRhYnMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Pro/DrawerForm.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Qcm8vRHJhd2VyRm9ybS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Pro/ModalForm.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Qcm8vTW9kYWxGb3JtLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Pro/ProCard.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Qcm8vUHJvQ2FyZC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Pro/ProForm.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Qcm8vUHJvRm9ybS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Pro/ProTable.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Qcm8vUHJvVGFibGUucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/_Imports.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9fSW1wb3J0cy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 

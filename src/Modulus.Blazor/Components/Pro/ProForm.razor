@@ -1,0 +1,125 @@
+@using AntDesign
+@using Microsoft.AspNetCore.Components.Forms
+@using Modulus.Ui.Abstractions
+
+<Form Model="@Model" Layout="@FormLayout">
+    @foreach (var field in Fields ?? new())
+    {
+        <FormItem Label="@field.Label" Required="@field.Required" Help="@field.Help">
+            @if (field.FieldType == "text" || field.FieldType == "email" || field.FieldType == "number")
+            {
+                <Input TValue="string" Placeholder="@field.Placeholder" Value="@(GetFieldValue(field.Name) as string)" ValueChanged="@((string val) => SetFieldValue(field.Name, val))" ValueExpression="@(() => GetFieldValue(field.Name) as string)" />
+            }
+            else if (field.FieldType == "textarea")
+            {
+                <TextArea Placeholder="@field.Placeholder" Value="@(GetFieldValue(field.Name) as string)" ValueChanged="@((string val) => SetFieldValue(field.Name, val))" ValueExpression="@(() => GetFieldValue(field.Name) as string)" />
+            }
+            else if (field.FieldType == "select")
+            {
+                <Select TItemValue="object" TItem="FieldOption" DataSource="@field.Options"
+                    LabelName="@nameof(FieldOption.Label)" ValueName="@nameof(FieldOption.Value)"
+                    Placeholder="@field.Placeholder" OnSelectedItemChanged="@((FieldOption opt) => SetFieldValue(field.Name, opt?.Value))" />
+            }
+            else if (field.FieldType == "checkbox")
+            {
+                <Checkbox Checked="@(GetFieldValueBool(field.Name))" CheckedChanged="@((bool val) => SetFieldValue(field.Name, val))" />
+            }
+            else if (field.FieldType == "date")
+            {
+                <DatePicker TValue="DateTime?" Value="@(GetFieldValueDate(field.Name))" ValueChanged="@((DateTime? val) => SetFieldValue(field.Name, val))" />
+            }
+        </FormItem>
+    }
+
+    <FormItem>
+        <Space>
+            <SpaceItem>
+                <AppButton Type="@ButtonType.Primary" HtmlType="submit" OnClick="@HandleSubmit">
+                    Submit
+                </AppButton>
+            </SpaceItem>
+            <SpaceItem>
+                <AppButton OnClick="@OnReset">
+                    Reset
+                </AppButton>
+            </SpaceItem>
+            @if (ExtraActions is not null)
+            {
+                @ExtraActions
+            }
+        </Space>
+    </FormItem>
+</Form>
+
+@code {
+    [Parameter]
+    public object? Model { get; set; }
+
+    [Parameter]
+    public List<ProFormField> Fields { get; set; } = new();
+
+    [Parameter]
+    public string FormLayout { get; set; } = "vertical";
+
+    [Parameter]
+    public EventCallback<object> OnSubmit { get; set; }
+
+    [Parameter]
+    public RenderFragment? ExtraActions { get; set; }
+
+    private Dictionary<string, object?> FieldValues = new();
+
+    protected override void OnInitialized()
+    {
+        if (Model is not null)
+        {
+            foreach (var prop in Model.GetType().GetProperties())
+            {
+                FieldValues[prop.Name] = prop.GetValue(Model);
+            }
+        }
+    }
+
+    private object? GetFieldValue(string fieldName)
+    {
+        FieldValues.TryGetValue(fieldName, out var value);
+        return value;
+    }
+
+    private bool GetFieldValueBool(string fieldName)
+    {
+        FieldValues.TryGetValue(fieldName, out var value);
+        return value as bool? ?? false;
+    }
+
+    private DateTime? GetFieldValueDate(string fieldName)
+    {
+        FieldValues.TryGetValue(fieldName, out var value);
+        return value as DateTime?;
+    }
+
+    private void SetFieldValue(string fieldName, object? value)
+    {
+        FieldValues[fieldName] = value;
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (OnSubmit.HasDelegate)
+        {
+            await OnSubmit.InvokeAsync(FieldValues);
+        }
+    }
+
+    private void OnReset()
+    {
+        FieldValues.Clear();
+        if (Model is not null)
+        {
+            foreach (var prop in Model.GetType().GetProperties())
+            {
+                FieldValues[prop.Name] = prop.GetValue(Model);
+            }
+        }
+    }
+}
