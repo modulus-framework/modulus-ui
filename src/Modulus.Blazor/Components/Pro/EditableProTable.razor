@@ -1,0 +1,68 @@
+@typeparam TItem
+@inherits ComponentBase
+
+<div @attributes="AdditionalAttributes" style="background: white; border: 1px solid #d9d9d9; border-radius: 4px;">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <div style="padding: 16px; border-bottom: 1px solid #f0f0f0;">
+            <h3 style="margin: 0;">@Title</h3>
+        </div>
+    }
+    
+    <table class="ant-table" style="width: 100%; border-collapse: collapse;">
+        <thead style="background-color: #fafafa;">
+            <tr>
+                @foreach (var column in Columns)
+                {
+                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #d9d9d9;">@column</th>
+                }
+                <th style="padding: 12px; text-align: center; width: 100px; border-bottom: 1px solid #d9d9d9;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (DataSource != null)
+            {
+                @foreach (var item in DataSource)
+                {
+                    <tr style="border-bottom: 1px solid #f0f0f0;">
+                        <td style="padding: 12px;">@item</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button class="ant-btn ant-btn-primary ant-btn-sm" style="margin-right: 4px;">Edit</button>
+                            <button class="ant-btn ant-btn-dangerous ant-btn-sm">Delete</button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    @if (!string.IsNullOrEmpty(FooterAction))
+    {
+        <div style="padding: 16px; border-top: 1px solid #f0f0f0; text-align: right;">
+            <button class="ant-btn ant-btn-primary">@FooterAction</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public List<string>? Columns { get; set; }
+
+    [Parameter]
+    public IEnumerable<TItem>? DataSource { get; set; }
+
+    [Parameter]
+    public string? FooterAction { get; set; } = "Add Row";
+
+    [Parameter]
+    public EventCallback<TItem> OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<TItem> OnDelete { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> AdditionalAttributes { get; set; } = [];
+}

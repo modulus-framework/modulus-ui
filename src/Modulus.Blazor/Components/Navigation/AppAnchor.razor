@@ -1,0 +1,24 @@
+@inherits ComponentBase
+
+<div @attributes="AdditionalAttributes" 
+     style="border-left: 2px solid #d9d9d9; padding-left: 16px;">
+    @if (Items != null)
+    {
+        @foreach (var item in Items)
+        {
+            <div style="padding: 4px 0; cursor: pointer;">
+                <a href="#@item" style="color: rgba(0,0,0,0.65); text-decoration: none;">
+                    @item
+                </a>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public List<string>? Items { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> AdditionalAttributes { get; set; } = [];
+}

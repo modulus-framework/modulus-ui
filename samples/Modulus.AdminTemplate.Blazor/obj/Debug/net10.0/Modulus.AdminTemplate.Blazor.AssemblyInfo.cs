@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Modulus.AdminTemplate.Blazor")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e431fb101ac537d5a2ed4a698affc22230078805")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+13bad3349e7996331a8d00649b65ddc9f219e0bc")]
 [assembly: System.Reflection.AssemblyProductAttribute("Modulus.AdminTemplate.Blazor")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Modulus.AdminTemplate.Blazor")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

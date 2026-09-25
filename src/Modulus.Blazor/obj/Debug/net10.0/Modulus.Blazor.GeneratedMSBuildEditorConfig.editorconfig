@@ -27,12 +27,44 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhRGlzcGxheS9BcHBDYXJkLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/DataDisplay/AppCollapse.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhRGlzcGxheS9BcHBDb2xsYXBzZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/DataDisplay/AppImage.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhRGlzcGxheS9BcHBJbWFnZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/DataDisplay/AppPopover.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhRGlzcGxheS9BcHBQb3BvdmVyLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/DataDisplay/AppStatistic.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhRGlzcGxheS9BcHBTdGF0aXN0aWMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/DataDisplay/AppTable.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhRGlzcGxheS9BcHBUYWJsZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/DataDisplay/AppTimeline.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhRGlzcGxheS9BcHBUaW1lbGluZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/DataDisplay/AppTooltip.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhRGlzcGxheS9BcHBUb29sdGlwLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/DataDisplay/AppTree.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhRGlzcGxheS9BcHBUcmVlLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/DataEntry/AppAutoComplete.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhRW50cnkvQXBwQXV0b0NvbXBsZXRlLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/DataEntry/AppCascader.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhRW50cnkvQXBwQ2FzY2FkZXIucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/DataEntry/AppCheckbox.razor]
@@ -65,6 +97,18 @@ build_metadata.AdditionalFiles.CssScope =
 
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/DataEntry/AppTextArea.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhRW50cnkvQXBwVGV4dEFyZWEucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/DataEntry/AppTransfer.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhRW50cnkvQXBwVHJhbnNmZXIucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/DataEntry/AppTreeSelect.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhRW50cnkvQXBwVHJlZVNlbGVjdC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/DataEntry/AppUpload.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9EYXRhRW50cnkvQXBwVXBsb2FkLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Feedback/AppAlert.razor]
@@ -103,6 +147,14 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvQXBwRGl2aWRlci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Layout/AppFlex.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvQXBwRmxleC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Layout/AppLayout.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvQXBwTGF5b3V0LnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Layout/AppRow.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvQXBwUm93LnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
@@ -111,8 +163,32 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvQXBwU3BhY2UucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Layout/LayoutContent.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvTGF5b3V0Q29udGVudC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Layout/LayoutFooter.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvTGF5b3V0Rm9vdGVyLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Layout/LayoutHeader.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvTGF5b3V0SGVhZGVyLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Layout/LayoutSider.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvTGF5b3V0U2lkZXIucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Navigation/AppAnchor.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9OYXZpZ2F0aW9uL0FwcEFuY2hvci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Navigation/AppBreadcrumb.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9OYXZpZ2F0aW9uL0FwcEJyZWFkY3J1bWIucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Navigation/AppDropdown.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9OYXZpZ2F0aW9uL0FwcERyb3Bkb3duLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Navigation/AppMenu.razor]
@@ -123,12 +199,24 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9OYXZpZ2F0aW9uL0FwcFBhZ2luYXRpb24ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Navigation/AppSteps.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9OYXZpZ2F0aW9uL0FwcFN0ZXBzLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Navigation/AppTabs.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9OYXZpZ2F0aW9uL0FwcFRhYnMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Pro/DrawerForm.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Qcm8vRHJhd2VyRm9ybS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Pro/EditableProTable.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Qcm8vRWRpdGFibGVQcm9UYWJsZS5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Pro/FooterToolbar.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Qcm8vRm9vdGVyVG9vbGJhci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Pro/ModalForm.razor]
@@ -155,6 +243,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Qcm8vUHJvTGF5b3V0LnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Pro/ProList.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Qcm8vUHJvTGlzdC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Pro/ProProField.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Qcm8vUHJvUHJvRmllbGQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
@@ -169,6 +261,14 @@ build_metadata.AdditionalFiles.CssScope =
 
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Pro/ProTable.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Qcm8vUHJvVGFibGUucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Pro/QueryFilter.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Qcm8vUXVlcnlGaWx0ZXIucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Pro/StatisticCard.razor]
+build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Qcm8vU3RhdGlzdGljQ2FyZC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/_Imports.razor]

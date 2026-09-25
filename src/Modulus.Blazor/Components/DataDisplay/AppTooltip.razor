@@ -1,0 +1,33 @@
+@inherits ComponentBase
+
+<div @attributes="AdditionalAttributes" 
+     style="position: relative; display: inline-block;"
+     @onmouseenter="ShowTooltip"
+     @onmouseleave="HideTooltip">
+    
+    @ChildContent
+    
+    @if (IsVisible)
+    {
+        <div style="position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: white; padding: 8px 12px; border-radius: 4px; white-space: nowrap; z-index: 1000; margin-bottom: 8px;">
+            @Title
+            <div style="position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 4px solid transparent; border-right: 4px solid transparent; border-top: 4px solid rgba(0,0,0,0.85);"></div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    public bool IsVisible { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> AdditionalAttributes { get; set; } = [];
+
+    private void ShowTooltip() => IsVisible = true;
+    private void HideTooltip() => IsVisible = false;
+}

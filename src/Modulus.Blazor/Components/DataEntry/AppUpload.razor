@@ -1,0 +1,30 @@
+@inherits ComponentBase
+
+<div @attributes="AdditionalAttributes" 
+     style="border: 2px dashed #d9d9d9; border-radius: 4px; padding: 48px; text-align: center;">
+    
+    <div style="font-size: 48px; margin-bottom: 16px;">📁</div>
+    <p style="margin: 0 0 8px 0; color: rgba(0,0,0,0.85);">@(Message ?? "Click to upload files")</p>
+    <p style="margin: 0; color: rgba(0,0,0,0.45); font-size: 12px;">@(HintText ?? "Support for single or bulk upload")</p>
+    
+    <button class="ant-btn ant-btn-primary" style="margin-top: 16px;">
+        Choose File
+    </button>
+</div>
+
+@code {
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public string? HintText { get; set; }
+
+    [Parameter]
+    public string Accept { get; set; } = "*";
+
+    [Parameter]
+    public bool Multiple { get; set; } = true;
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> AdditionalAttributes { get; set; } = [];
+}

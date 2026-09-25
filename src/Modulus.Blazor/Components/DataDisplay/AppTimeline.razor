@@ -1,0 +1,27 @@
+@inherits ComponentBase
+
+<div @attributes="AdditionalAttributes">
+    @if (Events != null)
+    {
+        <div style="border-left: 2px solid #1890ff; padding-left: 16px;">
+            @foreach (var (evt, index) in Events.Select((x, i) => (x, i)))
+            {
+                <div style="margin-bottom: 16px; position: relative;">
+                    <div style="position: absolute; left: -22px; top: 0; width: 12px; height: 12px; border-radius: 50%; background: #1890ff; border: 2px solid white;"></div>
+                    <div style="font-weight: bold;">@evt</div>
+                    <div style="color: rgba(0,0,0,0.45); font-size: 12px; margin-top: 4px;">
+                        @(DateTime.Now.AddDays(-index).ToString("yyyy-MM-dd"))
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public List<string>? Events { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> AdditionalAttributes { get; set; } = [];
+}

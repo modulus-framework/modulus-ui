@@ -1,0 +1,41 @@
+@inherits ComponentBase
+
+<div @attributes="AdditionalAttributes" 
+     style="display: inline-block; position: relative;"
+     @onclick="ShowPreview">
+    
+    <img src="@Src" 
+         alt="@Alt" 
+         style="max-width: @(Width ?? 200)px; max-height: @(Height ?? 200)px; cursor: pointer; border: 1px solid #d9d9d9; border-radius: 4px;" />
+    
+    @if (ShowPreviewImage)
+    {
+        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 2000;"
+             @onclick:stopPropagation="true"
+             @onclick="HidePreview">
+            <img src="@Src" style="max-width: 90%; max-height: 90%; border-radius: 4px;" />
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string? Src { get; set; }
+
+    [Parameter]
+    public string? Alt { get; set; }
+
+    [Parameter]
+    public int? Width { get; set; }
+
+    [Parameter]
+    public int? Height { get; set; }
+
+    public bool ShowPreviewImage { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> AdditionalAttributes { get; set; } = [];
+
+    private void ShowPreview() => ShowPreviewImage = true;
+    private void HidePreview() => ShowPreviewImage = false;
+}

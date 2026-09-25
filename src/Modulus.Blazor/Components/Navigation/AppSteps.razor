@@ -1,0 +1,33 @@
+@inherits ComponentBase
+
+<div @attributes="AdditionalAttributes" style="display: flex; gap: 0;">
+    @if (Items != null)
+    {
+        @foreach (var (item, index) in Items.Select((x, i) => (x, i)))
+        {
+            <div style="flex: 1; display: flex; align-items: center; position: relative;">
+                <div style="display: flex; flex-direction: column; align-items: center;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: @(index <= CurrentStep ? "#1890ff" : "#d9d9d9"); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 2;">
+                        @(index + 1)
+                    </div>
+                    <div style="margin-top: 8px; text-align: center; font-size: 12px;">@item</div>
+                </div>
+                @if (index < (Items.Count - 1))
+                {
+                    <div style="position: absolute; top: 16px; left: 50%; right: -50%; height: 2px; background: @(index < CurrentStep ? "#1890ff" : "#d9d9d9");"></div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public List<string>? Items { get; set; }
+
+    [Parameter]
+    public int CurrentStep { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> AdditionalAttributes { get; set; } = [];
+}

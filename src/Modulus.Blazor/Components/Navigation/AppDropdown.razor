@@ -1,0 +1,41 @@
+@inherits ComponentBase
+
+<div @attributes="AdditionalAttributes" style="position: relative; display: inline-block;">
+    <button class="ant-btn" @onclick="ToggleDropdown" style="position: relative;">
+        @Trigger
+        <span style="margin-left: 4px;">▼</span>
+    </button>
+    
+    @if (ShowDropdown)
+    {
+        <div style="position: absolute; top: 100%; left: 0; background: white; border: 1px solid #d9d9d9; border-radius: 4px; min-width: 160px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 1000; margin-top: 4px;">
+            @if (MenuItems != null)
+            {
+                @foreach (var item in MenuItems)
+                {
+                    <div style="padding: 8px 16px; cursor: pointer; hover:background: #f5f5f5; border-bottom: 1px solid #f0f0f0;">
+                        @item
+                    </div>
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string Trigger { get; set; } = "Dropdown";
+
+    [Parameter]
+    public IEnumerable<string>? MenuItems { get; set; }
+
+    public bool ShowDropdown { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> AdditionalAttributes { get; set; } = [];
+
+    private void ToggleDropdown()
+    {
+        ShowDropdown = !ShowDropdown;
+    }
+}

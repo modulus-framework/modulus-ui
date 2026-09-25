@@ -1,0 +1,44 @@
+@typeparam TItem
+@inherits ComponentBase
+
+<div @attributes="AdditionalAttributes" style="background: white; border: 1px solid #d9d9d9; border-radius: 4px;">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <div style="padding: 16px; border-bottom: 1px solid #f0f0f0;">
+            <h3 style="margin: 0;">@Title</h3>
+        </div>
+    }
+    
+    <div style="padding: 0; list-style: none;">
+        @if (DataSource != null)
+        {
+            @foreach (var item in DataSource)
+            {
+                <div style="padding: 16px; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: bold;">@item</div>
+                        <div style="color: rgba(0,0,0,0.65); font-size: 12px; margin-top: 4px;">Metadata here</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <button class="ant-btn ant-btn-text" style="margin-left: 8px;">View</button>
+                        <button class="ant-btn ant-btn-text" style="margin-left: 8px;">Edit</button>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public IEnumerable<TItem>? DataSource { get; set; }
+
+    [Parameter]
+    public RenderFragment<TItem>? ItemTemplate { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object> AdditionalAttributes { get; set; } = [];
+}
