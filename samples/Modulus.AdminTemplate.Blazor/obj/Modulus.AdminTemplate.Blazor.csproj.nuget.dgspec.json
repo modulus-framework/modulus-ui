@@ -66,7 +66,12 @@
           },
           "centralPackageVersions": {
             "AntDesign": "1.6.2",
-            "Microsoft.AspNetCore.Components.Web": "10.0.9"
+            "bunit": "1.32.4",
+            "bunit.web": "1.32.4",
+            "Microsoft.AspNetCore.Components.Web": "10.0.9",
+            "Microsoft.NET.Test.Sdk": "17.12.1",
+            "xunit": "2.8.1",
+            "xunit.runner.visualstudio": "2.8.1"
           },
           "imports": [
             "net461",
@@ -568,7 +573,12 @@
           },
           "centralPackageVersions": {
             "AntDesign": "1.6.2",
-            "Microsoft.AspNetCore.Components.Web": "10.0.9"
+            "bunit": "1.32.4",
+            "bunit.web": "1.32.4",
+            "Microsoft.AspNetCore.Components.Web": "10.0.9",
+            "Microsoft.NET.Test.Sdk": "17.12.1",
+            "xunit": "2.8.1",
+            "xunit.runner.visualstudio": "2.8.1"
           },
           "imports": [
             "net461",
@@ -908,7 +918,12 @@
           "targetAlias": "net10.0",
           "centralPackageVersions": {
             "AntDesign": "1.6.2",
-            "Microsoft.AspNetCore.Components.Web": "10.0.9"
+            "bunit": "1.32.4",
+            "bunit.web": "1.32.4",
+            "Microsoft.AspNetCore.Components.Web": "10.0.9",
+            "Microsoft.NET.Test.Sdk": "17.12.1",
+            "xunit": "2.8.1",
+            "xunit.runner.visualstudio": "2.8.1"
           },
           "imports": [
             "net461",
@@ -1255,7 +1270,12 @@
           },
           "centralPackageVersions": {
             "AntDesign": "1.6.2",
-            "Microsoft.AspNetCore.Components.Web": "10.0.9"
+            "bunit": "1.32.4",
+            "bunit.web": "1.32.4",
+            "Microsoft.AspNetCore.Components.Web": "10.0.9",
+            "Microsoft.NET.Test.Sdk": "17.12.1",
+            "xunit": "2.8.1",
+            "xunit.runner.visualstudio": "2.8.1"
           },
           "imports": [
             "net461",

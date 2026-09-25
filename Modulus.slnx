@@ -9,6 +9,9 @@
     <Project Path="src/Modulus.Ui.Abstractions/Modulus.Ui.Abstractions.csproj" />
     <Project Path="src/Modulus.Ui.Assets/Modulus.Ui.Assets.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Modulus.Blazor.Tests/Modulus.Blazor.Tests.csproj" />
+  </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/antd-drift/antd-drift.csproj" />
   </Folder>

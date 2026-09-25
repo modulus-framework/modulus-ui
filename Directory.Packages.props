@@ -6,5 +6,11 @@
     <!-- Ant Design Blazor: the ONLY place its version is pinned (see docs/UPGRADING.md). -->
     <PackageVersion Include="AntDesign" Version="1.6.2" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.9" />
+    <!-- Test packages -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.1" />
+    <PackageVersion Include="xunit" Version="2.8.1" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.1" />
+    <PackageVersion Include="bunit" Version="1.32.4" />
+    <PackageVersion Include="bunit.web" Version="1.32.4" />
   </ItemGroup>
 </Project>
