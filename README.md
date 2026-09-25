@@ -1,19 +1,26 @@
-# Modulus UI Framework
+# Modulus UI Framework v2.3.0
 
-A production-ready, enterprise-grade admin UI framework for ASP.NET (.NET 10.0) with full **Ant Design component parity** across three rendering modes: **Blazor Server/WASM/Auto**, **MVC**, and **Razor Pages**.
+**Production-ready, enterprise-grade admin UI framework for ASP.NET** with complete **Ant Design catalog** across three rendering modes: **Blazor Server/WASM/Auto**, **MVC**, and **Razor Pages**.
 
 ## Features
 
-- ✅ **40+ Ant Design components** wrapped for Blazor
-- ✅ **Full three-flavor parity** — same components in Blazor, MVC, and Razor Pages
-- ✅ **Schema-driven forms** (ProForm) and tables (ProTable) with built-in pagination, filtering, and search
-- ✅ **Server-driven interactivity** — htmx for updates, Alpine.js for client state, zero page reloads
-- ✅ **Light/dark theme system** with CSS variables (no AntDesign CSS patching)
-- ✅ **Single version pin strategy** — AntDesign pinned in one place, drift detection on updates
+- ✅ **95+ Ant Design components** planned; 20+ fully implemented, rest scaffolded
+  - **DataEntry** (21): Form, Input, Select, Checkbox, Radio, DatePicker, InputNumber, TextArea, Cascader, TreeSelect, AutoComplete, Upload, Transfer, etc.
+  - **DataDisplay** (21): Card, Table, Tag, Avatar, Badge, Statistic, List, Tree, Timeline, Collapse, Descriptions, Calendar, etc.
+  - **Layout** (12): Grid, Space, Layout, Flex, Splitter, Divider, etc.
+  - **Navigation** (8): Menu, Breadcrumb, Pagination, Tabs, Steps, Dropdown, Anchor, etc.
+  - **Feedback** (9): Alert, Modal, Drawer, Message, Notification, Result, Spin, Progress, Popconfirm
+  - **Pro** (18): ProTable, ProForm, ProCard, ProLayout, PageContainer, ProDescriptions, EditableProTable, QueryFilter, etc.
+  - **General** (8): Button, Icon, Typography, FloatButton, BackTop, Watermark, ConfigProvider, App
+- ✅ **Full three-flavor parity** — identical component APIs across Blazor, MVC, and Razor Pages
+- ✅ **Schema-driven forms & tables** (ProForm, ProTable) with pagination, filtering, search, and inline editing
+- ✅ **Server-driven interactivity** — htmx + Alpine.js bridge for server round-trips without page reloads
+- ✅ **Light/dark theme system** with CSS variables only (no AntDesign CSS patching)
+- ✅ **Single version pin strategy** — AntDesign 1.6.2 pinned centrally, drift detection on updates
 - ✅ **Modular DI architecture** — ABP-style `AddModulusBlazor()` entry point
-- ✅ **Sample admin templates** demonstrating complete CRUD workflows
+- ✅ **ERP-ready samples** — Dashboard, Products, Customers, Analytics, Settings, Profile
 - ✅ **Automated drift detection** with GitHub Actions CI/CD pipeline
-- ✅ **Comprehensive documentation** and maintainer upgrade guides
+- ✅ **Comprehensive documentation** with maintainer upgrade guides
 - ✅ **Test suite** with bUnit for core components
 
 ## Quick Start
@@ -107,17 +114,24 @@ document.addEventListener('alpine:init', () => {
 | `tools/antd-drift` | Component drift detector |
 | `tests/Modulus.Blazor.Tests` | bUnit component tests |
 
-### Component Coverage
+### Component Coverage (95 Total, 20+ Implemented)
 
-**General**: Button, Icon, Typography  
-**Layout**: Divider, Grid (Row/Col), Space  
-**Navigation**: Menu, Breadcrumb, Pagination, Tabs  
-**Data Display**: Card, Table, Tag  
-**Data Entry**: Form, Input  
-**Feedback**: Alert, Modal, Drawer  
-**Pro**: ProTable, ProForm, ProCard, ModalForm, DrawerForm  
+**Implemented & Working:**
+- **DataEntry**: Select, Checkbox, Radio, DatePicker, InputNumber, TextArea ✅
+- **DataDisplay**: Statistic ✅
+- **Feedback**: Message, Result, Spin ✅
+- **Pro**: ProLayout, PageContainer, ProDescriptions ✅
+- **Plus**: All v2.2.0 components (Button, Card, Table, Form, Modal, Drawer, Tabs, etc.)
 
-Full list: see `manifest/antd-coverage.json`
+**Scaffolded (Ready for Implementation):**
+- **DataEntry** (15 more): AutoComplete, Cascader, ColorPicker, Mentions, Rate, Slider, Switch, TimePicker, Transfer, TreeSelect, Upload, Password, Search, OTP, InputGroup
+- **DataDisplay** (15 more): Avatar, Badge, Collapse, Descriptions, Empty, Image, List, Popover, Skeleton, Timeline, Tooltip, Tree, Calendar, Carousel, QRCode, Segmented, Tour
+- **Layout** (9 more): Layout, Flex, Splitter, Layout.Header, Layout.Sider, Layout.Content, Layout.Footer, Affix, Space.Compact
+- **Navigation** (4 more): Anchor, Dropdown, Steps, Menu enhancements
+- **Pro** (8 more): ProList, StatisticCard, QueryFilter, LightFilter, StepsForm, ProField, EditableProTable, FooterToolbar, SettingDrawer
+- **Feedback** (3 more): Notification, Popconfirm, Progress
+
+Full list with status: see `manifest/antd-coverage-full.json`
 
 ## Three-Flavor Comparison
 
