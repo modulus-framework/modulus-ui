@@ -1,16 +1,22 @@
 @using AntDesign
 
-@switch (Variant)
+@if (Variant == "text")
 {
-    case "text":
-        <Text Mark="@Mark" Code="@Code" Underline="@Underline" Deleted="@Deleted" Strong="@Strong" Italic="@Italic" Disabled="@Disabled" Class="@Class" Style="@Style">@ChildContent</Text>
-        break;
-    case "title":
-        <Title Level="@Level" Mark="@Mark" Code="@Code" Underline="@Underline" Deleted="@Deleted" Strong="@Strong" Italic="@Italic" Class="@Class" Style="@Style">@ChildContent</Title>
-        break;
-    default:
-        <Paragraph Mark="@Mark" Code="@Code" Underline="@Underline" Deleted="@Deleted" Strong="@Strong" Italic="@Italic" Disabled="@Disabled" Ellipsis="@Ellipsis" Class="@Class" Style="@Style">@ChildContent</Paragraph>
-        break;
+    <Text Mark="@Mark" Code="@Code" Underline="@Underline" Deleted="@Deleted" Strong="@Strong" Italic="@Italic" Disabled="@Disabled" Class="@Class" Style="@Style">
+        @if (ChildContent != null) { @ChildContent }
+    </Text>
+}
+else if (Variant == "title")
+{
+    <Title Level="@Level" Mark="@Mark" Code="@Code" Underline="@Underline" Deleted="@Deleted" Strong="@Strong" Italic="@Italic" Class="@Class" Style="@Style">
+        @if (ChildContent != null) { @ChildContent }
+    </Title>
+}
+else
+{
+    <Paragraph Mark="@Mark" Code="@Code" Underline="@Underline" Deleted="@Deleted" Strong="@Strong" Italic="@Italic" Disabled="@Disabled" Ellipsis="@Ellipsis" Class="@Class" Style="@Style">
+        @if (ChildContent != null) { @ChildContent }
+    </Paragraph>
 }
 
 @code {

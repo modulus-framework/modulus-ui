@@ -4,7 +4,7 @@
 @using Modulus.Blazor.Components.DataEntry
 @using Modulus.Blazor.Components.Feedback
 
-<Form Model="@Model" Layout="@FormLayout">
+<Form Model="@Model">
     @foreach (var field in Fields ?? new())
     {
         <FormItem Label="@field.Label" Required="@field.Required" Help="@field.Help">
@@ -61,7 +61,7 @@
     public List<ProFormField> Fields { get; set; } = new();
 
     [Parameter]
-    public string FormLayout { get; set; } = "vertical";
+    public string FormLayout { get; set; } = "vertical"; // Not used with AntDesign Form, kept for API compat
 
     [Parameter]
     public EventCallback<object> OnSubmit { get; set; }

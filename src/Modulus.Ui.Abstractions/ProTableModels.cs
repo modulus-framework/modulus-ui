@@ -50,6 +50,7 @@ public class ProFormField
     public string? Placeholder { get; set; }
     public object? Value { get; set; }
     public List<FieldOption>? Options { get; set; }
+    public string? Help { get; set; }
 }
 
 /// <summary>
