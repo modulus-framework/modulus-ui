@@ -1,19 +1,10 @@
 @inherits Divider
 
-<Divider @attributes="AdditionalAttributes" Type="@Type" Orientation="@Orientation" OrientationMargin="@OrientationMargin" Dashed="@Dashed" Plain="@Plain" Class="@Class" Style="@Style">
+<Divider @attributes="AdditionalAttributes" Dashed="@Dashed" Plain="@Plain" Class="@Class" Style="@Style">
     @ChildContent
 </Divider>
 
 @code {
-    [Parameter]
-    public string? Type { get; set; } // "horizontal" | "vertical"
-
-    [Parameter]
-    public string? Orientation { get; set; } // "left" | "right" | "center"
-
-    [Parameter]
-    public string? OrientationMargin { get; set; }
-
     [Parameter]
     public bool Dashed { get; set; }
 

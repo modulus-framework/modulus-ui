@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Bash(git init *)",
+      "Bash(git config *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Phase 1: Modulus.Blazor foundation — theme, DI, AppButton wrapper *)",
+      "Bash(git commit -m 'Phase 2: Wrap General, Layout, Navigation, DataDisplay, Feedback, DataEntry components *)",
+      "Bash(mkdir -p samples)",
+      "Bash(dotnet new *)",
+      "Bash(dotnet sln *)",
+      "Bash(git commit -m 'Add sample Blazor Web App host and fix wrapper generics *)",
+      "Bash(git commit -m 'Vertical slice: admin shell layout, dashboard, and Customers CRUD demo *)",
+      "Bash(git commit *)"
+    ]
+  }
+}

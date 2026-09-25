@@ -1,13 +1,10 @@
 @inherits Alert
 
-<Alert @attributes="AdditionalAttributes" Type="@Type" Message="@Message" Description="@Description" ShowIcon="@ShowIcon" Closable="@Closable" Class="@Class" Style="@Style">
+<Alert @attributes="AdditionalAttributes" Message="@Message" Description="@Description" ShowIcon="@ShowIcon" Closable="@Closable" Class="@Class" Style="@Style">
     @ChildContent
 </Alert>
 
 @code {
-    [Parameter]
-    public string? Type { get; set; } // "success" | "info" | "warning" | "error"
-
     [Parameter]
     public string? Message { get; set; }
 

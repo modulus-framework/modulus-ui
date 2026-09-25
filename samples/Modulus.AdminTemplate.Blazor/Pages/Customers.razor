@@ -1,0 +1,104 @@
+@page "/customers"
+@using AntDesign
+@using Modulus.Blazor.Components.General
+@using Modulus.Blazor.Components.Layout
+@using Modulus.Blazor.Components.DataDisplay
+@using Modulus.Blazor.Components.Navigation
+@using Modulus.Blazor.Components.DataEntry
+@using Modulus.Blazor.Components.Feedback
+@using Modulus.AdminTemplate.Blazor.Models
+
+<PageTitle>Customers</PageTitle>
+
+<div class="customers-container">
+    <AppTypography Variant="title" Level="1">Customers</AppTypography>
+
+    <div style="margin-top: 16px;">
+        <AppButton Type="@ButtonType.Primary" Icon="plus">
+            <NavLink href="/customers/new" class="text-white">Add Customer</NavLink>
+        </AppButton>
+    </div>
+
+    <AppCard Title="Customer List" Class="mt-24" Bordered="false">
+        <Table TItem="Customer" DataSource="@customers" Striped="true" Bordered="true" Class="w-100">
+            <PropertyColumn Property="c => c.Id" Title="ID" Width="80" />
+            <PropertyColumn Property="c => c.Name" Title="Name" />
+            <PropertyColumn Property="c => c.Email" Title="Email" />
+            <PropertyColumn Property="c => c.Phone" Title="Phone" />
+            <PropertyColumn Property="c => c.City" Title="City" />
+            <PropertyColumn Property="c => c.Status" Title="Status">
+                @if (context.Status == "active")
+                {
+                    <Tag Color="green">Active</Tag>
+                }
+                else
+                {
+                    <Tag Color="red">Inactive</Tag>
+                }
+            </PropertyColumn>
+            <ActionColumn Title="Actions" Width="120">
+                <Space>
+                    <SpaceItem>
+                        <NavLink href="@($"/customers/{context.Id}")" class="ant-btn ant-btn-primary ant-btn-sm">
+                            Edit
+                        </NavLink>
+                    </SpaceItem>
+                    <SpaceItem>
+                        <AppButton Size="@ButtonSize.Small" Danger="true" OnClick="@(() => DeleteCustomer(context.Id))">
+                            Delete
+                        </AppButton>
+                    </SpaceItem>
+                </Space>
+            </ActionColumn>
+        </Table>
+    </AppCard>
+
+    @if (selectedCustomer != null)
+    {
+        <AppCard Title="Customer Details" Class="mt-24" Bordered="false">
+            <p><strong>ID:</strong> @selectedCustomer.Id</p>
+            <p><strong>Name:</strong> @selectedCustomer.Name</p>
+            <p><strong>Email:</strong> @selectedCustomer.Email</p>
+            <p><strong>Phone:</strong> @selectedCustomer.Phone</p>
+            <p><strong>City:</strong> @selectedCustomer.City</p>
+            <p><strong>Status:</strong> @selectedCustomer.Status</p>
+        </AppCard>
+    }
+</div>
+
+<style>
+.customers-container {
+    max-width: 1200px;
+}
+
+.mt-24 { margin-top: 24px; }
+.w-100 { width: 100%; }
+.text-white { color: white !important; }
+
+:deep(.ant-btn-primary:hover) {
+    color: white !important;
+}
+</style>
+
+@code {
+    private List<Customer> customers = new();
+    private Customer? selectedCustomer = null;
+
+    protected override void OnInitialized()
+    {
+        // Mock data
+        customers = new()
+        {
+            new() { Id = 1, Name = "John Doe", Email = "john@example.com", Phone = "+1 555-0101", City = "New York", Status = "active" },
+            new() { Id = 2, Name = "Jane Smith", Email = "jane@example.com", Phone = "+1 555-0102", City = "Los Angeles", Status = "active" },
+            new() { Id = 3, Name = "Bob Johnson", Email = "bob@example.com", Phone = "+1 555-0103", City = "Chicago", Status = "inactive" },
+            new() { Id = 4, Name = "Alice Brown", Email = "alice@example.com", Phone = "+1 555-0104", City = "Houston", Status = "active" },
+        };
+    }
+
+    private void DeleteCustomer(int id)
+    {
+        customers.RemoveAll(c => c.Id == id);
+        selectedCustomer = null;
+    }
+}

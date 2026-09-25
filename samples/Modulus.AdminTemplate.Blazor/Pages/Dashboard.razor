@@ -1,0 +1,93 @@
+@page "/dashboard"
+@using AntDesign
+@using Modulus.Blazor.Components.General
+@using Modulus.Blazor.Components.Layout
+@using Modulus.Blazor.Components.DataDisplay
+@using Modulus.Blazor.Components.Navigation
+
+<PageTitle>Dashboard</PageTitle>
+
+<div class="dashboard-container">
+    <AppTypography Variant="title" Level="1">Dashboard</AppTypography>
+    <p class="text-secondary">Welcome to your admin panel</p>
+
+    <div style="margin-top: 24px;">
+        <AppRow Gutter="16" Class="mb-24">
+            <AppCol Xs="24" Sm="12" Md="6" Class="mb-16">
+                <AppCard Bordered="false" Hoverable="true">
+                    <div class="stat-card">
+                        <div class="stat-value">1,234</div>
+                        <div class="stat-label">Total Customers</div>
+                    </div>
+                </AppCard>
+            </AppCol>
+
+            <AppCol Xs="24" Sm="12" Md="6" Class="mb-16">
+                <AppCard Bordered="false" Hoverable="true">
+                    <div class="stat-card">
+                        <div class="stat-value">567</div>
+                        <div class="stat-label">Active Orders</div>
+                    </div>
+                </AppCard>
+            </AppCol>
+
+            <AppCol Xs="24" Sm="12" Md="6" Class="mb-16">
+                <AppCard Bordered="false" Hoverable="true">
+                    <div class="stat-card">
+                        <div class="stat-value">$45.2K</div>
+                        <div class="stat-label">Monthly Revenue</div>
+                    </div>
+                </AppCard>
+            </AppCol>
+
+            <AppCol Xs="24" Sm="12" Md="6" Class="mb-16">
+                <AppCard Bordered="false" Hoverable="true">
+                    <div class="stat-card">
+                        <div class="stat-value">89%</div>
+                        <div class="stat-label">Conversion Rate</div>
+                    </div>
+                </AppCard>
+            </AppCol>
+        </AppRow>
+
+        <AppCard Title="Recent Activity" Bordered="false" Class="mt-24">
+            <div style="padding: 16px 0;">
+                <p>📊 Sales dashboard updated</p>
+                <p>👥 New customer registered</p>
+                <p>✅ Order #12345 completed</p>
+                <p>⚠️ Inventory low warning</p>
+            </div>
+        </AppCard>
+    </div>
+</div>
+
+<style>
+.dashboard-container {
+    max-width: 1200px;
+}
+
+.mb-24 { margin-bottom: 24px; }
+.mb-16 { margin-bottom: 16px; }
+.mt-24 { margin-top: 24px; }
+.text-secondary { color: var(--ant-color-text-secondary); }
+
+.stat-card {
+    text-align: center;
+    padding: 20px 0;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--ant-color-primary);
+}
+
+.stat-label {
+    font-size: 14px;
+    color: var(--ant-color-text-secondary);
+    margin-top: 8px;
+}
+</style>
+
+@code {
+}
