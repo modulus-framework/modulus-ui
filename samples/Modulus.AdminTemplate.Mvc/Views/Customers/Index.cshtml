@@ -21,7 +21,9 @@
                 <th style="width: 150px;">Actions</th>
             </app-table-head>
             <app-table-body>
-                @foreach (var customer in Model ?? new())
+                @if (Model != null)
+{
+    @foreach (var customer in Model)
                 {
                     <tr>
                         <td>@customer.Id</td>
