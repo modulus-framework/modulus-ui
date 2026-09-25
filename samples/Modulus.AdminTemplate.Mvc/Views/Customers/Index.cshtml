@@ -2,20 +2,6 @@
     ViewData["Title"] = "Customers";
 }
 
-@model List<Customer>
-
-@{
-    public class Customer
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Phone { get; set; } = string.Empty;
-        public string City { get; set; } = string.Empty;
-        public string Status { get; set; } = "active";
-    }
-}
-
 <div class="customers-container">
     <h1>Customers</h1>
 
@@ -35,7 +21,7 @@
                 <th style="width: 150px;">Actions</th>
             </app-table-head>
             <app-table-body>
-                @foreach (var customer in Model ?? new List<Customer>())
+                @foreach (var customer in Model ?? new())
                 {
                     <tr>
                         <td>@customer.Id</td>
@@ -49,8 +35,8 @@
                             </span>
                         </td>
                         <td>
-                            <app-button type="primary" size="small" href="@Url.Action("Edit", new { id = customer.Id })">Edit</app-button>
-                            <app-button type="default" size="small" danger="true" onclick="if(confirm('Delete?')) window.location='@Url.Action("Delete", new { id = customer.Id })'">Delete</app-button>
+                            <a href="/Customers/Edit/@customer.Id" class="ant-btn ant-btn-primary ant-btn-sm">Edit</a>
+                            <a href="/Customers/Delete/@customer.Id" class="ant-btn ant-btn-dangerous ant-btn-sm" onclick="return confirm('Delete?')">Delete</a>
                         </td>
                     </tr>
                 }

@@ -47,10 +47,6 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9GZWVkYmFjay9BcHBEcmF3ZXIucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Feedback/AppMessage.razor]
-build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9GZWVkYmFjay9BcHBNZXNzYWdlLnJhem9y
-build_metadata.AdditionalFiles.CssScope = 
-
 [/home/azimmahmud/projects/ui_template/src/Modulus.Blazor/Components/Feedback/AppModal.razor]
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9GZWVkYmFjay9BcHBNb2RhbC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Modulus.AdminTemplate.Mvc")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0530a713dc8e298bf0a39d29cf9ac42e55a4bd99")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+23786c07b77619991b61432500bc2899999d5d59")]
 [assembly: System.Reflection.AssemblyProductAttribute("Modulus.AdminTemplate.Mvc")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Modulus.AdminTemplate.Mvc")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
