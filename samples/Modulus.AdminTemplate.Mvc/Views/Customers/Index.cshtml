@@ -1,0 +1,68 @@
+@{
+    ViewData["Title"] = "Customers";
+}
+
+@model List<Customer>
+
+@{
+    public class Customer
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string Status { get; set; } = "active";
+    }
+}
+
+<div class="customers-container">
+    <h1>Customers</h1>
+
+    <div style="margin-top: 16px;">
+        <app-button type="primary" icon="plus" href="@Url.Action("Create")">Add Customer</app-button>
+    </div>
+
+    <app-card title="Customer List" class="mt-24">
+        <app-table striped="true" bordered="true">
+            <app-table-head>
+                <th style="width: 80px;">ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>City</th>
+                <th style="width: 100px;">Status</th>
+                <th style="width: 150px;">Actions</th>
+            </app-table-head>
+            <app-table-body>
+                @foreach (var customer in Model ?? new List<Customer>())
+                {
+                    <tr>
+                        <td>@customer.Id</td>
+                        <td>@customer.Name</td>
+                        <td>@customer.Email</td>
+                        <td>@customer.Phone</td>
+                        <td>@customer.City</td>
+                        <td>
+                            <span class="badge @(customer.Status == "active" ? "bg-success" : "bg-danger")">
+                                @customer.Status
+                            </span>
+                        </td>
+                        <td>
+                            <app-button type="primary" size="small" href="@Url.Action("Edit", new { id = customer.Id })">Edit</app-button>
+                            <app-button type="default" size="small" danger="true" onclick="if(confirm('Delete?')) window.location='@Url.Action("Delete", new { id = customer.Id })'">Delete</app-button>
+                        </td>
+                    </tr>
+                }
+            </app-table-body>
+        </app-table>
+    </app-card>
+</div>
+
+<style>
+    .customers-container {
+        max-width: 1200px;
+    }
+
+    .mt-24 { margin-top: 24px; }
+</style>

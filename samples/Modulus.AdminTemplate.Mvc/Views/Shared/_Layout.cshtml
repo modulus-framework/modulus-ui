@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Modulus Admin</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        :root {
+            --ant-color-primary: #1890ff;
+            --ant-color-text: rgba(0, 0, 0, 0.85);
+            --ant-color-text-secondary: rgba(0, 0, 0, 0.65);
+            --ant-color-bg: #ffffff;
+            --ant-color-border: #d9d9d9;
+        }
+
+        .admin-shell {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: var(--ant-color-bg);
+        }
+
+        .admin-header {
+            height: 64px;
+            background-color: #001529;
+            color: white;
+            border-bottom: 1px solid var(--ant-color-border);
+            display: flex;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .admin-header .logo {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .admin-body {
+            display: flex;
+            flex: 1;
+        }
+
+        .admin-sider {
+            width: 200px;
+            background-color: #001529;
+            border-right: 1px solid var(--ant-color-border);
+            overflow-y: auto;
+        }
+
+        .admin-content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .admin-footer {
+            height: 48px;
+            background-color: var(--ant-color-bg);
+            border-top: 1px solid var(--ant-color-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .ant-menu { list-style: none; padding: 0; margin: 0; }
+        .ant-menu-item { display: block; padding: 10px 16px; color: rgba(255,255,255,0.65); text-decoration: none; cursor: pointer; }
+        .ant-menu-item:hover { background-color: rgba(255,255,255,0.1); }
+        .ant-menu-dark .ant-menu-item { color: rgba(255,255,255,0.65); }
+
+        .px-24 { padding-left: 24px; padding-right: 24px; }
+        .gap-16 { gap: 16px; }
+        .d-flex { display: flex; }
+        .text-secondary { color: var(--ant-color-text-secondary); }
+    </style>
+</head>
+<body>
+    <div class="admin-shell">
+        <header class="admin-header">
+            <div class="container-fluid d-flex justify-content-between align-items-center px-24">
+                <h1 class="logo mb-0">Modulus</h1>
+                <div class="d-flex gap-16">
+                    <button class="btn btn-sm btn-outline-light" title="Search"><i class="bi bi-search"></i></button>
+                    <button class="btn btn-sm btn-outline-light" title="Notifications"><i class="bi bi-bell"></i></button>
+                    <button class="btn btn-sm btn-outline-light" title="User"><i class="bi bi-person"></i></button>
+                </div>
+            </div>
+        </header>
+
+        <div class="admin-body">
+            <aside class="admin-sider">
+                <nav class="ant-menu ant-menu-dark">
+                    <a href="@Url.Action("Index", "Home")" class="ant-menu-item">
+                        📊 Dashboard
+                    </a>
+                    <a href="@Url.Action("Index", "Customers")" class="ant-menu-item">
+                        👥 Customers
+                    </a>
+                    <a href="#" class="ant-menu-item">
+                        ⚙️ Settings
+                    </a>
+                </nav>
+            </aside>
+
+            <main class="admin-content">
+                @RenderBody()
+            </main>
+        </div>
+
+        <footer class="admin-footer">
+            <p class="text-center text-secondary mb-0">© 2026 Modulus. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

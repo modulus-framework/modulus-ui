@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Modulus.AspNetCore.Mvc\Modulus.AspNetCore.Mvc.csproj" />
+    <ProjectReference Include="..\..\src\Modulus.Ui.Assets\Modulus.Ui.Assets.csproj" />
+    <ProjectReference Include="..\..\src\Modulus.Ui.Abstractions\Modulus.Ui.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>
