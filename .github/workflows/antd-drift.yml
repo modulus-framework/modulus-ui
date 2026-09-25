@@ -1,0 +1,93 @@
+name: Ant Design Drift Check
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday at UTC 0:00
+  workflow_dispatch:
+
+jobs:
+  drift-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build drift tool
+      run: |
+        cd tools/antd-drift
+        dotnet build --configuration Release
+
+    - name: Run drift check
+      id: drift
+      run: |
+        cd tools/antd-drift
+        dotnet run --configuration Release || true
+
+    - name: Find/Create drift issue
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const path = require('path');
+
+          // Read latest drift report
+          const reports = fs.readdirSync('drift-reports').sort().reverse();
+          if (reports.length === 0) {
+            console.log('No drift report generated');
+            return;
+          }
+
+          const latest = reports[0];
+          const content = fs.readFileSync(path.join('drift-reports', latest), 'utf8');
+
+          // Search for existing drift issue
+          const issues = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            state: 'open',
+            labels: 'antd-drift'
+          });
+
+          const existingIssue = issues.data.find(i =>
+            i.title.includes('Ant Design Drift Report')
+          );
+
+          const issueBody = `
+          # Ant Design Drift Report
+
+          This issue tracks component drift with the latest Ant Design releases.
+
+          Generated: ${new Date().toISOString()}
+
+          ${content}
+          `;
+
+          if (existingIssue) {
+            // Update existing issue
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: existingIssue.number,
+              body: issueBody
+            });
+            console.log(`Updated issue #${existingIssue.number}`);
+          } else {
+            // Create new issue
+            const newIssue = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Ant Design Drift Report (Weekly)',
+              body: issueBody,
+              labels: ['antd-drift', 'maintenance']
+            });
+            console.log(`Created issue #${newIssue.data.number}`);
+          }

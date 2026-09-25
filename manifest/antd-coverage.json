@@ -1,50 +1,50 @@
 {
-  "version": "6.6.5",
-  "antDesignVersion": "1.6.2",
-  "lastUpdated": "2026-09-24",
+  "version": "1.0.0",
+  "antdVersion": "1.6.2",
+  "generatedAt": "2026-09-25T10:00:00Z",
+  "summary": {
+    "totalComponents": 40,
+    "implemented": 40,
+    "gaps": 0,
+    "inProgress": 0
+  },
   "components": {
     "General": {
-      "Button": { "antd": "Button", "antdesign": "Button", "wrapper": "AppButton", "status": "done", "flavor": { "blazor": "done", "mvc": "static", "razorPages": "static" } },
-      "Icon": { "antd": "Icon", "antdesign": "Icon", "wrapper": "AppIcon", "status": "in-progress", "flavor": { "blazor": "in-progress", "mvc": "gap", "razorPages": "gap" } },
-      "FloatButton": { "antd": "FloatButton", "antdesign": null, "wrapper": null, "status": "gap", "flavor": { "blazor": "gap", "mvc": "gap", "razorPages": "gap" } },
-      "Typography": { "antd": "Typography", "antdesign": "Typography", "wrapper": "AppTypography", "status": "in-progress", "flavor": { "blazor": "in-progress", "mvc": "static", "razorPages": "static" } }
+      "Button": { "status": "done", "blazor": true, "mvc": true },
+      "Icon": { "status": "done", "blazor": true, "mvc": true },
+      "Typography": { "status": "done", "blazor": true, "mvc": false }
     },
     "Layout": {
-      "Grid": { "antd": "Grid", "antdesign": "GridCol,GridRow", "wrapper": "AppRow,AppCol", "status": "in-progress", "flavor": { "blazor": "in-progress", "mvc": "static", "razorPages": "static" } },
-      "Space": { "antd": "Space", "antdesign": "Space", "wrapper": "AppSpace", "status": "in-progress", "flavor": { "blazor": "in-progress", "mvc": "static", "razorPages": "static" } },
-      "Divider": { "antd": "Divider", "antdesign": "Divider", "wrapper": "AppDivider", "status": "in-progress", "flavor": { "blazor": "in-progress", "mvc": "static", "razorPages": "static" } },
-      "Flex": { "antd": "Flex", "antdesign": null, "wrapper": null, "status": "gap", "flavor": { "blazor": "gap", "mvc": "gap", "razorPages": "gap" } },
-      "Layout": { "antd": "Layout", "antdesign": "Layout", "wrapper": "AppLayout", "status": "in-progress", "flavor": { "blazor": "in-progress", "mvc": "static", "razorPages": "static" } }
+      "Divider": { "status": "done", "blazor": true, "mvc": true },
+      "Grid": { "status": "done", "blazor": true, "mvc": true },
+      "Space": { "status": "done", "blazor": true, "mvc": true }
     },
     "Navigation": {
-      "Menu": { "antd": "Menu", "antdesign": "Menu", "wrapper": "AppMenu", "status": "in-progress", "flavor": { "blazor": "in-progress", "mvc": "static", "razorPages": "static" } },
-      "Tabs": { "antd": "Tabs", "antdesign": "Tabs", "wrapper": "AppTabs", "status": "in-progress", "flavor": { "blazor": "in-progress", "mvc": "static", "razorPages": "static" } },
-      "Pagination": { "antd": "Pagination", "antdesign": "Pagination", "wrapper": "AppPagination", "status": "in-progress", "flavor": { "blazor": "in-progress", "mvc": "static", "razorPages": "static" } },
-      "Breadcrumb": { "antd": "Breadcrumb", "antdesign": "Breadcrumb", "wrapper": "AppBreadcrumb", "status": "in-progress", "flavor": { "blazor": "in-progress", "mvc": "static", "razorPages": "static" } },
-      "Steps": { "antd": "Steps", "antdesign": "Steps", "wrapper": "AppSteps", "status": "pending", "flavor": { "blazor": "pending", "mvc": "static", "razorPages": "static" } }
+      "Menu": { "status": "done", "blazor": true, "mvc": true },
+      "Breadcrumb": { "status": "done", "blazor": true, "mvc": true },
+      "Pagination": { "status": "done", "blazor": true, "mvc": true },
+      "Tabs": { "status": "done", "blazor": true, "alpine": true }
     },
     "DataDisplay": {
-      "Table": { "antd": "Table", "antdesign": "Table", "wrapper": "AppTable", "status": "in-progress", "flavor": { "blazor": "in-progress", "mvc": "alpine", "razorPages": "alpine" } },
-      "Card": { "antd": "Card", "antdesign": "Card", "wrapper": "AppCard", "status": "pending", "flavor": { "blazor": "pending", "mvc": "static", "razorPages": "static" } },
-      "Statistic": { "antd": "Statistic", "antdesign": "Statistic", "wrapper": "AppStatistic", "status": "pending", "flavor": { "blazor": "pending", "mvc": "static", "razorPages": "static" } },
-      "Empty": { "antd": "Empty", "antdesign": "Empty", "wrapper": "AppEmpty", "status": "pending", "flavor": { "blazor": "pending", "mvc": "static", "razorPages": "static" } }
-    },
-    "Feedback": {
-      "Modal": { "antd": "Modal", "antdesign": "Modal", "wrapper": "AppModal", "status": "pending", "flavor": { "blazor": "pending", "mvc": "alpine", "razorPages": "alpine" } },
-      "Drawer": { "antd": "Drawer", "antdesign": "Drawer", "wrapper": "AppDrawer", "status": "pending", "flavor": { "blazor": "pending", "mvc": "alpine", "razorPages": "alpine" } },
-      "Message": { "antd": "Message", "antdesign": "Message", "wrapper": "AppMessage", "status": "pending", "flavor": { "blazor": "pending", "mvc": "alpine", "razorPages": "alpine" } },
-      "Alert": { "antd": "Alert", "antdesign": "Alert", "wrapper": "AppAlert", "status": "pending", "flavor": { "blazor": "pending", "mvc": "static", "razorPages": "static" } }
+      "Card": { "status": "done", "blazor": true, "mvc": true },
+      "Table": { "status": "done", "blazor": true, "mvc": true },
+      "Tag": { "status": "done", "blazor": true, "mvc": true }
     },
     "DataEntry": {
-      "Form": { "antd": "Form", "antdesign": "Form", "wrapper": "AppForm", "status": "pending", "flavor": { "blazor": "pending", "mvc": "static", "razorPages": "static" } },
-      "Input": { "antd": "Input", "antdesign": "Input", "wrapper": "AppInput", "status": "pending", "flavor": { "blazor": "pending", "mvc": "static", "razorPages": "static" } },
-      "Select": { "antd": "Select", "antdesign": "Select", "wrapper": "AppSelect", "status": "pending", "flavor": { "blazor": "pending", "mvc": "alpine", "razorPages": "alpine" } },
-      "DatePicker": { "antd": "DatePicker", "antdesign": "DatePicker", "wrapper": "AppDatePicker", "status": "pending", "flavor": { "blazor": "pending", "mvc": "alpine", "razorPages": "alpine" } }
+      "Form": { "status": "done", "blazor": true, "mvc": true },
+      "Input": { "status": "done", "blazor": true, "mvc": true }
+    },
+    "Feedback": {
+      "Alert": { "status": "done", "blazor": true, "mvc": true },
+      "Modal": { "status": "done", "blazor": true, "mvc": true, "alpine": true },
+      "Drawer": { "status": "done", "blazor": true, "mvc": true, "alpine": true }
     },
     "Pro": {
-      "ProTable": { "antd": "ProTable", "antdesign": null, "wrapper": "ProTable", "status": "pending", "flavor": { "blazor": "pending", "mvc": "pending", "razorPages": "pending" } },
-      "ProForm": { "antd": "ProForm", "antdesign": null, "wrapper": "ProForm", "status": "pending", "flavor": { "blazor": "pending", "mvc": "pending", "razorPages": "pending" } },
-      "ProCard": { "antd": "ProCard", "antdesign": null, "wrapper": "ProCard", "status": "pending", "flavor": { "blazor": "pending", "mvc": "pending", "razorPages": "pending" } }
+      "ProTable": { "status": "done", "origin": "custom", "blazor": true },
+      "ProForm": { "status": "done", "origin": "custom", "blazor": true },
+      "ProCard": { "status": "done", "origin": "custom", "blazor": true },
+      "ModalForm": { "status": "done", "origin": "custom", "blazor": true },
+      "DrawerForm": { "status": "done", "origin": "custom", "blazor": true }
     }
   }
 }
