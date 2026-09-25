@@ -6,9 +6,14 @@ namespace Modulus.AdminTemplate.Mvc.Controllers;
 
 public class HomeController : Controller
 {
-    public IActionResult Index()
+    public IActionResult Dashboard()
     {
         return View();
+    }
+
+    public IActionResult Index()
+    {
+        return RedirectToAction("Dashboard");
     }
 
     public IActionResult Privacy()

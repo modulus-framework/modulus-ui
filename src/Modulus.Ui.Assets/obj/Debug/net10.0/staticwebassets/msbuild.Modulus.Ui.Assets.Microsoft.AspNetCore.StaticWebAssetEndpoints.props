@@ -1,5 +1,17 @@
 ﻿<Project>
   <ItemGroup>
+    <StaticWebAssetEndpoint Include="_content/Modulus.Ui.Assets/css/modulus-professional.css">
+      <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\modulus-professional.css'))</AssetFile>
+      <Selectors><![CDATA[[]]]></Selectors>
+      <EndpointProperties><![CDATA[[{"Name":"integrity","Value":"sha256-o8EkoEWwa5IhogVFC/FOeK\u002BINoFEUBi1n46ySNmlfdY="}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"14802"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022o8EkoEWwa5IhogVFC/FOeK\u002BINoFEUBi1n46ySNmlfdY=\u0022"},{"Name":"Last-Modified","Value":"Fri, 25 Sep 2026 05:10:58 GMT"},{"Name":"Vary","Value":"Accept-Encoding"}]]]></ResponseHeaders>
+    </StaticWebAssetEndpoint>
+    <StaticWebAssetEndpoint Include="_content/Modulus.Ui.Assets/css/modulus-professional.f9p76o67kl.css">
+      <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\modulus-professional.css'))</AssetFile>
+      <Selectors><![CDATA[[]]]></Selectors>
+      <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"f9p76o67kl"},{"Name":"integrity","Value":"sha256-o8EkoEWwa5IhogVFC/FOeK\u002BINoFEUBi1n46ySNmlfdY="},{"Name":"label","Value":"_content/Modulus.Ui.Assets/css/modulus-professional.css"}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"14802"},{"Name":"Content-Type","Value":"text/css"},{"Name":"ETag","Value":"\u0022o8EkoEWwa5IhogVFC/FOeK\u002BINoFEUBi1n46ySNmlfdY=\u0022"},{"Name":"Last-Modified","Value":"Fri, 25 Sep 2026 05:10:58 GMT"},{"Name":"Vary","Value":"Accept-Encoding"}]]]></ResponseHeaders>
+    </StaticWebAssetEndpoint>
     <StaticWebAssetEndpoint Include="_content/Modulus.Ui.Assets/js/modulus-alpine.3isax8t8iq.js">
       <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\js\modulus-alpine.js'))</AssetFile>
       <Selectors><![CDATA[[]]]></Selectors>

@@ -4,77 +4,24 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Modulus Admin</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/modulus-professional.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <style>
-        :root {
-            --ant-color-primary: #1890ff;
-            --ant-color-text: rgba(0, 0, 0, 0.85);
-            --ant-color-text-secondary: rgba(0, 0, 0, 0.65);
-            --ant-color-bg: #ffffff;
-            --ant-color-border: #d9d9d9;
-        }
-
-        .admin-shell {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-            background-color: var(--ant-color-bg);
-        }
-
+        .admin-shell { background-color: #f0f2f5; }
         .admin-header {
-            height: 64px;
-            background-color: #001529;
-            color: white;
-            border-bottom: 1px solid var(--ant-color-border);
-            display: flex;
-            align-items: center;
-            z-index: 999;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
         }
-
         .admin-header .logo {
-            font-size: 18px;
-            font-weight: 600;
-            color: white;
+            margin: 0;
+            letter-spacing: -0.5px;
         }
-
-        .admin-body {
-            display: flex;
-            flex: 1;
-        }
-
         .admin-sider {
-            width: 200px;
-            background-color: #001529;
-            border-right: 1px solid var(--ant-color-border);
-            overflow-y: auto;
+            box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.1);
         }
-
-        .admin-content {
-            flex: 1;
-            padding: 24px;
-            overflow-y: auto;
-        }
-
-        .admin-footer {
-            height: 48px;
-            background-color: var(--ant-color-bg);
-            border-top: 1px solid var(--ant-color-border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 16px;
-        }
-
-        .ant-menu { list-style: none; padding: 0; margin: 0; }
-        .ant-menu-item { display: block; padding: 10px 16px; color: rgba(255,255,255,0.65); text-decoration: none; cursor: pointer; }
-        .ant-menu-item:hover { background-color: rgba(255,255,255,0.1); }
-        .ant-menu-dark .ant-menu-item { color: rgba(255,255,255,0.65); }
-
+        .admin-content { background-color: #f0f2f5; }
         .px-24 { padding-left: 24px; padding-right: 24px; }
         .gap-16 { gap: 16px; }
         .d-flex { display: flex; }
-        .text-secondary { color: var(--ant-color-text-secondary); }
     </style>
 </head>
 <body>
@@ -93,23 +40,42 @@
         <div class="admin-body">
             <aside class="admin-sider">
                 <nav class="ant-menu ant-menu-dark">
-                    <a href="@Url.Action("Index", "Home")" class="ant-menu-item">
-                        📊 Dashboard
+                    <a href="@Url.Action("Dashboard", "Home")" class="ant-menu-item">
+                        <span style="display: inline-flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 16px;">📊</span>
+                            <span>Dashboard</span>
+                        </span>
                     </a>
                     <a href="@Url.Action("Analytics", "Dashboard")" class="ant-menu-item">
-                        📈 Analytics
+                        <span style="display: inline-flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 16px;">📈</span>
+                            <span>Analytics</span>
+                        </span>
                     </a>
                     <a href="@Url.Action("Index", "Customers")" class="ant-menu-item">
-                        👥 Customers
+                        <span style="display: inline-flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 16px;">👥</span>
+                            <span>Customers</span>
+                        </span>
                     </a>
                     <a href="@Url.Action("Index", "Products")" class="ant-menu-item">
-                        📦 Products
+                        <span style="display: inline-flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 16px;">📦</span>
+                            <span>Products</span>
+                        </span>
                     </a>
+                    <div style="border-top: 1px solid rgba(255, 255, 255, 0.1); margin: 8px 0;"></div>
                     <a href="@Url.Action("Profile", "Home")" class="ant-menu-item">
-                        👤 Profile
+                        <span style="display: inline-flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 16px;">👤</span>
+                            <span>Profile</span>
+                        </span>
                     </a>
                     <a href="@Url.Action("Settings", "Home")" class="ant-menu-item">
-                        ⚙️ Settings
+                        <span style="display: inline-flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 16px;">⚙️</span>
+                            <span>Settings</span>
+                        </span>
                     </a>
                 </nav>
             </aside>

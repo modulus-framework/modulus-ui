@@ -1,6 +1,10 @@
 {
   "Files": [
     {
+      "Id": "/home/azimmahmud/projects/ui_template/src/Modulus.Ui.Assets/wwwroot/css/modulus-professional.css",
+      "PackagePath": "staticwebassets/css/modulus-professional.css"
+    },
+    {
       "Id": "/home/azimmahmud/projects/ui_template/src/Modulus.Ui.Assets/wwwroot/js/modulus-alpine.js",
       "PackagePath": "staticwebassets/js/modulus-alpine.js"
     },

@@ -1,5 +1,25 @@
 ﻿<Project>
   <ItemGroup>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\modulus-professional.css'))">
+      <SourceType>Package</SourceType>
+      <SourceId>Modulus.Ui.Assets</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/Modulus.Ui.Assets</BasePath>
+      <RelativePath>css/modulus-professional.css</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <Fingerprint>f9p76o67kl</Fingerprint>
+      <Integrity>o8EkoEWwa5IhogVFC/FOeK+INoFEUBi1n46ySNmlfdY=</Integrity>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <FileLength>14802</FileLength>
+      <LastWriteTime>Fri, 25 Sep 2026 05:10:58 GMT</LastWriteTime>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\css\modulus-professional.css'))</OriginalItemSpec>
+    </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\js\modulus-alpine.js'))">
       <SourceType>Package</SourceType>
       <SourceId>Modulus.Ui.Assets</SourceId>

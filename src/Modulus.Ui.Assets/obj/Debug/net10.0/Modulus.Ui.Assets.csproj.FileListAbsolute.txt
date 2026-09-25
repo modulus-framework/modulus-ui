@@ -31,3 +31,4 @@
 /home/azimmahmud/projects/ui_template/src/Modulus.Ui.Assets/obj/Debug/net10.0/refint/Modulus.Ui.Assets.dll
 /home/azimmahmud/projects/ui_template/src/Modulus.Ui.Assets/obj/Debug/net10.0/Modulus.Ui.Assets.pdb
 /home/azimmahmud/projects/ui_template/src/Modulus.Ui.Assets/obj/Debug/net10.0/ref/Modulus.Ui.Assets.dll
+/home/azimmahmud/projects/ui_template/src/Modulus.Ui.Assets/obj/Debug/net10.0/compressed/xsksiparha-{0}-f9p76o67kl-f9p76o67kl.gz

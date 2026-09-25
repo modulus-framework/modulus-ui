@@ -1,0 +1,202 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="admin-content-inner">
+    <div class="flex justify-between items-center mb-24">
+        <h1 style="margin: 0;">Dashboard</h1>
+        <div class="flex gap-8">
+            <select class="ant-input" style="width: 180px;">
+                <option>Last 7 Days</option>
+                <option>Last 30 Days</option>
+                <option>Last 90 Days</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- KPI Cards Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 24px;">
+
+        <!-- Total Revenue Card -->
+        <div class="ant-card">
+            <div style="padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h5 style="margin: 0; color: #8c8c8c;">Total Revenue</h5>
+                    <div style="font-size: 24px;">💰</div>
+                </div>
+                <div style="font-size: 32px; font-weight: 700; color: #1890ff; margin-bottom: 8px;">$48,500</div>
+                <div style="color: #52c41a; font-size: 12px;">↑ 23% vs last period</div>
+            </div>
+        </div>
+
+        <!-- Total Orders Card -->
+        <div class="ant-card">
+            <div style="padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h5 style="margin: 0; color: #8c8c8c;">Total Orders</h5>
+                    <div style="font-size: 24px;">📦</div>
+                </div>
+                <div style="font-size: 32px; font-weight: 700; color: #1890ff; margin-bottom: 8px;">1,850</div>
+                <div style="color: #52c41a; font-size: 12px;">↑ 12% vs last period</div>
+            </div>
+        </div>
+
+        <!-- Active Users Card -->
+        <div class="ant-card">
+            <div style="padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h5 style="margin: 0; color: #8c8c8c;">Active Users</h5>
+                    <div style="font-size: 24px;">👥</div>
+                </div>
+                <div style="font-size: 32px; font-weight: 700; color: #1890ff; margin-bottom: 8px;">3,250</div>
+                <div style="color: #ff7875; font-size: 12px;">↓ 5% vs last period</div>
+            </div>
+        </div>
+
+        <!-- Conversion Rate Card -->
+        <div class="ant-card">
+            <div style="padding: 24px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h5 style="margin: 0; color: #8c8c8c;">Conversion Rate</h5>
+                    <div style="font-size: 24px;">📈</div>
+                </div>
+                <div style="font-size: 32px; font-weight: 700; color: #1890ff; margin-bottom: 8px;">3.42%</div>
+                <div style="color: #52c41a; font-size: 12px;">↑ 0.8% vs last period</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Section -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px; margin-bottom: 24px;">
+
+        <!-- Revenue Trend -->
+        <div class="ant-card">
+            <div class="ant-card-header">
+                <h5 class="ant-card-title">Revenue Trend</h5>
+            </div>
+            <div class="ant-card-body">
+                <div style="height: 300px; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #8c8c8c; font-size: 14px;">
+                    📊 Chart Placeholder - Integrate with Chart.js or ECharts
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Products -->
+        <div class="ant-card">
+            <div class="ant-card-header">
+                <h5 class="ant-card-title">Top Products</h5>
+            </div>
+            <div class="ant-card-body">
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                        <span>Laptop Pro</span>
+                        <span style="color: #1890ff; font-weight: 600;">$2,450</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                        <span>Wireless Mouse</span>
+                        <span style="color: #1890ff; font-weight: 600;">$450</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0;">
+                        <span>USB-C Cable</span>
+                        <span style="color: #1890ff; font-weight: 600;">$180</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0;">
+                        <span>Monitor 4K</span>
+                        <span style="color: #1890ff; font-weight: 600;">$890</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions Table -->
+    <div class="ant-card">
+        <div class="ant-card-header">
+            <h5 class="ant-card-title">Recent Transactions</h5>
+        </div>
+        <div class="ant-card-body">
+            <table class="ant-table">
+                <thead>
+                    <tr style="background: #fafafa;">
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="font-weight: 600;">ORD-5234</td>
+                        <td>John Smith</td>
+                        <td style="font-weight: 600; color: #1890ff;">$1,250.00</td>
+                        <td><span class="ant-tag ant-tag-success">Completed</span></td>
+                        <td>2026-09-24</td>
+                        <td><button class="ant-btn ant-btn-sm">View</button></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">ORD-5233</td>
+                        <td>Jane Doe</td>
+                        <td style="font-weight: 600; color: #1890ff;">$875.50</td>
+                        <td><span class="ant-tag ant-tag-info">Processing</span></td>
+                        <td>2026-09-23</td>
+                        <td><button class="ant-btn ant-btn-sm">View</button></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">ORD-5232</td>
+                        <td>Bob Wilson</td>
+                        <td style="font-weight: 600; color: #1890ff;">$2,100.00</td>
+                        <td><span class="ant-tag ant-tag-success">Completed</span></td>
+                        <td>2026-09-22</td>
+                        <td><button class="ant-btn ant-btn-sm">View</button></td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600;">ORD-5231</td>
+                        <td>Alice Brown</td>
+                        <td style="font-weight: 600; color: #1890ff;">$450.25</td>
+                        <td><span class="ant-tag ant-tag-warning">Pending</span></td>
+                        <td>2026-09-21</td>
+                        <td><button class="ant-btn ant-btn-sm">View</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div style="display: flex; justify-content: center; margin-top: 24px;">
+        <nav class="ant-pagination">
+            <button class="ant-pagination-item">← Previous</button>
+            <button class="ant-pagination-item ant-pagination-item-active">1</button>
+            <button class="ant-pagination-item">2</button>
+            <button class="ant-pagination-item">3</button>
+            <button class="ant-pagination-item">Next →</button>
+        </nav>
+    </div>
+</div>
+
+<style>
+    .admin-content-inner {
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .ant-tag-success {
+        background-color: #f6ffed;
+        border-color: #b7eb8f;
+        color: #52c41a;
+    }
+
+    .ant-tag-warning {
+        background-color: #fffbe6;
+        border-color: #ffd591;
+        color: #faad14;
+    }
+
+    .ant-tag-info {
+        background-color: #e6f7ff;
+        border-color: #91d5ff;
+        color: #1890ff;
+    }
+</style>
