@@ -820,6 +820,9 @@ select.m-select.m-select-sm { width: auto; height: 28px; padding: 2px 28px 2px 8
 
 /* Drawer + confirm dialog shown by Alpine */
 .ant-drawer.m-drawer .ant-drawer-mask { opacity: 1; height: 100%; }
+/* AntD locks page scroll while the page holds an .ant-drawer-open with a mask. The MVC drawer always carries that class
+   (x-show hides it), so release the lock unless it is actually open ([data-open] is bound to the drawer store). */
+body:has(.m-drawer:not([data-open]) .ant-drawer-mask) { overflow: visible; padding-right: 0; }
 .ant-drawer.m-drawer .ant-drawer-content-wrapper { box-shadow: -6px 0 16px -8px rgba(0, 0, 0, 0.08), -9px 0 28px 0 rgba(0, 0, 0, 0.05), -12px 0 48px 16px rgba(0, 0, 0, 0.03); }
 .m-drawer-enter { transition: transform 0.3s var(--m-ease); }
 .m-drawer-hidden { transform: translateX(100%); }

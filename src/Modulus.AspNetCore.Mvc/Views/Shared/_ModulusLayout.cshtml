@@ -50,7 +50,7 @@
     @Html.Raw(ShellRenderer.Customizer(shell))
 
     @* Shared drawer. Open with Alpine.store('drawer').show(title) and load its body via hx-target="#modulus-drawer-body". *@
-    <div x-data class="ant-drawer ant-drawer-right ant-drawer-open m-drawer" x-show="$store.drawer.open" x-cloak
+    <div x-data class="ant-drawer ant-drawer-right ant-drawer-open m-drawer" x-show="$store.drawer.open" :data-open="$store.drawer.open" x-cloak
          @@keydown.escape.window="$store.drawer.hide()" role="dialog" aria-modal="true" :aria-label="$store.drawer.title">
         <div class="ant-drawer-mask" @@click="$store.drawer.hide()" x-show="$store.drawer.open" x-transition.opacity></div>
         <div class="ant-drawer-content-wrapper" :style="`width: ${$store.drawer.width}px; max-width: 100vw`"
