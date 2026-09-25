@@ -1,4 +1,4 @@
-# Modulus UI Framework v2.3.0
+# Modulus UI Framework v3.0.0
 
 **Production-ready, enterprise-grade admin UI framework for ASP.NET** with complete **Ant Design catalog** across three rendering modes: **Blazor Server/WASM/Auto**, **MVC**, and **Razor Pages**.
 
