@@ -1,0 +1,11 @@
+/home/azimmahmud/projects/ui_template/src/Modulus.Ui.Abstractions/bin/Release/net10.0/Modulus.Ui.Abstractions.deps.json
+/home/azimmahmud/projects/ui_template/src/Modulus.Ui.Abstractions/bin/Release/net10.0/Modulus.Ui.Abstractions.dll
+/home/azimmahmud/projects/ui_template/src/Modulus.Ui.Abstractions/bin/Release/net10.0/Modulus.Ui.Abstractions.pdb
+/home/azimmahmud/projects/ui_template/src/Modulus.Ui.Abstractions/obj/Release/net10.0/Modulus.Ui.Abstractions.GeneratedMSBuildEditorConfig.editorconfig
+/home/azimmahmud/projects/ui_template/src/Modulus.Ui.Abstractions/obj/Release/net10.0/Modulus.Ui.Abstractions.AssemblyInfoInputs.cache
+/home/azimmahmud/projects/ui_template/src/Modulus.Ui.Abstractions/obj/Release/net10.0/Modulus.Ui.Abstractions.AssemblyInfo.cs
+/home/azimmahmud/projects/ui_template/src/Modulus.Ui.Abstractions/obj/Release/net10.0/Modulus.Ui.Abstractions.csproj.CoreCompileInputs.cache
+/home/azimmahmud/projects/ui_template/src/Modulus.Ui.Abstractions/obj/Release/net10.0/Modulus.Ui.Abstractions.dll
+/home/azimmahmud/projects/ui_template/src/Modulus.Ui.Abstractions/obj/Release/net10.0/refint/Modulus.Ui.Abstractions.dll
+/home/azimmahmud/projects/ui_template/src/Modulus.Ui.Abstractions/obj/Release/net10.0/Modulus.Ui.Abstractions.pdb
+/home/azimmahmud/projects/ui_template/src/Modulus.Ui.Abstractions/obj/Release/net10.0/ref/Modulus.Ui.Abstractions.dll

@@ -27,12 +27,9 @@ public static class HtmxExtensions
     /// <summary>
     /// Sends an HTMX trigger event via response header (for client-side event dispatch).
     /// </summary>
-    public static void TriggerHtmxEvent(this HttpResponse response, string eventName, string? detail = null)
+    public static void TriggerHtmxEvent(this HttpResponse response, string eventName)
     {
-        var headerValue = detail is not null
-            ? $"""{{"{eventName}": {detail}}}"""
-            : eventName;
-        response.Headers.Append("HX-Trigger", headerValue);
+        response.Headers.Append("HX-Trigger", eventName);
     }
 
     /// <summary>

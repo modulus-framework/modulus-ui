@@ -1,6 +1,8 @@
 @using AntDesign
 @using Microsoft.AspNetCore.Components.Forms
 @using Modulus.Ui.Abstractions
+@using Modulus.Blazor.Components.DataEntry
+@using Modulus.Blazor.Components.Feedback
 
 <Form Model="@Model" Layout="@FormLayout">
     @foreach (var field in Fields ?? new())

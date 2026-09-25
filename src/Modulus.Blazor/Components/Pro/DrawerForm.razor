@@ -1,7 +1,7 @@
 @using AntDesign
 @using Modulus.Ui.Abstractions
 
-<Drawer Title="@Title" Visible="@Visible" OnClose="@OnClose" Width="@Width" DestroyOnClose="true">
+<Drawer Title="@Title" Visible="@Visible" OnClose="@OnClose" Width="@Width.ToString()" DestroyOnClose="true">
     <ProForm Model="@Model" Fields="@Fields" FormLayout="@FormLayout" OnFinish="@OnFormFinish" />
 </Drawer>
 
