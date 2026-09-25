@@ -1,0 +1,81 @@
+@using AntDesign
+
+@if (IsVisible)
+{
+    <div class="app-message" style="@GetMessageStyle()">
+        <AppAlert Message="@Message" Description="@Description" ShowIcon="@true" Type="@AlertType" Closable="@true" />
+    </div>
+}
+
+<style>
+.app-message {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    z-index: 1000;
+    width: 360px;
+    animation: slideIn 0.3s ease-in-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+</style>
+
+@code {
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public string? Description { get; set; }
+
+    [Parameter]
+    public string AlertType { get; set; } = "info"; // success, info, warning, error
+
+    [Parameter]
+    public bool IsVisible { get; set; } = false;
+
+    [Parameter]
+    public int Duration { get; set; } = 4500; // milliseconds
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Inject]
+    private IJSRuntime? JS { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && Duration > 0)
+        {
+            await Task.Delay(Duration);
+            await Close();
+        }
+    }
+
+    private async Task Close()
+    {
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+
+    private string GetMessageStyle()
+    {
+        return AlertType switch
+        {
+            "success" => "border-left: 4px solid var(--ant-color-success);",
+            "warning" => "border-left: 4px solid var(--ant-color-warning);",
+            "error" => "border-left: 4px solid var(--ant-color-error);",
+            _ => "border-left: 4px solid var(--ant-color-info);",
+        };
+    }
+}
