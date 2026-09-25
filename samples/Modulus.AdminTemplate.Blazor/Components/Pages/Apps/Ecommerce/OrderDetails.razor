@@ -1,0 +1,156 @@
+@page "/apps/ecommerce/orders/{Id:int}"
+@inject SampleStore Store
+@inject IMessageService Message
+@inject NavigationManager Navigation
+
+@if (_order is null) return;
+@{
+    var o = _order;
+    var next = SampleUi.NextStatus(o.Status);
+    var open = o.Status is not (OrderStatus.Delivered or OrderStatus.Cancelled);
+}
+<PageTitle>Order @o.Number · Modulus</PageTitle>
+
+<PageHeading Pretitle="Orders" Title="@($"Order {o.Number}")" Subtitle="@($"Placed {Fmt.DateTime(o.PlacedAt)} · {o.Lines.Sum(l => l.Qty)} items")">
+    <Actions>
+        <a class="ant-btn ant-btn-default" href="/apps/ecommerce/orders"><Ti Name="arrow-left" /><span>All orders</span></a>
+        @if (open)
+        {
+            <Popconfirm Title="@($"Cancel order {o.Number}?{(o.Payment == PaymentStatus.Paid ? " The payment will be refunded." : "")}")" OkText="Cancel order" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => SetStatusAsync(OrderStatus.Cancelled)">
+                <button type="button" class="ant-btn ant-btn-default ant-btn-dangerous"><Ti Name="x" /><span>Cancel order</span></button>
+            </Popconfirm>
+        }
+        @if (next is { } n)
+        {
+            <button type="button" class="ant-btn ant-btn-primary" @onclick="() => SetStatusAsync(n)"><Ti Name="truck-delivery" /><span>@SampleUi.NextStatusAction(n)</span></button>
+        }
+    </Actions>
+</PageHeading>
+
+<div class="m-row-cards m-cols-8-4 m-align-start">
+    <div class="m-row-cards">
+        <div class="m-card">
+            <div class="m-card-header">
+                <h3 class="m-card-title">Order details</h3>
+                <div class="m-card-actions m-flex m-gap-8">
+                    <span class="m-badge @SampleUi.OrderBadge(o.Status)">@SampleUi.Label(o.Status)</span>
+                    <span class="m-badge m-badge-@SampleUi.PaymentTone(o.Payment)-lt">@o.Payment</span>
+                </div>
+            </div>
+            <div class="ant-table-wrapper m-table-flush">
+                <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                    <table style="table-layout:auto">
+                        <thead class="ant-table-thead">
+                            <tr><th class="ant-table-cell">Product</th><th class="ant-table-cell" style="text-align:right">Price</th><th class="ant-table-cell" style="text-align:right">Qty</th><th class="ant-table-cell" style="text-align:right">Total</th></tr>
+                        </thead>
+                        <tbody class="ant-table-tbody">
+                            @foreach (var l in o.Lines)
+                            {
+                                <tr class="ant-table-row">
+                                    <td class="ant-table-cell"><div class="m-heading m-medium">@l.Product</div><div class="m-xsmall m-muted">@l.Sku</div></td>
+                                    <td class="ant-table-cell m-num" style="text-align:right">@Fmt.Money(l.Price)</td>
+                                    <td class="ant-table-cell m-num" style="text-align:right">@l.Qty</td>
+                                    <td class="ant-table-cell m-num m-heading" style="text-align:right">@Fmt.Money(l.Total)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div></div></div>
+            </div>
+            <div class="m-card-body m-card-body-divided">
+                <dl class="m-invoice-totals m-order-totals">
+                    <dt>Subtotal</dt><dd>@Fmt.Money(o.Subtotal)</dd>
+                    <dt>Shipping</dt><dd>@(o.Shipping == 0 ? "Free" : Fmt.Money(o.Shipping))</dd>
+                    <dt>Tax (8%)</dt><dd>@Fmt.Money(o.Tax)</dd>
+                    <dt class="m-invoice-total">Total</dt><dd class="m-invoice-total">@Fmt.Money(o.Total)</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Shipping activity</h3></div>
+            <div class="m-card-body">
+                <ul class="m-timeline m-timeline-wide">
+                    @foreach (var (title, note, at, done) in SampleUi.OrderTimeline(o))
+                    {
+                        <li class="m-timeline-item">
+                            <span class="m-timeline-icon@(done ? " m-timeline-icon-done" : "")"><Ti Name="@(done ? "check" : "clock")" /></span>
+                            <div class="m-timeline-body">
+                                <div class="m-flex m-between"><strong>@title</strong><span class="m-timeline-time">@(at is { } t ? Fmt.DateTime(t) : "Pending")</span></div>
+                                <div class="m-small m-muted">@note</div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards">
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Customer</h3></div>
+            <div class="m-card-body">
+                <div class="m-entity">
+                    <span class="m-avatar m-av-@o.Tint">@Fmt.Initials(o.CustomerName)</span>
+                    <div class="m-entity-text">
+                        @if (_customer is not null)
+                        {
+                            <a class="m-entity-title" href="/apps/customers/@_customer.Id">@o.CustomerName</a>
+                        }
+                        else
+                        {
+                            <span class="m-entity-title">@o.CustomerName</span>
+                        }
+                        <span class="m-entity-desc">Customer ID #@o.CustomerId</span>
+                    </div>
+                </div>
+                <div class="m-flex m-gap-8 m-mt-16"><span class="m-icon-tile m-tile-sm m-tile-green-lt"><Ti Name="shopping-cart" /></span><span class="m-heading m-medium">@_customerOrders @(_customerOrders == 1 ? "order" : "orders")</span></div>
+                <div class="m-subheader m-mt-16 m-mb-8">Contact info</div>
+                <dl class="m-dl">
+                    <dt>Email</dt><dd class="m-truncate">@o.CustomerEmail</dd>
+                    <dt>Company</dt><dd>@(_customer?.Company ?? "—")</dd>
+                </dl>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Shipping address</h3></div>
+            <div class="m-card-body"><address class="m-invoice-address" style="margin:0">@o.CustomerName<br />@o.ShippingAddress</address></div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Payment</h3></div>
+            <div class="m-card-body">
+                <dl class="m-dl">
+                    <dt>Method</dt><dd>@o.Method</dd>
+                    <dt>Status</dt><dd><span class="m-status"><span class="m-status-dot m-status-@SampleUi.PaymentTone(o.Payment)"></span>@o.Payment</span></dd>
+                    <dt>Amount</dt><dd class="m-num">@Fmt.Money(o.Total)</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Order? _order;
+    private Customer? _customer;
+    private int _customerOrders;
+
+    protected override void OnParametersSet()
+    {
+        _order = Store.FindOrder(Id);
+        if (_order is null)
+        {
+            Navigation.NotFound();
+            return;
+        }
+        _customer = Store.FindCustomer(_order.CustomerId);
+        _customerOrders = Store.CustomerOrders(_order.CustomerId).Count;
+    }
+
+    private async Task SetStatusAsync(OrderStatus status)
+    {
+        Store.SetOrderStatus(Id, status);
+        await Message.SuccessAsync($"Order #{Id} {(status == OrderStatus.Cancelled ? "cancelled" : $"marked {SampleUi.Label(status).ToLowerInvariant()}")}");
+    }
+}

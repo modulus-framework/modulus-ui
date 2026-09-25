@@ -1,41 +1,80 @@
-@using AntDesign
-@using Modulus.Ui.Abstractions
+@*
+    Drawer hosting a validated Ant Design form (Ant Design Pro DrawerForm) — use for
+    longer create/edit flows where the list should stay visible.
+*@
+@typeparam TModel
 
-<Drawer Title="@Title" Visible="@Visible" OnClose="@OnClose" Width="@Width.ToString()" DestroyOnClose="true">
-    <ProForm Model="@Model" Fields="@Fields" FormLayout="@FormLayout" OnFinish="@OnFormFinish" />
+<Drawer Title="@Title"
+        Visible="Visible"
+        VisibleChanged="VisibleChanged"
+        Width="@Width"
+        Placement="DrawerPlacement.Right"
+        MaskClosable="false"
+        OnClose="CloseAsync">
+    <div class="m-drawer-form">
+        <div class="m-drawer-form-body">
+            <Form TModel="TModel" Model="Model" Layout="@FormLayout.Vertical" RequiredMark="RequiredMark" OnFinish="FinishAsync" @ref="_form">
+                @ChildContent?.Invoke(context)
+            </Form>
+        </div>
+        <div class="m-drawer-form-footer">
+            @if (FooterStart is not null)
+            {
+                @FooterStart
+                <span class="m-spacer"></span>
+            }
+            <Button OnClick="CloseAsync">@CancelText</Button>
+            @FooterExtra
+            <Button Type="@ButtonType.Primary" Loading="_submitting" OnClick="() => _form?.Submit()">@SubmitText</Button>
+        </div>
+    </div>
 </Drawer>
 
 @code {
-    [Parameter]
-    public bool Visible { get; set; }
+    [Parameter] public string? Title { get; set; }
 
-    [Parameter]
-    public string? Title { get; set; } = "Form";
+    [Parameter] public bool Visible { get; set; }
 
-    [Parameter]
-    public object? Model { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
 
-    [Parameter]
-    public List<ProFormField> Fields { get; set; } = new();
+    [Parameter, EditorRequired] public TModel Model { get; set; } = default!;
 
-    [Parameter]
-    public string FormLayout { get; set; } = "vertical";
+    [Parameter] public RenderFragment<TModel>? ChildContent { get; set; }
 
-    [Parameter]
-    public int Width { get; set; } = 520;
+    /// <summary>Runs after validation passes. Return true to close the drawer.</summary>
+    [Parameter] public Func<TModel, Task<bool>>? OnFinish { get; set; }
 
-    [Parameter]
-    public EventCallback<object> OnFormSubmit { get; set; }
+    [Parameter] public string SubmitText { get; set; } = "Save";
 
-    [Parameter]
-    public EventCallback OnClose { get; set; }
+    [Parameter] public string CancelText { get; set; } = "Cancel";
 
-    private async Task OnFormFinish(object formData)
+    /// <summary>Footer content on the left, away from Cancel / submit (e.g. a Delete button).</summary>
+    [Parameter] public RenderFragment? FooterStart { get; set; }
+
+    /// <summary>Extra footer buttons between Cancel and the submit button (e.g. "Save draft").</summary>
+    [Parameter] public RenderFragment? FooterExtra { get; set; }
+
+    [Parameter] public string Width { get; set; } = "480";
+
+    /// <summary>Required-field markers. Hidden by default (Tabler forms flag errors, not required fields).</summary>
+    [Parameter] public FormRequiredMark RequiredMark { get; set; } = FormRequiredMark.None;
+
+    private Form<TModel>? _form;
+    private bool _submitting;
+
+    private async Task FinishAsync()
     {
-        if (OnFormSubmit.HasDelegate)
+        _submitting = true;
+        try
         {
-            await OnFormSubmit.InvokeAsync(formData);
+            if (OnFinish is null || await OnFinish(Model))
+                await CloseAsync();
         }
-        await OnClose.InvokeAsync();
+        finally
+        {
+            _submitting = false;
+        }
     }
+
+    private Task CloseAsync() => VisibleChanged.InvokeAsync(false);
 }

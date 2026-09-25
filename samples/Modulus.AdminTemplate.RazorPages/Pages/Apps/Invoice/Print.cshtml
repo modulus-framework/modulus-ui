@@ -1,0 +1,7 @@
+@page "/apps/invoice/print/{id:int}"
+@model InvoicePrintModel
+@{
+    ViewData["Title"] = $"Invoice {Model.Invoice.Number}";
+    Layout = "_BlankLayout";
+}
+<partial name="Ui/Apps/Invoice/InvoicePrint" model="Model.Invoice" />

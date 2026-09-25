@@ -1,0 +1,207 @@
+@{
+    (string Key, string Label, string Icon)[] Tabs =
+        [("profile", "Profile", "user"), ("teams", "Teams", "users-group"), ("projects", "Projects", "layout-grid"), ("connections", "Connections", "link")];
+    var tab = Context.Request.Query["tab"].ToString();
+    var Current = Tabs.Any(t => t.Key == tab) ? tab : "profile";
+}
+<div class="m-card">
+    <div class="m-profile-cover"></div>
+    <div class="m-profile-head">
+        <span class="m-avatar m-avatar-xxl m-av-1">@Fmt.Initials(CurrentUser.Name)</span>
+        <div>
+            <h1 class="m-profile-name">@CurrentUser.Name</h1>
+            <div class="m-profile-meta">
+                <span><app-ti name="briefcase" />@CurrentUser.Title</span>
+                <span><app-ti name="map-pin" />San Francisco, US</span>
+                <span><app-ti name="calendar" />Joined April 2021</span>
+            </div>
+        </div>
+        <div class="m-profile-actions">
+            <a class="ant-btn ant-btn-default" href="/pages/account-settings"><app-ti name="settings" /><span>Edit profile</span></a>
+            <a class="ant-btn ant-btn-primary" href="/apps/chat"><app-ti name="message" /><span>Message</span></a>
+        </div>
+    </div>
+    <nav class="m-tabs-nav" aria-label="Profile sections">
+        @foreach (var (key, label, icon) in Tabs)
+        {
+            <a href="/pages/profile?tab=@key" aria-current="@(key == Current ? "page" : null)"><app-ti name="@icon" />@label</a>
+        }
+    </nav>
+</div>
+
+<div class="m-mt-16">
+    @switch (Current)
+    {
+        case "teams":
+            <div class="m-row-cards m-cols-3">
+                @foreach (var t in SampleContent.Teams)
+                {
+                    <div class="m-card">
+                        <div class="m-card-body">
+                            <div class="m-flex m-gap-12">
+                                <span class="m-icon-tile m-tile-@SampleUi.Tone(t.Tint)-lt"><app-ti name="@t.Icon" /></span>
+                                <div class="m-truncate"><div class="m-h3">@t.Name</div><div class="m-small m-muted">@t.Members.Count members</div></div>
+                            </div>
+                            <p class="m-muted m-mt-12">@t.Description</p>
+                            <div class="m-flex m-between m-mt-16">
+                                <div class="m-avatar-list">
+                                    @foreach (var m in t.Members)
+                                    {
+                                        <span class="m-avatar m-avatar-sm m-av-@Fmt.Tint(m)" title="@m">@Fmt.Initials(m)</span>
+                                    }
+                                </div>
+                                <div class="m-tag-list">@foreach (var tag in t.Tags){<span class="m-badge m-badge-gray-lt">@tag</span>}</div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            break;
+        case "projects":
+            <div class="m-row-cards m-cols-3">
+                @foreach (var p in SampleContent.Projects)
+                {
+                    <div class="m-card">
+                        <div class="m-card-header">
+                            <span class="m-icon-tile m-tile-sm m-tile-primary-lt"><app-ti name="@p.Icon" /></span>
+                            <div class="m-truncate"><h3 class="m-card-title">@p.Name</h3><p class="m-card-subtitle">Client: @p.Client</p></div>
+                        </div>
+                        <div class="m-card-body">
+                            <div class="m-flex m-between m-small"><span class="m-muted">@p.TasksDone / @p.TasksTotal tasks</span><span class="m-medium">@p.Progress%</span></div>
+                            <div class="m-progress m-mt-8"><div class="m-progress-bar" style="width:@(p.Progress)%;--c:@(p.Progress >= 75 ? "var(--m-success)" : p.Progress < 25 ? "var(--m-warning)" : "var(--m-primary)")"></div></div>
+                            <dl class="m-dl m-mt-16 m-small">
+                                <dt>Budget</dt><dd>@Fmt.Money0(p.Budget) <span class="m-muted" style="font-weight:400">· @Fmt.Money0(p.Spent) spent</span></dd>
+                                <dt>Deadline</dt><dd>@Fmt.Date(p.Deadline) <span class="m-muted" style="font-weight:400">· in @((p.Deadline - DateTime.Today).Days) days</span></dd>
+                                <dt>Leader</dt><dd>@p.Leader</dd>
+                            </dl>
+                        </div>
+                        <div class="m-card-footer m-flex m-between">
+                            <div class="m-avatar-list">
+                                @foreach (var m in p.Team)
+                                {
+                                    <span class="m-avatar m-avatar-sm m-av-@Fmt.Tint(m)" title="@m">@Fmt.Initials(m)</span>
+                                }
+                            </div>
+                            <span class="m-small m-muted">@p.Team.Count members</span>
+                        </div>
+                    </div>
+                }
+            </div>
+            break;
+        case "connections":
+            <div class="m-row-cards m-cols-3">
+                @foreach (var c in SampleContent.Connections)
+                {
+                    <div class="m-card">
+                        <div class="m-card-body m-connection">
+                            <span class="m-avatar m-avatar-xl m-av-@c.Tint">@Fmt.Initials(c.Name)</span>
+                            <div class="m-h3">@c.Name</div>
+                            <div class="m-muted m-small">@c.Role</div>
+                            <div class="m-connection-stats">
+                                <div><div class="m-h3">@c.Projects</div><div class="m-xsmall m-muted">Projects</div></div>
+                                <div><div class="m-h3">@Fmt.Number(c.Tasks)</div><div class="m-xsmall m-muted">Tasks</div></div>
+                                <div><div class="m-h3">@c.Connections</div><div class="m-xsmall m-muted">Connections</div></div>
+                            </div>
+                            <div class="m-form-actions">
+                                @if (c.Connected)
+                                {
+                                    <a class="ant-btn ant-btn-primary" href="/pages/profile?tab=connections"><app-ti name="user-check" /><span>Connected</span></a>
+                                }
+                                else
+                                {
+                                    <a class="ant-btn ant-btn-default" href="/pages/profile?tab=connections"><app-ti name="user-plus" /><span>Connect</span></a>
+                                }
+                                <a class="ant-btn ant-btn-default ant-btn-icon-only" href="/apps/email" aria-label="Email @c.Name"><app-ti name="mail" /></a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            break;
+        default:
+            <div class="m-row-cards m-cols-side">
+                <div class="m-row-cards" style="align-content:start">
+                    <div class="m-card">
+                        <div class="m-card-header"><h2 class="m-card-title">About</h2></div>
+                        <div class="m-card-body">
+                            <dl class="m-dl">
+                                <dt><app-ti name="user" />Full name</dt><dd>@CurrentUser.Name</dd>
+                                <dt><app-ti name="circle-check" />Status</dt><dd><span class="m-badge m-badge-success-lt">Active</span></dd>
+                                <dt><app-ti name="crown" />Role</dt><dd>@CurrentUser.Role</dd>
+                                <dt><app-ti name="flag" />Country</dt><dd>United States</dd>
+                                <dt><app-ti name="language" />Languages</dt><dd>English, Korean</dd>
+                            </dl>
+                            <div class="m-subheader m-mt-24 m-mb-8">Contacts</div>
+                            <dl class="m-dl">
+                                <dt><app-ti name="phone" />Phone</dt><dd>+1 202 555 0111</dd>
+                                <dt><app-ti name="mail" />Email</dt><dd class="m-truncate">@CurrentUser.Email</dd>
+                                <dt><app-ti name="brand-slack" />Slack</dt><dd>@@serena</dd>
+                            </dl>
+                        </div>
+                    </div>
+                    <div class="m-card">
+                        <div class="m-card-header"><h2 class="m-card-title">Overview</h2></div>
+                        <div class="m-card-body">
+                            <dl class="m-dl">
+                                <dt><app-ti name="checks" />Tasks compiled</dt><dd>13.5k</dd>
+                                <dt><app-ti name="briefcase" />Projects</dt><dd>@SampleContent.Projects.Count</dd>
+                                <dt><app-ti name="users" />Connections</dt><dd>897</dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="m-row-cards" style="align-content:start">
+                    <div class="m-card">
+                        <div class="m-card-header"><h2 class="m-card-title">Activity timeline</h2></div>
+                        <div class="m-card-body">
+                            <ul class="m-timeline">
+                                @foreach (var a in SampleContent.ProfileActivity())
+                                {
+                                    <li class="m-timeline-item">
+                                        <span class="m-timeline-icon"><app-ti name="@a.Icon" /></span>
+                                        <div class="m-timeline-body">
+                                            <div><strong>You</strong> <span class="m-secondary">@a.What</span> @a.Target</div>
+                                            <div class="m-timeline-time">@Fmt.Relative(a.At)</div>
+                                        </div>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="m-row-cards m-cols-2">
+                        <div class="m-card">
+                            <div class="m-card-header"><h2 class="m-card-title">Connections</h2><div class="m-card-actions"><a class="m-small" href="/pages/profile?tab=connections">View all</a></div></div>
+                            <div class="m-card-body m-card-body-flush">
+                                <ul class="m-list">
+                                    @foreach (var c in SampleContent.Connections.Take(4))
+                                    {
+                                        <li class="m-list-item">
+                                            <span class="m-avatar m-avatar-sm m-av-@c.Tint">@Fmt.Initials(c.Name)</span>
+                                            <div class="m-list-item-text"><span class="m-list-item-title">@c.Name</span><span class="m-list-item-sub">@c.Connections connections</span></div>
+                                            <span class="m-badge @(c.Connected ? "m-badge-primary-lt" : "m-badge-gray-lt")">@(c.Connected ? "Connected" : "Pending")</span>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="m-card">
+                            <div class="m-card-header"><h2 class="m-card-title">Teams</h2><div class="m-card-actions"><a class="m-small" href="/pages/profile?tab=teams">View all</a></div></div>
+                            <div class="m-card-body m-card-body-flush">
+                                <ul class="m-list">
+                                    @foreach (var t in SampleContent.Teams)
+                                    {
+                                        <li class="m-list-item">
+                                            <span class="m-icon-tile m-tile-sm m-tile-@SampleUi.Tone(t.Tint)-lt"><app-ti name="@t.Icon" /></span>
+                                            <div class="m-list-item-text"><span class="m-list-item-title">@t.Name</span><span class="m-list-item-sub">@t.Members.Count members</span></div>
+                                            <span class="m-badge m-badge-gray-lt">@t.Tags[0]</span>
+                                        </li>
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            break;
+    }
+</div>

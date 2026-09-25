@@ -1,0 +1,93 @@
+@model ChatPage
+@{
+    const string Base = "/apps/chat";
+    var a = Model.Active;
+}
+<app-page-header pretitle="Apps" title="Chat"></app-page-header>
+
+@* Contact links and search are boosted GETs; sending posts the form and swaps the whole app back. *@
+<div id="chat-app" class="m-card m-app m-app-chat" hx-boost="true" hx-target="#chat-app" hx-select="#chat-app" hx-swap="outerHTML" hx-push-url="true">
+    <aside class="m-app-side">
+        <div class="m-chat-me">
+            <span class="m-presence"><span class="m-avatar m-av-@Fmt.Tint(CurrentUser.Name)">@Fmt.Initials(CurrentUser.Name)</span><span class="m-avatar-status m-status-online"></span></span>
+            <div class="m-truncate"><div class="m-heading m-medium">@CurrentUser.Name</div><div class="m-small m-muted">Available</div></div>
+        </div>
+        <div class="m-app-side-head" style="padding-bottom:12px">
+            <form method="get" action="@(a is null ? Base : $"{Base}/{a.Id}")" role="search">
+                <span class="ant-input-affix-wrapper">
+                    <span class="ant-input-prefix"><app-ti name="search" /></span>
+                    <input class="ant-input" type="search" name="keyword" value="@Model.Keyword" placeholder="Search contacts" aria-label="Search contacts" />
+                </span>
+            </form>
+        </div>
+        <nav class="m-app-side-body" aria-label="Chats">
+            <div class="m-subheader m-app-nav-title" style="margin-top:0">Chats</div>
+            @if (Model.Contacts.Count == 0)
+            {
+                <div class="m-small m-muted" style="padding:8px">No contacts found</div>
+            }
+            @foreach (var (c, last) in Model.Contacts)
+            {
+                var active = a?.Id == c.Id;
+                <a class="m-chat-contact@(active ? " active" : "")" href="@Base/@c.Id" aria-current="@(active ? "page" : null)">
+                    <span class="m-presence"><span class="m-avatar m-av-@c.Tint">@Fmt.Initials(c.Name)</span><span class="m-avatar-status m-status-@c.Presence.ToString().ToLowerInvariant()"></span></span>
+                    <span class="m-chat-contact-text">
+                        <span class="m-chat-contact-name"><span class="m-truncate">@c.Name</span>@if (last is not null) { <time datetime="@last.At.ToString("o")">@SampleUi.ChatTime(last.At)</time> }</span>
+                        <span class="m-chat-contact-sub" style="display:block">@(last is null ? c.About : (last.FromMe ? "You: " : "") + last.Text)</span>
+                    </span>
+                </a>
+            }
+        </nav>
+    </aside>
+
+    <section class="m-app-main" aria-label="Conversation">
+        @if (a is null)
+        {
+            <div class="m-chat-empty">
+                <span class="m-icon-tile m-tile-primary-lt m-tile-round" style="width:64px;height:64px"><app-ti name="messages" /></span>
+                <div class="m-h3" style="color:var(--m-heading)">Start a conversation</div>
+                <div>Pick a contact on the left to see your messages.</div>
+            </div>
+        }
+        else
+        {
+            <div class="m-app-bar m-chat-head">
+                <span class="m-presence"><span class="m-avatar m-av-@a.Tint">@Fmt.Initials(a.Name)</span><span class="m-avatar-status m-status-@a.Presence.ToString().ToLowerInvariant()"></span></span>
+                <div class="m-truncate" style="flex:1">
+                    <div class="m-heading m-medium">@a.Name</div>
+                    <div class="m-small m-muted">@a.Presence · @a.About</div>
+                </div>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Call" title="Call"><app-ti name="phone" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Video call" title="Video call"><app-ti name="video" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="More" title="More"><app-ti name="dots-vertical" /></button>
+            </div>
+            <div class="m-chat-log" role="log" aria-live="polite">
+                <div class="m-chat-log-inner">
+                    @foreach (var day in Model.Conversation.GroupBy(m => m.At.Date))
+                    {
+                        <div class="m-chat-day">@SampleUi.ChatDay(day.Key)</div>
+                        @foreach (var m in day)
+                        {
+                            <div class="m-chat-msg@(m.FromMe ? " me" : "")">
+                                @if (m.FromMe)
+                                {
+                                    <span class="m-avatar m-avatar-sm m-av-@Fmt.Tint(CurrentUser.Name)">@Fmt.Initials(CurrentUser.Name)</span>
+                                }
+                                else
+                                {
+                                    <span class="m-avatar m-avatar-sm m-av-@a.Tint">@Fmt.Initials(a.Name)</span>
+                                }
+                                <div><div class="m-chat-bubble">@m.Text</div><time class="m-chat-time" datetime="@m.At.ToString("o")">@Fmt.Time(m.At)</time></div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+            <form class="m-chat-compose" method="post" action="@Base/@a.Id/send" asp-antiforgery="true" hx-post="@Base/@a.Id/send" hx-push-url="false" autocomplete="off">
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Attach a file" title="Attach"><app-ti name="paperclip" /></button>
+                <input class="ant-input" name="text" placeholder="Type your message…" aria-label="Message" required maxlength="1000" />
+                <button type="submit" class="ant-btn ant-btn-primary"><app-ti name="send" /><span>Send</span></button>
+            </form>
+        }
+    </section>
+</div>

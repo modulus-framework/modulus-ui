@@ -1,0 +1,20 @@
+@model CustomerInput
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    var id = ViewData["Id"] as int?;
+}
+@* Add / edit customer drawer (Customers list and customer view). *@
+<form class="m-drawer-form ant-form ant-form-vertical ant-form-hide-required-mark" hx-post="/apps/customers/save/@id" hx-target="#modulus-drawer-body" hx-swap="innerHTML" novalidate>
+    <div class="m-drawer-form-body">
+        <app-form-item asp-for="Name" label="Contact name"><app-input asp-for="Name" placeholder="Olivia Bennett" autocomplete="off" /></app-form-item>
+        <app-form-item asp-for="Email" label="Email"><app-input asp-for="Email" type="email" placeholder="olivia@northwind.com" /></app-form-item>
+        <app-form-item asp-for="Company" label="Company"><app-input asp-for="Company" placeholder="Northwind" /></app-form-item>
+        <app-form-item asp-for="City" label="City"><app-input asp-for="City" placeholder="London" /></app-form-item>
+        <app-form-item asp-for="Tier" label="Tier"><app-radio-group asp-for="Tier" items="Enum.GetNames<CustomerTier>().Select(v => new SelectListItem(v, v))" button-style="solid" /></app-form-item>
+        <app-form-item asp-for="Status" label="Status"><app-radio-group asp-for="Status" items="Enum.GetNames<CustomerStatus>().Select(v => new SelectListItem(v, v))" button-style="solid" /></app-form-item>
+    </div>
+    <div class="m-drawer-form-footer">
+        <app-button @@click="$store.drawer.hide()">Cancel</app-button>
+        <app-button type="primary" html-type="submit">@(id is null ? "Add customer" : "Save changes")</app-button>
+    </div>
+</form>

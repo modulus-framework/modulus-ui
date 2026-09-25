@@ -1,0 +1,118 @@
+@page "/tables/advanced"
+
+<PageTitle>Data table · Modulus</PageTitle>
+
+@* Data table: search, filters, sorting, paging, column picker, density, selection and CSV export (/tables/advanced/export,
+   mapped in Program.cs). MVC and Razor Pages render the same page from Samples.Web Views/Shared/Ui/Tables/Advanced.cshtml. *@
+<PageHeading Pretitle="Tables" Title="Data table" Subtitle="Search, filter, sort, page, pick columns and export to CSV." />
+
+<ProTable TItem="Employee" @ref="_table" HeaderTitle="Employees" Request="LoadAsync" RowKey="e => e.Id" Selectable ScrollX="1100">
+    <TitleExtra>
+        <span class="m-badge m-badge-gray-lt">@_summary.Count</span>
+        <span class="m-small m-muted m-medium" style="font-weight:400">avg. salary @Fmt.Money0(_summary.AverageSalary)</span>
+    </TitleExtra>
+    <ToolBar>
+        <Input @bind-Value="_keyword" Placeholder="Search name, email, position…" AllowClear Class="m-table-toolbar-search" OnPressEnter="SearchAsync" OnClear="SearchAsync" Prefix="@_searchIcon" />
+        <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight">
+            <Overlay>
+                <Menu Selectable="false">
+                    @foreach (var (key, title) in EmployeeDirectory.OptionalColumns)
+                    {
+                        <MenuItem Key="@key" OnClick="() => ToggleColumn(key)">
+                            <span class="m-column-toggle"><Ti Name="@(Shows(key) ? "square-check" : "square")" />@title</span>
+                        </MenuItem>
+                    }
+                </Menu>
+            </Overlay>
+            <ChildContent>
+                <button type="button" class="ant-btn ant-btn-default"><Ti Name="columns" /><span>Columns</span></button>
+            </ChildContent>
+        </Dropdown>
+        <a class="ant-btn ant-btn-default" href="@ExportUrl()" download><Ti Name="download" /><span>Export CSV</span></a>
+    </ToolBar>
+    <Filters>
+        <Select TItemValue="string" TItem="string" Value="_department" ValueChanged="v => FilterAsync(() => _department = v)" DataSource="EmployeeDirectory.Departments" Placeholder="All departments" AllowClear />
+        <Select TItemValue="string" TItem="string" Value="_office" ValueChanged="v => FilterAsync(() => _office = v)" DataSource="EmployeeDirectory.Offices" Placeholder="All offices" AllowClear />
+        <Select TItemValue="EmployeeStatus?" TItem="string" Value="_status" ValueChanged="v => FilterAsync(() => _status = v)" Placeholder="Any status" AllowClear>
+            <SelectOptions>
+                @foreach (var s in Enum.GetValues<EmployeeStatus>())
+                {
+                    <SelectOption TItemValue="EmployeeStatus?" TItem="string" Value="s" Label="@EmployeeDirectory.StatusLabel(s)" />
+                }
+            </SelectOptions>
+        </Select>
+        @if (Filtered)
+        {
+            <button type="button" class="ant-btn ant-btn-link" @onclick="ClearFiltersAsync"><span>Clear filters</span></button>
+        }
+    </Filters>
+    <BatchActions Context="rows">
+        <a class="ant-btn ant-btn-primary ant-btn-sm" href="@ExportUrl(rows.Select(r => r.Id))" download><span>Export selected</span></a>
+    </BatchActions>
+    @* Optional columns are hidden rather than removed, so toggling one keeps the table's sort state. *@
+    <Columns Context="row">
+        <PropertyColumn Property="e => e.Name" Title="Employee" Sortable Width="260">
+            <div class="m-entity">
+                <span class="m-avatar m-avatar-sm m-av-@row.Tint">@Fmt.Initials(row.Name)</span>
+                <div class="m-entity-text"><span class="m-entity-title">@row.Name</span><span class="m-entity-desc">@row.Email</span></div>
+            </div>
+        </PropertyColumn>
+        <PropertyColumn Hidden="@(!Shows("position"))" Property="e => e.Position" Title="Position" Sortable Width="190" />
+        <PropertyColumn Hidden="@(!Shows("department"))" Property="e => e.Department" Title="Department" Sortable Width="150" />
+        <PropertyColumn Hidden="@(!Shows("office"))" Property="e => e.Office" Title="Office" Sortable Width="150">
+            <span class="m-flex m-gap-6"><Ti Name="@(row.Office == "Remote" ? "home" : "map-pin")" />@row.Office</span>
+        </PropertyColumn>
+        <PropertyColumn Hidden="@(!Shows("start"))" Property="e => e.StartDate" Title="Start date" Sortable Width="130" Class="m-muted">@Fmt.Date(row.StartDate)</PropertyColumn>
+        <PropertyColumn Hidden="@(!Shows("salary"))" Property="e => e.Salary" Title="Salary" Sortable Width="120" Align="ColumnAlign.Right"><span class="m-num m-heading">@Fmt.Money0(row.Salary)</span></PropertyColumn>
+        <PropertyColumn Property="e => e.Status" Title="Status" Width="110">
+            <span class="m-badge @EmployeeDirectory.StatusBadge(row.Status)">@EmployeeDirectory.StatusLabel(row.Status)</span>
+        </PropertyColumn>
+    </Columns>
+</ProTable>
+
+@code {
+    private ProTable<Employee>? _table;
+    private string? _keyword, _department, _office;
+    private EmployeeStatus? _status;
+    private HashSet<string> _hidden = [];
+    private (int Count, decimal AverageSalary) _summary = EmployeeDirectory.Summary(new());
+    private readonly RenderFragment _searchIcon = @<Ti Name="search" />;
+
+    private EmployeeQuery Query => new(_keyword, _department, _office, _status);
+
+    private bool Filtered => !string.IsNullOrEmpty(_keyword) || _department is not null || _office is not null || _status is not null;
+
+    private bool Shows(string column) => !_hidden.Contains(column);
+
+    private Task<ProTableResponse<Employee>> LoadAsync(ProTableRequest request)
+    {
+        _summary = EmployeeDirectory.Summary(Query);
+        return Task.FromResult(EmployeeDirectory.Query(Query, request));
+    }
+
+    private void ToggleColumn(string key) => _hidden = EmployeeDirectory.ParseHidden(EmployeeDirectory.ToggleHidden(_hidden, key));
+
+    private string ExportUrl(IEnumerable<int>? ids = null)
+    {
+        var query = new List<KeyValuePair<string, string?>>();
+        if (ids is not null) query.AddRange(ids.Select(id => new KeyValuePair<string, string?>("ids", id.ToString())));
+        else
+        {
+            if (!string.IsNullOrEmpty(_keyword)) query.Add(new("keyword", _keyword));
+            if (_department is not null) query.Add(new("department", _department));
+            if (_office is not null) query.Add(new("office", _office));
+            if (_status is { } s) query.Add(new("status", s.ToString()));
+        }
+        return Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString("/tables/advanced/export", query);
+    }
+
+    private Task SearchAsync() => _table!.ReloadAsync(resetPage: true);
+
+    private async Task FilterAsync(Action set)
+    {
+        set();
+        await _table!.ReloadAsync(resetPage: true);
+    }
+
+    private Task ClearFiltersAsync() => FilterAsync(() => (_keyword, _department, _office, _status) = (null, null, null, null));
+}

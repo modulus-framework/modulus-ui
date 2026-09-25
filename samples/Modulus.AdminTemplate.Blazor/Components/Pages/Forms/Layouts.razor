@@ -1,0 +1,121 @@
+@page "/forms/layouts"
+@inject IMessageService Message
+
+<PageTitle>Form layouts · Modulus</PageTitle>
+
+@* Vertical, horizontal and multi-column forms. MVC and Razor Pages render the same page from Samples.Web Views/Shared/Ui/Forms/Layouts.cshtml. *@
+<PageHeading Pretitle="Forms" Title="Form layouts" Subtitle="Vertical, horizontal and multi-column forms with server-side validation." />
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card" id="vertical">
+            <div class="m-card-header"><div><h2 class="m-card-title">Vertical</h2><p class="m-card-subtitle">Labels above the fields. The default for most forms.</p></div></div>
+            <div class="m-card-body">
+                <Form @ref="_contactForm" Model="_contact" Layout="@FormLayout.Vertical" OnFinish="SendContact">
+                    <FormItem Label="Full name"><Input @bind-Value="context.FullName" Placeholder="Serena Park" /></FormItem>
+                    <FormItem Label="Email"><Input @bind-Value="context.Email" Placeholder="you@company.com" Prefix="@MailIcon" /></FormItem>
+                    <div class="m-form-grid">
+                        <FormItem Label="Company" Help="Optional"><Input @bind-Value="context.Company" Placeholder="Company name" /></FormItem>
+                        <FormItem Label="Topic"><Select TItemValue="string" TItem="string" @bind-Value="context.Topic" DataSource="ContactFormInput.Topics" Placeholder="Choose a topic" /></FormItem>
+                    </div>
+                    <FormItem Label="Message"><TextArea @bind-Value="context.Message" Rows="4" MaxLength="500" ShowCount Placeholder="How can we help?" /></FormItem>
+                    <div class="m-form-actions">
+                        <Button Type="@ButtonType.Primary" HtmlType="submit">Send message</Button>
+                        <Button OnClick="ResetContact">Reset</Button>
+                    </div>
+                </Form>
+            </div>
+        </div>
+
+        <div class="m-card" id="horizontal">
+            <div class="m-card-header"><div><h2 class="m-card-title">Horizontal</h2><p class="m-card-subtitle">Labels beside the fields. Good for short settings forms.</p></div></div>
+            <div class="m-card-body">
+                <Form @ref="_signupForm" Model="_signup" Layout="@FormLayout.Horizontal" Class="m-form-horizontal" OnFinish="CreateAccount">
+                    <FormItem Label="Username"><Input @bind-Value="context.Username" Placeholder="serena.park" Prefix="@UserIcon" /></FormItem>
+                    <FormItem Label="Email"><Input @bind-Value="context.Email" Placeholder="you@company.com" /></FormItem>
+                    <FormItem Label="Password"><InputPassword @bind-Value="context.Password" Placeholder="At least 8 characters" /></FormItem>
+                    <FormItem Label="Confirm"><InputPassword @bind-Value="context.ConfirmPassword" Placeholder="Repeat the password" /></FormItem>
+                    <FormItem Class="m-form-offset"><Checkbox @bind-Value="context.Newsletter">Send me product news</Checkbox></FormItem>
+                    <FormItem Class="m-form-offset">
+                        <div class="m-form-actions">
+                            <Button Type="@ButtonType.Primary" HtmlType="submit">Create account</Button>
+                            <Button OnClick="ResetSignup">Cancel</Button>
+                        </div>
+                    </FormItem>
+                </Form>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card" id="multi-column">
+        <div class="m-card-header"><div><h2 class="m-card-title">Multi-column with sections</h2><p class="m-card-subtitle">Group long forms into titled sections with a two-column grid.</p></div></div>
+        <Form @ref="_shippingForm" Model="_shipping" Layout="@FormLayout.Vertical" OnFinish="SaveShipping">
+            <div class="m-card-body">
+                <h3 class="m-form-section">1. Contact details</h3>
+                <div class="m-form-grid">
+                    <FormItem Label="First name"><Input @bind-Value="context.FirstName" /></FormItem>
+                    <FormItem Label="Last name"><Input @bind-Value="context.LastName" /></FormItem>
+                    <FormItem Label="Email"><Input @bind-Value="context.Email" /></FormItem>
+                    <FormItem Label="Phone" Help="Optional. Used only for delivery updates."><Input @bind-Value="context.Phone" /></FormItem>
+                </div>
+                <h3 class="m-form-section">2. Shipping address</h3>
+                <div class="m-form-grid">
+                    <FormItem Label="Street address" Class="m-span-2"><Input @bind-Value="context.Address" /></FormItem>
+                    <FormItem Label="City"><Input @bind-Value="context.City" /></FormItem>
+                    <FormItem Label="Postal code"><Input @bind-Value="context.Zip" /></FormItem>
+                    <FormItem Label="Country" Class="m-span-2"><Select TItemValue="string" TItem="string" @bind-Value="context.Country" DataSource="Lookups.Countries" Placeholder="Choose a country" /></FormItem>
+                </div>
+                <h3 class="m-form-section">3. Delivery</h3>
+                <div class="m-choice-cards" role="radiogroup" aria-label="Delivery option">
+                    @foreach (var (value, label, note) in ShippingFormInput.DeliveryOptions)
+                    {
+                        <label class="m-choice-card">
+                            <input type="radio" name="Shipping.Delivery" value="@value" checked="@(_shipping.Delivery == value)" @onchange="() => _shipping.Delivery = value" />
+                            <span><span class="m-heading m-medium">@label</span><span class="m-small m-muted">@note</span></span>
+                        </label>
+                    }
+                </div>
+            </div>
+            <div class="m-card-footer m-form-actions" style="justify-content:flex-end">
+                <Button OnClick="ResetShipping">Cancel</Button>
+                <Button Type="@ButtonType.Primary" HtmlType="submit">Save address</Button>
+            </div>
+        </Form>
+    </div>
+</div>
+
+@code {
+    private ContactFormInput _contact = new();
+    private SignupFormInput _signup = new();
+    private ShippingFormInput _shipping = new();
+    private Form<ContactFormInput>? _contactForm;
+    private Form<SignupFormInput>? _signupForm;
+    private Form<ShippingFormInput>? _shippingForm;
+
+    private static readonly RenderFragment MailIcon = @<Icon Type="mail" />;
+    private static readonly RenderFragment UserIcon = @<Icon Type="user" />;
+
+    private void SendContact()
+    {
+        _ = Message.SuccessAsync("Message sent. We reply within one business day.");
+        ResetContact();
+    }
+
+    private void CreateAccount()
+    {
+        _ = Message.SuccessAsync($"Account {_signup.Username} created");
+        ResetSignup();
+    }
+
+    private void SaveShipping()
+    {
+        _ = Message.SuccessAsync("Shipping address saved");
+        ResetShipping();
+    }
+
+    private void ResetContact() { _contact = new(); _contactForm?.Reset(); }
+
+    private void ResetSignup() { _signup = new(); _signupForm?.Reset(); }
+
+    private void ResetShipping() { _shipping = new(); _shippingForm?.Reset(); }
+}

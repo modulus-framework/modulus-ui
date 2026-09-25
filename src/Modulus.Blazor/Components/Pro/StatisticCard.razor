@@ -1,51 +1,54 @@
-@inherits ComponentBase
+@*
+    KPI card in the Ant Design Pro "ChartCard" pattern: title (+ info tooltip),
+    headline value, optional mini chart (ChildContent) and a footer line.
+*@
 
-<div @attributes="AdditionalAttributes" 
-     style="background: white; border: 1px solid #d9d9d9; border-radius: 4px; padding: 16px; text-align: center;">
-    @if (!string.IsNullOrEmpty(Title))
-    {
-        <p style="margin: 0 0 12px 0; color: rgba(0,0,0,0.65); font-size: 12px;">@Title</p>
-    }
-    
-    <div style="font-size: 28px; font-weight: bold; color: #1890ff; margin-bottom: 8px;">
-        @if (!string.IsNullOrEmpty(Prefix))
+<Card Bordered="false" Loading="@Loading" Class="@($"m-stat-card {Class}")" Style="@Style">
+    <div class="m-stat-card-head">
+        <span>@Title</span>
+        @if (!string.IsNullOrEmpty(Tooltip))
         {
-            <span>@Prefix</span>
-        }
-        @Value
-        @if (!string.IsNullOrEmpty(Suffix))
-        {
-            <span>@Suffix</span>
+            <AntDesign.Tooltip Title="@Tooltip"><Icon Type="info-circle" /></AntDesign.Tooltip>
         }
     </div>
-    
-    @if (!string.IsNullOrEmpty(Trend))
+    <div class="m-stat-card-value">
+        @if (ValueContent is not null)
+        {
+            @ValueContent
+        }
+        else
+        {
+            @Value
+        }
+    </div>
+    @if (ChildContent is not null)
     {
-        <div style="font-size: 12px; color: @(Trend.StartsWith("↑") ? "#52c41a" : "#ff7875");">
-            @Trend
-        </div>
+        <div class="m-stat-card-chart">@ChildContent</div>
     }
-</div>
+    @if (Footer is not null)
+    {
+        <div class="m-stat-card-footer">@Footer</div>
+    }
+</Card>
 
 @code {
-    [Parameter]
-    public string? Title { get; set; }
+    [Parameter] public string? Title { get; set; }
 
-    [Parameter]
-    public string? Value { get; set; }
+    [Parameter] public string? Tooltip { get; set; }
 
-    [Parameter]
-    public string? Prefix { get; set; }
+    [Parameter] public string? Value { get; set; }
 
-    [Parameter]
-    public string? Suffix { get; set; }
+    /// <summary>Rich value markup; overrides <see cref="Value"/>.</summary>
+    [Parameter] public RenderFragment? ValueContent { get; set; }
 
-    [Parameter]
-    public string? Trend { get; set; }
+    /// <summary>Chart or supporting content between the value and the footer (46px tall).</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    [Parameter]
-    public string? Color { get; set; } = "#1890ff";
+    [Parameter] public RenderFragment? Footer { get; set; }
 
-    [Parameter(CaptureUnmatchedValues = true)]
-    public Dictionary<string, object> AdditionalAttributes { get; set; } = [];
+    [Parameter] public bool Loading { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public string? Style { get; set; }
 }

@@ -1,22 +1,27 @@
 using Modulus.AdminTemplate.Blazor.Components;
 using Modulus.Blazor;
+using Modulus.Samples.Shared;
+using Modulus.Ui.Abstractions.Navigation;
+using Modulus.Ui.Abstractions.Shell;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Add Modulus UI
-builder.Services.AddModulusBlazor();
+// Modulus UI: Ant Design Blazor + official ProLayout + theme tokens + menu pipeline.
+// Theme values can also be bound from configuration ("Modulus:Theme" in appsettings.json).
+builder.Services.AddModulusBlazor(theme => builder.Configuration.GetSection("Modulus:Theme").Bind(theme));
+builder.Services.AddTransient<IMenuContributor, AdminMenuContributor>();
+builder.Services.AddSingleton<IShellContentProvider, SampleShellContentProvider>();
+
+builder.Services.AddSingleton<SampleStore>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
@@ -25,6 +30,18 @@ app.UseHttpsRedirection();
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+
+// CSV export for the data table page (/tables/advanced); MVC and Razor Pages serve the same URL.
+app.MapGet("/tables/advanced/export", (HttpRequest request) =>
+{
+    var q = request.Query;
+    var query = new EmployeeQuery(q["keyword"], NullIfEmpty(q["department"]), NullIfEmpty(q["office"]),
+        Enum.TryParse<EmployeeStatus>(q["status"], out var status) ? status : null);
+    var ids = q["ids"].Select(v => int.TryParse(v, out var id) ? id : 0).Where(id => id > 0).ToList();
+    return Results.File(System.Text.Encoding.UTF8.GetBytes(EmployeeDirectory.Csv(EmployeeDirectory.ForExport(query, ids))), "text/csv", "employees.csv");
+
+    static string? NullIfEmpty(string? value) => string.IsNullOrEmpty(value) ? null : value;
+});
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

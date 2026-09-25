@@ -1,45 +1,65 @@
-@using AntDesign
-@using Modulus.Ui.Abstractions
+@*
+    Modal hosting a validated Ant Design form (Ant Design Pro ModalForm).
+    OnFinish returns true to close; the submit button shows a spinner meanwhile.
 
-<Modal Title="@Title" Visible="@Visible" OnOk="@OnOk" OnCancel="@OnCancel" DestroyOnClose="true" Width="@Width">
-    <ProForm Model="@Model" Fields="@Fields" FormLayout="@FormLayout" OnFinish="@OnFormFinish" />
+    <ModalForm TModel="CustomerInput" Title="New customer" @bind-Visible="_open" Model="_input" OnFinish="SaveAsync">
+        <FormItem Label="Name"><Input @bind-Value="context.Name" /></FormItem>
+    </ModalForm>
+*@
+@typeparam TModel
+
+<Modal Title="@Title"
+       Visible="Visible"
+       VisibleChanged="VisibleChanged"
+       Width="@Width"
+       DestroyOnClose="true"
+       MaskClosable="false"
+       OnCancel="CloseAsync"
+       Footer="@FooterFragment">
+    <Form TModel="TModel" Model="Model" Layout="@FormLayout.Vertical" OnFinish="FinishAsync" @ref="_form">
+        @ChildContent?.Invoke(context)
+    </Form>
 </Modal>
 
 @code {
-    [Parameter]
-    public bool Visible { get; set; }
+    [Parameter] public string? Title { get; set; }
 
-    [Parameter]
-    public string? Title { get; set; } = "Form";
+    [Parameter] public bool Visible { get; set; }
 
-    [Parameter]
-    public object? Model { get; set; }
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
 
-    [Parameter]
-    public List<ProFormField> Fields { get; set; } = new();
+    [Parameter, EditorRequired] public TModel Model { get; set; } = default!;
 
-    [Parameter]
-    public string FormLayout { get; set; } = "vertical";
+    [Parameter] public RenderFragment<TModel>? ChildContent { get; set; }
 
-    [Parameter]
-    public string Width { get; set; } = "520px";
+    /// <summary>Runs after validation passes. Return true to close the modal.</summary>
+    [Parameter] public Func<TModel, Task<bool>>? OnFinish { get; set; }
 
-    [Parameter]
-    public EventCallback<object> OnFormSubmit { get; set; }
+    [Parameter] public string SubmitText { get; set; } = "Submit";
 
-    [Parameter]
-    public EventCallback OnCancel { get; set; }
+    [Parameter] public string Width { get; set; } = "560px";
 
-    private async Task OnFormFinish(object formData)
+    private Form<TModel>? _form;
+    private bool _submitting;
+
+    private RenderFragment FooterFragment => @<div class="m-row" style="justify-content:flex-end">
+        <Button OnClick="CloseAsync">Cancel</Button>
+        <Button Type="@ButtonType.Primary" Loading="_submitting" OnClick="() => _form?.Submit()">@SubmitText</Button>
+    </div>;
+
+    private async Task FinishAsync()
     {
-        if (OnFormSubmit.HasDelegate)
+        _submitting = true;
+        try
         {
-            await OnFormSubmit.InvokeAsync(formData);
+            if (OnFinish is null || await OnFinish(Model))
+                await CloseAsync();
+        }
+        finally
+        {
+            _submitting = false;
         }
     }
 
-    private async Task OnOk()
-    {
-        // Form will auto-submit via OnFormFinish
-    }
+    private Task CloseAsync() => VisibleChanged.InvokeAsync(false);
 }

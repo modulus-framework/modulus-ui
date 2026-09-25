@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- Server-rendered page bodies shared by the MVC and Razor Pages samples. Both apps serve the same
+       URLs and render these partials; only the routing (controllers vs. page models) differs. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\..\src\Modulus.AspNetCore.Mvc\Modulus.AspNetCore.Mvc.csproj" />
+    <ProjectReference Include="..\Modulus.Samples.Shared\Modulus.Samples.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

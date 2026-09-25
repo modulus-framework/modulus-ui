@@ -1,0 +1,112 @@
+@*
+    Modulus application shell for MVC and Razor Pages (Tabler layout). The sidebar, header, navbar,
+    footer and theme settings panel come from ShellRenderer, which Blazor's AppShell also uses, so
+    every flavor renders the same DOM.
+
+    Sections:  Head (optional), Scripts (optional)
+    Content:   register an IShellContentProvider for the user menu, notifications and footer links.
+    Page:      ViewData["Title"] sets the document title.
+*@
+@using Microsoft.AspNetCore.Authorization
+@using Modulus.Ui.Abstractions.Shell
+@inject IOptions<ModulusThemeOptions> ThemeOptions
+@inject IMenuProvider MenuProvider
+@inject IShellContentProvider ShellContentProvider
+@inject IAuthorizationService Authorization
+@{
+    var cookies = Context.Request.Cookies;
+    var theme = ThemeCss.ResolveOptions(ThemeOptions.Value, name => cookies[name]);
+    var menu = await MenuFilter.FilterAsync(await MenuProvider.GetMainMenuAsync(),
+        async policy => (await Authorization.AuthorizeAsync(User, policy)).Succeeded);
+    var shell = new ShellView(theme, menu, Context.Request.Path.Value?.Trim('/') ?? "",
+        await ShellContentProvider.GetContentAsync(User, Context.RequestAborted),
+        ThemeCss.ResolveMode(cookies[ThemeCss.ModeCookie], ThemeMode.System));
+    var title = ViewData["Title"] as string;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(title is null ? theme.Title : $"{title} · {theme.Title}")</title>
+    <modulus-head />
+    @await RenderSectionAsync("Head", required: false)
+</head>
+<body modulus-antiforgery>
+    <div class="m-page">
+        @Html.Raw(ShellRenderer.Sidebar(shell))
+        @Html.Raw(ShellRenderer.Topbar(shell))
+        @Html.Raw(ShellRenderer.Navbar(shell))
+        <div class="m-page-wrapper">
+            @* x-data: every page can use Alpine directives (@click="$store.drawer.load(…)") without its own scope. *@
+            <main class="m-page-body" id="main" x-data>
+                <div class="m-container">
+                    @RenderBody()
+                </div>
+            </main>
+            @Html.Raw(ShellRenderer.Footer(shell))
+        </div>
+    </div>
+    @Html.Raw(ShellRenderer.Customizer(shell))
+
+    @* Shared drawer. Open with Alpine.store('drawer').show(title) and load its body via hx-target="#modulus-drawer-body". *@
+    <div x-data class="ant-drawer ant-drawer-right ant-drawer-open m-drawer" x-show="$store.drawer.open" x-cloak
+         @@keydown.escape.window="$store.drawer.hide()" role="dialog" aria-modal="true" :aria-label="$store.drawer.title">
+        <div class="ant-drawer-mask" @@click="$store.drawer.hide()" x-show="$store.drawer.open" x-transition.opacity></div>
+        <div class="ant-drawer-content-wrapper" :style="`width: ${$store.drawer.width}px; max-width: 100vw`"
+             x-show="$store.drawer.open"
+             x-transition:enter="m-drawer-enter" x-transition:enter-start="m-drawer-hidden"
+             x-transition:leave="m-drawer-enter" x-transition:leave-end="m-drawer-hidden">
+            <div class="ant-drawer-content">
+                <div class="ant-drawer-wrapper-body">
+                    @* Same header as AntDesign Blazor's Drawer: title, then the close button on the right (Tabler offcanvas). *@
+                    <div class="ant-drawer-header">
+                        <div class="ant-drawer-title" x-text="$store.drawer.title"></div>
+                        <button type="button" class="ant-drawer-close" aria-label="Close" @@click="$store.drawer.hide()"><app-icon type="close" /></button>
+                    </div>
+                    <div class="ant-drawer-body" id="modulus-drawer-body"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Ant Design confirm dialog used for every hx-confirm. *@
+    <div x-data class="m-confirm" x-show="$store.confirm.open" x-cloak @@keydown.escape.window="$store.confirm.answer(false)">
+        <div class="ant-modal-mask"></div>
+        <div class="ant-modal-wrap" role="alertdialog" aria-modal="true" :aria-label="$store.confirm.title">
+            <div class="ant-modal ant-modal-confirm ant-modal-confirm-confirm" style="width: 416px;">
+                <div class="ant-modal-content">
+                    <div class="ant-modal-body">
+                        <div class="ant-modal-confirm-body-wrapper">
+                            <div class="ant-modal-confirm-body">
+                                <app-icon type="exclamation-circle" theme="Fill" />
+                                <span class="ant-modal-confirm-title" x-text="$store.confirm.title"></span>
+                                <div class="ant-modal-confirm-content">This action can't be undone.</div>
+                            </div>
+                            <div class="ant-modal-confirm-btns">
+                                <button type="button" class="ant-btn ant-btn-default" @@click="$store.confirm.answer(false)"><span>Cancel</span></button>
+                                <button type="button" class="ant-btn ant-btn-primary" :class="$store.confirm.danger && 'ant-btn-dangerous'" @@click="$store.confirm.answer(true)" x-ref="ok"><span x-text="$store.confirm.okText"></span></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ant-message" id="modulus-messages" aria-live="polite"></div>
+    <div class="ant-notification ant-notification-topRight m-notifications" id="modulus-notifications" aria-live="polite"></div>
+    <template id="modulus-icon-check-circle"><app-icon type="check-circle" theme="Fill" /></template>
+    <template id="modulus-icon-info-circle"><app-icon type="info-circle" theme="Fill" /></template>
+    <template id="modulus-icon-exclamation-circle"><app-icon type="exclamation-circle" theme="Fill" /></template>
+    <template id="modulus-icon-close-circle"><app-icon type="close-circle" theme="Fill" /></template>
+    <template id="modulus-icon-o-check-circle"><app-icon type="check-circle" /></template>
+    <template id="modulus-icon-o-info-circle"><app-icon type="info-circle" /></template>
+    <template id="modulus-icon-o-exclamation-circle"><app-icon type="exclamation-circle" /></template>
+    <template id="modulus-icon-o-close-circle"><app-icon type="close-circle" /></template>
+    <template id="modulus-icon-close"><app-icon type="close" /></template>
+
+    <modulus-scripts />
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

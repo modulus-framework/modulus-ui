@@ -1,0 +1,153 @@
+@page "/apps/customers"
+@inject SampleStore Store
+@inject IMessageService Message
+
+<PageTitle>Customers · Modulus</PageTitle>
+
+<PageHeading Pretitle="eCommerce" Title="Customers" Subtitle="Companies buying from the store, their plan and lifetime value.">
+    <Actions>
+        <Button Type="@ButtonType.Primary" Icon="plus" OnClick="Create">Add customer</Button>
+    </Actions>
+</PageHeading>
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-4">
+        @foreach (var (label, value, note, icon, tone) in Tiles)
+        {
+            <div class="m-card"><div class="m-card-body">
+                <div class="m-flex m-between" style="align-items:flex-start">
+                    <div>
+                        <div class="m-subheader">@label</div>
+                        <div class="m-h1 m-mt-4">@value</div>
+                        <div class="m-small m-muted m-mt-4">@note</div>
+                    </div>
+                    <span class="m-icon-tile m-tile-@tone-lt"><Ti Name="@icon" /></span>
+                </div>
+            </div></div>
+        }
+    </div>
+
+    <ProTable TItem="Customer" @ref="_table" HeaderTitle="All customers" Request="LoadAsync" RowKey="c => c.Id" Selectable ScrollX="1000">
+        <ToolBar>
+            <Input @bind-Value="_keyword" Placeholder="Search customers…" AllowClear Class="m-table-toolbar-search" OnPressEnter="SearchAsync" OnClear="SearchAsync" Prefix="@_searchIcon" />
+            <Button Icon="download">Export</Button>
+        </ToolBar>
+        <Filters>
+            <Select TItemValue="CustomerStatus?" TItem="string" Value="_query.Status" ValueChanged="v => FilterAsync(() => _query.Status = v)" Placeholder="Status" AllowClear>
+                <SelectOptions>
+                    @foreach (var s in Enum.GetValues<CustomerStatus>())
+                    {
+                        <SelectOption TItemValue="CustomerStatus?" TItem="string" Value="s" Label="@s.ToString()" />
+                    }
+                </SelectOptions>
+            </Select>
+            <Select TItemValue="CustomerTier?" TItem="string" Value="_query.Tier" ValueChanged="v => FilterAsync(() => _query.Tier = v)" Placeholder="Tier" AllowClear>
+                <SelectOptions>
+                    @foreach (var t in Enum.GetValues<CustomerTier>())
+                    {
+                        <SelectOption TItemValue="CustomerTier?" TItem="string" Value="t" Label="@t.ToString()" />
+                    }
+                </SelectOptions>
+            </Select>
+            <Select TItemValue="string" TItem="string" Value="_query.City" ValueChanged="v => FilterAsync(() => _query.City = v)" DataSource="_cities" Placeholder="City" AllowClear />
+        </Filters>
+        <BatchActions Context="rows">
+            <Popconfirm Title="@($"Delete {rows.Count} customers?")" OkText="Delete" OnConfirm="() => DeleteAsync(rows.Select(r => r.Id))">
+                <Button Danger Size="@ButtonSize.Small">Delete selected</Button>
+            </Popconfirm>
+        </BatchActions>
+        <Columns Context="row">
+            <PropertyColumn Property="c => c.Name" Title="Customer" Sortable Width="300">
+                <div class="m-entity">
+                    <span class="m-avatar m-avatar-sm m-av-@Fmt.Tint(row.Name)">@Fmt.Initials(row.Name)</span>
+                    <div class="m-entity-text">
+                        <a class="m-entity-title" href="/apps/customers/@row.Id">@row.Name</a>
+                        <span class="m-entity-desc">@row.Email</span>
+                    </div>
+                </div>
+            </PropertyColumn>
+            <PropertyColumn Property="c => c.Company" Title="Company"><span class="m-heading">@row.Company</span></PropertyColumn>
+            <PropertyColumn Property="c => c.City" Title="City"><span class="m-muted">@row.City</span></PropertyColumn>
+            <PropertyColumn Property="c => c.Tier" Title="Tier"><span class="m-badge m-badge-@SampleUi.TierTone(row.Tier)-lt">@row.Tier</span></PropertyColumn>
+            <PropertyColumn Property="c => c.Revenue" Title="Revenue" Sortable Align="ColumnAlign.Right"><span class="m-num m-heading">@Fmt.Money0(row.Revenue)</span></PropertyColumn>
+            <PropertyColumn Property="c => c.Status" Title="Status"><span class="m-badge @SampleUi.CustomerBadge(row.Status)">@row.Status</span></PropertyColumn>
+            <ActionColumn Title="Actions" Width="130" Align="ColumnAlign.Right">
+                <div class="m-row-actions">
+                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/customers/@row.Id" aria-label="View @row.Name" title="View"><Ti Name="eye" /></a>
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Edit @row.Name" title="Edit" @onclick="() => Edit(row)"><Ti Name="edit" /></button>
+                    <Popconfirm Title="@($"Delete {row.Name}?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => DeleteAsync([row.Id])">
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @row.Name" title="Delete"><Ti Name="trash" /></button>
+                    </Popconfirm>
+                </div>
+            </ActionColumn>
+        </Columns>
+    </ProTable>
+</div>
+
+<CustomerDrawer @bind-Visible="_drawerOpen" CustomerId="_editingId" OnSaved="SavedAsync" />
+
+@code {
+    private ProTable<Customer>? _table;
+    private CustomerStats _stats = default!;
+    private IReadOnlyList<string> _cities = [];
+    private string? _keyword;
+    private readonly CustomerQuery _query = new();
+    private int? _editingId;
+    private bool _drawerOpen;
+    private readonly RenderFragment _searchIcon = @<Ti Name="search" />;
+
+    private (string Label, string Value, string Note, string Icon, string Tone)[] Tiles =>
+    [
+        ("Customers", _stats.Total.ToString("N0"), "Accounts with at least one order", "users", "primary"),
+        ("Active", _stats.Active.ToString("N0"), $"{Fmt.Percent(_stats.Active / (double)Math.Max(1, _stats.Total))} of all customers", "user-check", "green"),
+        ("On trial", _stats.Trial.ToString("N0"), "Evaluating a paid plan", "hourglass", "azure"),
+        ("Lifetime revenue", Fmt.Money0(_stats.Revenue), $"{_stats.Churned} churned accounts", "currency-dollar", "yellow"),
+    ];
+
+    protected override void OnInitialized()
+    {
+        _stats = Store.CustomerStats();
+        _cities = Store.CustomerCities();
+    }
+
+    private Task<ProTableResponse<Customer>> LoadAsync(ProTableRequest request)
+    {
+        _query.Keyword = _keyword;
+        return Task.FromResult(Store.QueryCustomers(_query, request));
+    }
+
+    private Task SearchAsync() => _table!.ReloadAsync(resetPage: true);
+
+    private async Task FilterAsync(Action set)
+    {
+        set();
+        await _table!.ReloadAsync(resetPage: true);
+    }
+
+    private void Create()
+    {
+        _editingId = null;
+        _drawerOpen = true;
+    }
+
+    private void Edit(Customer customer)
+    {
+        _editingId = customer.Id;
+        _drawerOpen = true;
+    }
+
+    private async Task SavedAsync()
+    {
+        _stats = Store.CustomerStats();
+        await _table!.ReloadAsync();
+    }
+
+    private async Task DeleteAsync(IEnumerable<int> ids)
+    {
+        var count = Store.DeleteCustomers(ids);
+        _table!.ClearSelection();
+        _ = Message.SuccessAsync(count == 1 ? "Customer deleted" : $"{count} customers deleted");
+        _stats = Store.CustomerStats();
+        await _table.ReloadAsync();
+    }
+}

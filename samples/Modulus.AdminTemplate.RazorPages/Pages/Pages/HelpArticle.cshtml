@@ -1,0 +1,6 @@
+@page "/pages/help-center/{slug}"
+@model HelpArticleModel
+@{
+    ViewData["Title"] = Model.Article.Title;
+}
+<partial name="Ui/Pages/HelpArticle" model="(Model.Category, Model.Article)" />

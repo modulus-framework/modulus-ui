@@ -1,0 +1,90 @@
+@*
+    Tabler-style application shell: header with search, notifications and account menu, a horizontal
+    navbar or vertical sidebar (switchable in the theme settings panel), footer.
+
+        <AppShell>@Body</AppShell>
+
+    The chrome is rendered by ShellRenderer, the same code the MVC / Razor Pages layout uses, so both
+    flavors share one DOM and stylesheet; modulus-shell.js adds the behaviour. Menu items come from every
+    registered IMenuContributor; header content from IShellContentProvider (or the Content parameter).
+*@
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+@using Modulus.Ui.Abstractions.Shell
+@implements IDisposable
+@inject IMenuProvider MenuProvider
+@inject IShellContentProvider ShellContentProvider
+@inject IOptions<ModulusThemeOptions> ThemeOptions
+@inject NavigationManager Navigation
+@inject IServiceProvider Services
+
+<div class="m-page">
+    @((MarkupString)_sidebar)
+    @((MarkupString)_topbar)
+    @((MarkupString)_navbar)
+    <div class="m-page-wrapper">
+        <main class="m-page-body" id="main">
+            <div class="m-container">
+                @ChildContent
+            </div>
+        </main>
+        @((MarkupString)_footer)
+    </div>
+</div>
+@((MarkupString)_customizer)
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Header and footer content. Null asks the registered IShellContentProvider.</summary>
+    [Parameter] public ShellContent? Content { get; set; }
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private IReadOnlyList<MenuItemDefinition> _menu = [];
+    private ShellContent _content = new();
+    private string _sidebar = "", _topbar = "", _navbar = "", _footer = "", _customizer = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var user = AuthenticationState is null ? new ClaimsPrincipal(new ClaimsIdentity()) : (await AuthenticationState).User;
+        var authorization = Services.GetService(typeof(IAuthorizationService)) as IAuthorizationService;
+        _menu = await MenuFilter.FilterAsync(await MenuProvider.GetMainMenuAsync(),
+            async policy => authorization is not null && (await authorization.AuthorizeAsync(user, policy)).Succeeded);
+        _content = Content ?? await ShellContentProvider.GetContentAsync(user);
+
+        var view = View();
+        _topbar = ShellRenderer.Topbar(view);
+        _footer = ShellRenderer.Footer(view);
+        _customizer = ShellRenderer.Customizer(view);
+        RenderNavigation(view);
+    }
+
+    protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        RenderNavigation(View());
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void RenderNavigation(ShellView view)
+    {
+        _sidebar = ShellRenderer.Sidebar(view);
+        _navbar = ShellRenderer.Navbar(view);
+    }
+
+    // Theme settings live in cookies the browser applies before paint; the panel re-syncs itself on open.
+    private ShellView View() => new(ThemeOptions.Value, _menu, CurrentPath(), _content);
+
+    private string CurrentPath()
+    {
+        var relative = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var end = relative.IndexOfAny(['?', '#']);
+        return (end < 0 ? relative : relative[..end]).Trim('/');
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}

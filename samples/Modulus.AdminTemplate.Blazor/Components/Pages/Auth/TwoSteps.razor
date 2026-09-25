@@ -1,0 +1,66 @@
+@page "/auth/two-steps"
+@layout AuthLayout
+@inject NavigationManager Navigation
+
+<PageTitle>Two-step verification · Modulus</PageTitle>
+
+<div class="m-auth-card">
+    <div class="m-auth-card-body">
+        <span class="m-auth-icon m-bg-primary-lt m-text-primary"><Ti Name="auth-2fa" /></span>
+        <h1 class="m-auth-title">Authenticate your account</h1>
+        <p class="m-auth-lead">Enter the 6-digit code from your authenticator app. We also sent it to ••• ••• 4821.</p>
+        <form @onsubmit="VerifyAsync" novalidate>
+            <div class="ant-form-item @(_error is null ? "" : "ant-form-item-has-error")">
+                <div class="m-otp" role="group" aria-label="Verification code">
+                    @for (var i = 0; i < 6; i++)
+                    {
+                        var index = i;
+                        if (index == 3) { <span class="m-otp-gap" aria-hidden="true"></span> }
+                        <input @ref="_inputs[index]" class="ant-input @(_error is null ? "" : "ant-input-status-error")" inputmode="numeric" maxlength="1" autocomplete="one-time-code"
+                               aria-label="Digit @(index + 1)" value="@_digits[index]" @oninput="e => OnDigitAsync(index, e)" @onkeydown="e => OnKeyAsync(index, e)" />
+                    }
+                </div>
+                @if (_error is not null)
+                {
+                    <div class="ant-form-item-explain ant-form-item-explain-connected m-center" role="alert"><div class="ant-form-item-explain-error">@_error</div></div>
+                }
+            </div>
+            <div class="m-auth-actions">
+                <button type="submit" class="ant-btn ant-btn-primary ant-btn-block"><span>Verify my account</span></button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="m-auth-foot">Didn't get the code? <a href="/auth/two-steps">Resend</a> · <a href="/auth/login">Use another method</a></div>
+
+@code {
+    private readonly ElementReference[] _inputs = new ElementReference[6];
+    private readonly string[] _digits = ["", "", "", "", "", ""];
+    private string? _error;
+
+    private async Task OnDigitAsync(int index, ChangeEventArgs e)
+    {
+        var text = new string((e.Value?.ToString() ?? "").Where(char.IsDigit).ToArray());
+        if (text.Length > 1)
+        {
+            // Pasted code: spread it over the boxes.
+            for (var i = 0; i < 6; i++) _digits[i] = i - index < text.Length && i >= index ? text[i - index].ToString() : _digits[i];
+            await _inputs[Math.Min(5, index + text.Length)].FocusAsync();
+            return;
+        }
+        _digits[index] = text;
+        if (text.Length == 1 && index < 5) await _inputs[index + 1].FocusAsync();
+    }
+
+    private async Task OnKeyAsync(int index, KeyboardEventArgs e)
+    {
+        if (e.Key == "Backspace" && _digits[index] == "" && index > 0) await _inputs[index - 1].FocusAsync();
+    }
+
+    private void VerifyAsync()
+    {
+        var code = string.Concat(_digits);
+        _error = System.Text.RegularExpressions.Regex.IsMatch(code, @"^\d{6}$") ? null : "Enter the 6-digit code";
+        if (_error is null) Navigation.NavigateTo("/");
+    }
+}

@@ -1,0 +1,6 @@
+@page "/apps/email/{handler?}/{id:int?}"
+@model EmailModel
+@{
+    ViewData["Title"] = "Email";
+}
+<partial name="Ui/Apps/Email/Email" model="Model.View" />

@@ -1,0 +1,56 @@
+@model ValidationDemoInput
+@using Microsoft.AspNetCore.Mvc.Rendering
+@* Every common validation rule on one form. Rules are data annotations on ValidationDemoInput, shared with the Blazor sample. *@
+@{
+    static IEnumerable<SelectListItem> Items(IEnumerable<string> values) => values.Select(v => new SelectListItem(v, v));
+    var billing = ValidationDemoInput.BillingCycles.Select(b => new SelectListItem(b.Label, b.Value));
+}
+<app-page-header pretitle="Forms" title="Validation" subtitle="Required fields, formats, ranges, comparisons and custom rules, checked on submit."></app-page-header>
+
+<div class="m-row-cards m-cols-8-4">
+    <div class="m-card">
+        <div class="m-card-header"><div><h2 class="m-card-title">Create profile</h2><p class="m-card-subtitle">Submit the empty form to see every message.</p></div></div>
+        <form method="post" action="/forms/validation" asp-antiforgery="true" class="ant-form ant-form-vertical" novalidate>
+            <div class="m-card-body">
+                <div class="m-form-grid">
+                    <app-form-item asp-for="Name" label="Name"><app-input asp-for="Name" placeholder="Serena Park" /></app-form-item>
+                    <app-form-item asp-for="Email" label="Email"><app-input asp-for="Email" placeholder="you@company.com" /></app-form-item>
+                    <app-form-item asp-for="Password" label="Password"><app-input asp-for="Password" type="password" placeholder="8+ characters, A–z and 0–9" /></app-form-item>
+                    <app-form-item asp-for="ConfirmPassword" label="Confirm password"><app-input asp-for="ConfirmPassword" type="password" placeholder="Repeat the password" /></app-form-item>
+                    <app-form-item asp-for="Age" label="Age"><app-input-number asp-for="Age" min="0" max="150" /></app-form-item>
+                    <app-form-item asp-for="StartDate" label="Start date"><app-date-picker asp-for="StartDate" /></app-form-item>
+                    <app-form-item asp-for="Website" label="Website" help="Optional"><app-input asp-for="Website" placeholder="https://example.com" /></app-form-item>
+                    <app-form-item asp-for="Phone" label="Phone" help="Optional"><app-input asp-for="Phone" placeholder="+1 202 555 0111" /></app-form-item>
+                    <app-form-item asp-for="Plan" label="Plan"><app-select asp-for="Plan" items="Items(ValidationDemoInput.Plans)" placeholder="Choose a plan" /></app-form-item>
+                    <app-form-item asp-for="Billing" label="Billing cycle"><app-radio-group asp-for="Billing" items="billing" /></app-form-item>
+                    <app-form-item asp-for="Interests" label="Interests" class="m-span-2">
+                        <div class="m-flex m-flex-wrap m-gap-16">
+                            @foreach (var interest in ValidationDemoInput.InterestOptions)
+                            {
+                                <app-checkbox name="Interests" value="@interest" checked="Model.Interests.Contains(interest)">@interest</app-checkbox>
+                            }
+                        </div>
+                    </app-form-item>
+                    <app-form-item asp-for="Bio" label="Bio" class="m-span-2"><app-textarea asp-for="Bio" rows="3" maxlength="300" show-count placeholder="What do you work on?" /></app-form-item>
+                    <app-form-item asp-for="AcceptTerms" label="" class="m-span-2"><app-checkbox asp-for="AcceptTerms">I accept the terms of service</app-checkbox></app-form-item>
+                </div>
+            </div>
+            <div class="m-card-footer m-form-actions">
+                <app-button type="primary" html-type="submit">Submit</app-button>
+                <a class="ant-btn ant-btn-default" href="/forms/validation"><span>Reset</span></a>
+            </div>
+        </form>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><h2 class="m-card-title">Rules on this form</h2></div>
+        <div class="m-card-body">
+            <ul class="m-check-list m-mt-0 m-small">
+                @foreach (var (rule, where) in ValidationDemoInput.Rules)
+                {
+                    <li><app-ti name="check" /><span><span class="m-heading m-medium">@rule</span><br /><span class="m-muted">@where</span></span></li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>

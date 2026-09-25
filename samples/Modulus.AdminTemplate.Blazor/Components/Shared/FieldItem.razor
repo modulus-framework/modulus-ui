@@ -1,0 +1,54 @@
+@*
+    A form item with the exact markup of the MVC <app-form-item> tag helper, for forms whose validation
+    the page drives itself (per-step wizard). Inside an AntDesign <Form>, use <FormItem> instead.
+*@
+<div class="@Css">
+    <div class="ant-row ant-form-item-row ant-form-item-row-vertical">
+        @if (!string.IsNullOrEmpty(Label))
+        {
+            <div class="ant-form-item-label"><label for="@For" class="@(Required ? "ant-form-item-required" : null)">@Label</label></div>
+        }
+        <div class="ant-col ant-form-item-control">
+            <div class="ant-form-item-control-input"><div class="ant-form-item-control-input-content">@ChildContent</div></div>
+            @if (Errors is { Length: > 0 })
+            {
+                <div class="ant-form-item-explain ant-form-item-explain-connected" role="alert">
+                    @foreach (var error in Errors)
+                    {
+                        <div class="ant-form-item-explain-error">@error</div>
+                    }
+                </div>
+            }
+            else if (Help is not null)
+            {
+                <div class="ant-form-item-explain"><div>@Help</div></div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Id of the control the label points at.</summary>
+    [Parameter] public string? For { get; set; }
+
+    [Parameter] public bool Required { get; set; }
+
+    [Parameter] public string? Help { get; set; }
+
+    [Parameter] public string[]? Errors { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string Css
+    {
+        get
+        {
+            var error = Errors is { Length: > 0 };
+            return string.Join(' ', new[] { "ant-form-item", error ? "ant-form-item-has-error" : null, error || Help is not null ? "ant-form-item-with-help" : null, Class }.Where(c => !string.IsNullOrEmpty(c)));
+        }
+    }
+}

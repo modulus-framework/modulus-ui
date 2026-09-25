@@ -1,0 +1,35 @@
+@model Invoice
+@{
+    var baseUrl = $"/apps/invoice/preview/{Model.Id}";
+}
+<app-page-header pretitle="Invoice" title="@($"Invoice {Model.Number}")">
+    <a class="ant-btn ant-btn-default" href="/apps/invoice/list"><app-ti name="arrow-left" /><span>All invoices</span></a>
+</app-page-header>
+
+<div id="invoice-preview" class="m-invoice-layout">
+    <div hidden hx-get="@baseUrl" hx-trigger="invoices:refresh from:body" hx-select="#invoice-preview" hx-target="#invoice-preview" hx-swap="outerHTML"></div>
+    <div class="m-card"><partial name="Ui/Apps/Invoice/_InvoicePaper" model="Model" /></div>
+    <aside class="m-invoice-side">
+        <div class="m-card">
+            <div class="m-card-body m-invoice-actions">
+                <button type="button" class="ant-btn ant-btn-primary ant-btn-block" disabled="@(Model.Status != InvoiceStatus.Draft)"
+                        hx-post="@baseUrl/send" hx-swap="none"><app-ti name="send" /><span>@(Model.Status == InvoiceStatus.Draft ? "Send invoice" : "Invoice sent")</span></button>
+                <a class="ant-btn ant-btn-default ant-btn-block" href="/apps/invoice/print/@Model.Id" target="_blank" rel="noopener"><app-ti name="download" /><span>Download</span></a>
+                <div class="m-invoice-actions-row">
+                    <a class="ant-btn ant-btn-default" href="/apps/invoice/print/@Model.Id" target="_blank" rel="noopener"><app-ti name="printer" /><span>Print</span></a>
+                    <a class="ant-btn ant-btn-default" href="/apps/invoice/edit/@Model.Id"><app-ti name="edit" /><span>Edit</span></a>
+                </div>
+                <button type="button" class="ant-btn ant-btn-default ant-btn-block m-btn-success" disabled="@(Model.Balance == 0)"
+                        @@click="$store.drawer.load('@baseUrl/payment', 'Add payment')"><app-ti name="currency-dollar" /><span>Add payment</span></button>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-body">
+                <div class="m-subheader m-mb-12">Payment</div>
+                <div class="m-flex m-between m-small"><span class="m-muted">Paid</span><span class="m-num">@Fmt.Money(Model.Paid) of @Fmt.Money(Model.Total)</span></div>
+                <div class="m-progress m-mt-8"><div class="m-progress-bar" style="width:@Fmt.Pct((double)Model.Paid, (double)Math.Max(0.01m, Model.Total))%;--c:var(--m-success)"></div></div>
+                <div class="m-flex m-between m-mt-12"><span class="m-muted">Balance due</span><span class="m-h3 m-num">@Fmt.Money(Model.Balance)</span></div>
+            </div>
+        </div>
+    </aside>
+</div>

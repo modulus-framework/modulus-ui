@@ -1,0 +1,6 @@
+@model Invoice
+@* Print / "download" view: the invoice alone on a blank page; opens the print dialog. *@
+<div class="m-invoice-print">
+    <partial name="Ui/Apps/Invoice/_InvoicePaper" model="Model" />
+</div>
+<script>window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 300); });</script>

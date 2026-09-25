@@ -1,0 +1,6 @@
+@page "/apps/email/{id:int}"
+@model EmailReadModel
+@{
+    ViewData["Title"] = Model.View.Open!.Subject;
+}
+<partial name="Ui/Apps/Email/Email" model="Model.View" />

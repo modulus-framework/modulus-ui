@@ -1,0 +1,25 @@
+@* Full-page layout without the shell, for sign-in, error and status pages. *@
+@inject Microsoft.Extensions.Options.IOptions<Modulus.Ui.Abstractions.Theming.ModulusThemeOptions> ThemeOptions
+@{
+    var title = ViewData["Title"] as string;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@(title is null ? ThemeOptions.Value.Title : $"{title} · {ThemeOptions.Value.Title}")</title>
+    <modulus-head />
+</head>
+<body modulus-antiforgery>
+    @RenderBody()
+    <div class="ant-message" id="modulus-messages" aria-live="polite"></div>
+    <template id="modulus-icon-check-circle"><app-icon type="check-circle" theme="Fill" /></template>
+    <template id="modulus-icon-info-circle"><app-icon type="info-circle" theme="Fill" /></template>
+    <template id="modulus-icon-exclamation-circle"><app-icon type="exclamation-circle" theme="Fill" /></template>
+    <template id="modulus-icon-close-circle"><app-icon type="close-circle" theme="Fill" /></template>
+    <modulus-scripts />
+    <script src="/_content/Modulus.Samples.Web/js/samples.js"></script>
+    <partial name="_Flash" />
+</body>
+</html>

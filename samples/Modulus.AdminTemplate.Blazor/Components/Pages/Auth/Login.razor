@@ -1,0 +1,54 @@
+@page "/auth/login"
+@layout AuthLayout
+@inject NavigationManager Navigation
+
+<PageTitle>Sign in · Modulus</PageTitle>
+
+@if (Reset)
+{
+    <Alert Type="@AlertType.Success" ShowIcon="true" Message="Your password has been reset. Sign in with your new password." Class="m-mb-16" />
+}
+<div class="m-auth-card">
+    <div class="m-auth-card-body">
+        <h1 class="m-auth-title">Login to your account</h1>
+        <Form Model="_model" Layout="@FormLayout.Vertical" OnFinish="SignInAsync" RequiredMark="FormRequiredMark.None">
+            <FormItem Label="Email address">
+                <Input @bind-Value="context.Email" Placeholder="your@email.com" Prefix="@_mail" />
+            </FormItem>
+            <FormItem Label="Password">
+                <InputPassword @bind-Value="context.Password" Placeholder="Your password" Prefix="@_lock" />
+            </FormItem>
+            <div class="m-flex m-between">
+                <Checkbox Checked="context.Remember" CheckedChanged="v => context.Remember = v">Remember me on this device</Checkbox>
+                <a href="/auth/forgot-password" class="m-small">I forgot password</a>
+            </div>
+            <div class="m-auth-actions">
+                <Button Type="@ButtonType.Primary" HtmlType="submit" Block Loading="_busy">Sign in</Button>
+            </div>
+        </Form>
+    </div>
+    <div class="m-hr-text"><span>or</span></div>
+    <div class="m-auth-card-body">
+        <div class="m-social">
+            <a class="ant-btn ant-btn-default" href="/"><Ti Name="brand-github" /><span>GitHub</span></a>
+            <a class="ant-btn ant-btn-default" href="/"><Ti Name="brand-google" /><span>Google</span></a>
+        </div>
+    </div>
+</div>
+<div class="m-auth-foot">Don't have account yet? <a href="/auth/register">Sign up</a></div>
+
+@code {
+    [SupplyParameterFromQuery] public bool Reset { get; set; }
+
+    private readonly LoginInput _model = new();
+    private bool _busy;
+    private readonly RenderFragment _mail = @<Icon Type="mail" />;
+    private readonly RenderFragment _lock = @<Icon Type="lock" />;
+
+    private async Task SignInAsync()
+    {
+        _busy = true;
+        await Task.Delay(400);
+        Navigation.NavigateTo("/auth/two-steps");
+    }
+}

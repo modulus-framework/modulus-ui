@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../buildMultiTargeting/Modulus.AspNetCore.Mvc.props" />
-</Project>

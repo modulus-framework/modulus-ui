@@ -1,0 +1,6 @@
+@page "/apps/kanban/{handler?}/{id:int?}"
+@model KanbanModel
+@{
+    ViewData["Title"] = "Kanban";
+}
+<partial name="Ui/Apps/Kanban/Kanban" model="Model.Tasks" />

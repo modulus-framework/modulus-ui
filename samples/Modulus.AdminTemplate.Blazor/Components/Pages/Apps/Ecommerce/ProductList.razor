@@ -1,0 +1,171 @@
+@page "/apps/ecommerce/products"
+@inject SampleStore Store
+@inject IMessageService Message
+
+<PageTitle>Products · Modulus</PageTitle>
+
+<PageHeading Pretitle="eCommerce" Title="Products">
+    <Actions>
+        <Button Type="@ButtonType.Primary" Icon="plus" OnClick="Create">Add product</Button>
+    </Actions>
+</PageHeading>
+
+<div class="m-row-cards">
+    <div class="m-card">
+        <div class="m-stat-strip">
+            @foreach (var (label, value, icon) in Strip)
+            {
+                <div class="m-stat-strip-item">
+                    <div><div class="m-h2">@value</div><div class="m-small m-muted">@label</div></div>
+                    <span class="m-icon-tile m-tile-gray-lt"><Ti Name="@icon" /></span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <ProTable TItem="Product" @ref="_table" HeaderTitle="All products" Request="LoadAsync" RowKey="p => p.Id" Selectable ScrollX="1000">
+        <ToolBar>
+            <Input @bind-Value="_keyword" Placeholder="Search products…" AllowClear Class="m-table-toolbar-search" OnPressEnter="SearchAsync" OnClear="SearchAsync" Prefix="@_searchIcon" />
+            <Button Icon="download">Export</Button>
+        </ToolBar>
+        <Filters>
+            <Select TItemValue="string" TItem="string" Value="_category" ValueChanged="v => FilterAsync(() => _category = v)" DataSource="ProductInput.Categories" Placeholder="Category" AllowClear />
+            <Select TItemValue="string" TItem="string" Value="_stock" ValueChanged="v => FilterAsync(() => _stock = v)" Placeholder="Stock" AllowClear>
+                <SelectOptions>
+                    @foreach (var (key, label) in ProductQuery.StockLevels)
+                    {
+                        <SelectOption TItemValue="string" TItem="string" Value="key" Label="@label" />
+                    }
+                </SelectOptions>
+            </Select>
+            <Select TItemValue="ProductStatus?" TItem="string" Value="_status" ValueChanged="v => FilterAsync(() => _status = v)" Placeholder="Status" AllowClear>
+                <SelectOptions>
+                    @foreach (var s in Enum.GetValues<ProductStatus>())
+                    {
+                        <SelectOption TItemValue="ProductStatus?" TItem="string" Value="s" Label="@s.ToString()" />
+                    }
+                </SelectOptions>
+            </Select>
+        </Filters>
+        <BatchActions Context="rows">
+            <Popconfirm Title="@($"Delete {rows.Count} products?")" OkText="Delete" OnConfirm="() => DeleteAsync(rows.Select(r => r.Id))">
+                <Button Danger Size="@ButtonSize.Small">Delete selected</Button>
+            </Popconfirm>
+        </BatchActions>
+        <Columns Context="row">
+            <PropertyColumn Property="p => p.Name" Title="Product" Sortable Width="300">
+                <div class="m-entity">
+                    <span class="m-icon-tile m-tile-sm m-tile-@SampleUi.Tone(row.Tint)-lt"><Ti Name="@row.Icon" /></span>
+                    <div class="m-entity-text"><span class="m-entity-title">@row.Name</span><span class="m-entity-desc">@row.Sku</span></div>
+                </div>
+            </PropertyColumn>
+            <PropertyColumn Property="p => p.Category" Title="Category" Sortable>
+                <span class="m-flex m-gap-8"><Ti Name="@SampleUi.CategoryIcon(row.Category)" Class="m-muted" />@row.Category</span>
+            </PropertyColumn>
+            <PropertyColumn Property="p => p.Stock" Title="Stock" Sortable>
+                @{ var (text, tone) = SampleUi.Stock(row); }
+                <span class="m-status"><span class="m-status-dot m-status-@tone"></span>@text</span>
+            </PropertyColumn>
+            <PropertyColumn Property="p => p.Price" Title="Price" Sortable Align="ColumnAlign.Right">
+                <span class="m-num m-heading">@Fmt.Money(row.Price)</span>
+            </PropertyColumn>
+            <PropertyColumn Property="p => p.Sold" Title="Sold" Sortable Align="ColumnAlign.Right">
+                <span class="m-num">@row.Sold.ToString("N0")</span>
+            </PropertyColumn>
+            <PropertyColumn Property="p => p.Status" Title="Status">
+                <span class="m-badge @SampleUi.ProductBadge(row.Status)">@row.Status</span>
+            </PropertyColumn>
+            <ActionColumn Title="Actions" Width="130" Align="ColumnAlign.Right">
+                <div class="m-row-actions">
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Edit @row.Name" title="Edit" @onclick="() => Edit(row)"><Ti Name="edit" /></button>
+                    <Popconfirm Title="@($"Delete {row.Name}?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => DeleteAsync([row.Id])">
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @row.Name" title="Delete"><Ti Name="trash" /></button>
+                    </Popconfirm>
+                </div>
+            </ActionColumn>
+        </Columns>
+    </ProTable>
+</div>
+
+<DrawerForm TModel="ProductInput" Title="@(_editingId is null ? "Add product" : "Edit product")" @bind-Visible="_drawerOpen" Model="_input" OnFinish="SaveAsync" SubmitText="@(_editingId is null ? "Add product" : "Save changes")">
+    <FormItem Label="Product name"><Input @bind-Value="context.Name" Placeholder="Edge Gateway X2" /></FormItem>
+    <div class="m-form-grid">
+        <FormItem Label="SKU"><Input @bind-Value="context.Sku" Placeholder="MD-1234" /></FormItem>
+        <FormItem Label="Category"><Select TItemValue="string" TItem="string" @bind-Value="context.Category" DataSource="ProductInput.Categories" Placeholder="Select category" /></FormItem>
+        <FormItem Label="Price ($)"><AntDesign.InputNumber TValue="decimal?" @bind-Value="context.Price" Min="0" Step="0.01m" Placeholder="99.99" Style="width:100%" /></FormItem>
+        <FormItem Label="Stock"><AntDesign.InputNumber TValue="int?" @bind-Value="context.Stock" Min="0" Placeholder="100" Style="width:100%" /></FormItem>
+    </div>
+    <FormItem Label="Description"><TextArea @bind-Value="context.Description" Rows="3" Placeholder="What makes this product great" /></FormItem>
+    <FormItem Label="Status">
+        <RadioGroup @bind-Value="context.Status" ButtonStyle="RadioButtonStyle.Solid">
+            @foreach (var s in Enum.GetValues<ProductStatus>())
+            {
+                <Radio RadioButton Value="s">@s</Radio>
+            }
+        </RadioGroup>
+    </FormItem>
+</DrawerForm>
+
+@code {
+    private ProTable<Product>? _table;
+    private ProductStats _stats = default!;
+    private string? _keyword, _category, _stock;
+    private ProductStatus? _status;
+    private ProductInput _input = new();
+    private int? _editingId;
+    private bool _drawerOpen;
+    private readonly RenderFragment _searchIcon = @<Ti Name="search" />;
+
+    private (string Label, string Value, string Icon)[] Strip =>
+    [
+        ("Products", _stats.Total.ToString("N0"), "package"),
+        ("Published", _stats.Published.ToString("N0"), "world"),
+        ("Low stock", _stats.LowStock.ToString("N0"), "alert-triangle"),
+        ("Inventory value", Fmt.Money0(_stats.InventoryValue), "building-warehouse"),
+    ];
+
+    protected override void OnInitialized() => _stats = Store.ProductStats();
+
+    private Task<ProTableResponse<Product>> LoadAsync(ProTableRequest request) =>
+        Task.FromResult(Store.QueryProducts(new ProductQuery(_keyword, _category, _stock, _status), request));
+
+    private Task SearchAsync() => _table!.ReloadAsync(resetPage: true);
+
+    private async Task FilterAsync(Action set)
+    {
+        set();
+        await _table!.ReloadAsync(resetPage: true);
+    }
+
+    private void Create()
+    {
+        _editingId = null;
+        _input = new ProductInput();
+        _drawerOpen = true;
+    }
+
+    private void Edit(Product product)
+    {
+        _editingId = product.Id;
+        _input = ProductInput.From(product);
+        _drawerOpen = true;
+    }
+
+    private async Task<bool> SaveAsync(ProductInput input)
+    {
+        Store.SaveProduct(_editingId, input);
+        _ = Message.SuccessAsync(_editingId is null ? $"Added {input.Name}" : $"Saved {input.Name}");
+        _stats = Store.ProductStats();
+        await _table!.ReloadAsync();
+        return true;
+    }
+
+    private async Task DeleteAsync(IEnumerable<int> ids)
+    {
+        var count = Store.DeleteProducts(ids);
+        _table!.ClearSelection();
+        _ = Message.SuccessAsync(count == 1 ? "Product deleted" : $"{count} products deleted");
+        _stats = Store.ProductStats();
+        await _table.ReloadAsync();
+    }
+}

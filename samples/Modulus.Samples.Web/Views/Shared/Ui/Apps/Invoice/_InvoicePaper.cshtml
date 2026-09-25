@@ -1,0 +1,87 @@
+@model Invoice
+@inject Microsoft.Extensions.Options.IOptions<Modulus.Ui.Abstractions.Theming.ModulusThemeOptions> ThemeOptions
+@{
+    var seller = SampleContent.Seller;
+}
+@* The printable invoice (preview and print pages). *@
+<div class="m-invoice">
+    <div class="m-invoice-head">
+        <div>
+            <div class="m-invoice-brand">@Html.Raw(ShellRenderer.Brand(ThemeOptions.Value))</div>
+            <address class="m-invoice-address">
+                @foreach (var line in seller.Address)
+                {
+                    <div>@line</div>
+                }
+                <div>@seller.Phone</div>
+            </address>
+        </div>
+        <div class="m-invoice-meta">
+            <div class="m-invoice-number">Invoice @Model.Number</div>
+            <dl>
+                <dt>Date issued</dt><dd>@Fmt.Date(Model.IssuedAt)</dd>
+                <dt>Date due</dt><dd>@Fmt.Date(Model.DueAt)</dd>
+            </dl>
+            <span class="m-badge @SampleUi.InvoiceBadge(Model.Status)">@SampleUi.Label(Model.Status)</span>
+        </div>
+    </div>
+
+    <div class="m-invoice-parties">
+        <div>
+            <div class="m-subheader m-mb-8">Invoice to</div>
+            <div class="m-heading m-medium">@Model.ClientName</div>
+            <div class="m-muted">@Model.ClientCompany</div>
+            <div class="m-muted">@Model.ClientAddress</div>
+            <div class="m-muted">@Model.ClientCountry</div>
+            <div class="m-muted">@Model.ClientEmail</div>
+        </div>
+        <div>
+            <div class="m-subheader m-mb-8">Bill to</div>
+            <dl class="m-invoice-kv">
+                <dt>Total due</dt><dd class="m-heading">@Fmt.Money(Model.Balance)</dd>
+                @foreach (var (label, value) in SampleContent.BankDetails)
+                {
+                    <dt>@label</dt><dd>@value</dd>
+                }
+            </dl>
+        </div>
+    </div>
+
+    <div class="m-invoice-lines">
+        <table>
+            <thead><tr><th>Item</th><th>Description</th><th class="m-num-col">Cost</th><th class="m-num-col">Qty</th><th class="m-num-col">Price</th></tr></thead>
+            <tbody>
+                @foreach (var l in Model.Lines)
+                {
+                    <tr><td class="m-heading m-medium">@l.Item</td><td class="m-muted">@l.Description</td><td class="m-num-col">@Fmt.Money(l.Cost)</td><td class="m-num-col">@l.Qty</td><td class="m-num-col m-heading">@Fmt.Money(l.Total)</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="m-invoice-foot">
+        <div class="m-invoice-seller">
+            <div><span class="m-heading m-medium">Salesperson:</span> <span class="m-muted">@Model.Salesperson</span></div>
+            <div class="m-muted m-mt-4">Thanks for your business</div>
+        </div>
+        <dl class="m-invoice-totals">
+            <dt>Subtotal</dt><dd>@Fmt.Money(Model.Subtotal)</dd>
+            @if (Model.Discount > 0)
+            {
+                <dt>Discount (@((Model.DiscountRate * 100).ToString("0.#"))%)</dt><dd>−@Fmt.Money(Model.Discount)</dd>
+            }
+            <dt>Tax (@((Model.TaxRate * 100).ToString("0.#"))%)</dt><dd>@Fmt.Money(Model.Tax)</dd>
+            <dt class="m-invoice-total">Total</dt><dd class="m-invoice-total">@Fmt.Money(Model.Total)</dd>
+            @if (Model.Paid > 0)
+            {
+                <dt>Paid</dt><dd>−@Fmt.Money(Model.Paid)</dd>
+                <dt class="m-heading">Balance due</dt><dd class="m-heading">@Fmt.Money(Model.Balance)</dd>
+            }
+        </dl>
+    </div>
+
+    @if (Model.Note.Length > 0)
+    {
+        <div class="m-invoice-note"><span class="m-heading m-medium">Note:</span> <span class="m-muted">@Model.Note</span></div>
+    }
+</div>

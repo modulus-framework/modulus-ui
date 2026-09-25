@@ -13,6 +13,13 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <!--
+      The official Ant Design stylesheets (_content/AntDesign/css/*, _content/AntDesign.ProLayout/css/*)
+      are the single source of component styling for EVERY flavor. MVC and Razor Pages render the same
+      antd DOM through tag helpers, so they get these assets from here too.
+    -->
+    <PackageReference Include="AntDesign" />
+    <PackageReference Include="AntDesign.ProLayout" />
   </ItemGroup>
 
 </Project>

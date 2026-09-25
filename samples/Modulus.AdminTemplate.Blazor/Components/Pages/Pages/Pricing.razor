@@ -1,0 +1,81 @@
+@page "/pages/pricing"
+
+<PageTitle>Pricing · Modulus</PageTitle>
+
+<div class="m-pricing-head">
+    <div class="m-pretitle">Pricing</div>
+    <h1 class="m-h1">Plans that grow with your team</h1>
+    <p class="m-muted">Start free, upgrade when you need more. Every plan includes a 14-day trial of Standard features.</p>
+    <label class="m-billing-toggle">
+        <span>Monthly</span>
+        <Switch @bind-Value="_yearly" />
+        <span>Yearly <span class="m-badge m-badge-success-lt">Save 20%</span></span>
+    </label>
+</div>
+
+<div class="m-pricing">
+    @foreach (var plan in SampleContent.Plans)
+    {
+        var price = _yearly ? plan.Yearly : plan.Monthly;
+        <div class="m-card m-price-card @(plan.Popular ? "m-price-popular" : "")">
+            @if (plan.Popular)
+            {
+                <span class="m-badge m-badge-primary m-price-ribbon">Popular</span>
+            }
+            <span class="m-icon-tile m-tile-lg m-tile-@(plan.Popular ? "primary" : "gray")-lt"><Ti Name="@plan.Icon" /></span>
+            <div class="m-price-name">@plan.Name</div>
+            <div class="m-price"><span class="m-price-currency">$</span><span class="m-price-value">@price.ToString("0")</span><span class="m-price-period">/mo</span></div>
+            <div class="m-price-note">@(price == 0 ? "Free forever" : _yearly ? $"{Fmt.Money0(price * 12)} billed yearly" : "Billed monthly")</div>
+            <p class="m-muted m-mt-8">@plan.Tagline</p>
+            <ul class="m-check-list">
+                @foreach (var feature in plan.Features)
+                {
+                    <li><Ti Name="check" /><span>@feature</span></li>
+                }
+            </ul>
+            <a class="ant-btn @(plan.Popular ? "ant-btn-primary" : "ant-btn-default") ant-btn-block" href="/auth/register"><span>@(price == 0 ? "Get started" : "Choose " + plan.Name)</span></a>
+        </div>
+    }
+</div>
+
+<div class="m-card m-mt-24" style="max-width:1080px;margin-left:auto;margin-right:auto">
+    <div class="m-card-header"><div><h2 class="m-card-title">Compare plans</h2><p class="m-card-subtitle">Everything included in each plan</p></div></div>
+    <div class="ant-table-wrapper m-table-flush m-compare">
+        <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+            <table style="table-layout:auto">
+                <thead class="ant-table-thead"><tr><th class="ant-table-cell">Feature</th>@foreach (var plan in SampleContent.Plans){<th class="ant-table-cell">@plan.Name</th>}</tr></thead>
+                <tbody class="ant-table-tbody">
+                    @foreach (var row in SampleContent.PlanFeatures)
+                    {
+                        <tr class="ant-table-row">
+                            <td class="ant-table-cell m-heading m-medium">@row.Feature</td>
+                            @foreach (var value in new[] { row.Basic, row.Standard, row.Enterprise })
+                            {
+                                <td class="ant-table-cell">
+                                    @if (value == "✓") { <span class="m-text-success" aria-label="Included"><Ti Name="check" /></span> }
+                                    else if (value == "—") { <span class="m-text-quaternary" aria-label="Not included"><Ti Name="minus" /></span> }
+                                    else { <span class="m-muted">@value</span> }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div></div></div>
+    </div>
+</div>
+
+<div class="m-mt-24" style="max-width:760px;margin-left:auto;margin-right:auto">
+    <div class="m-section-head" style="justify-content:center"><h2 class="m-h3">Frequently asked questions</h2></div>
+    <div class="m-accordion">
+        @foreach (var item in SampleContent.Faq.First(c => c.Key == "payment").Items)
+        {
+            <details><summary>@item.Question</summary><div class="m-accordion-body">@item.Answer</div></details>
+        }
+    </div>
+    <p class="m-center m-muted m-mt-16">Still have questions? <a href="/pages/faq">Read the full FAQ</a> or <a href="/pages/help-center">contact support</a>.</p>
+</div>
+
+@code {
+    private bool _yearly;
+}

@@ -1,0 +1,6 @@
+@page "/apps/ecommerce/orders/{id:int}/{handler?}"
+@model OrderDetailsModel
+@{
+    ViewData["Title"] = $"Order {Model.View.Order.Number}";
+}
+<partial name="Ui/Apps/Ecommerce/OrderDetails" model="Model.View" />

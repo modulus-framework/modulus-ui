@@ -1,0 +1,194 @@
+@page "/apps/roles"
+@inject SampleStore Store
+@inject IMessageService Message
+
+<PageTitle>Roles · Modulus</PageTitle>
+
+<PageHeading Pretitle="Users & access" Title="Roles" Subtitle="A role gives access to menus and features; assign one to each user." />
+
+<div id="roles-page" class="m-row-cards">
+    <div class="m-row-cards m-cols-3">
+        @foreach (var r in _roles)
+        {
+            var members = _users.Where(u => u.Role == r.Name).ToList();
+            <div class="m-card">
+                <div class="m-card-body">
+                    <div class="m-flex m-between">
+                        <span class="m-small m-muted">Total @members.Count @(members.Count == 1 ? "user" : "users")</span>
+                        <div class="m-avatar-list">
+                            @foreach (var m in members.Take(4))
+                            {
+                                <span class="m-avatar m-avatar-sm m-av-@m.Tint" title="@m.Name">@Fmt.Initials(m.Name)</span>
+                            }
+                            @if (members.Count > 4)
+                            {
+                                <span class="m-avatar m-avatar-sm">+@(members.Count - 4)</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="m-flex m-between m-mt-16" style="align-items:flex-end">
+                        <div class="m-truncate">
+                            <div class="m-h3">@r.Name</div>
+                            <div class="m-small m-muted m-mt-4 m-truncate">@r.Description</div>
+                            <button type="button" class="m-link-btn m-small m-mt-8" @onclick="() => Edit(r)">Edit role</button>
+                        </div>
+                        <span class="m-icon-tile m-tile-@SampleUi.RoleTone(r.Name)-lt"><Ti Name="@SampleUi.RoleIcon(r.Name)" /></span>
+                    </div>
+                </div>
+            </div>
+        }
+        <div class="m-card m-role-add">
+            <div class="m-card-body">
+                <span class="m-icon-tile m-tile-primary-lt"><Ti Name="shield-plus" /></span>
+                <div>
+                    <div class="m-h3">New role</div>
+                    <div class="m-small m-muted m-mt-4">Add a role if none of these fit.</div>
+                    <button type="button" class="ant-btn ant-btn-primary ant-btn-sm m-mt-8" @onclick="Create"><Ti Name="plus" /><span>Add role</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header">
+            <div><h3 class="m-card-title">Access by module</h3><p class="m-card-subtitle">What each role can do in every module</p></div>
+            <div class="m-card-actions m-access-legend">
+                @foreach (var a in RoleInput.AccessLevels)
+                {
+                    <span class="m-badge m-badge-@LevelTone(a)-lt">@a</span>
+                }
+            </div>
+        </div>
+        <div class="ant-table-wrapper m-table-flush">
+            <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content" style="overflow-x:auto">
+                <table style="table-layout:auto;min-width:760px">
+                    <thead class="ant-table-thead">
+                        <tr>
+                            <th class="ant-table-cell">Module</th>
+                            @foreach (var r in _roles)
+                            {
+                                <th class="ant-table-cell" style="text-align:center">@r.Name</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody class="ant-table-tbody">
+                        @foreach (var module in Lookups.PermissionModules)
+                        {
+                            <tr class="ant-table-row">
+                                <td class="ant-table-cell m-heading m-medium">@module</td>
+                                @foreach (var r in _roles)
+                                {
+                                    var access = r.Permissions.GetValueOrDefault(module);
+                                    <td class="ant-table-cell" style="text-align:center">
+                                        @if (access == Access.None)
+                                        {
+                                            <span class="m-text-quaternary" aria-label="No access">—</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="m-access">
+                                                @foreach (var a in RoleInput.AccessLevels.Where(a => access.HasFlag(a)))
+                                                {
+                                                    <span class="m-badge m-badge-@LevelTone(a)-lt" title="@a">@a.ToString()[0]</span>
+                                                }
+                                            </span>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div></div></div>
+        </div>
+    </div>
+</div>
+
+<DrawerForm TModel="RoleInput" Title="@(_editingId is null ? "Add role" : "Edit role")" Width="720" @bind-Visible="_drawerOpen" Model="_input" OnFinish="SaveAsync" SubmitText="@(_editingId is null ? "Add role" : "Save changes")">
+    <FormItem Label="Role name">
+        <Input @bind-Value="context.Name" Placeholder="e.g. Support agent" />
+    </FormItem>
+    <FormItem Label="Description">
+        <Input @bind-Value="context.Description" Placeholder="What people with this role do" />
+    </FormItem>
+    <div class="m-flex m-between m-mb-8">
+        <div class="m-h3">Role permissions</div>
+        <Checkbox Checked="AllGranted(context)" CheckedChanged="on => GrantAll(context, on)">Select all</Checkbox>
+    </div>
+    <div class="ant-table-wrapper m-table-flush m-role-matrix">
+        <div class="ant-table ant-table-small"><div class="ant-table-container"><div class="ant-table-content">
+            <table style="table-layout:auto">
+                <thead class="ant-table-thead">
+                    <tr><th class="ant-table-cell">Module</th>@foreach (var a in RoleInput.AccessLevels){<th class="ant-table-cell" style="text-align:center">@a</th>}</tr>
+                </thead>
+                <tbody class="ant-table-tbody">
+                    @foreach (var module in Lookups.PermissionModules)
+                    {
+                        <tr class="ant-table-row">
+                            <td class="ant-table-cell m-heading">@module</td>
+                            @foreach (var a in RoleInput.AccessLevels)
+                            {
+                                <td class="ant-table-cell" style="text-align:center">
+                                    <Checkbox Checked="context.Permissions.GetValueOrDefault(module).HasFlag(a)" CheckedChanged="on => Grant(context, module, a, on)" aria-label="@($"{a} {module}")" />
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div></div></div>
+    </div>
+</DrawerForm>
+
+@code {
+    private static string LevelTone(Access a) => a switch { Access.Read => "azure", Access.Write => "orange", _ => "green" };
+
+    private IReadOnlyList<AppRole> _roles = [];
+    private IReadOnlyList<AppUser> _users = [];
+    private RoleInput _input = new();
+    private int? _editingId;
+    private bool _drawerOpen;
+
+    protected override void OnInitialized() => Load();
+
+    private void Load()
+    {
+        _roles = Store.Roles();
+        _users = Store.Users();
+    }
+
+    private void Create()
+    {
+        _editingId = null;
+        _input = new RoleInput();
+        _drawerOpen = true;
+    }
+
+    private void Edit(AppRole role)
+    {
+        _editingId = role.Id;
+        _input = RoleInput.From(role);
+        _drawerOpen = true;
+    }
+
+    private static bool AllGranted(RoleInput input) =>
+        Lookups.PermissionModules.All(m => input.Permissions.GetValueOrDefault(m) == (Access.Read | Access.Write | Access.Create));
+
+    private static void GrantAll(RoleInput input, bool on) =>
+        input.Permissions = on ? Lookups.PermissionModules.ToDictionary(m => m, _ => Access.Read | Access.Write | Access.Create) : [];
+
+    private static void Grant(RoleInput input, string module, Access level, bool on)
+    {
+        var current = input.Permissions.GetValueOrDefault(module);
+        input.Permissions[module] = on ? current | level : current & ~level;
+    }
+
+    private async Task<bool> SaveAsync(RoleInput input)
+    {
+        Store.SaveRole(_editingId, input);
+        _ = Message.SuccessAsync(_editingId is null ? $"Added the {input.Name} role" : $"Saved the {input.Name} role");
+        Load();
+        await Task.CompletedTask;
+        return true;
+    }
+}

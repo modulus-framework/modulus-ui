@@ -1,0 +1,431 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@model GalleryForm
+@{
+    var sections = new[] { ("general", "General"), ("layout", "Layout"), ("navigation", "Navigation"), ("data-entry", "Data Entry"), ("data-display", "Data Display"), ("feedback", "Feedback") };
+    var plans = GalleryData.Plans.Select(p => new SelectListItem(p, p));
+    var channels = new[] { new SelectListItem("Email", "email", true), new SelectListItem("SMS", "sms"), new SelectListItem("Push (coming soon)", "push") { Disabled = true } };
+    var priorities = new[] { new SelectListItem("Low", "low"), new SelectListItem("Normal", "normal"), new SelectListItem("High", "high") };
+    var sizes = new[] { new SelectListItem("Small", "s"), new SelectListItem("Medium", "m"), new SelectListItem("Large", "l") };
+}
+
+@* Every Ant Design component family on one page, built with Modulus tag helpers. The Blazor sample renders the same gallery; MVC and Razor Pages share this view. *@
+<app-page-header pretitle="User interface" title="Components" subtitle="The Ant Design component set as it looks in Modulus. The same page is rendered by all three samples."></app-page-header>
+
+    <nav class="m-demo-nav" aria-label="Component categories">
+        @foreach (var (id, label) in sections)
+        {
+            <a href="#@id">@label</a>
+        }
+    </nav>
+
+    <section id="general" class="m-demo-section">
+        <h2 class="m-section-title">General</h2>
+        <div class="m-demo-grid">
+            <app-card title="Button">
+                <p class="m-demo-desc">One primary action per area. Dashed for "add", text and link for low emphasis.</p>
+                <div class="m-demo-row">
+                    <app-button type="primary">Primary</app-button>
+                    <app-button>Default</app-button>
+                    <app-button type="dashed">Dashed</app-button>
+                    <app-button type="text">Text</app-button>
+                    <app-button type="link">Link</app-button>
+                </div>
+                <div class="m-demo-row">
+                    <app-button type="primary" icon="search">Search</app-button>
+                    <app-button type="primary" danger>Delete</app-button>
+                    <app-button loading>Saving</app-button>
+                    <app-button disabled>Disabled</app-button>
+                    <app-button shape="circle" icon="download" aria-label="Download" />
+                </div>
+                <div class="m-demo-row">
+                    <app-button type="primary" size="small">Small</app-button>
+                    <app-button type="primary">Middle</app-button>
+                    <app-button type="primary" size="large">Large</app-button>
+                </div>
+            </app-card>
+
+            <app-card title="Typography">
+                <p class="m-demo-desc">Five heading levels, semantic text colours and inline marks.</p>
+                <app-title level="3">Quarterly report</app-title>
+                <app-title level="5">Revenue grew in every region</app-title>
+                <app-paragraph>
+                    Ant Design uses a 14&nbsp;px base size with a 22&nbsp;px line height. Use <app-text strong>strong</app-text>,
+                    <app-text code>code</app-text>, <app-text mark>mark</app-text>, <app-text underline>underline</app-text> and <app-text delete>delete</app-text>
+                    for inline emphasis.
+                </app-paragraph>
+                <div class="m-demo-row">
+                    <app-text type="secondary">Secondary</app-text>
+                    <app-text type="success">Success</app-text>
+                    <app-text type="warning">Warning</app-text>
+                    <app-text type="danger">Danger</app-text>
+                    <app-text disabled>Disabled</app-text>
+                </div>
+            </app-card>
+
+            <app-card title="Icon">
+                <p class="m-demo-desc">The full Ant Design icon set, outlined, filled and two-tone.</p>
+                <div class="m-demo-icons">
+                    @foreach (var icon in GalleryData.Icons)
+                    {
+                        <div class="m-demo-icon"><app-icon type="@icon" /><span>@icon</span></div>
+                    }
+                </div>
+            </app-card>
+        </div>
+    </section>
+
+    <section id="layout" class="m-demo-section">
+        <h2 class="m-section-title">Layout</h2>
+        <div class="m-demo-grid">
+            <app-card title="Grid">
+                <p class="m-demo-desc">24-column grid with gutters and responsive spans.</p>
+                <app-row gutter="16">
+                    <app-col span="8"><div class="m-demo-block">col-8</div></app-col>
+                    <app-col span="8"><div class="m-demo-block">col-8</div></app-col>
+                    <app-col span="8"><div class="m-demo-block">col-8</div></app-col>
+                </app-row>
+                <app-row gutter="16" style="margin-top: 16px">
+                    <app-col span="6"><div class="m-demo-block">col-6</div></app-col>
+                    <app-col span="12"><div class="m-demo-block m-demo-block-strong">col-12</div></app-col>
+                    <app-col span="6"><div class="m-demo-block">col-6</div></app-col>
+                </app-row>
+            </app-card>
+
+            <app-card title="Space and Divider">
+                <p class="m-demo-desc">Consistent spacing between inline items, and dividers between groups.</p>
+                <app-space wrap>
+                    <app-button>Cancel</app-button>
+                    <app-button type="primary">Submit</app-button>
+                    <app-text type="secondary">Last saved 2 min ago</app-text>
+                </app-space>
+                <app-divider orientation="left">Billing</app-divider>
+                <app-text>Invoices</app-text>
+                <app-divider type="vertical" />
+                <app-text>Payment methods</app-text>
+                <app-divider type="vertical" />
+                <app-text>Tax settings</app-text>
+                <app-divider dashed />
+            </app-card>
+        </div>
+    </section>
+
+    <section id="navigation" class="m-demo-section">
+        <h2 class="m-section-title">Navigation</h2>
+        <div class="m-demo-grid">
+            <app-card title="Breadcrumb and Tabs">
+                <p class="m-demo-desc">Show where the user is, and switch between views of the same object.</p>
+                <app-breadcrumb>
+                    <app-breadcrumb-item href="~/">Home</app-breadcrumb-item>
+                    <app-breadcrumb-item href="~/customers">Customers</app-breadcrumb-item>
+                    <app-breadcrumb-item>Acme Corporation</app-breadcrumb-item>
+                </app-breadcrumb>
+                <app-tabs active="overview" style="margin-top: 12px">
+                    <app-tab key="overview" title="Overview">Account summary, owner and health score.</app-tab>
+                    <app-tab key="orders" title="Orders">42 orders in the last 12 months.</app-tab>
+                    <app-tab key="activity" title="Activity">Latest changes by your team.</app-tab>
+                </app-tabs>
+                <app-tabs active="day" type="card" size="small">
+                    <app-tab key="day" title="Today">Card tabs suit toolbars and dense panels.</app-tab>
+                    <app-tab key="week" title="This week">Week view</app-tab>
+                    <app-tab key="month" title="This month">Month view</app-tab>
+                </app-tabs>
+            </app-card>
+
+            <app-card title="Steps">
+                <p class="m-demo-desc">Guide users through a multi-step task.</p>
+                <app-steps current="1">
+                    <app-step title="Account" description="Completed" />
+                    <app-step title="Billing" description="In progress" />
+                    <app-step title="Review" description="Waiting" />
+                </app-steps>
+                <app-steps current="2" size="small" status="error" style="margin-top: 24px">
+                    <app-step title="Upload" />
+                    <app-step title="Validate" />
+                    <app-step title="Import" />
+                </app-steps>
+            </app-card>
+
+            <app-card title="Dropdown and Pagination">
+                <p class="m-demo-desc">Secondary actions in a menu; paging for long lists.</p>
+                <div class="m-demo-row">
+                    <app-dropdown>
+                        <app-button>Actions <app-icon type="down" /></app-button>
+                        <dropdown-menu>
+                            <app-dropdown-item icon="edit">Edit</app-dropdown-item>
+                            <app-dropdown-item icon="copy">Duplicate</app-dropdown-item>
+                            <app-dropdown-divider />
+                            <app-dropdown-item icon="delete" danger hx-post="/ui/components/demo/delete" hx-swap="none" hx-confirm="Delete this invoice?" data-confirm-danger data-confirm-ok="Delete">Delete</app-dropdown-item>
+                        </dropdown-menu>
+                    </app-dropdown>
+                </div>
+                <app-pagination current="2" total="85" page-size="10" table="false" style="margin-top: 16px" />
+                <app-pagination current="2" total="85" page-size="10" table="false" size="small" show-total="false" style="margin-top: 16px" />
+            </app-card>
+        </div>
+    </section>
+
+    <section id="data-entry" class="m-demo-section">
+        <h2 class="m-section-title">Data Entry</h2>
+        <div class="m-demo-grid">
+            <app-card title="Input">
+                <p class="m-demo-desc">Text fields with prefixes, addons, passwords, search and counters.</p>
+                <div class="ant-form ant-form-vertical">
+                    <app-form-item asp-for="Name" label="Username">
+                        <app-input asp-for="Name" placeholder="Enter a username" prefix-icon="user" allow-clear />
+                    </app-form-item>
+                    <app-form-item asp-for="Website" label="Website">
+                        <app-input asp-for="Website" addon-before="https://" addon-after=".com" />
+                    </app-form-item>
+                    <app-form-item asp-for="Password" label="Password">
+                        <app-input asp-for="Password" type="password" placeholder="At least 8 characters" />
+                    </app-form-item>
+                    <app-form-item asp-for="Query" label="Search">
+                        <app-input-search asp-for="Query" placeholder="Search customers" enter-button="true" />
+                    </app-form-item>
+                    <app-form-item asp-for="Notes" label="Notes">
+                        <app-textarea asp-for="Notes" rows="3" maxlength="200" show-count />
+                    </app-form-item>
+                </div>
+            </app-card>
+
+            <app-card title="Select, Number and Date">
+                <p class="m-demo-desc">Choose from a list, enter numbers with steppers, pick dates and times.</p>
+                <div class="ant-form ant-form-vertical">
+                    <app-form-item asp-for="Plan" label="Plan">
+                        <app-select asp-for="Plan" items="plans" />
+                    </app-form-item>
+                    <app-form-item asp-for="Seats" label="Seats">
+                        <app-input-number asp-for="Seats" min="1" max="500" />
+                    </app-form-item>
+                    <app-form-item asp-for="Start" label="Start date">
+                        <app-date-picker asp-for="Start" />
+                    </app-form-item>
+                    <app-form-item asp-for="Period" label="Billing period">
+                        <app-range-picker asp-for="Period" />
+                    </app-form-item>
+                    <app-form-item asp-for="ReportAt" label="Daily report at">
+                        <app-date-picker asp-for="ReportAt" picker="time" />
+                    </app-form-item>
+                </div>
+            </app-card>
+
+            <app-card title="Choice controls">
+                <p class="m-demo-desc">Switches apply immediately; checkboxes and radios are submitted with the form.</p>
+                <div class="ant-form ant-form-vertical">
+                    <app-form-item asp-for="Alerts" label="Email alerts">
+                        <app-switch asp-for="Alerts" hx-post="/ui/components/demo/alerts" hx-trigger="change" hx-include="find input" hx-swap="none" />
+                    </app-form-item>
+                    <app-form-item label="Channels">
+                        <app-checkbox-group name="Channels" items="channels" />
+                    </app-form-item>
+                    <app-form-item asp-for="Priority" label="Priority">
+                        <app-radio-group asp-for="Priority" items="priorities" />
+                    </app-form-item>
+                    <app-form-item asp-for="Size" label="Size">
+                        <app-radio-group asp-for="Size" items="sizes" button-style="solid" />
+                    </app-form-item>
+                    <app-form-item asp-for="View" label="View">
+                        <app-segmented asp-for="View" items="GalleryData.Views" />
+                    </app-form-item>
+                </div>
+            </app-card>
+
+            <app-card title="Slider, Rate and Upload">
+                <p class="m-demo-desc">Pick a value in a range, rate, or attach files.</p>
+                <div class="ant-form ant-form-vertical">
+                    <app-form-item asp-for="Discount" label="Discount">
+                        <app-slider asp-for="Discount" show-value value-format="{0}%" aria-label="Discount" />
+                    </app-form-item>
+                    <app-form-item asp-for="Rating" label="Satisfaction">
+                        <app-rate asp-for="Rating" tooltips="Terrible,Bad,Normal,Good,Wonderful" />
+                    </app-form-item>
+                    <app-form-item label="Attachments">
+                        <app-upload name="files" drag multiple text="Click or drag files here to upload" hint="PDF or images, up to 10 MB each." />
+                    </app-form-item>
+                </div>
+            </app-card>
+        </div>
+    </section>
+
+    <section id="data-display" class="m-demo-section">
+        <h2 class="m-section-title">Data Display</h2>
+        <div class="m-demo-grid">
+            <app-card title="Avatar, Badge and Tag">
+                <p class="m-demo-desc">People, counts, statuses and labels.</p>
+                <div class="m-demo-row">
+                    <app-avatar-group max-count="3">
+                        <app-avatar name="Serena Park" color="#1677ff" />
+                        <app-avatar name="Jae Lee" color="#52c41a" />
+                        <app-avatar name="Mia Kim" color="#faad14" />
+                        <app-avatar name="Ana Ruiz" color="#eb2f96" />
+                        <app-avatar name="Tom Nash" color="#722ed1" />
+                    </app-avatar-group>
+                    <app-badge count="5"><app-avatar shape="square" icon="user" /></app-badge>
+                    <app-badge dot><app-avatar shape="square" icon="bell" /></app-badge>
+                    <app-badge count="120" overflow-count="99"><app-avatar shape="square" icon="mail" /></app-badge>
+                </div>
+                <div class="m-demo-row">
+                    <app-badge status="success" text="Active" />
+                    <app-badge status="processing" text="Syncing" />
+                    <app-badge status="warning" text="Trial" />
+                    <app-badge status="error" text="Suspended" />
+                    <app-badge status="default" text="Archived" />
+                </div>
+                <div class="m-demo-row">
+                    <app-tag color="blue">Enterprise</app-tag>
+                    <app-tag color="green">Paid</app-tag>
+                    <app-tag color="orange">Pending</app-tag>
+                    <app-tag color="red">Overdue</app-tag>
+                    <app-tag color="purple">Beta</app-tag>
+                    <app-tag>Default</app-tag>
+                </div>
+            </app-card>
+
+            <app-card title="Statistic and Ribbon">
+                <p class="m-demo-desc">Headline numbers, and a ribbon to flag a featured item.</p>
+                <app-row gutter="16">
+                    <app-col span="12"><app-statistic title="Active users" value="112893" /></app-col>
+                    <app-col span="12"><app-statistic title="Conversion" value="9.3" precision="1" suffix="%" /></app-col>
+                </app-row>
+                <div style="margin-top: 16px">
+                    <app-badge-ribbon text="Recommended">
+                        <div class="ant-card ant-card-bordered ant-card-small">
+                            <div class="ant-card-head"><div class="ant-card-head-wrapper"><div class="ant-card-head-title">Business plan</div></div></div>
+                            <div class="ant-card-body">$49 per seat per month, billed yearly.</div>
+                        </div>
+                    </app-badge-ribbon>
+                </div>
+            </app-card>
+
+            <app-card title="Descriptions">
+                <p class="m-demo-desc">Read-only key/value details of a single record.</p>
+                <app-descriptions bordered column="2" size="small">
+                    <app-descriptions-item label="Customer">Acme Corporation</app-descriptions-item>
+                    <app-descriptions-item label="Plan">Enterprise</app-descriptions-item>
+                    <app-descriptions-item label="Owner">Serena Park</app-descriptions-item>
+                    <app-descriptions-item label="Status"><app-badge status="success" text="Active" /></app-descriptions-item>
+                    <app-descriptions-item label="Address" span="2">1 Market Street, San Francisco, CA</app-descriptions-item>
+                </app-descriptions>
+            </app-card>
+
+            <app-card title="Table">
+                <p class="m-demo-desc">Tabular data. For server paging, filters and batch actions see Customers.</p>
+                <app-table size="small" caption="Recent invoices">
+                    <thead><tr><th scope="col">Invoice</th><th scope="col">Customer</th><th scope="col" class="ant-table-cell m-num" style="text-align:right">Amount</th><th scope="col">Status</th></tr></thead>
+                    <tbody>
+                        @foreach (var i in GalleryData.Invoices)
+                        {
+                            <tr>
+                                <td>@i.Number</td>
+                                <td>@i.Customer</td>
+                                <td class="ant-table-cell m-num" style="text-align:right">@i.Amount.ToString("C0")</td>
+                                <td><app-tag color="@(i.Status == "Paid" ? "green" : i.Status == "Overdue" ? "red" : "orange")">@i.Status</app-tag></td>
+                            </tr>
+                        }
+                    </tbody>
+                </app-table>
+            </app-card>
+
+            <app-card title="List">
+                <p class="m-demo-desc">A list of records with an avatar, a description and actions.</p>
+                <app-list>
+                    @foreach (var i in GalleryData.Invoices.Take(3))
+                    {
+                        <app-list-item title="@i.Customer" description="@($"{i.Number} · {i.Amount:C0}")" avatar-name="@i.Customer" avatar-color="#1677ff">
+                            <list-item-actions><a href="#">View</a></list-item-actions>
+                        </app-list-item>
+                    }
+                </app-list>
+            </app-card>
+
+            <app-card title="Timeline">
+                <p class="m-demo-desc">Events in time order.</p>
+                <app-timeline>
+                    <app-timeline-item color="green">Invoice INV-1042 paid · 09:12</app-timeline-item>
+                    <app-timeline-item color="blue">Plan upgraded to Enterprise · yesterday</app-timeline-item>
+                    <app-timeline-item color="red">Payment failed · 3 days ago</app-timeline-item>
+                    <app-timeline-item color="gray">Account created · Jan 2026</app-timeline-item>
+                </app-timeline>
+            </app-card>
+
+            <app-card title="Collapse">
+                <p class="m-demo-desc">Progressive disclosure for secondary content.</p>
+                <app-collapse active="1">
+                    <app-panel key="1" header="How is billing calculated?">Per active seat, prorated daily.</app-panel>
+                    <app-panel key="2" header="Can I change plans later?">Yes, at any time. Changes apply to the next invoice.</app-panel>
+                    <app-panel key="3" header="Where is my data stored?">In the region you selected when the workspace was created.</app-panel>
+                </app-collapse>
+            </app-card>
+
+            <app-card title="Tooltip, Popover and Empty">
+                <p class="m-demo-desc">Extra context on hover, and a clear empty state.</p>
+                <div class="m-demo-row">
+                    <app-tooltip title="Copies the invoice link"><app-button icon="link">Hover me</app-button></app-tooltip>
+                    <app-popover title="Seats" content="18 of 25 seats used. Add seats from Billing."><app-button>Popover</app-button></app-popover>
+                </div>
+                <app-empty description="No invoices yet" style="margin-top: 16px" />
+            </app-card>
+        </div>
+    </section>
+
+    <section id="feedback" class="m-demo-section">
+        <h2 class="m-section-title">Feedback</h2>
+        <div class="m-demo-grid">
+            <app-card title="Alert">
+                <p class="m-demo-desc">Page-level messages that stay until dismissed.</p>
+                <div class="m-stack m-stack-sm">
+                    <app-alert type="success" message="Payment received" show-icon />
+                    <app-alert type="info" message="A new version is available" show-icon closable />
+                    <app-alert type="warning" message="Your trial ends in 3 days" show-icon />
+                    <app-alert type="error" message="Import failed" show-icon>Row 14: the email address is not valid. Fix the file and upload it again.</app-alert>
+                </div>
+            </app-card>
+
+            <app-card title="Progress">
+                <p class="m-demo-desc">Completion of a task or usage of a quota.</p>
+                <app-progress percent="30" />
+                <app-progress percent="70" status="active" />
+                <app-progress percent="45" status="exception" />
+                <app-progress percent="100" />
+                <div class="m-demo-row" style="margin-top: 16px">
+                    <app-progress type="circle" percent="75" width="96" />
+                    <app-progress type="circle" percent="100" width="96" />
+                    <app-progress type="dashboard" percent="62" width="96" />
+                </div>
+            </app-card>
+
+            <app-card title="Message, Notification, Modal and Popconfirm">
+                <p class="m-demo-desc">Transient feedback, dialogs and confirmation of destructive actions.</p>
+                <div class="m-demo-row">
+                    <app-button hx-post="/ui/components/demo/message" hx-swap="none">Message</app-button>
+                    <app-button hx-post="/ui/components/demo/notification" hx-swap="none">Notification</app-button>
+                    <app-button type="primary" x-data x-on:click="$dispatch('modulus:modal-open', 'invite')">Open modal</app-button>
+                    <app-button danger hx-post="/ui/components/demo/delete" hx-swap="none" hx-confirm="Delete this invoice?" data-confirm-danger data-confirm-ok="Delete">Delete</app-button>
+                </div>
+                <app-modal name="invite" title="Invite teammates" ok-text="Send invites" form="invite-form">
+                    <form id="invite-form" hx-post="/ui/components/demo/invite" hx-swap="none">
+                        <p>Invitations expire after 7 days. Teammates join with the Member role.</p>
+                        <app-input name="emails" placeholder="name@company.com, …" prefix-icon="mail" aria-label="Email addresses" />
+                    </form>
+                </app-modal>
+            </app-card>
+
+            <app-card title="Skeleton and Spin">
+                <p class="m-demo-desc">Placeholders while content loads.</p>
+                <app-skeleton active avatar />
+                <app-spin tip="Loading…" style="margin-top: 16px">
+                    <app-alert type="info" message="Loading content" description="Spin wraps content while it refreshes." />
+                </app-spin>
+            </app-card>
+
+            <app-card title="Result">
+                <p class="m-demo-desc">The outcome of an operation, with next steps.</p>
+                <app-result status="success" title="Order placed" sub-title="Order 2026-0142 is being processed. It usually ships within two days.">
+                    <result-extra>
+                        <app-button type="primary">View order</app-button>
+                        <app-button>Buy again</app-button>
+                    </result-extra>
+                </app-result>
+            </app-card>
+        </div>
+    </section>

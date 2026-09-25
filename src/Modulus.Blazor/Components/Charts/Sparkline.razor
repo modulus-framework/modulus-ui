@@ -1,0 +1,36 @@
+@* Area sparkline for statistic cards. Hover shows each point's label and value. *@
+@using Modulus.Ui.Abstractions.Charts
+
+<div class="m-chart m-sparkline @Class" role="img" aria-label="@AriaLabel">
+    <svg viewBox="0 0 100 46" preserveAspectRatio="none" aria-hidden="true">
+        @if (Area)
+        {
+            <path class="m-spark-area" d="@_paths.Area" />
+        }
+        <path class="m-spark-line" d="@_paths.Line" />
+    </svg>
+    <div class="m-hits" aria-hidden="true">
+        @foreach (var point in Data)
+        {
+            <span class="m-hit"><span class="m-tip"><span class="m-tip-label">@point.Label</span><span class="m-tip-value">@Format(point.Value)</span></span></span>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartPoint> Data { get; set; } = [];
+
+    /// <summary>Fill under the line. False draws a plain line.</summary>
+    [Parameter] public bool Area { get; set; } = true;
+
+    [Parameter] public Func<double, string> Format { get; set; } = v => v.ToString("N0");
+
+    [Parameter] public string? AriaLabel { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    private (string Line, string Area) _paths;
+
+    protected override void OnParametersSet() =>
+        _paths = ChartGeometry.Sparkline(Data.Select(p => p.Value).ToList(), 100, 46);
+}

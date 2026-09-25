@@ -1,50 +1,634 @@
 {
-  "version": "1.0.0",
-  "antdVersion": "1.6.2",
-  "generatedAt": "2026-09-25T10:00:00Z",
-  "summary": {
-    "totalComponents": 40,
-    "implemented": 40,
-    "gaps": 0,
-    "inProgress": 0
-  },
+  "$comment": "Coverage of Ant Design Blazor by Modulus. status: alias = App* subclass in Modulus.Blazor (verified by tools/antd-drift); service = used through an injected AntDesign service; direct = use the AntDesign component as-is; superseded = replaced by a Pro pattern; pro = official AntDesign.ProLayout; modulus = Modulus Pro component. mvc = tag helper (app-*), partial or htmx response helper with the same DOM; entries without mvc are Blazor-only (interactive widgets that need a component runtime, e.g. Cascader, Transfer, Tree, Calendar). knownComponentTypes is the baseline written by `antd-drift --update-baseline`.",
+  "antDesignVersion": "1.6.2",
   "components": {
     "General": {
-      "Button": { "status": "done", "blazor": true, "mvc": true },
-      "Icon": { "status": "done", "blazor": true, "mvc": true },
-      "Typography": { "status": "done", "blazor": true, "mvc": false }
+      "Button": {
+        "status": "alias",
+        "mvc": "app-button"
+      },
+      "Icon": {
+        "status": "alias",
+        "mvc": "app-icon"
+      },
+      "Title": {
+        "status": "alias",
+        "mvc": "app-title"
+      },
+      "Text": {
+        "status": "alias",
+        "mvc": "app-text"
+      },
+      "Paragraph": {
+        "status": "alias",
+        "mvc": "app-paragraph"
+      },
+      "Link": {
+        "status": "alias",
+        "mvc": "app-link"
+      }
     },
     "Layout": {
-      "Divider": { "status": "done", "blazor": true, "mvc": true },
-      "Grid": { "status": "done", "blazor": true, "mvc": true },
-      "Space": { "status": "done", "blazor": true, "mvc": true }
+      "Divider": {
+        "status": "alias",
+        "mvc": "app-divider"
+      },
+      "Flex": {
+        "status": "alias",
+        "mvc": "app-flex"
+      },
+      "Row": {
+        "status": "alias",
+        "mvc": "app-row"
+      },
+      "Col": {
+        "status": "alias",
+        "mvc": "app-col"
+      },
+      "Layout": {
+        "status": "alias",
+        "mvc": "_ModulusLayout shell"
+      },
+      "Header": {
+        "status": "alias",
+        "mvc": "_ModulusLayout shell"
+      },
+      "Sider": {
+        "status": "alias",
+        "mvc": "_ModulusLayout shell"
+      },
+      "Content": {
+        "status": "alias",
+        "mvc": "_ModulusLayout shell"
+      },
+      "Footer": {
+        "status": "alias",
+        "mvc": "_ModulusLayout shell"
+      },
+      "Space": {
+        "status": "alias",
+        "mvc": "app-space"
+      },
+      "SpaceItem": {
+        "status": "alias",
+        "mvc": "app-space (each child)"
+      },
+      "Splitter": {
+        "status": "alias"
+      }
     },
     "Navigation": {
-      "Menu": { "status": "done", "blazor": true, "mvc": true },
-      "Breadcrumb": { "status": "done", "blazor": true, "mvc": true },
-      "Pagination": { "status": "done", "blazor": true, "mvc": true },
-      "Tabs": { "status": "done", "blazor": true, "alpine": true }
-    },
-    "DataDisplay": {
-      "Card": { "status": "done", "blazor": true, "mvc": true },
-      "Table": { "status": "done", "blazor": true, "mvc": true },
-      "Tag": { "status": "done", "blazor": true, "mvc": true }
+      "Affix": {
+        "status": "alias"
+      },
+      "Anchor": {
+        "status": "alias"
+      },
+      "Breadcrumb": {
+        "status": "alias",
+        "mvc": "app-breadcrumb"
+      },
+      "Dropdown": {
+        "status": "alias",
+        "mvc": "app-dropdown"
+      },
+      "DropdownButton": {
+        "status": "alias",
+        "mvc": "app-dropdown around an app-button"
+      },
+      "Menu": {
+        "status": "alias",
+        "mvc": "_ModulusLayout sider menu (IMenuProvider)"
+      },
+      "MenuItem": {
+        "status": "alias",
+        "mvc": "_ModulusLayout sider menu (IMenuProvider)"
+      },
+      "SubMenu": {
+        "status": "alias",
+        "mvc": "_ModulusLayout sider menu (IMenuProvider)"
+      },
+      "Pagination": {
+        "status": "alias",
+        "mvc": "app-pagination"
+      },
+      "Steps": {
+        "status": "alias",
+        "mvc": "app-steps"
+      },
+      "Step": {
+        "status": "alias",
+        "mvc": "app-step"
+      },
+      "Tabs": {
+        "status": "alias",
+        "mvc": "app-tabs"
+      },
+      "TabPane": {
+        "status": "alias",
+        "mvc": "app-tab"
+      },
+      "BackTop": {
+        "status": "alias"
+      }
     },
     "DataEntry": {
-      "Form": { "status": "done", "blazor": true, "mvc": true },
-      "Input": { "status": "done", "blazor": true, "mvc": true }
+      "AutoComplete": {
+        "status": "alias",
+        "mvc": "app-input items (datalist)"
+      },
+      "Cascader": {
+        "status": "alias"
+      },
+      "Checkbox": {
+        "status": "alias",
+        "mvc": "app-checkbox"
+      },
+      "CheckboxGroup": {
+        "status": "alias",
+        "mvc": "app-checkbox-group"
+      },
+      "DatePicker": {
+        "status": "alias",
+        "mvc": "app-date-picker"
+      },
+      "RangePicker": {
+        "status": "alias",
+        "mvc": "app-range-picker"
+      },
+      "TimePicker": {
+        "status": "alias",
+        "mvc": "app-date-picker picker=\"time\""
+      },
+      "Form": {
+        "status": "alias",
+        "mvc": "<form> + app-form-item"
+      },
+      "FormItem": {
+        "status": "alias",
+        "mvc": "app-form-item"
+      },
+      "Input": {
+        "status": "alias",
+        "mvc": "app-input"
+      },
+      "InputGroup": {
+        "status": "alias",
+        "mvc": "app-input addon-before/addon-after"
+      },
+      "InputPassword": {
+        "status": "alias",
+        "mvc": "app-input type=\"password\""
+      },
+      "Search": {
+        "status": "alias",
+        "mvc": "app-input-search"
+      },
+      "TextArea": {
+        "status": "alias",
+        "mvc": "app-textarea"
+      },
+      "InputNumber": {
+        "status": "alias",
+        "mvc": "app-input-number"
+      },
+      "Mentions": {
+        "status": "alias"
+      },
+      "Radio": {
+        "status": "alias",
+        "mvc": "app-radio-group"
+      },
+      "RadioGroup": {
+        "status": "alias",
+        "mvc": "app-radio-group"
+      },
+      "Rate": {
+        "status": "alias",
+        "mvc": "app-rate"
+      },
+      "Select": {
+        "status": "alias",
+        "mvc": "app-select"
+      },
+      "Slider": {
+        "status": "alias",
+        "mvc": "app-slider"
+      },
+      "Switch": {
+        "status": "alias",
+        "mvc": "app-switch"
+      },
+      "Transfer": {
+        "status": "alias"
+      },
+      "TreeSelect": {
+        "status": "alias"
+      },
+      "Upload": {
+        "status": "alias",
+        "mvc": "app-upload"
+      }
+    },
+    "DataDisplay": {
+      "Avatar": {
+        "status": "alias",
+        "mvc": "app-avatar"
+      },
+      "AvatarGroup": {
+        "status": "alias",
+        "mvc": "app-avatar-group"
+      },
+      "Badge": {
+        "status": "alias",
+        "mvc": "app-badge"
+      },
+      "BadgeRibbon": {
+        "status": "alias",
+        "mvc": "app-badge-ribbon"
+      },
+      "Calendar": {
+        "status": "alias"
+      },
+      "Card": {
+        "status": "alias",
+        "mvc": "app-card"
+      },
+      "Carousel": {
+        "status": "alias"
+      },
+      "Collapse": {
+        "status": "alias",
+        "mvc": "app-collapse"
+      },
+      "Panel": {
+        "status": "alias",
+        "mvc": "app-panel"
+      },
+      "Descriptions": {
+        "status": "alias",
+        "mvc": "app-descriptions"
+      },
+      "DescriptionsItem": {
+        "status": "alias",
+        "mvc": "app-descriptions-item"
+      },
+      "Empty": {
+        "status": "alias",
+        "mvc": "app-empty"
+      },
+      "Image": {
+        "status": "alias",
+        "mvc": "app-image"
+      },
+      "List": {
+        "status": "alias",
+        "type": "AntList",
+        "mvc": "app-list"
+      },
+      "Popover": {
+        "status": "alias",
+        "mvc": "app-popover"
+      },
+      "Segmented": {
+        "status": "alias",
+        "mvc": "app-segmented"
+      },
+      "Statistic": {
+        "status": "alias",
+        "mvc": "app-statistic"
+      },
+      "CountDown": {
+        "status": "alias"
+      },
+      "Table": {
+        "status": "alias",
+        "mvc": "app-table"
+      },
+      "Tag": {
+        "status": "alias",
+        "mvc": "app-tag"
+      },
+      "Timeline": {
+        "status": "alias",
+        "mvc": "app-timeline"
+      },
+      "TimelineItem": {
+        "status": "alias",
+        "mvc": "app-timeline-item"
+      },
+      "Tooltip": {
+        "status": "alias",
+        "mvc": "app-tooltip"
+      },
+      "Tree": {
+        "status": "alias"
+      }
     },
     "Feedback": {
-      "Alert": { "status": "done", "blazor": true, "mvc": true },
-      "Modal": { "status": "done", "blazor": true, "mvc": true, "alpine": true },
-      "Drawer": { "status": "done", "blazor": true, "mvc": true, "alpine": true }
+      "Alert": {
+        "status": "alias",
+        "mvc": "app-alert"
+      },
+      "Drawer": {
+        "status": "alias",
+        "mvc": "layout drawer (Alpine store)"
+      },
+      "Modal": {
+        "status": "alias",
+        "mvc": "app-modal"
+      },
+      "Popconfirm": {
+        "status": "alias",
+        "mvc": "hx-confirm (modulus confirm dialog)"
+      },
+      "Progress": {
+        "status": "alias",
+        "mvc": "app-progress"
+      },
+      "Result": {
+        "status": "alias",
+        "mvc": "app-result"
+      },
+      "Skeleton": {
+        "status": "alias",
+        "mvc": "app-skeleton"
+      },
+      "Spin": {
+        "status": "alias",
+        "mvc": "app-spin"
+      },
+      "Watermark": {
+        "status": "alias",
+        "mvc": "app-watermark"
+      },
+      "Message": {
+        "status": "service",
+        "note": "Inject IMessageService; MVC: Response.HxMessage()",
+        "mvc": "Response.HxMessage"
+      },
+      "Notification": {
+        "status": "service",
+        "note": "Inject INotificationService",
+        "mvc": "Response.HxNotify"
+      },
+      "Confirm": {
+        "status": "service",
+        "note": "Inject IConfirmService / ModalService; MVC: hx-confirm",
+        "mvc": "hx-confirm (modulus confirm dialog)"
+      }
+    },
+    "Other": {
+      "ConfigProvider": {
+        "status": "direct",
+        "note": "Wrap the app when you need RTL or locale overrides"
+      },
+      "AntContainer": {
+        "status": "direct",
+        "note": "Required once in Routes.razor; hosts overlays"
+      },
+      "Comment": {
+        "status": "direct",
+        "note": "Removed from antd v5; not aliased"
+      },
+      "PageHeader": {
+        "status": "superseded",
+        "note": "Use ProLayout PageContainer (Blazor) / app-page-container (MVC)",
+        "mvc": "app-page-container"
+      },
+      "ReuseTabs": {
+        "status": "direct",
+        "note": "Multi-tab admin shells; opt-in"
+      }
     },
     "Pro": {
-      "ProTable": { "status": "done", "origin": "custom", "blazor": true },
-      "ProForm": { "status": "done", "origin": "custom", "blazor": true },
-      "ProCard": { "status": "done", "origin": "custom", "blazor": true },
-      "ModalForm": { "status": "done", "origin": "custom", "blazor": true },
-      "DrawerForm": { "status": "done", "origin": "custom", "blazor": true }
+      "BasicLayout": {
+        "status": "pro",
+        "note": "ModulusLayout wraps AntDesign.ProLayout BasicLayout; MVC: _ModulusLayout",
+        "mvc": "_ModulusLayout shell"
+      },
+      "PageContainer": {
+        "status": "pro",
+        "mvc": "app-page-container"
+      },
+      "ProTable": {
+        "status": "modulus",
+        "mvc": "htmx table pattern: app-table + app-pagination partial (Customers/_Table)"
+      },
+      "QueryFilter": {
+        "status": "modulus"
+      },
+      "ModalForm": {
+        "status": "modulus"
+      },
+      "DrawerForm": {
+        "status": "modulus"
+      },
+      "FooterToolbar": {
+        "status": "modulus"
+      },
+      "StatisticCard": {
+        "status": "modulus",
+        "mvc": "app-statistic-card"
+      },
+      "Trend": {
+        "status": "modulus",
+        "mvc": "app-trend"
+      },
+      "Sparkline": {
+        "status": "modulus",
+        "mvc": "app-sparkline"
+      },
+      "MiniBar": {
+        "status": "modulus",
+        "mvc": "app-mini-bar"
+      },
+      "BarChart": {
+        "status": "modulus",
+        "mvc": "app-bar-chart"
+      }
     }
-  }
+  },
+  "knownComponentTypes": [
+    "ActionColumn",
+    "Affix",
+    "Alert",
+    "Anchor",
+    "AnchorLink",
+    "AntContainer",
+    "AntList",
+    "AutoComplete",
+    "AutoCompleteInput",
+    "AutoCompleteOptGroup",
+    "AutoCompleteOption",
+    "AutoCompleteSearch",
+    "Avatar",
+    "AvatarGroup",
+    "BackTop",
+    "Badge",
+    "BadgeRibbon",
+    "Breadcrumb",
+    "BreadcrumbItem",
+    "Button",
+    "ButtonGroup",
+    "Calendar",
+    "CalendarHeader",
+    "Card",
+    "CardAction",
+    "CardGrid",
+    "CardMeta",
+    "Carousel",
+    "CarouselSlick",
+    "Cascader",
+    "Checkbox",
+    "CheckboxGroup",
+    "Col",
+    "Collapse",
+    "Column",
+    "ColumnBase",
+    "ColumnDefinition",
+    "ComfirmContainer",
+    "Comment",
+    "Component",
+    "ConfigProvider",
+    "Confirm",
+    "Content",
+    "CountDown",
+    "DatePicker",
+    "DatePickerPanelBase",
+    "Descriptions",
+    "DescriptionsItem",
+    "Dialog",
+    "DialogWrapper",
+    "DirectoryTree",
+    "Divider",
+    "DownloadButton",
+    "DraftMonitor",
+    "Drawer",
+    "DrawerContainer",
+    "Dropdown",
+    "DropdownButton",
+    "Empty",
+    "EmptyDefaultImg",
+    "EmptySimpleImg",
+    "EnumCheckboxGroup",
+    "EnumRadioGroup",
+    "EnumSelect",
+    "Flex",
+    "Footer",
+    "ForeachLoop",
+    "Form",
+    "FormItem",
+    "FormProvider",
+    "GenerateColumns",
+    "GenerateFormItem",
+    "GridCol",
+    "GridRow",
+    "Header",
+    "Icon",
+    "IconFont",
+    "Image",
+    "ImagePreview",
+    "ImagePreviewContainer",
+    "ImagePreviewGroup",
+    "Input",
+    "InputGroup",
+    "InputNumber",
+    "InputPassword",
+    "Layout",
+    "Link",
+    "ListItem",
+    "ListItemMeta",
+    "Mentions",
+    "MentionsOption",
+    "Menu",
+    "MenuDivider",
+    "MenuItem",
+    "MenuItemGroup",
+    "MenuLink",
+    "Message",
+    "MessageItem",
+    "Modal",
+    "ModalCancelFooter",
+    "ModalContainer",
+    "ModalFooter",
+    "ModalOkFooter",
+    "MonthPicker",
+    "Notification",
+    "NotificationBase",
+    "NotificationItem",
+    "PageHeader",
+    "Pagination",
+    "PaginationOptions",
+    "PaginationPager",
+    "Panel",
+    "Paragraph",
+    "Popconfirm",
+    "Popover",
+    "Progress",
+    "PropertyColumn",
+    "QuarterPicker",
+    "Radio",
+    "RadioGroup",
+    "RangePicker",
+    "Rate",
+    "RateItem",
+    "Result",
+    "ReusePages",
+    "ReuseTabs",
+    "Row",
+    "Search",
+    "Segmented",
+    "SegmentedItem",
+    "Select",
+    "SelectOption",
+    "Selection",
+    "Sider",
+    "SimpleSelect",
+    "SimpleSelectOption",
+    "SimpleTableHeader",
+    "Skeleton",
+    "SkeletonElement",
+    "Slider",
+    "Space",
+    "SpaceItem",
+    "Spin",
+    "Splitter",
+    "SplitterPanel",
+    "Statistic",
+    "Step",
+    "Steps",
+    "SubMenu",
+    "SummaryCell",
+    "SummaryRow",
+    "Switch",
+    "TabPane",
+    "Table",
+    "TableCell",
+    "TableHeader",
+    "TableRow",
+    "Tabs",
+    "Tag",
+    "Template",
+    "Text",
+    "TextArea",
+    "TimePicker",
+    "Timeline",
+    "TimelineItem",
+    "Title",
+    "Tooltip",
+    "Transfer",
+    "Tree",
+    "TreeIndent",
+    "TreeNode",
+    "TreeNodeCheckbox",
+    "TreeNodeSwitcher",
+    "TreeNodeTitle",
+    "TreeSelect",
+    "Typography",
+    "Upload",
+    "Watermark",
+    "WeekPicker",
+    "YearPicker"
+  ]
 }

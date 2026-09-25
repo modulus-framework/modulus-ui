@@ -1,0 +1,133 @@
+@page "/apps/permissions"
+@inject SampleStore Store
+@inject IMessageService Message
+
+<PageTitle>Permissions · Modulus</PageTitle>
+
+<PageHeading Pretitle="Users & access" Title="Permissions" Subtitle="Each permission is granted to one or more roles. Core permissions can't be removed." />
+
+<div id="permissions-page">
+    <div class="ant-card m-table-card">
+        <div class="ant-card-body">
+            <div class="m-table-toolbar">
+                <div class="m-table-toolbar-title">All permissions <span class="m-badge m-badge-gray-lt">@Filtered.Count</span></div>
+                <div class="m-table-toolbar-actions">
+                    <Input @bind-Value="_keyword" Placeholder="Search permissions…" AllowClear Class="m-table-toolbar-search" Prefix="@_searchIcon" BindOnInput aria-label="Search permissions" />
+                    <Button Type="@ButtonType.Primary" Icon="plus" OnClick="Create">Add permission</Button>
+                </div>
+            </div>
+            <div class="ant-table-wrapper">
+                <div class="ant-table ant-table-middle"><div class="ant-table-container"><div class="ant-table-content" style="overflow-x:auto">
+                    <table style="table-layout:fixed;min-width:760px">
+                        <colgroup><col style="width:32%" /><col style="width:34%" /><col /><col style="width:110px" /></colgroup>
+                        <thead class="ant-table-thead">
+                            <tr><th class="ant-table-cell">Name</th><th class="ant-table-cell">Assigned to</th><th class="ant-table-cell">Created</th><th class="ant-table-cell" style="text-align:right">Actions</th></tr>
+                        </thead>
+                        <tbody class="ant-table-tbody">
+                            @if (Filtered.Count == 0)
+                            {
+                                <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="4"><div class="m-table-empty">No permissions match “@_keyword”</div></td></tr>
+                            }
+                            @foreach (var p in Filtered)
+                            {
+                                <tr class="ant-table-row">
+                                    <td class="ant-table-cell"><span class="m-heading m-medium">@p.Name</span>@if (p.Core) { <span class="m-badge m-badge-gray-lt m-ml-8">Core</span> }</td>
+                                    <td class="ant-table-cell">
+                                        <div class="m-tag-list">
+                                            @foreach (var role in p.Roles)
+                                            {
+                                                <span class="m-badge m-badge-@SampleUi.RoleTone(role)-lt">@role</span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="ant-table-cell m-muted">@Fmt.Date(p.CreatedAt), @Fmt.Time(p.CreatedAt)</td>
+                                    <td class="ant-table-cell" style="text-align:right">
+                                        <div class="m-row-actions">
+                                            <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Edit @p.Name" title="Edit"
+                                                    @onclick="() => Edit(p)"><Ti Name="edit" /></button>
+                                            <Popconfirm Title="@($"Delete the “{p.Name}” permission?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => DeleteAsync(p)" Disabled="p.Core">
+                                                <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @p.Name" title="@(p.Core ? "Core permissions can't be deleted" : "Delete")" disabled="@p.Core"><Ti Name="trash" /></button>
+                                            </Popconfirm>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<DrawerForm TModel="PermissionInput" Title="@(_editingId is null ? "Add permission" : "Edit permission")" @bind-Visible="_drawerOpen" Model="_input" OnFinish="SaveAsync" SubmitText="@(_editingId is null ? "Add permission" : "Save changes")">
+    @if (_editingId is not null)
+    {
+        <Alert Type="@AlertType.Warning" ShowIcon="true" Message="Changing a permission affects every role it's assigned to." Class="m-mb-16" />
+    }
+    <FormItem Label="Permission name">
+        <Input @bind-Value="context.Name" Placeholder="e.g. Export reports" />
+    </FormItem>
+    <FormItem Label="Assign to roles">
+        <div class="m-check-grid">
+            @foreach (var role in Lookups.Roles)
+            {
+                <Checkbox Checked="context.Roles.Contains(role)" CheckedChanged="on => ToggleRole(context, role, on)">@role</Checkbox>
+            }
+        </div>
+    </FormItem>
+    <FormItem>
+        <Checkbox Checked="context.Core" CheckedChanged="on => context.Core = on">Core permission (can't be deleted)</Checkbox>
+    </FormItem>
+</DrawerForm>
+
+@code {
+    private IReadOnlyList<AppPermission> _permissions = [];
+    private string? _keyword;
+    private PermissionInput _input = new();
+    private int? _editingId;
+    private bool _drawerOpen;
+    private readonly RenderFragment _searchIcon = @<Ti Name="search" />;
+
+    private List<AppPermission> Filtered =>
+        _permissions.Where(p => string.IsNullOrWhiteSpace(_keyword) || p.Name.Contains(_keyword.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+
+    protected override void OnInitialized() => _permissions = Store.Permissions();
+
+    private void Create()
+    {
+        _editingId = null;
+        _input = new PermissionInput();
+        _drawerOpen = true;
+    }
+
+    private void Edit(AppPermission p)
+    {
+        _editingId = p.Id;
+        _input = new PermissionInput { Name = p.Name, Roles = [.. p.Roles], Core = p.Core };
+        _drawerOpen = true;
+    }
+
+    private static void ToggleRole(PermissionInput input, string role, bool on)
+    {
+        input.Roles.Remove(role);
+        if (on) input.Roles.Add(role);
+    }
+
+    private async Task<bool> SaveAsync(PermissionInput input)
+    {
+        Store.SavePermission(_editingId, input);
+        _ = Message.SuccessAsync(_editingId is null ? "Permission added" : "Permission saved");
+        _permissions = Store.Permissions();
+        await Task.CompletedTask;
+        return true;
+    }
+
+    private async Task DeleteAsync(AppPermission p)
+    {
+        Store.DeletePermission(p.Id);
+        _ = Message.SuccessAsync("Permission deleted");
+        _permissions = Store.Permissions();
+        await Task.CompletedTask;
+    }
+}

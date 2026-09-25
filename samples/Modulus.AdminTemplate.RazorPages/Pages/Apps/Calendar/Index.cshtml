@@ -1,0 +1,6 @@
+@page "/apps/calendar/{handler?}/{id:int?}"
+@model CalendarModel
+@{
+    ViewData["Title"] = "Calendar";
+}
+<partial name="Ui/Apps/Calendar/Calendar" model="Model.View" />

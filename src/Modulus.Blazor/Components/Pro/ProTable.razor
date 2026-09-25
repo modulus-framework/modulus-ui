@@ -1,144 +1,207 @@
-@using AntDesign
-@using Modulus.Ui.Abstractions
+@*
+    Server-driven data table in the Ant Design Pro ProTable pattern:
+    toolbar (title, actions, density, reload) + table + paging + sorting + batch selection.
+
+    <ProTable TItem="Customer" HeaderTitle="Customers" Request="LoadAsync" RowKey="c => c.Id">
+        <Columns>
+            <PropertyColumn Property="c => c.Name" Sortable />
+        </Columns>
+        <ToolBar><Button Type="@ButtonType.Primary">New</Button></ToolBar>
+    </ProTable>
+
+    Search forms live outside (see QueryFilter); call ReloadAsync(resetPage: true) after a search.
+*@
 @typeparam TItem
+@attribute [CascadingTypeParameter(nameof(TItem))]
 
-<AppCard Title="@Title" Bordered="false">
-    <!-- Search & Toolbar -->
-    <div class="pro-table-toolbar" style="margin-bottom: 16px;">
-        <AppRow Gutter="16" Wrap="true">
-            <AppCol Xs="24" Sm="12" Md="6">
-                <Input TValue="string" Placeholder="Search..." Value="@searchText" ValueChanged="@((string val) => searchText = val)" ValueExpression="@(() => searchText)" />
-            </AppCol>
-            <AppCol Xs="24" Sm="12" Md="18" Class="d-flex gap-8">
-                <AppButton Icon="reload" OnClick="@Refresh" Title="Refresh" />
-                <AppButton Icon="plus" Type="@ButtonType.Primary" OnClick="@OnAddClick" Title="Add New" />
-                @if (ExtraToolbar is not null)
-                {
-                    @ExtraToolbar
-                }
-            </AppCol>
-        </AppRow>
+<Card Bordered="false" Class="@($"m-table-card {Class}")">
+    <div class="m-table-toolbar">
+        <div class="m-table-toolbar-title">
+            @HeaderTitle
+            @TitleExtra
+            @if (!string.IsNullOrEmpty(Tooltip))
+            {
+                <AntDesign.Tooltip Title="@Tooltip"><Icon Type="info-circle" Class="m-muted" /></AntDesign.Tooltip>
+            }
+        </div>
+        <div class="m-table-toolbar-actions">
+            @ToolBar
+            <div class="m-table-toolbar-settings">
+                <AntDesign.Tooltip Title="@("Reload")">
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Reload" @onclick="() => ReloadAsync()"><Icon Type="reload" /></button>
+                </AntDesign.Tooltip>
+                <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight">
+                    <Overlay>
+                        <Menu SelectedKeys="@(new[] { _size.ToString() })" OnMenuItemClicked="OnDensity">
+                            <MenuItem Key="@nameof(TableSize.Default)">Comfortable</MenuItem>
+                            <MenuItem Key="@nameof(TableSize.Middle)">Standard</MenuItem>
+                            <MenuItem Key="@nameof(TableSize.Small)">Compact</MenuItem>
+                        </Menu>
+                    </Overlay>
+                    <ChildContent>
+                        <AntDesign.Tooltip Title="@("Density")">
+                            <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Table density"><Icon Type="column-height" /></button>
+                        </AntDesign.Tooltip>
+                    </ChildContent>
+                </Dropdown>
+            </div>
+        </div>
     </div>
 
-    <!-- Table -->
-    <Table TItem="TItem" DataSource="@CurrentData" Striped="true" Bordered="true" Pagination="false" Loading="@IsLoading" Class="w-100">
-        @ChildContent
-        <ActionColumn Title="Actions" Width="150">
-            <Space>
-                <SpaceItem>
-                    <AppButton Type="@ButtonType.Primary" Size="@ButtonSize.Small" OnClick="@(() => OnEditClick(context))">
-                        Edit
-                    </AppButton>
-                </SpaceItem>
-                <SpaceItem>
-                    <Popconfirm Title="Delete?" OnConfirm="@(() => OnDeleteClick(context))" OkText="Yes" CancelText="No">
-                        <AppButton Size="@ButtonSize.Small" Danger="true">
-                            Delete
-                        </AppButton>
-                    </Popconfirm>
-                </SpaceItem>
-            </Space>
-        </ActionColumn>
+    @if (Filters is not null)
+    {
+        <div class="m-table-filters">@Filters</div>
+    }
+
+    @if (Selectable && _selected.Any())
+    {
+        <Alert Type="@AlertType.Info" Class="m-table-alert" ShowIcon="false">
+            <MessageTemplate>
+                <span>Selected <strong>@_selected.Count()</strong> @(_selected.Count() == 1 ? "item" : "items")</span>
+                <Button Type="@ButtonType.Link" Size="@ButtonSize.Small" OnClick="ClearSelection">Clear</Button>
+                <span class="m-spacer"></span>
+                @BatchActions?.Invoke(_selected.ToList())
+            </MessageTemplate>
+        </Alert>
+    }
+
+    <Table TItem="TItem"
+           DataSource="_data"
+           Total="_total"
+           RemoteDataSource="true"
+           PageIndex="_pageIndex"
+           PageIndexChanged="i => _pageIndex = i"
+           PageSize="_pageSize"
+           PageSizeChanged="s => _pageSize = s"
+           OnChange="OnTableChange"
+           Loading="_loading"
+           Size="_size"
+           RowKey="RowKey"
+           ScrollX="@ScrollX"
+           SelectedRows="_selected"
+           SelectedRowsChanged="rows => _selected = rows"
+           PaginationTemplate="PaginationWithTotal">
+        <ChildContent>
+            @if (Selectable)
+            {
+                <Selection Width="48" Disabled="@(RowSelectable is not null && !RowSelectable(context))" />
+            }
+            @Columns?.Invoke(context)
+        </ChildContent>
     </Table>
-
-    <!-- Pagination -->
-    <div style="margin-top: 16px; text-align: right;">
-        <AppPagination Total="@Total" Current="@Current" PageSize="@PageSize" />
-    </div>
-</AppCard>
-
-<style>
-.pro-table-toolbar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-}
-
-.d-flex { display: flex; }
-.gap-8 { gap: 8px; }
-.w-100 { width: 100%; }
-</style>
+</Card>
 
 @code {
-    [Parameter]
-    public string? Title { get; set; } = "List";
+    [Parameter] public string? HeaderTitle { get; set; }
 
-    [Parameter]
-    public List<TItem> DataSource { get; set; } = new();
+    [Parameter] public string? Tooltip { get; set; }
 
-    [Parameter]
-    public int PageSize { get; set; } = 10;
+    /// <summary>Content after the title (a count badge, a summary).</summary>
+    [Parameter] public RenderFragment? TitleExtra { get; set; }
 
-    [Parameter]
-    public RenderFragment? ChildContent { get; set; }
+    /// <summary>Column definitions (PropertyColumn, ActionColumn …).</summary>
+    [Parameter] public RenderFragment<TItem>? Columns { get; set; }
 
-    [Parameter]
-    public RenderFragment? ExtraToolbar { get; set; }
+    /// <summary>Filter controls shown in a row under the toolbar (Tabler datagrid filters).</summary>
+    [Parameter] public RenderFragment? Filters { get; set; }
 
-    [Parameter]
-    public EventCallback<ProTableRequest> OnRequest { get; set; }
+    /// <summary>Buttons shown right of the title.</summary>
+    [Parameter] public RenderFragment? ToolBar { get; set; }
 
-    [Parameter]
-    public EventCallback<TItem> OnEdit { get; set; }
+    /// <summary>Loads one page. Called on first render, paging, sorting and <see cref="ReloadAsync"/>.</summary>
+    [Parameter, EditorRequired] public Func<ProTableRequest, Task<ProTableResponse<TItem>>> Request { get; set; } = default!;
 
-    [Parameter]
-    public EventCallback<TItem> OnDelete { get; set; }
+    [Parameter] public Func<TItem, object>? RowKey { get; set; }
 
-    [Parameter]
-    public EventCallback OnAdd { get; set; }
+    [Parameter] public int PageSize { get; set; } = 10;
 
-    private List<TItem> CurrentData = new();
-    private bool IsLoading = false;
-    private string? searchText;
-    private int Current = 1;
-    private int Total = 0;
+    [Parameter] public TableSize Size { get; set; } = TableSize.Middle;
 
-    protected override async Task OnInitializedAsync()
+    [Parameter] public string? ScrollX { get; set; }
+
+    /// <summary>Adds a checkbox column and the selection bar.</summary>
+    [Parameter] public bool Selectable { get; set; }
+
+    /// <summary>With <see cref="Selectable"/>: rows for which this returns false get a disabled checkbox.</summary>
+    [Parameter] public Func<TItem, bool>? RowSelectable { get; set; }
+
+    /// <summary>Actions for the selection bar; receives the selected rows.</summary>
+    [Parameter] public RenderFragment<IReadOnlyList<TItem>>? BatchActions { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    private IEnumerable<TItem> _data = [];
+    private IEnumerable<TItem> _selected = [];
+    private int _total;
+    private int _pageIndex = 1;
+    private int _pageSize;
+    private bool _loading;
+    private TableSize _size;
+    private string? _sortField;
+    private Modulus.Ui.Abstractions.SortDirection _sortOrder;
+    private int _loadVersion;
+
+    protected override void OnInitialized()
     {
-        CurrentData = DataSource.Take(PageSize).ToList();
-        Total = DataSource.Count;
-        await Refresh();
+        _pageSize = PageSize;
+        _size = Size;
     }
 
-    private async Task Refresh()
+    /// <summary>Reloads the current page, or page 1 when <paramref name="resetPage"/> is true (after a search).</summary>
+    public async Task ReloadAsync(bool resetPage = false)
     {
-        IsLoading = true;
-        var request = new ProTableRequest
+        if (resetPage) _pageIndex = 1;
+        await LoadAsync();
+    }
+
+    public void ClearSelection() => _selected = [];
+
+    private async Task OnTableChange(AntDesign.TableModels.QueryModel<TItem> query)
+    {
+        _pageIndex = query.PageIndex;
+        _pageSize = query.PageSize;
+        var sort = query.SortModel.FirstOrDefault(s => s.SortDirection != AntDesign.SortDirection.None);
+        _sortField = sort?.FieldName;
+        _sortOrder = sort?.SortDirection switch
         {
-            Current = Current,
-            PageSize = PageSize,
-            Filters = searchText != null ? new Dictionary<string, object?> { { "search", searchText } } : new()
+            AntDesign.SortDirection.Ascending => Modulus.Ui.Abstractions.SortDirection.Ascending,
+            AntDesign.SortDirection.Descending => Modulus.Ui.Abstractions.SortDirection.Descending,
+            _ => Modulus.Ui.Abstractions.SortDirection.None,
         };
-
-        if (OnRequest.HasDelegate)
-        {
-            await OnRequest.InvokeAsync(request);
-        }
-
-        IsLoading = false;
+        await LoadAsync();
     }
 
-    private async Task OnEditClick(TItem item)
+    private async Task LoadAsync()
     {
-        if (OnEdit.HasDelegate)
+        // Drop responses from superseded requests (fast paging / typing).
+        var version = ++_loadVersion;
+        _loading = true;
+        StateHasChanged();
+        try
         {
-            await OnEdit.InvokeAsync(item);
+            var response = await Request(new ProTableRequest
+            {
+                Current = _pageIndex,
+                PageSize = _pageSize,
+                SortField = _sortField,
+                SortOrder = _sortOrder,
+            });
+            if (version != _loadVersion) return;
+            _data = response.Data;
+            _total = response.Total;
+        }
+        finally
+        {
+            if (version == _loadVersion) _loading = false;
         }
     }
 
-    private async Task OnDeleteClick(TItem item)
-    {
-        if (OnDelete.HasDelegate)
-        {
-            await OnDelete.InvokeAsync(item);
-        }
-    }
+    // Ant Design's pagination with the "1–10 of 57" range on the left (matches the server-rendered grid).
+    private RenderFragment<(int PageSize, int PageIndex, int Total, string PaginationClass, EventCallback<PaginationEventArgs> HandlePageChange)> PaginationWithTotal => p =>
+        @<Pagination Class="@p.PaginationClass" Total="p.Total" PageSize="p.PageSize" Current="p.PageIndex" Size="PaginationSize.Small"
+                     ShowSizeChanger="true" OnChange="p.HandlePageChange" ShowTotal="ShowTotal" />;
 
-    private async Task OnAddClick()
-    {
-        if (OnAdd.HasDelegate)
-        {
-            await OnAdd.InvokeAsync();
-        }
-    }
+    private static readonly Func<PaginationTotalContext, string> ShowTotal = ctx => $"{ctx.Range.Item1}–{ctx.Range.Item2} of {ctx.Total}";
+
+    private void OnDensity(MenuItem item) => _size = Enum.Parse<TableSize>(item.Key);
 }

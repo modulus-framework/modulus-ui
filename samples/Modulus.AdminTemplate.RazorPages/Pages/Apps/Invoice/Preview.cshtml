@@ -1,0 +1,6 @@
+@page "/apps/invoice/preview/{id:int}/{handler?}"
+@model InvoicePreviewModel
+@{
+    ViewData["Title"] = $"Invoice {Model.Invoice.Number}";
+}
+<partial name="Ui/Apps/Invoice/InvoicePreview" model="Model.Invoice" />

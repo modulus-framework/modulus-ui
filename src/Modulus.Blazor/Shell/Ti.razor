@@ -1,0 +1,9 @@
+@* Tabler outline icon from the bundled sprite: <Ti Name="home" /> *@
+@((MarkupString)ShellRenderer.Icon(Name, Class))
+
+@code {
+    /// <summary>Tabler Icons name, e.g. "home", "users", "chart-bar" (see tools/tabler-icons/icons.txt).</summary>
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+
+    [Parameter] public string? Class { get; set; }
+}

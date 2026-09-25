@@ -1,0 +1,29 @@
+@* Compact column chart for statistic cards. *@
+@using Modulus.Ui.Abstractions.Charts
+
+<div class="m-chart m-sparkline @Class" role="img" aria-label="@AriaLabel">
+    <div class="m-bars m-bars-mini" aria-hidden="true">
+        @foreach (var point in Data)
+        {
+            <div class="m-bar-slot">
+                <span class="m-bar" style="height:@ChartGeometry.Percent(point.Value, _max)%">
+                    <span class="m-tip"><span class="m-tip-label">@point.Label</span><span class="m-tip-value">@Format(point.Value)</span></span>
+                </span>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartPoint> Data { get; set; } = [];
+
+    [Parameter] public Func<double, string> Format { get; set; } = v => v.ToString("N0");
+
+    [Parameter] public string? AriaLabel { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    private double _max;
+
+    protected override void OnParametersSet() => _max = Data.Count == 0 ? 0 : Data.Max(p => p.Value);
+}

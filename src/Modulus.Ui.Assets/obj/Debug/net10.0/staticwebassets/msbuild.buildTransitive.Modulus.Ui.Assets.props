@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../buildMultiTargeting/Modulus.Ui.Assets.props" />
-</Project>

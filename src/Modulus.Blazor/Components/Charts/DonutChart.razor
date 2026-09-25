@@ -1,0 +1,13 @@
+@* Part-to-whole (≤ 6 parts) with a value legend: <DonutChart Slices="channels" CenterLabel="Visits" /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.Donut(Slices, Options(centerLabel: CenterLabel), Size))
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSlice> Slices { get; set; } = [];
+
+    [Parameter] public string? CenterLabel { get; set; }
+
+    /// <summary>Ring diameter in px.</summary>
+    [Parameter] public int Size { get; set; } = 180;
+}

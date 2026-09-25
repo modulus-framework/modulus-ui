@@ -1,0 +1,290 @@
+@page "/apps/email"
+@page "/apps/email/{Id:int}"
+@inject SampleStore Store
+@inject IMessageService Message
+@inject NavigationManager Navigation
+
+<PageTitle>@(_open?.Subject ?? "Email") · Modulus</PageTitle>
+
+<PageHeading Pretitle="Apps" Title="Email" />
+
+<div class="m-card m-app">
+    <aside class="m-app-side">
+        <div class="m-app-side-head">
+            <button type="button" class="ant-btn ant-btn-primary ant-btn-block" @onclick="() => OpenCompose(null, false)"><Ti Name="pencil" /><span>Compose</span></button>
+        </div>
+        <nav class="m-app-side-body" aria-label="Mail folders">
+            <ul class="m-app-nav">
+                @foreach (var (folder, icon) in SampleUi.MailFolders)
+                {
+                    var active = Label is null && _folder == folder;
+                    <li>
+                        <a class="m-app-nav-link@(active ? " active" : "")" href="/apps/email@(SampleUi.MailScope(folder, null))" aria-current="@(active ? "page" : null)">
+                            <Ti Name="@icon" /><span>@folder</span>
+                            @if (_counts.TryGetValue(folder, out var count) && count > 0)
+                            {
+                                <span class="m-badge @SampleUi.MailCountBadge(folder)">@count</span>
+                            }
+                        </a>
+                    </li>
+                }
+            </ul>
+            <div class="m-subheader m-app-nav-title">Labels</div>
+            <ul class="m-app-nav">
+                @foreach (var label in Lookups.MailLabels)
+                {
+                    var active = Label == label;
+                    <li><a class="m-app-nav-link@(active ? " active" : "")" href="/apps/email?label=@Uri.EscapeDataString(label)" aria-current="@(active ? "page" : null)"><span class="m-app-dot" style="--c:@SampleUi.LabelColor(label)"></span><span>@label</span></a></li>
+                }
+            </ul>
+        </nav>
+    </aside>
+
+    <section class="m-app-main" aria-label="@(_open is null ? "Messages" : "Message")">
+        @if (_open is { } m)
+        {
+            <div class="m-app-bar">
+                <a class="ant-btn ant-btn-text ant-btn-icon-only" href="@ListUrl" aria-label="Back to @(Label ?? _folder.ToString())" title="Back"><Ti Name="arrow-left" /></a>
+                <h2 class="m-h3 m-truncate" style="margin:0;flex:1">@m.Subject</h2>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="@(m.Starred ? "Unstar" : "Star")" title="@(m.Starred ? "Unstar" : "Star")" @onclick="() => Star(m.Id)"><Ti Name="star" Class="@(m.Starred ? "m-text-warning" : null)" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Mark as unread" title="Mark as unread" @onclick="() => MarkRead([m.Id], false)"><Ti Name="mail" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")" title="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")" @onclick="() => MoveOpen(m.Folder == MailFolder.Spam ? MailFolder.Inbox : MailFolder.Spam)"><Ti Name="alert-octagon" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-danger-hover" aria-label="@(m.Folder == MailFolder.Trash ? "Delete forever" : "Move to trash")" title="@(m.Folder == MailFolder.Trash ? "Delete forever" : "Move to trash")" @onclick="() => MoveOpen(MailFolder.Trash)"><Ti Name="trash" /></button>
+            </div>
+            <div class="m-app-scroll">
+                <article class="m-mail-read">
+                    <div class="m-mail-read-head">
+                        <span class="m-avatar m-av-@m.Tint">@Fmt.Initials(m.FromName)</span>
+                        <div style="flex:1;min-width:0">
+                            <div class="m-heading m-medium">@m.FromName <span class="m-muted m-small">&lt;@m.FromEmail&gt;</span></div>
+                            <div class="m-small m-muted">to @(m.To == CurrentUser.Email ? "me" : m.To)</div>
+                        </div>
+                        <div class="m-small m-muted m-nowrap">@Fmt.DateTime(m.At)</div>
+                    </div>
+                    @if (m.Labels.Count > 0)
+                    {
+                        <div class="m-flex m-gap-8 m-mt-16">
+                            @foreach (var label in m.Labels)
+                            {
+                                <span class="m-status"><span class="m-app-dot" style="--c:@SampleUi.LabelColor(label)"></span>@label</span>
+                            }
+                        </div>
+                    }
+                    <div class="m-mail-body">
+                        @foreach (var paragraph in m.Body)
+                        {
+                            <p>@paragraph</p>
+                        }
+                    </div>
+                    @if (m.Attachments.Count > 0)
+                    {
+                        <div class="m-mail-attachments">
+                            @foreach (var a in m.Attachments)
+                            {
+                                <a class="m-mail-attachment" href="#" @onclick:preventDefault><Ti Name="paperclip" /><span class="m-medium">@a.Name</span><span class="m-xsmall m-muted">@a.Size</span></a>
+                            }
+                        </div>
+                    }
+                    <div class="m-flex m-gap-8 m-mt-24">
+                        <button type="button" class="ant-btn ant-btn-default" @onclick="() => OpenCompose(m, false)"><Ti Name="arrow-back-up" /><span>Reply</span></button>
+                        <button type="button" class="ant-btn ant-btn-default" @onclick="() => OpenCompose(m, true)"><Ti Name="arrow-forward-up" /><span>Forward</span></button>
+                    </div>
+                </article>
+            </div>
+        }
+        else
+        {
+            <div class="m-app-bar">
+                <Input @bind-Value="_keyword" Placeholder="Search mail" Bordered="false" AllowClear OnPressEnter="Search" OnClear="Search" Prefix="@_searchIcon" Style="flex:1" aria-label="Search mail" />
+            </div>
+            <div class="m-app-bar">
+                <Checkbox Checked="AllSelected" Indeterminate="_selected.Count > 0 && !AllSelected" CheckedChanged="SelectAll" aria-label="Select all messages" />
+                @if (_selected.Count > 0)
+                {
+                    <div class="m-flex m-gap-8">
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Mark as read" title="Mark as read" @onclick="() => MarkRead(_selected, true)"><Ti Name="mail-opened" /></button>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Mark as unread" title="Mark as unread" @onclick="() => MarkRead(_selected, false)"><Ti Name="mail" /></button>
+                        @if (InTrash)
+                        {
+                            <Popconfirm Title="Delete the selected messages forever?" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => MoveSelected(MailFolder.Trash)">
+                                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-danger-hover" aria-label="Delete forever" title="Delete forever"><Ti Name="trash" /></button>
+                            </Popconfirm>
+                        }
+                        else
+                        {
+                            <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-danger-hover" aria-label="Move to trash" title="Move to trash" @onclick="() => MoveSelected(MailFolder.Trash)"><Ti Name="trash" /></button>
+                        }
+                    </div>
+                }
+                <span class="m-spacer"></span>
+                <span class="m-small m-muted">@_messages.Count @(_messages.Count == 1 ? "message" : "messages")</span>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Refresh" title="Refresh" @onclick="Load"><Ti Name="refresh" /></button>
+            </div>
+            <div class="m-app-scroll" id="mail-list">
+                @if (_messages.Count == 0)
+                {
+                    <div class="m-table-empty" style="padding:64px 0">@(Keyword is { Length: > 0 } ? "No messages match your search" : "No messages here")</div>
+                }
+                @foreach (var msg in _messages)
+                {
+                    var id = msg.Id;
+                    <div class="m-mail-item@(msg.Read ? "" : " unread")" @key="id">
+                        <Checkbox Checked="_selected.Contains(id)" CheckedChanged="v => Toggle(id, v)" aria-label="@($"Select {msg.Subject}")" />
+                        <button type="button" class="m-mail-star@(msg.Starred ? " on" : "")" aria-label="@(msg.Starred ? "Unstar" : "Star")" aria-pressed="@(msg.Starred ? "true" : "false")" @onclick="() => Star(id)"><Ti Name="star" /></button>
+                        <a class="m-mail-text" href="@($"/apps/email/{id}{SampleUi.MailScope(_folder, Label)}")">
+                            <span class="m-avatar m-avatar-sm m-av-@msg.Tint">@Fmt.Initials(msg.FromName)</span>
+                            <span class="m-mail-from">@(_folder is MailFolder.Sent or MailFolder.Draft ? $"To: {msg.To}" : msg.FromName)</span>
+                            <span class="m-mail-line"><span class="m-mail-subject">@msg.Subject</span> — @msg.Preview</span>
+                        </a>
+                        <span class="m-mail-meta">
+                            @foreach (var label in msg.Labels)
+                            {
+                                <span class="m-app-dot" style="--c:@SampleUi.LabelColor(label)" title="@label"></span>
+                            }
+                            @if (msg.Attachments.Count > 0) { <Ti Name="paperclip" /> }
+                            <time datetime="@msg.At.ToString("o")">@(msg.At.Date == DateTime.Today ? Fmt.Time(msg.At) : msg.At.ToString("MMM d"))</time>
+                        </span>
+                    </div>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+<DrawerForm TModel="ComposeInput" Title="@_composeTitle" @bind-Visible="_composeOpen" Model="_compose" OnFinish="SendAsync" SubmitText="Send" CancelText="Discard" Width="560">
+    <ChildContent>
+        <FormItem Label="To"><Input @bind-Value="context.To" Placeholder="name@company.com" /></FormItem>
+        <FormItem Label="Subject"><Input @bind-Value="context.Subject" Placeholder="What's it about?" /></FormItem>
+        <FormItem Label="Message"><TextArea @bind-Value="context.Body" Rows="12" Placeholder="Write your message…" /></FormItem>
+    </ChildContent>
+    <FooterExtra>
+        <Button OnClick="SaveDraft">Save draft</Button>
+    </FooterExtra>
+</DrawerForm>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    [SupplyParameterFromQuery] public string? Folder { get; set; }
+
+    [SupplyParameterFromQuery] public string? Label { get; set; }
+
+    [SupplyParameterFromQuery] public string? Keyword { get; set; }
+
+    private MailFolder _folder;
+    private string? _keyword;
+    private IReadOnlyList<MailMessage> _messages = [];
+    private IReadOnlyDictionary<MailFolder, int> _counts = new Dictionary<MailFolder, int>();
+    private MailMessage? _open;
+    private readonly HashSet<int> _selected = [];
+    private ComposeInput _compose = new();
+    private string _composeTitle = "Compose mail";
+    private bool _composeOpen;
+    private readonly RenderFragment _searchIcon = @<Ti Name="search" />;
+
+    private string ListUrl => "/apps/email" + SampleUi.MailScope(_folder, Label);
+    private bool InTrash => _folder == MailFolder.Trash && Label is null;
+    private bool AllSelected => _messages.Count > 0 && _selected.Count == _messages.Count;
+
+    protected override void OnParametersSet()
+    {
+        _folder = SampleUi.ParseFolder(Folder);
+        _keyword = Keyword;
+        _selected.Clear();
+        if (Id is { } id)
+        {
+            if (Store.FindMail(id) is null)
+            {
+                Navigation.NotFound();
+                return;
+            }
+            Store.UpdateMail(id, m => m.Read = true);
+        }
+        Load();
+    }
+
+    private void Load()
+    {
+        _messages = Store.Mail(_folder, Label, Keyword);
+        _counts = Store.MailCounts();
+        _open = Id is { } id ? Store.FindMail(id) : null;
+        _selected.IntersectWith(_messages.Select(m => m.Id));
+    }
+
+    private void Search()
+    {
+        var scope = SampleUi.MailScope(_folder, Label);
+        var url = string.IsNullOrWhiteSpace(_keyword) ? ListUrl : $"{ListUrl}{(scope.Length == 0 ? "?" : "&")}keyword={Uri.EscapeDataString(_keyword.Trim())}";
+        Navigation.NavigateTo(url);
+    }
+
+    private void Toggle(int id, bool on)
+    {
+        if (on) _selected.Add(id);
+        else _selected.Remove(id);
+    }
+
+    private void SelectAll(bool on)
+    {
+        _selected.Clear();
+        if (on) _selected.UnionWith(_messages.Select(m => m.Id));
+    }
+
+    private void Star(int id)
+    {
+        Store.UpdateMail(id, m => m.Starred = !m.Starred);
+        Load();
+    }
+
+    private void MarkRead(IEnumerable<int> ids, bool read)
+    {
+        foreach (var id in ids.ToList()) Store.UpdateMail(id, m => m.Read = read);
+        _ = Message.SuccessAsync(read ? "Marked as read" : "Marked as unread");
+        Load();
+    }
+
+    private void MoveSelected(MailFolder to)
+    {
+        var ids = _selected.ToList();
+        var text = Move(ids, to);
+        _ = Message.SuccessAsync(ids.Count > 1 ? $"{text} ({ids.Count})" : text);
+        _selected.Clear();
+        Load();
+    }
+
+    private void MoveOpen(MailFolder to)
+    {
+        _ = Message.SuccessAsync(Move([_open!.Id], to));
+        Navigation.NavigateTo(ListUrl);
+    }
+
+    private string Move(IReadOnlyList<int> ids, MailFolder to)
+    {
+        var permanent = to == MailFolder.Trash && ids.Select(Store.FindMail).All(m => m?.Folder == MailFolder.Trash);
+        Store.MoveMail(ids, to);
+        return permanent ? "Deleted forever" : to switch { MailFolder.Trash => "Moved to trash", MailFolder.Spam => "Reported as spam", _ => $"Moved to {to}" };
+    }
+
+    private void OpenCompose(MailMessage? message, bool forward)
+    {
+        _compose = ComposeInput.For(message, forward);
+        _composeTitle = message is null ? "Compose mail" : forward ? "Forward" : "Reply";
+        _composeOpen = true;
+    }
+
+    private Task<bool> SendAsync(ComposeInput input)
+    {
+        Store.SendMail(input);
+        _ = Message.SuccessAsync("Message sent");
+        Load();
+        return Task.FromResult(true);
+    }
+
+    private void SaveDraft()
+    {
+        Store.SendMail(_compose, draft: true);
+        _ = Message.SuccessAsync("Draft saved");
+        _composeOpen = false;
+        Load();
+    }
+}

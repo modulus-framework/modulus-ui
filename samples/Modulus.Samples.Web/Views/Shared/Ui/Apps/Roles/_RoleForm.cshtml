@@ -1,0 +1,43 @@
+@model RoleInput
+@{
+    var id = ViewData["Id"] as int?;
+    var granted = Model.Grants.ToHashSet();
+}
+@* Add / edit role drawer: name, description and one checkbox per module × access level. *@
+<form class="m-drawer-form ant-form ant-form-vertical ant-form-hide-required-mark" hx-post="/apps/roles/save/@id" hx-target="#modulus-drawer-body" hx-swap="innerHTML" novalidate
+      x-data="{ all(on) { $root.querySelectorAll('input[name=Grants]').forEach(b => { b.checked = on; b.dispatchEvent(new Event('change', { bubbles: true })) }) } }">
+    <div class="m-drawer-form-body">
+        <app-form-item asp-for="Name" label="Role name"><app-input asp-for="Name" placeholder="e.g. Support agent" autocomplete="off" /></app-form-item>
+        <app-form-item asp-for="Description" label="Description"><app-input asp-for="Description" placeholder="What people with this role do" /></app-form-item>
+        <div class="m-flex m-between m-mb-8">
+            <div class="m-h3">Role permissions</div>
+            <app-checkbox @@change="all($event.target.checked)" checked="granted.Count == Lookups.PermissionModules.Length * RoleInput.AccessLevels.Length">Select all</app-checkbox>
+        </div>
+        <div class="ant-table-wrapper m-table-flush m-role-matrix">
+            <div class="ant-table ant-table-small"><div class="ant-table-container"><div class="ant-table-content">
+                <table style="table-layout:auto">
+                    <thead class="ant-table-thead">
+                        <tr><th class="ant-table-cell">Module</th>@foreach (var a in RoleInput.AccessLevels){<th class="ant-table-cell" style="text-align:center">@a</th>}</tr>
+                    </thead>
+                    <tbody class="ant-table-tbody">
+                        @foreach (var module in Lookups.PermissionModules)
+                        {
+                            <tr class="ant-table-row">
+                                <td class="ant-table-cell m-heading">@module</td>
+                                @foreach (var a in RoleInput.AccessLevels)
+                                {
+                                    var grant = $"{module}|{a}";
+                                    <td class="ant-table-cell" style="text-align:center"><app-checkbox name="Grants" value="@grant" checked="granted.Contains(grant)" aria-label="@($"{a} {module}")" /></td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div></div></div>
+        </div>
+    </div>
+    <div class="m-drawer-form-footer">
+        <app-button @@click="$store.drawer.hide()">Cancel</app-button>
+        <app-button type="primary" html-type="submit">@(id is null ? "Add role" : "Save changes")</app-button>
+    </div>
+</form>

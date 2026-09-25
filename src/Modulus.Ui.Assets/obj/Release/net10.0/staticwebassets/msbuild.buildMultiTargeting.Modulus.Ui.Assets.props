@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../build/Modulus.Ui.Assets.props" />
-</Project>

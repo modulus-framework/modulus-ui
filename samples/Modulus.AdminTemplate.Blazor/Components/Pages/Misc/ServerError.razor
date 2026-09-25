@@ -1,0 +1,28 @@
+@page "/misc/server-error"
+@page "/Error"
+@layout AuthLayout
+@attribute [ExcludeFromInteractiveRouting]
+@using System.Diagnostics
+
+<PageTitle>Server error · Modulus</PageTitle>
+
+@* Static SSR (see App.razor), so it renders even when the circuit cannot start. *@
+<div class="m-status-page">
+    <div class="m-status-code">500</div>
+    <h1 class="m-status-title">Something went wrong</h1>
+    <p class="m-status-text">An unexpected error occurred on our side. Try again in a moment, and contact support if it keeps happening.</p>
+    @if (RequestId is not null)
+    {
+        <p class="m-small m-muted m-mt-8">Reference: <code>@RequestId</code></p>
+    }
+    <div class="m-status-actions">
+        <a class="ant-btn ant-btn-default" href="/pages/help-center"><Ti Name="lifebuoy" /><span>Help center</span></a>
+        <a class="ant-btn ant-btn-primary" href="/"><Ti Name="arrow-left" /><span>Take me home</span></a>
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId => Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}

@@ -1,0 +1,144 @@
+@page "/apps/users/list"
+@inject SampleStore Store
+@inject IMessageService Message
+
+<PageTitle>Users · Modulus</PageTitle>
+
+<PageHeading Pretitle="Users & access" Title="Users" Subtitle="Everyone with access to the workspace, their role and plan." />
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-4">
+        @foreach (var (label, value, note, icon, tone) in SampleUi.UserStatTiles(_stats))
+        {
+            <div class="m-card"><div class="m-card-body">
+                <div class="m-flex m-between" style="align-items:flex-start">
+                    <div>
+                        <div class="m-subheader">@label</div>
+                        <div class="m-h1 m-mt-4">@value</div>
+                        <div class="m-small m-muted m-mt-4">@note</div>
+                    </div>
+                    <span class="m-icon-tile m-tile-@tone-lt"><Ti Name="@icon" /></span>
+                </div>
+            </div></div>
+        }
+    </div>
+
+    <ProTable TItem="AppUser" @ref="_table" HeaderTitle="All users" Request="LoadAsync" RowKey="u => u.Id" Selectable RowSelectable="u => u.Id != CurrentUser.Id" ScrollX="980">
+        <ToolBar>
+            <Input @bind-Value="_keyword" Placeholder="Search users…" AllowClear Class="m-table-toolbar-search" OnPressEnter="SearchAsync" OnClear="SearchAsync" Prefix="@_searchIcon" />
+            <Button Icon="download">Export</Button>
+            <Button Type="@ButtonType.Primary" Icon="plus" OnClick="Create">Add user</Button>
+        </ToolBar>
+        <Filters>
+            <Select TItemValue="string" TItem="string" Value="_role" ValueChanged="v => FilterAsync(() => _role = v)" DataSource="Lookups.Roles" Placeholder="Select role" AllowClear />
+            <Select TItemValue="string" TItem="string" Value="_plan" ValueChanged="v => FilterAsync(() => _plan = v)" DataSource="Lookups.Plans" Placeholder="Select plan" AllowClear />
+            <Select TItemValue="UserStatus?" TItem="string" Value="_status" ValueChanged="v => FilterAsync(() => _status = v)" Placeholder="Select status" AllowClear>
+                <SelectOptions>
+                    @foreach (var s in Enum.GetValues<UserStatus>())
+                    {
+                        <SelectOption TItemValue="UserStatus?" TItem="string" Value="s" Label="@s.ToString()" />
+                    }
+                </SelectOptions>
+            </Select>
+        </Filters>
+        <BatchActions Context="rows">
+            <Popconfirm Title="@($"Delete {rows.Count} users?")" OkText="Delete" OnConfirm="() => DeleteAsync(rows.Select(r => r.Id))">
+                <Button Danger Size="@ButtonSize.Small">Delete selected</Button>
+            </Popconfirm>
+        </BatchActions>
+        <Columns Context="row">
+            <PropertyColumn Property="u => u.Name" Title="User" Sortable Width="280">
+                <div class="m-entity">
+                    <span class="m-avatar m-avatar-sm m-av-@row.Tint">@Fmt.Initials(row.Name)</span>
+                    <div class="m-entity-text">
+                        <a class="m-entity-title" href="/apps/users/view/@row.Id">@row.Name</a>
+                        <span class="m-entity-desc">@row.Email</span>
+                    </div>
+                </div>
+            </PropertyColumn>
+            <PropertyColumn Property="u => u.Role" Title="Role" Sortable>
+                <span class="m-flex m-gap-8"><span class="m-icon-tile m-tile-xs m-tile-@SampleUi.RoleTone(row.Role)-lt"><Ti Name="@SampleUi.RoleIcon(row.Role)" /></span>@row.Role</span>
+            </PropertyColumn>
+            <PropertyColumn Property="u => u.Plan" Title="Plan" Sortable>
+                <span class="m-heading">@row.Plan</span>
+            </PropertyColumn>
+            <PropertyColumn Property="u => u.Billed" Title="Billing" Sortable Align="ColumnAlign.Right">
+                <span class="m-num">@Fmt.Money0(row.Billed)</span>
+            </PropertyColumn>
+            <PropertyColumn Property="u => u.Status" Title="Status">
+                <span class="m-badge @SampleUi.UserBadge(row.Status)">@row.Status</span>
+            </PropertyColumn>
+            <ActionColumn Title="Actions" Width="130" Align="ColumnAlign.Right">
+                <div class="m-row-actions">
+                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/users/view/@row.Id" aria-label="View @row.Name" title="View"><Ti Name="eye" /></a>
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Edit @row.Name" title="Edit" @onclick="() => Edit(row)"><Ti Name="edit" /></button>
+                    <Popconfirm Title="Delete this user?" OkText="Delete" OnConfirm="() => DeleteAsync([row.Id])" Disabled="row.Id == CurrentUser.Id">
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @row.Name" title="Delete" disabled="@(row.Id == CurrentUser.Id)"><Ti Name="trash" /></button>
+                    </Popconfirm>
+                </div>
+            </ActionColumn>
+        </Columns>
+    </ProTable>
+</div>
+
+<DrawerForm TModel="UserInput" Title="@(_editingId is null ? "Add user" : "Edit user")" @bind-Visible="_drawerOpen" Model="_input" OnFinish="SaveAsync" SubmitText="@(_editingId is null ? "Add user" : "Save changes")">
+    <UserFormFields Model="context" />
+</DrawerForm>
+
+@code {
+    private ProTable<AppUser>? _table;
+    private UserStats _stats = default!;
+    private string? _keyword, _role, _plan;
+    private UserStatus? _status;
+    private UserInput _input = new();
+    private int? _editingId;
+    private bool _drawerOpen;
+    private readonly RenderFragment _searchIcon = @<Ti Name="search" />;
+
+    protected override void OnInitialized() => _stats = Store.UserStats();
+
+
+    private Task<ProTableResponse<AppUser>> LoadAsync(ProTableRequest request) =>
+        Task.FromResult(Store.QueryUsers(new UserQuery(_keyword, _role, _plan, _status), request));
+
+    private Task SearchAsync() => _table!.ReloadAsync(resetPage: true);
+
+    private async Task FilterAsync(Action set)
+    {
+        set();
+        await _table!.ReloadAsync(resetPage: true);
+    }
+
+    private void Create()
+    {
+        _editingId = null;
+        _input = new UserInput();
+        _drawerOpen = true;
+    }
+
+    private void Edit(AppUser user)
+    {
+        _editingId = user.Id;
+        _input = UserInput.From(user);
+        _drawerOpen = true;
+    }
+
+    private async Task<bool> SaveAsync(UserInput input)
+    {
+        if (_editingId is { } id) Store.UpdateUser(id, input);
+        else Store.AddUser(input);
+        _ = Message.SuccessAsync(_editingId is null ? $"Added {input.Name}" : $"Saved {input.Name}");
+        _stats = Store.UserStats();
+        await _table!.ReloadAsync();
+        return true;
+    }
+
+    private async Task DeleteAsync(IEnumerable<int> ids)
+    {
+        var count = Store.DeleteUsers(ids);
+        _table!.ClearSelection();
+        _ = Message.SuccessAsync(count == 1 ? "User deleted" : $"{count} users deleted");
+        _stats = Store.UserStats();
+        await _table.ReloadAsync();
+    }
+}

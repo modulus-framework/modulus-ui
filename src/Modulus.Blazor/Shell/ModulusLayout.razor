@@ -1,0 +1,99 @@
+@*
+    Application shell on the official Ant Design Pro BasicLayout.
+
+    <ModulusLayout>@Body</ModulusLayout>
+
+    Menu items come from every registered IMenuContributor (shared with MVC).
+    Items with RequiredPolicy are shown only when the current user satisfies it.
+*@
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IMenuProvider MenuProvider
+@inject IOptions<ModulusThemeOptions> ThemeOptions
+@inject IServiceProvider Services
+
+<BasicLayout Logo="@_logo"
+             MenuData="@_menu"
+             SiderWidth="@ThemeOptions.Value.SiderWidth"
+             Theme="@(ThemeOptions.Value.NavTheme == NavTheme.Dark ? MenuTheme.Dark : MenuTheme.Light)"
+             @bind-Collapsed="Collapsed">
+    <RightContentRender>
+        @if (HeaderContent is not null)
+        {
+            @HeaderContent
+        }
+        else
+        {
+            <HeaderActions />
+        }
+    </RightContentRender>
+    <ChildContent>
+        @ChildContent
+    </ChildContent>
+    <FooterRender>
+        @if (Footer is not null)
+        {
+            @Footer
+        }
+        else if (ThemeOptions.Value.Copyright is { } copyright)
+        {
+            <FooterView Copyright="@copyright" Links="@FooterLinks" />
+        }
+    </FooterRender>
+</BasicLayout>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Replaces the default right-side header actions.</summary>
+    [Parameter] public RenderFragment? HeaderContent { get; set; }
+
+    /// <summary>Replaces the default copyright footer.</summary>
+    [Parameter] public RenderFragment? Footer { get; set; }
+
+    [Parameter] public LinkItem[] FooterLinks { get; set; } = [];
+
+    [Parameter] public bool Collapsed { get; set; }
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private MenuDataItem[] _menu = [];
+    private readonly RenderFragment _logo = @<ModulusLogo />;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var items = await MenuProvider.GetMainMenuAsync();
+        var authorizer = new Func<MenuItemDefinition, Task<bool>>(IsVisibleAsync);
+        _menu = await ToMenuDataAsync(items, authorizer);
+    }
+
+    private async Task<bool> IsVisibleAsync(MenuItemDefinition item)
+    {
+        if (item.RequiredPolicy is null) return true;
+        var authorization = Services.GetService(typeof(IAuthorizationService)) as IAuthorizationService;
+        if (authorization is null || AuthenticationState is null) return false;
+        var user = (await AuthenticationState).User;
+        return (await authorization.AuthorizeAsync(user, item.RequiredPolicy)).Succeeded;
+    }
+
+    private static async Task<MenuDataItem[]> ToMenuDataAsync(IEnumerable<MenuItemDefinition> items, Func<MenuItemDefinition, Task<bool>> visible)
+    {
+        var result = new List<MenuDataItem>();
+        foreach (var item in items)
+        {
+            if (!await visible(item)) continue;
+            var children = item.Children.Count > 0 ? await ToMenuDataAsync(item.Children, visible) : null;
+            if (item.Href is null && children is not { Length: > 0 }) continue;
+            result.Add(new MenuDataItem
+            {
+                Key = item.Key,
+                Name = item.Label,
+                Icon = item.Icon,
+                Path = item.Href is null ? null : "/" + item.Href.TrimStart('/'),
+                Match = item.ExactMatch ? Microsoft.AspNetCore.Components.Routing.NavLinkMatch.All : Microsoft.AspNetCore.Components.Routing.NavLinkMatch.Prefix,
+                Children = children,
+            });
+        }
+        return [.. result];
+    }
+}

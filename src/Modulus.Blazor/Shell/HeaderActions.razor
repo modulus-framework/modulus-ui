@@ -1,0 +1,121 @@
+@* Default right-hand header: notifications, theme toggle and the account menu. *@
+@inject NavigationManager Navigation
+
+<div class="m-header-actions">
+    @ChildContent
+
+    @if (Notices is not null)
+    {
+        <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight" OverlayClassName="m-notice-overlay">
+            <Overlay>
+                <div class="m-notice-panel">
+                    <div class="m-notice-head">
+                        <span class="m-strong">Notifications</span>
+                        @if (_unread > 0)
+                        {
+                            <Button Type="@ButtonType.Link" Size="@ButtonSize.Small" OnClick="MarkAllRead">Mark all as read</Button>
+                        }
+                    </div>
+                    @if (Notices.Count == 0)
+                    {
+                        <Empty Simple Description="@("You're all caught up")" />
+                    }
+                    else
+                    {
+                        <ul class="m-notice-list">
+                            @foreach (var notice in Notices)
+                            {
+                                <li class="@(notice.Read ? "m-notice read" : "m-notice")">
+                                    <Avatar Size="AvatarSize.Small" Icon="@(notice.Avatar ?? "bell")" Class="m-notice-avatar" />
+                                    <div class="m-notice-text">
+                                        <div class="m-notice-title">@notice.Title</div>
+                                        @if (!string.IsNullOrEmpty(notice.Description))
+                                        {
+                                            <div class="m-notice-desc">@notice.Description</div>
+                                        }
+                                        <div class="m-notice-time">@Relative(notice.Datetime)</div>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            </Overlay>
+            <ChildContent>
+                <button type="button" class="m-header-action" aria-label="Notifications">
+                    <Badge Count="_unread" Size="BadgeSize.Small" Offset="(2, -2)">
+                        <Icon Type="bell" Theme="IconThemeType.Outline" Style="font-size:16px" />
+                    </Badge>
+                </button>
+            </ChildContent>
+        </Dropdown>
+    }
+
+    <ThemeToggle />
+
+    <Dropdown Placement="Placement.BottomRight" OverlayClassName="m-account-overlay">
+        <Overlay>
+            <Menu Selectable="false" OnMenuItemClicked="OnAccountItemClicked">
+                <MenuItem Key="profile"><Icon Type="user" /> Profile</MenuItem>
+                <MenuItem Key="settings"><Icon Type="setting" /> Settings</MenuItem>
+                <MenuDivider />
+                <MenuItem Key="logout"><Icon Type="logout" /> Sign out</MenuItem>
+            </Menu>
+        </Overlay>
+        <ChildContent>
+            <button type="button" class="m-header-action" aria-label="Account menu">
+                @if (UserAvatar is not null)
+                {
+                    <Avatar Size="AvatarSize.Small" Src="@UserAvatar" />
+                }
+                else
+                {
+                    <Avatar Size="AvatarSize.Small" Style="background: var(--m-primary);">@Initials</Avatar>
+                }
+                <span class="m-header-user-name">@UserName</span>
+            </button>
+        </ChildContent>
+    </Dropdown>
+</div>
+
+@code {
+    [Parameter] public string UserName { get; set; } = "Admin";
+
+    [Parameter] public string? UserAvatar { get; set; }
+
+    /// <summary>Notification items; null hides the bell.</summary>
+    [Parameter] public IReadOnlyList<NoticeIconData>? Notices { get; set; }
+
+    /// <summary>Extra header actions rendered before the defaults.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Handles profile/settings/logout. Defaults to navigating to /profile, /settings, /logout.</summary>
+    [Parameter] public EventCallback<string> OnAccountAction { get; set; }
+
+    private int _unread;
+
+    private string Initials => string.Concat(UserName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(p => char.ToUpperInvariant(p[0])));
+
+    protected override void OnParametersSet() => _unread = Notices?.Count(n => !n.Read) ?? 0;
+
+    private void MarkAllRead()
+    {
+        foreach (var notice in Notices ?? []) notice.Read = true;
+        _unread = 0;
+    }
+
+    private async Task OnAccountItemClicked(MenuItem item)
+    {
+        if (OnAccountAction.HasDelegate) await OnAccountAction.InvokeAsync(item.Key);
+        else Navigation.NavigateTo(item.Key);
+    }
+
+    private static string Relative(DateTime time)
+    {
+        var span = DateTime.Now - time;
+        if (span.TotalMinutes < 1) return "just now";
+        if (span.TotalHours < 1) return $"{(int)span.TotalMinutes} min ago";
+        if (span.TotalDays < 1) return $"{(int)span.TotalHours} h ago";
+        return span.TotalDays < 7 ? $"{(int)span.TotalDays} d ago" : time.ToString("MMM d");
+    }
+}

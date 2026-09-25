@@ -1,0 +1,13 @@
+@* Multi-series line / area chart with a crosshair tooltip: <LineChart Labels="months" Series="series" Area /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.Line(Labels, Series, Options(area: Area)))
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<string> Labels { get; set; } = [];
+
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSeries> Series { get; set; } = [];
+
+    /// <summary>10 % fill under each line.</summary>
+    [Parameter] public bool Area { get; set; }
+}

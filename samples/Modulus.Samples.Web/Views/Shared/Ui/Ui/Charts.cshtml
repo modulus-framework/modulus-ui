@@ -1,0 +1,120 @@
+@* Every chart type in Modulus (server-rendered SVG/HTML, hover tooltips, light and dark). The Blazor sample renders the same page. *@
+@{
+    var traffic = UiShowcase.Traffic;
+    var total = UiShowcase.Devices.Sum(d => d.Value);
+}
+<app-page-header pretitle="User interface" title="Charts" subtitle="Server-rendered charts with hover tooltips. No chart library or client script needed."></app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Line chart</h3><p class="m-card-subtitle">Visitors per month by source</p></div>
+                <div class="m-card-actions"><span class="m-heading m-medium m-num">@Fmt.Number(traffic.Sum(s => s.Values[^1]))</span><span class="m-small m-muted">in December</span></div>
+            </div>
+            <div class="m-card-body">
+                <app-line-chart labels="UiShowcase.Months" series="traffic" title="Visitors per month by source" height="280" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Area chart</h3><p class="m-card-subtitle">Sessions per month, thousands</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-line-chart labels="UiShowcase.Months" series="UiShowcase.Sessions" area suffix="k" title="Sessions per month, this year and last year" height="280" />
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Grouped columns</h3><p class="m-card-subtitle">Earning and expense per month</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-column-chart labels="UiShowcase.Months" series="UiShowcase.Finance" prefix="$" title="Earning and expense per month" height="280" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Stacked columns</h3><p class="m-card-subtitle">Revenue per quarter by channel</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-column-chart labels="UiShowcase.Quarters" series="UiShowcase.Channels" stacked prefix="$" title="Revenue per quarter by channel" height="280" />
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-8-4">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Bar chart</h3><p class="m-card-subtitle">Sign-ups per day, last 14 days</p></div>
+                <div class="m-card-actions"><span class="m-delta m-delta-up">+18.2% <app-ti name="trending-up" /></span></div>
+            </div>
+            <div class="m-card-body">
+                <app-bar-chart data="UiShowcase.Signups" title="Sign-ups per day" height="280" max-x-labels="7" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Donut chart</h3><p class="m-card-subtitle">Sessions by device</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-donut-chart slices="UiShowcase.Devices" center-label="Sessions" title="Sessions by device" size="168" />
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header">
+            <div><h3 class="m-card-title">Heatmap</h3><p class="m-card-subtitle">Orders by weekday and time of day</p></div>
+        </div>
+        <div class="m-card-body">
+            <app-heatmap rows="UiShowcase.Weekdays" columns="UiShowcase.HourBlocks" values="UiShowcase.Activity" title="Orders by weekday and two-hour block" />
+        </div>
+    </div>
+
+    <h2 class="m-section-title">Small charts</h2>
+    <div class="m-row-cards m-cols-4">
+        <div class="m-card">
+            <div class="m-card-body">
+                <div class="m-kpi-head"><span class="m-subheader">Response time</span><span class="m-delta m-delta-up" style="margin-left:auto">-29.7% <app-ti name="trending-down" /></span></div>
+                <div class="m-kpi-value"><span class="m-h1">128 ms</span></div>
+                <div class="m-kpi-chart"><app-sparkline data="UiShowcase.ResponseTime" aria-label="Response time per month" /></div>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-body">
+                <div class="m-kpi-head"><span class="m-subheader">Open tickets</span><span class="m-delta m-delta-up" style="margin-left:auto">-14.3% <app-ti name="trending-down" /></span></div>
+                <div class="m-kpi-value"><span class="m-h1">36</span></div>
+                <div class="m-kpi-chart"><app-mini-bar data="UiShowcase.Tickets" aria-label="Open tickets per month" /></div>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-body">
+                <div class="m-kpi-head"><span class="m-subheader">Line only</span></div>
+                <div class="m-kpi-value"><span class="m-h1">@Fmt.Number(UiShowcase.Signups[^1].Value)</span><span class="m-muted">sign-ups today</span></div>
+                <div class="m-kpi-chart"><app-sparkline data="UiShowcase.Signups" area="false" aria-label="Sign-ups per day" /></div>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-body">
+                <div class="m-kpi-head"><span class="m-subheader">Device share</span></div>
+                <div class="m-progress m-progress-lg m-mt-12">
+                    @for (var i = 0; i < UiShowcase.Devices.Length; i++)
+                    {
+                        var d = UiShowcase.Devices[i];
+                        <div class="m-progress-bar" style="width:@Fmt.Pct(d.Value, total)%;--c:var(--m-series-@(i + 1))" title="@d.Label: @Fmt.Percent(d.Value / total)"></div>
+                    }
+                </div>
+                <ul class="m-progress-legend">
+                    @for (var i = 0; i < UiShowcase.Devices.Length; i++)
+                    {
+                        var d = UiShowcase.Devices[i];
+                        <li><span class="m-key m-key-rect" style="--c:var(--m-series-@(i + 1))"></span>@d.Label <span class="m-muted m-num">@Fmt.Percent(d.Value / total)</span></li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

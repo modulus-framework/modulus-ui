@@ -1,0 +1,6 @@
+@page "/apps/ecommerce/products/{handler?}/{id:int?}"
+@model ProductsModel
+@{
+    ViewData["Title"] = "Products";
+}
+<partial name="Ui/Apps/Ecommerce/ProductList" model="Model.View" />

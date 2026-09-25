@@ -1,0 +1,40 @@
+@model (Modulus.Ui.Abstractions.Navigation.MenuItemDefinition Item, string Path, int Level)
+@{
+    var (item, path, level) = Model;
+    var padding = 24 * level;
+}
+@if (item.Children.Count == 0)
+{
+    var selected = item.Matches(path);
+    <li class="ant-menu-item @(selected ? "ant-menu-item-selected" : "")" role="menuitem" style="padding-left: @(padding)px;">
+        <span class="ant-menu-title-content">
+            <a href="~/@item.Href" aria-current="@(selected ? "page" : null)" title="@item.Label">
+                @if (item.Icon is not null)
+                {
+                    <app-icon type="@item.Icon" />
+                }
+                <span>@item.Label</span>
+            </a>
+        </span>
+    </li>
+}
+else
+{
+    var open = item.Children.Any(c => c.Matches(path));
+    <li class="ant-menu-submenu ant-menu-submenu-inline @(open ? "ant-menu-submenu-open ant-menu-submenu-selected" : "")" role="menuitem" x-data="{ open: @(open ? "true" : "false") }" :class="open && 'ant-menu-submenu-open'">
+        <div class="ant-menu-submenu-title" role="button" tabindex="0" style="padding-left: @(padding)px;" @@click="open = !open" @@keydown.enter="open = !open" :aria-expanded="open">
+            @if (item.Icon is not null)
+            {
+                <app-icon type="@item.Icon" />
+            }
+            <span class="ant-menu-title-content">@item.Label</span>
+            <i class="ant-menu-submenu-arrow"></i>
+        </div>
+        <ul class="ant-menu ant-menu-sub ant-menu-inline" role="menu" x-show="open" @(open ? "" : "style=display:none")>
+            @foreach (var child in item.Children)
+            {
+                <partial name="_ModulusMenuItem" model="(child, path, level + 1)" />
+            }
+        </ul>
+    </li>
+}

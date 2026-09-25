@@ -1,0 +1,32 @@
+@model TwoStepInput
+@{
+    var error = ViewData.ModelState[nameof(TwoStepInput.Code)]?.Errors.FirstOrDefault()?.ErrorMessage;
+}
+<div class="m-auth-card">
+    <div class="m-auth-card-body">
+        <span class="m-auth-icon m-bg-primary-lt m-text-primary"><app-ti name="auth-2fa" /></span>
+        <h1 class="m-auth-title">Authenticate your account</h1>
+        <p class="m-auth-lead">Enter the 6-digit code from your authenticator app. We also sent it to ••• ••• 4821.</p>
+        <form method="post" novalidate x-data="otp" x-on:submit="sync()">
+            <input type="hidden" name="Code" x-ref="code" value="@Model.Code" />
+            <div class="ant-form-item @(error is null ? "" : "ant-form-item-has-error")">
+                <div class="m-otp" role="group" aria-label="Verification code">
+                    @for (var i = 0; i < 6; i++)
+                    {
+                        if (i == 3) { <span class="m-otp-gap" aria-hidden="true"></span> }
+                        <input class="ant-input @(error is null ? "" : "ant-input-status-error")" inputmode="numeric" maxlength="1" autocomplete="one-time-code"
+                               aria-label="Digit @(i + 1)" data-otp="@i" x-on:input="input($event)" x-on:keydown.backspace="back($event)" x-on:paste.prevent="paste($event)" />
+                    }
+                </div>
+                @if (error is not null)
+                {
+                    <div class="ant-form-item-explain ant-form-item-explain-connected m-center" role="alert"><div class="ant-form-item-explain-error">@error</div></div>
+                }
+            </div>
+            <div class="m-auth-actions">
+                <button type="submit" class="ant-btn ant-btn-primary ant-btn-block"><span>Verify my account</span></button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="m-auth-foot">Didn't get the code? <a href="/auth/two-steps">Resend</a> · <a href="/auth/login">Use another method</a></div>

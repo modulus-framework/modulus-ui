@@ -1,0 +1,15 @@
+@model string
+<div class="m-dropdown" x-data="dropdown" @@click.outside="close()" @@keydown.escape="close()">
+    <button type="button" class="m-header-action" @@click="toggle()" :aria-expanded="open" aria-haspopup="menu" aria-label="Account menu">
+        <app-avatar name="@Model" size="small" color="var(--m-primary)" />
+        <span class="m-header-user-name">@Model</span>
+    </button>
+    <div class="ant-dropdown m-dropdown-panel" x-show="open" x-transition.opacity x-cloak>
+        <ul class="ant-dropdown-menu ant-dropdown-menu-root ant-dropdown-menu-vertical ant-dropdown-menu-light" role="menu">
+            <li class="ant-dropdown-menu-item" role="menuitem"><a href="~/settings"><app-icon type="user" /> Profile</a></li>
+            <li class="ant-dropdown-menu-item" role="menuitem"><a href="~/settings"><app-icon type="setting" /> Settings</a></li>
+            <li class="ant-dropdown-menu-item-divider"></li>
+            <li class="ant-dropdown-menu-item" role="menuitem"><a href="~/login"><app-icon type="logout" /> Sign out</a></li>
+        </ul>
+    </div>
+</div>

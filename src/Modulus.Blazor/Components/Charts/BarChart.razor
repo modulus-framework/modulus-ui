@@ -1,0 +1,71 @@
+@*
+    Single-series column chart with a zero baseline, nice ticks, recessive grid and
+    per-bar hover tooltips. A visually hidden table gives screen readers the data.
+*@
+@using Modulus.Ui.Abstractions.Charts
+
+<div class="m-chart m-barchart @Class" style="height:@(Height)px">
+    <div class="m-barchart-plot" aria-hidden="true">
+        @foreach (var tick in _ticks)
+        {
+            <div class="@(tick == 0 ? "m-gridline m-baseline" : "m-gridline")" style="bottom:@ChartGeometry.Percent(tick, _top)%">
+                <span class="m-axis-y">@AxisFormat(tick)</span>
+            </div>
+        }
+        <div class="m-bars">
+            @foreach (var point in Data)
+            {
+                <div class="m-bar-slot">
+                    <span class="m-bar" style="height:@ChartGeometry.Percent(point.Value, _top)%">
+                        <span class="m-tip"><span class="m-tip-label">@point.Label</span><span class="m-tip-value">@Format(point.Value)</span></span>
+                    </span>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="m-barchart-x" aria-hidden="true">
+        @for (var i = 0; i < Data.Count; i++)
+        {
+            <span class="@(i % _labelEvery == 0 ? null : "m-skip")">@Data[i].Label</span>
+        }
+    </div>
+    <table class="m-sr-only">
+        <caption>@Title</caption>
+        <tbody>
+            @foreach (var point in Data)
+            {
+                <tr><th scope="row">@point.Label</th><td>@Format(point.Value)</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartPoint> Data { get; set; } = [];
+
+    /// <summary>Accessible name; also the caption of the screen-reader table.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    [Parameter] public int Height { get; set; } = 280;
+
+    [Parameter] public Func<double, string> Format { get; set; } = v => v.ToString("N0");
+
+    [Parameter] public Func<double, string> AxisFormat { get; set; } = ChartGeometry.Compact;
+
+    /// <summary>Show at most this many x-axis labels; the rest stay available on hover.</summary>
+    [Parameter] public int MaxXLabels { get; set; } = 12;
+
+    [Parameter] public string? Class { get; set; }
+
+    private IReadOnlyList<double> _ticks = [];
+    private double _top;
+    private int _labelEvery = 1;
+
+    protected override void OnParametersSet()
+    {
+        var max = Data.Count == 0 ? 0 : Data.Max(p => p.Value);
+        _ticks = ChartGeometry.NiceTicks(max);
+        _top = _ticks[^1] > 0 ? _ticks[^1] : 1;
+        _labelEvery = Math.Max(1, (int)Math.Ceiling(Data.Count / (double)Math.Max(1, MaxXLabels)));
+    }
+}

@@ -1,166 +1,62 @@
 using Microsoft.AspNetCore.Mvc;
+using Modulus.AspNetCore.Mvc.Htmx;
+using Modulus.Samples.Shared;
+using Modulus.Samples.Web.Models;
+using Modulus.Ui.Abstractions;
 
 namespace Modulus.AdminTemplate.Mvc.Controllers;
 
-public class CustomersController : Controller
+/// <summary>
+/// Customers list (Tabler datagrid over htmx) and customer view. Filters, paging and sorting are
+/// boosted GETs; the add / edit drawer saves return 204 with a refresh event.
+/// </summary>
+[Route("apps/customers")]
+public class CustomersController(SampleStore store) : SampleController
 {
-    private static List<Customer> Customers = new()
-    {
-        new() { Id = 1, Name = "John Doe", Email = "john@example.com", Phone = "+1 555-0101", City = "New York", Status = "active" },
-        new() { Id = 2, Name = "Jane Smith", Email = "jane@example.com", Phone = "+1 555-0102", City = "Los Angeles", Status = "active" },
-        new() { Id = 3, Name = "Bob Johnson", Email = "bob@example.com", Phone = "+1 555-0103", City = "Chicago", Status = "inactive" },
-        new() { Id = 4, Name = "Alice Brown", Email = "alice@example.com", Phone = "+1 555-0104", City = "Houston", Status = "active" },
-    };
+    public const string RefreshEvent = "customers:refresh";
+    private const string FormView = "~/Views/Shared/Ui/Apps/Customers/_CustomerForm.cshtml";
 
-    public IActionResult Index()
+    [HttpGet("")]
+    public IActionResult List([FromQuery] CustomerQuery query, [FromQuery] ProTableRequest request) =>
+        Page("Customers", "Apps/Customers/CustomerList", CustomerListPage.Load(store, query, request));
+
+    [HttpGet("{id:int}")]
+    public IActionResult View(int id) =>
+        store.FindCustomer(id) is { } customer ? Page(customer.Name, "Apps/Customers/CustomerView", CustomerViewPage.Load(store, customer)) : NotFound();
+
+    [HttpGet("form/{id:int?}")]
+    public IActionResult Form(int? id)
     {
-        return View(Customers);
+        if (id is null) return Drawer(null, new CustomerInput());
+        return store.FindCustomer(id.Value) is { } customer ? Drawer(id, CustomerInput.From(customer)) : NotFound();
     }
 
-    public IActionResult Create()
+    [HttpPost("save/{id:int?}")]
+    public IActionResult Save(int? id, CustomerInput input)
     {
-        return View(new Customer { Status = "active" });
-    }
-
-    [HttpPost]
-    public IActionResult Create(Customer customer)
-    {
-        if (ModelState.IsValid)
+        if (!ModelState.IsValid) return Drawer(id, input);
+        if (id is { } existing)
         {
-            customer.Id = Customers.Max(c => c.Id) + 1;
-            Customers.Add(customer);
-            return RedirectToAction(nameof(Index));
+            if (!store.UpdateCustomer(existing, input)) return NotFound();
         }
-        return View(customer);
+        else store.AddCustomer(input);
+
+        Response.HxMessage(MessageType.Success, id is null ? $"Added {input.Name}" : $"Saved {input.Name}")
+            .HxCloseDrawer().HxTrigger(RefreshEvent);
+        return Request.IsHtmx() ? NoContent() : Redirect("~/apps/customers");
     }
 
-    public IActionResult Edit(int id)
+    [HttpPost("delete")]
+    public IActionResult Delete([FromForm] int[] ids)
     {
-        var customer = Customers.FirstOrDefault(c => c.Id == id);
-        if (customer is null)
-            return NotFound();
-        return View(customer);
+        var count = store.DeleteCustomers(ids);
+        Response.HxMessage(MessageType.Success, count == 1 ? "Customer deleted" : $"{count} customers deleted").HxTrigger(RefreshEvent);
+        return Request.IsHtmx() ? NoContent() : Redirect("~/apps/customers");
     }
 
-    [HttpPost]
-    public IActionResult Edit(Customer customer)
+    private PartialViewResult Drawer(int? id, CustomerInput input)
     {
-        if (ModelState.IsValid)
-        {
-            var existing = Customers.FirstOrDefault(c => c.Id == customer.Id);
-            if (existing is not null)
-            {
-                existing.Name = customer.Name;
-                existing.Email = customer.Email;
-                existing.Phone = customer.Phone;
-                existing.City = customer.City;
-                existing.Status = customer.Status;
-            }
-            return RedirectToAction(nameof(Index));
-        }
-        return View(customer);
+        ViewData["Id"] = id;
+        return PartialView(FormView, input);
     }
-
-    /// <summary>
-    /// htmx endpoint: Returns filtered/paginated customer table body as partial
-    /// </summary>
-    [HttpGet]
-    public IActionResult GetTableBody(string? search = null, int page = 1, int pageSize = 10)
-    {
-        var filtered = Customers.AsEnumerable();
-
-        // Apply search filter
-        if (!string.IsNullOrEmpty(search))
-        {
-            var term = search.ToLower();
-            filtered = filtered.Where(c =>
-                c.Name.ToLower().Contains(term) ||
-                c.Email.ToLower().Contains(term) ||
-                c.City.ToLower().Contains(term));
-        }
-
-        // Apply pagination
-        var total = filtered.Count();
-        var paginated = filtered
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-
-        ViewBag.Total = total;
-        ViewBag.Page = page;
-        ViewBag.PageSize = pageSize;
-
-        return PartialView("~/Views/Components/ProTableBody.cshtml", paginated);
-    }
-
-    /// <summary>
-    /// htmx endpoint: Delete customer via htmx and return empty response (row removed)
-    /// </summary>
-    [HttpDelete]
-    public IActionResult Delete(int id)
-    {
-        var customer = Customers.FirstOrDefault(c => c.Id == id);
-        if (customer is not null)
-        {
-            Customers.Remove(customer);
-        }
-        return Ok(); // htmx will remove the row after this response
-    }
-
-    /// <summary>
-    /// htmx endpoint: Return form content for modal
-    /// </summary>
-    [HttpGet]
-    public IActionResult FormPartial(int? id = null)
-    {
-        var customer = id.HasValue ? Customers.FirstOrDefault(c => c.Id == id.Value) : new Customer { Status = "active" };
-        return PartialView("~/Views/Components/ProFormContent.cshtml", customer);
-    }
-
-    /// <summary>
-    /// htmx endpoint: Handle form submission and return validation errors or success
-    /// </summary>
-    [HttpPost]
-    public IActionResult FormSubmit(Customer customer)
-    {
-        if (!ModelState.IsValid)
-        {
-            // Return form with validation errors
-            return PartialView("~/Views/Components/ProFormContent.cshtml", customer);
-        }
-
-        if (customer.Id == 0)
-        {
-            // Create new
-            customer.Id = Customers.Max(c => c.Id) + 1;
-            Customers.Add(customer);
-        }
-        else
-        {
-            // Update existing
-            var existing = Customers.FirstOrDefault(c => c.Id == customer.Id);
-            if (existing is not null)
-            {
-                existing.Name = customer.Name;
-                existing.Email = customer.Email;
-                existing.Phone = customer.Phone;
-                existing.City = customer.City;
-                existing.Status = customer.Status;
-            }
-        }
-
-        // Signal modal close and table refresh
-        Response.Headers.Append("HX-Trigger", "formSuccess");
-        return Ok();
-    }
-}
-
-public class Customer
-{
-    public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
-    public string Phone { get; set; } = string.Empty;
-    public string City { get; set; } = string.Empty;
-    public string Status { get; set; } = "active";
 }

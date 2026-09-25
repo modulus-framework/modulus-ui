@@ -1,0 +1,171 @@
+@model CrmDashboard
+@{
+    var d = Model;
+}
+<app-page-header pretitle="Dashboards" title="CRM">
+        <a class="ant-btn ant-btn-default" href="/apps/customers"><app-ti name="users" /><span>Customers</span></a>
+        <a class="ant-btn ant-btn-primary" href="/apps/calendar"><app-ti name="calendar-plus" /><span>Schedule meeting</span></a>
+</app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-4">
+        @foreach (var k in d.Kpis)
+        {
+            <div class="m-card">
+                <div class="m-card-body">
+                    <div class="m-kpi-head">
+                        <span class="m-subheader">@k.Label</span>
+                        <span class="m-delta @(k.Delta >= 0 ? "m-delta-up" : "m-delta-down")" style="margin-left:auto">@Fmt.Delta(k.Delta) <app-ti name="@(k.Delta >= 0 ? "trending-up" : "trending-down")" /></span>
+                    </div>
+                    <div class="m-kpi-value"><span class="m-h1">@k.Value</span></div>
+                    <div class="m-kpi-foot">@k.Note</div>
+                    <div class="m-kpi-chart"><app-sparkline data="k.Trend" aria-label="@($"{k.Label} trend")" /></div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="m-row-cards m-cols-8-4">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div>
+                    <h3 class="m-card-title">Deals won and lost</h3>
+                    <p class="m-card-subtitle">Closed deals per month, @DateTime.Today.Year</p>
+                </div>
+            </div>
+            <div class="m-card-body">
+                <app-column-chart labels="d.Months" series="d.WonLost" title="Deals won and lost per month" height="280" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div>
+                    <h3 class="m-card-title">Sales funnel</h3>
+                    <p class="m-card-subtitle">Open pipeline by stage</p>
+                </div>
+            </div>
+            <div class="m-card-body">
+                <ul class="m-funnel">
+                    @foreach (var s in d.Funnel)
+                    {
+                        <li>
+                            <div class="m-flex m-between"><span class="m-heading m-medium">@s.Stage</span><span class="m-num m-heading">@s.Count.ToString("N0")</span></div>
+                            <div class="m-progress m-mt-8"><div class="m-progress-bar" style="width:@Fmt.Pct(s.Count, d.Funnel[0].Count)%"></div></div>
+                            <div class="m-xsmall m-muted m-mt-4">@Fmt.Percent(s.Count / (double)d.Funnel[0].Count) of leads</div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-8-4">
+        <div class="m-card">
+            <div class="m-card-header">
+                <h3 class="m-card-title">Top customers</h3>
+                <div class="m-card-actions"><a class="ant-btn ant-btn-default ant-btn-sm" href="/apps/customers"><span>View all</span></a></div>
+            </div>
+            <div class="ant-table-wrapper m-table-flush">
+                <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                    <table style="table-layout:auto">
+                        <thead class="ant-table-thead">
+                            <tr><th class="ant-table-cell">Customer</th><th class="ant-table-cell" style="text-align:right">Deals</th><th class="ant-table-cell" style="text-align:right">Revenue</th><th class="ant-table-cell" style="text-align:right">Change</th></tr>
+                        </thead>
+                        <tbody class="ant-table-tbody">
+                            @foreach (var c in d.TopCustomers)
+                            {
+                                <tr class="ant-table-row">
+                                    <td class="ant-table-cell">
+                                        <div class="m-flex m-gap-12">
+                                            <span class="m-avatar m-avatar-sm m-av-@c.Tint">@Fmt.Initials(c.Name)</span>
+                                            <div class="m-truncate"><div class="m-heading m-medium">@c.Name</div><div class="m-xsmall m-muted">@c.Company</div></div>
+                                        </div>
+                                    </td>
+                                    <td class="ant-table-cell m-num" style="text-align:right">@c.Deals</td>
+                                    <td class="ant-table-cell m-num m-heading" style="text-align:right">@Fmt.Money0(c.Revenue)</td>
+                                    <td class="ant-table-cell" style="text-align:right"><span class="m-delta @(c.Change >= 0 ? "m-delta-up" : "m-delta-down")">@Fmt.Delta(c.Change)</span></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div></div></div>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div>
+                    <h3 class="m-card-title">Team quota</h3>
+                    <p class="m-card-subtitle">Closed this quarter vs. target</p>
+                </div>
+            </div>
+            <div class="m-card-body m-card-body-flush">
+                <ul class="m-list">
+                    @foreach (var r in d.Team)
+                    {
+                        var share = (double)(r.Closed / r.Quota);
+                        <li class="m-list-item">
+                            <span class="m-avatar m-avatar-sm m-av-@r.Tint">@Fmt.Initials(r.Name)</span>
+                            <div class="m-list-item-text">
+                                <div class="m-flex m-between"><span class="m-list-item-title">@r.Name</span><span class="m-small m-muted">@Fmt.Money0(r.Closed) / @Fmt.Money0(r.Quota)</span></div>
+                                <div class="m-progress m-progress-xs m-mt-8"><div class="m-progress-bar" style="width:@(share * 100)%;--c:@(share >= 0.9 ? "var(--m-success)" : "var(--m-primary)")"></div></div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-3">
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Sales by country</h3></div>
+            <div class="m-card-body m-card-body-flush">
+                <ul class="m-list">
+                    @foreach (var c in d.Countries)
+                    {
+                        <li class="m-list-item">
+                            <span class="m-avatar m-avatar-sm m-avatar-rounded m-country">@c.Code</span>
+                            <div class="m-list-item-text"><span class="m-list-item-title">@Fmt.Money0(c.Sales)</span><span class="m-list-item-sub">@c.Country</span></div>
+                            <span class="m-delta @(c.Change >= 0 ? "m-delta-up" : "m-delta-down")"><app-ti name="@(c.Change >= 0 ? "chevron-up" : "chevron-down")" />@Math.Abs(c.Change).ToString("0.0")%</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <h3 class="m-card-title">Upcoming meetings</h3>
+                <div class="m-card-actions"><a href="/apps/calendar" class="m-small">Calendar</a></div>
+            </div>
+            <div class="m-card-body m-card-body-flush">
+                <ul class="m-list">
+                    @foreach (var m in d.Meetings)
+                    {
+                        <li class="m-list-item">
+                            <div class="m-date-tile"><span class="m-date-tile-month">@m.At.ToString("MMM")</span><span class="m-date-tile-day">@m.At.Day</span></div>
+                            <div class="m-list-item-text"><span class="m-list-item-title">@m.Title</span><span class="m-list-item-sub">@m.With</span></div>
+                            <span class="m-badge"><app-ti name="clock" />@Fmt.Time(m.At)</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Recent activity</h3></div>
+            <div class="m-card-body">
+                <ul class="m-timeline">
+                    @foreach (var a in d.Activity)
+                    {
+                        <li class="m-timeline-item">
+                            <span class="m-timeline-icon"><app-ti name="@a.Icon" /></span>
+                            <div class="m-timeline-body">
+                                <div><strong>@a.Who</strong> <span class="m-secondary">@a.What</span> @a.Target</div>
+                                <div class="m-timeline-time">@Fmt.Relative(a.At)</div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

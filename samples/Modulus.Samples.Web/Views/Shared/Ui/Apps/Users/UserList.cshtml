@@ -1,0 +1,151 @@
+@model UserListPage
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    const string Base = "/apps/users/list";
+    var grid = new Grid(Context.Request, Model.Request);
+    var q = Model.Query;
+    static IEnumerable<SelectListItem> Items(IEnumerable<string> values, string? selected) => values.Select(v => new SelectListItem(v, v, v == selected));
+}
+<app-page-header pretitle="Users & access" title="Users" subtitle="Everyone with access to the workspace, their role and plan."></app-page-header>
+
+@* The whole page body refreshes after a save or delete (stats + grid); links and the filter form
+   inside it are boosted, so paging, sorting and filtering swap just this block and push the URL. *@
+<div id="users-page" class="m-row-cards"
+     hx-boost="true" hx-target="#users-page" hx-select="#users-page" hx-swap="outerHTML" hx-push-url="true">
+    <div hidden hx-get="@grid.Current" hx-trigger="users:refresh from:body" hx-push-url="false"></div>
+    <div class="m-row-cards m-cols-4">
+        @foreach (var (label, value, note, icon, tone) in SampleUi.UserStatTiles(Model.Stats))
+        {
+            <div class="m-card"><div class="m-card-body">
+                <div class="m-flex m-between" style="align-items:flex-start">
+                    <div>
+                        <div class="m-subheader">@label</div>
+                        <div class="m-h1 m-mt-4">@value</div>
+                        <div class="m-small m-muted m-mt-4">@note</div>
+                    </div>
+                    <span class="m-icon-tile m-tile-@tone-lt"><app-ti name="@icon" /></span>
+                </div>
+            </div></div>
+        }
+    </div>
+
+    <div class="ant-card m-table-card" x-data="tableSelection" @@change="sync()">
+        <div class="ant-card-body">
+            <div class="m-table-toolbar">
+                <div class="m-table-toolbar-title">All users</div>
+                <div class="m-table-toolbar-actions">
+                    <span class="m-table-toolbar-search ant-input-affix-wrapper">
+                        <span class="ant-input-prefix"><app-ti name="search" /></span>
+                        <input class="ant-input" type="search" name="keyword" value="@q.Keyword" placeholder="Search users…" aria-label="Search users" form="users-filter" />
+                    </span>
+                    <app-button icon="download">Export</app-button>
+                    <app-button type="primary" icon="plus" @@click="$store.drawer.load('@Base/form', 'Add user')">Add user</app-button>
+                    <div class="m-table-toolbar-settings">
+                        <a class="ant-btn ant-btn-text ant-btn-icon-only" href="@grid.Current" aria-label="Reload" title="Reload"><app-icon type="reload" /></a>
+                        <app-dropdown placement="bottomRight">
+                            <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Table density" title="Density"><app-icon type="column-height" /></button>
+                            <dropdown-menu>
+                                <app-dropdown-item @@click="setDensity('')">Default</app-dropdown-item>
+                                <app-dropdown-item @@click="setDensity('ant-table-middle')">Middle</app-dropdown-item>
+                                <app-dropdown-item @@click="setDensity('ant-table-small')">Compact</app-dropdown-item>
+                            </dropdown-menu>
+                        </app-dropdown>
+                    </div>
+                </div>
+            </div>
+
+            <form id="users-filter" class="m-table-filters" method="get" action="@Base" @@change="$el.requestSubmit()">
+                <app-select name="role" items="Items(Lookups.Roles, q.Role)" placeholder="Select role" aria-label="Role" />
+                <app-select name="plan" items="Items(Lookups.Plans, q.Plan)" placeholder="Select plan" aria-label="Plan" />
+                <app-select name="status" items="Items(Enum.GetNames<UserStatus>(), q.Status?.ToString())" placeholder="Select status" aria-label="Status" />
+                @if (Model.Request.SortField is { } sortField)
+                {
+                    <input type="hidden" name="sortField" value="@sortField" />
+                    <input type="hidden" name="sortOrder" value="@Model.Request.SortOrder" />
+                }
+                <input type="hidden" name="pageSize" value="@Model.Request.PageSize" />
+            </form>
+
+            <div class="ant-alert ant-alert-info m-table-alert" role="status" x-show="count > 0" x-cloak>
+                <div class="ant-alert-content">
+                    <div class="ant-alert-message">
+                        <span>Selected <strong x-text="count"></strong> <span x-text="count === 1 ? 'item' : 'items'"></span></span>
+                        <button type="button" class="ant-btn ant-btn-link ant-btn-sm" @@click="clear()"><span>Clear</span></button>
+                        <span class="m-spacer"></span>
+                        <app-button danger size="small"
+                                    hx-post="@Base/delete" hx-include="#users-table input[name='ids']:checked" hx-swap="none"
+                                    hx-confirm="Delete the selected users?" data-confirm-danger data-confirm-ok="Delete">Delete selected</app-button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ant-table-wrapper" id="users-table">
+                <div class="ant-table ant-table-scroll-horizontal" :class="density">
+                    <div class="ant-table-container">
+                        <div class="ant-table-content" style="overflow: auto hidden;">
+                            <table style="width: 980px; min-width: 100%; table-layout: fixed;">
+                                <colgroup>
+                                    <col style="width:48px" /><col style="width:280px" />
+                                    @for (var i = 0; i < 4; i++) { <col style="width: calc((980px - 458px) / 4)" /> }
+                                    <col style="width:130px" />
+                                </colgroup>
+                                <thead class="ant-table-thead">
+                                    <tr>
+                                        <th class="ant-table-cell ant-table-selection-column">
+                                            <app-checkbox aria-label="Select all rows" data-select-all @@change="toggleAll($event.target.checked)" />
+                                        </th>
+                                        @grid.SortTh(nameof(AppUser.Name), "User")
+                                        @grid.SortTh(nameof(AppUser.Role), "Role")
+                                        @grid.SortTh(nameof(AppUser.Plan), "Plan")
+                                        @grid.SortTh(nameof(AppUser.Billed), "Billing", "text-align: right")
+                                        <th class="ant-table-cell">Status</th>
+                                        <th class="ant-table-cell" style="text-align:right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="ant-table-tbody">
+                                    @if (Model.Page.Data.Count == 0)
+                                    {
+                                        <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="7"><div class="m-table-empty">No users match these filters</div></td></tr>
+                                    }
+                                    @foreach (var u in Model.Page.Data)
+                                    {
+                                        var self = u.Id == CurrentUser.Id;
+                                        <tr class="ant-table-row ant-table-row-level-0">
+                                            <td class="ant-table-cell ant-table-selection-column">
+                                                <app-checkbox name="ids" value="@u.Id.ToString()" aria-label="@($"Select {u.Name}")" disabled="self" />
+                                            </td>
+                                            <td class="ant-table-cell@(grid.SortClass(nameof(AppUser.Name)))">
+                                                <div class="m-entity">
+                                                    <span class="m-avatar m-avatar-sm m-av-@u.Tint">@Fmt.Initials(u.Name)</span>
+                                                    <div class="m-entity-text">
+                                                        <a class="m-entity-title" href="/apps/users/view/@u.Id" hx-boost="false">@u.Name</a>
+                                                        <span class="m-entity-desc">@u.Email</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="ant-table-cell@(grid.SortClass(nameof(AppUser.Role)))"><span class="m-flex m-gap-8"><span class="m-icon-tile m-tile-xs m-tile-@SampleUi.RoleTone(u.Role)-lt"><app-ti name="@SampleUi.RoleIcon(u.Role)" /></span>@u.Role</span></td>
+                                            <td class="ant-table-cell@(grid.SortClass(nameof(AppUser.Plan)))"><span class="m-heading">@u.Plan</span></td>
+                                            <td class="ant-table-cell@(grid.SortClass(nameof(AppUser.Billed)))" style="text-align:right"><span class="m-num">@Fmt.Money0(u.Billed)</span></td>
+                                            <td class="ant-table-cell"><span class="m-badge @SampleUi.UserBadge(u.Status)">@u.Status</span></td>
+                                            <td class="ant-table-cell" style="text-align:right">
+                                                <div class="m-row-actions">
+                                                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/users/view/@u.Id" hx-boost="false" aria-label="View @u.Name" title="View"><app-ti name="eye" /></a>
+                                                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Edit @u.Name" title="Edit"
+                                                            @@click="$store.drawer.load('@Base/form/@u.Id', 'Edit user')"><app-ti name="edit" /></button>
+                                                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @u.Name" title="Delete" disabled="@self"
+                                                            hx-post="@Base/delete" hx-vals='{"ids": @u.Id}' hx-swap="none"
+                                                            hx-confirm="@($"Delete {u.Name}?")" data-confirm-danger data-confirm-ok="Delete"><app-ti name="trash" /></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                @grid.Pager(Model.Page.Total)
+            </div>
+        </div>
+    </div>
+</div>

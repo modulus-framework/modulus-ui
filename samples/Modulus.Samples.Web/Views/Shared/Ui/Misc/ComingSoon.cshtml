@@ -1,0 +1,19 @@
+@{
+    var left = LaunchDate.Value - DateTime.UtcNow;
+    (int, string)[] parts = [(left.Days, "Days"), (left.Hours, "Hours"), (left.Minutes, "Minutes"), (left.Seconds, "Seconds")];
+}
+<div class="m-status-page">
+    <span class="m-status-art m-bg-primary-lt m-text-primary"><app-ti name="rocket" /></span>
+    <h1 class="m-status-title">We are launching soon</h1>
+    <p class="m-status-text">Our new workspace is almost ready. Leave your email and we'll let you know the moment it's live.</p>
+    <div class="m-countdown" role="timer" aria-live="off" x-data="countdown(@((long)(LaunchDate.Value - DateTime.UnixEpoch).TotalMilliseconds))">
+        @for (var i = 0; i < parts.Length; i++)
+        {
+            <div class="m-countdown-cell"><span class="m-countdown-value" x-text="pad(parts[@i])">@parts[i].Item1.ToString("00")</span><span class="m-countdown-label">@parts[i].Item2</span></div>
+        }
+    </div>
+    <form class="m-subscribe" method="post" x-data x-on:submit.prevent="notifyLaunch($el)" novalidate>
+        <input class="ant-input" type="email" name="email" placeholder="your@email.com" aria-label="Email address" />
+        <button type="submit" class="ant-btn ant-btn-primary"><span>Notify me</span></button>
+    </form>
+</div>

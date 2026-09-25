@@ -1,0 +1,144 @@
+@model ProductListPage
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    const string Base = "/apps/ecommerce/products";
+    var grid = new Grid(Context.Request, Model.Request);
+    var q = Model.Query;
+    var s = Model.Stats;
+    (string Label, string Value, string Icon)[] strip =
+    [
+        ("Products", s.Total.ToString("N0"), "package"),
+        ("Published", s.Published.ToString("N0"), "world"),
+        ("Low stock", s.LowStock.ToString("N0"), "alert-triangle"),
+        ("Inventory value", Fmt.Money0(s.InventoryValue), "building-warehouse"),
+    ];
+}
+<app-page-header pretitle="eCommerce" title="Products">
+    <app-button type="primary" icon="plus" @@click="$store.drawer.load('@Base/form', 'Add product')">Add product</app-button>
+</app-page-header>
+
+<div id="products-page" class="m-row-cards"
+     hx-boost="true" hx-target="#products-page" hx-select="#products-page" hx-swap="outerHTML" hx-push-url="true">
+    <div hidden hx-get="@grid.Current" hx-trigger="products:refresh from:body" hx-push-url="false"></div>
+    <div class="m-card">
+        <div class="m-stat-strip">
+            @foreach (var (label, value, icon) in strip)
+            {
+                <div class="m-stat-strip-item">
+                    <div><div class="m-h2">@value</div><div class="m-small m-muted">@label</div></div>
+                    <span class="m-icon-tile m-tile-gray-lt"><app-ti name="@icon" /></span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="ant-card m-table-card" x-data="tableSelection" @@change="sync()">
+        <div class="ant-card-body">
+            <div class="m-table-toolbar">
+                <div class="m-table-toolbar-title">All products</div>
+                <div class="m-table-toolbar-actions">
+                    <span class="m-table-toolbar-search ant-input-affix-wrapper">
+                        <span class="ant-input-prefix"><app-ti name="search" /></span>
+                        <input class="ant-input" type="search" name="keyword" value="@q.Keyword" placeholder="Search products…" aria-label="Search products" form="products-filter" />
+                    </span>
+                    <app-button icon="download">Export</app-button>
+                    <partial name="Ui/_TableSettings" model="grid.Current" />
+                </div>
+            </div>
+
+            <form id="products-filter" class="m-table-filters" method="get" action="@Base" @@change="$el.requestSubmit()">
+                <app-select name="category" items="ProductInput.Categories.Select(c => new SelectListItem(c, c, c == q.Category))" placeholder="Category" aria-label="Category" />
+                <app-select name="stock" items="ProductQuery.StockLevels.Select(l => new SelectListItem(l.Label, l.Key, l.Key == q.Stock))" placeholder="Stock" aria-label="Stock" />
+                <app-select name="status" items="Enum.GetValues<ProductStatus>().Select(v => new SelectListItem(v.ToString(), v.ToString(), v == q.Status))" placeholder="Status" aria-label="Status" />
+                @if (Model.Request.SortField is { } sortField)
+                {
+                    <input type="hidden" name="sortField" value="@sortField" />
+                    <input type="hidden" name="sortOrder" value="@Model.Request.SortOrder" />
+                }
+                <input type="hidden" name="pageSize" value="@Model.Request.PageSize" />
+            </form>
+
+            <div class="ant-alert ant-alert-info m-table-alert" role="status" x-show="count > 0" x-cloak>
+                <div class="ant-alert-content">
+                    <div class="ant-alert-message">
+                        <span>Selected <strong x-text="count"></strong> <span x-text="count === 1 ? 'item' : 'items'"></span></span>
+                        <button type="button" class="ant-btn ant-btn-link ant-btn-sm" @@click="clear()"><span>Clear</span></button>
+                        <span class="m-spacer"></span>
+                        <app-button danger size="small"
+                                    hx-post="@Base/delete" hx-include="#products-table input[name='ids']:checked" hx-swap="none"
+                                    hx-confirm="Delete the selected products?" data-confirm-danger data-confirm-ok="Delete">Delete selected</app-button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ant-table-wrapper" id="products-table">
+                <div class="ant-table ant-table-scroll-horizontal" :class="density">
+                    <div class="ant-table-container">
+                        <div class="ant-table-content" style="overflow: auto hidden;">
+                            <table style="width: 1000px; min-width: 100%; table-layout: fixed;">
+                                <colgroup>
+                                    <col style="width:48px" /><col style="width:300px" />
+                                    @for (var i = 0; i < 5; i++) { <col style="width: calc((1000px - 478px) / 5)" /> }
+                                    <col style="width:130px" />
+                                </colgroup>
+                                <thead class="ant-table-thead">
+                                    <tr>
+                                        <th class="ant-table-cell ant-table-selection-column">
+                                            <app-checkbox aria-label="Select all rows" data-select-all @@change="toggleAll($event.target.checked)" />
+                                        </th>
+                                        @grid.SortTh(nameof(Product.Name), "Product")
+                                        @grid.SortTh(nameof(Product.Category), "Category")
+                                        @grid.SortTh(nameof(Product.Stock), "Stock")
+                                        @grid.SortTh(nameof(Product.Price), "Price", "text-align: right")
+                                        @grid.SortTh(nameof(Product.Sold), "Sold", "text-align: right")
+                                        <th class="ant-table-cell">Status</th>
+                                        <th class="ant-table-cell" style="text-align:right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="ant-table-tbody">
+                                    @if (Model.Page.Data.Count == 0)
+                                    {
+                                        <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="8"><div class="m-table-empty">No products match these filters</div></td></tr>
+                                    }
+                                    @foreach (var p in Model.Page.Data)
+                                    {
+                                        var (stockText, stockTone) = SampleUi.Stock(p);
+                                        <tr class="ant-table-row ant-table-row-level-0">
+                                            <td class="ant-table-cell ant-table-selection-column">
+                                                <app-checkbox name="ids" value="@p.Id.ToString()" aria-label="@($"Select {p.Name}")" />
+                                            </td>
+                                            <td class="ant-table-cell@(grid.SortClass(nameof(Product.Name)))">
+                                                <div class="m-entity">
+                                                    <span class="m-icon-tile m-tile-sm m-tile-@SampleUi.Tone(p.Tint)-lt"><app-ti name="@p.Icon" /></span>
+                                                    <div class="m-entity-text">
+                                                        <span class="m-entity-title">@p.Name</span>
+                                                        <span class="m-entity-desc">@p.Sku</span>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="ant-table-cell@(grid.SortClass(nameof(Product.Category)))"><span class="m-flex m-gap-8"><app-ti name="@SampleUi.CategoryIcon(p.Category)" class="m-muted" />@p.Category</span></td>
+                                            <td class="ant-table-cell@(grid.SortClass(nameof(Product.Stock)))"><span class="m-status"><span class="m-status-dot m-status-@stockTone"></span>@stockText</span></td>
+                                            <td class="ant-table-cell@(grid.SortClass(nameof(Product.Price)))" style="text-align:right"><span class="m-num m-heading">@Fmt.Money(p.Price)</span></td>
+                                            <td class="ant-table-cell@(grid.SortClass(nameof(Product.Sold)))" style="text-align:right"><span class="m-num">@p.Sold.ToString("N0")</span></td>
+                                            <td class="ant-table-cell"><span class="m-badge @SampleUi.ProductBadge(p.Status)">@p.Status</span></td>
+                                            <td class="ant-table-cell" style="text-align:right">
+                                                <div class="m-row-actions">
+                                                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Edit @p.Name" title="Edit"
+                                                            @@click="$store.drawer.load('@Base/form/@p.Id', 'Edit product')"><app-ti name="edit" /></button>
+                                                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @p.Name" title="Delete"
+                                                            hx-post="@Base/delete" hx-vals='{"ids": @p.Id}' hx-swap="none"
+                                                            hx-confirm="@($"Delete {p.Name}?")" data-confirm-danger data-confirm-ok="Delete"><app-ti name="trash" /></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                @grid.Pager(Model.Page.Total)
+            </div>
+        </div>
+    </div>
+</div>

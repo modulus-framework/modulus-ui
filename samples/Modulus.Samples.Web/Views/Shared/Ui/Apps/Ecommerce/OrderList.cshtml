@@ -1,0 +1,114 @@
+@model OrderListPage
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    const string Base = "/apps/ecommerce/orders";
+    var grid = new Grid(Context.Request, Model.Request);
+    var q = Model.Query;
+    var s = Model.Stats;
+    (string Label, string Value, string Icon)[] strip =
+    [
+        ("Pending payment", s.PendingPayment.ToString("N0"), "calendar-time"),
+        ("Completed", s.Completed.ToString("N0"), "checks"),
+        ("Refunded", s.Refunded.ToString("N0"), "arrow-back-up"),
+        ("Failed", s.Failed.ToString("N0"), "alert-octagon"),
+    ];
+}
+<app-page-header pretitle="eCommerce" title="Orders">
+    <a class="ant-btn ant-btn-default" href="/dashboards/ecommerce"><app-ti name="chart-bar" /><span>Sales overview</span></a>
+</app-page-header>
+
+<div id="orders-page" class="m-row-cards"
+     hx-boost="true" hx-target="#orders-page" hx-select="#orders-page" hx-swap="outerHTML" hx-push-url="true">
+    <div class="m-card">
+        <div class="m-stat-strip">
+            @foreach (var (label, value, icon) in strip)
+            {
+                <div class="m-stat-strip-item">
+                    <div><div class="m-h2">@value</div><div class="m-small m-muted">@label</div></div>
+                    <span class="m-icon-tile m-tile-gray-lt"><app-ti name="@icon" /></span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="ant-card m-table-card" x-data="tableSelection">
+        <div class="ant-card-body">
+            <div class="m-table-toolbar">
+                <div class="m-table-toolbar-title">All orders</div>
+                <div class="m-table-toolbar-actions">
+                    <span class="m-table-toolbar-search ant-input-affix-wrapper">
+                        <span class="ant-input-prefix"><app-ti name="search" /></span>
+                        <input class="ant-input" type="search" name="keyword" value="@q.Keyword" placeholder="Search orders…" aria-label="Search orders" form="orders-filter" />
+                    </span>
+                    <form id="orders-filter" method="get" action="@Base" @@change="$el.requestSubmit()" class="m-table-toolbar-filter">
+                        <app-select name="status" items="Enum.GetValues<OrderStatus>().Select(v => new SelectListItem(SampleUi.Label(v), v.ToString(), v == q.Status))" placeholder="Any status" aria-label="Status" />
+                        <app-select name="payment" items="Enum.GetValues<PaymentStatus>().Select(v => new SelectListItem(v.ToString(), v.ToString(), v == q.Payment))" placeholder="Any payment" aria-label="Payment" />
+                        @if (Model.Request.SortField is { } sortField)
+                        {
+                            <input type="hidden" name="sortField" value="@sortField" />
+                            <input type="hidden" name="sortOrder" value="@Model.Request.SortOrder" />
+                        }
+                        <input type="hidden" name="pageSize" value="@Model.Request.PageSize" />
+                    </form>
+                    <app-button icon="download">Export</app-button>
+                    <partial name="Ui/_TableSettings" model="grid.Current" />
+                </div>
+            </div>
+
+            <div class="ant-table-wrapper" id="orders-table">
+                <div class="ant-table ant-table-scroll-horizontal" :class="density">
+                    <div class="ant-table-container">
+                        <div class="ant-table-content" style="overflow: auto hidden;">
+                            <table style="width: 1000px; min-width: 100%; table-layout: fixed;">
+                                <colgroup>
+                                    <col style="width:100px" /><col style="width:150px" /><col style="width:280px" />
+                                    @for (var i = 0; i < 3; i++) { <col style="width: calc((1000px - 610px) / 3)" /> }
+                                    <col style="width:80px" />
+                                </colgroup>
+                                <thead class="ant-table-thead">
+                                    <tr>
+                                        @grid.SortTh("Id", "Order")
+                                        @grid.SortTh(nameof(Order.PlacedAt), "Date")
+                                        @grid.SortTh(nameof(Order.CustomerName), "Customer")
+                                        <th class="ant-table-cell">Payment</th>
+                                        <th class="ant-table-cell">Status</th>
+                                        @grid.SortTh(nameof(Order.Total), "Total", "text-align: right")
+                                        <th class="ant-table-cell" style="text-align:right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="ant-table-tbody">
+                                    @if (Model.Page.Data.Count == 0)
+                                    {
+                                        <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="7"><div class="m-table-empty">No orders match these filters</div></td></tr>
+                                    }
+                                    @foreach (var o in Model.Page.Data)
+                                    {
+                                        <tr class="ant-table-row ant-table-row-level-0">
+                                            <td class="ant-table-cell@(grid.SortClass("Id"))"><a class="m-medium" href="@Base/@o.Id" hx-boost="false">@o.Number</a></td>
+                                            <td class="ant-table-cell@(grid.SortClass(nameof(Order.PlacedAt)))"><span class="m-muted">@Fmt.DateTime(o.PlacedAt)</span></td>
+                                            <td class="ant-table-cell@(grid.SortClass(nameof(Order.CustomerName)))">
+                                                <div class="m-entity">
+                                                    <span class="m-avatar m-avatar-sm m-av-@o.Tint">@Fmt.Initials(o.CustomerName)</span>
+                                                    <div class="m-entity-text"><span class="m-entity-title">@o.CustomerName</span><span class="m-entity-desc">@o.CustomerEmail</span></div>
+                                                </div>
+                                            </td>
+                                            <td class="ant-table-cell"><span class="m-status"><span class="m-status-dot m-status-@SampleUi.PaymentTone(o.Payment)"></span>@o.Payment</span></td>
+                                            <td class="ant-table-cell"><span class="m-badge @SampleUi.OrderBadge(o.Status)">@SampleUi.Label(o.Status)</span></td>
+                                            <td class="ant-table-cell@(grid.SortClass(nameof(Order.Total)))" style="text-align:right"><span class="m-num m-heading">@Fmt.Money(o.Total)</span></td>
+                                            <td class="ant-table-cell" style="text-align:right">
+                                                <div class="m-row-actions">
+                                                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="@Base/@o.Id" hx-boost="false" aria-label="View order @o.Number" title="View"><app-ti name="eye" /></a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                @grid.Pager(Model.Page.Total)
+            </div>
+        </div>
+    </div>
+</div>

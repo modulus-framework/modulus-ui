@@ -5,12 +5,12 @@
   <ItemGroup>
     <!-- Ant Design Blazor: the ONLY place its version is pinned (see docs/UPGRADING.md). -->
     <PackageVersion Include="AntDesign" Version="1.6.2" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.9" />
+    <!-- Official Pro layout (BasicLayout, PageContainer, GlobalHeader). Keep in lock-step with AntDesign. -->
+    <PackageVersion Include="AntDesign.ProLayout" Version="1.6.2" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.12" />
     <!-- Test packages -->
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.1" />
-    <PackageVersion Include="xunit" Version="2.8.1" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.1" />
-    <PackageVersion Include="bunit" Version="1.32.4" />
-    <PackageVersion Include="bunit.web" Version="1.32.4" />
+    <PackageVersion Include="xunit.v3" Version="4.0.1" />
+    <PackageVersion Include="bunit" Version="2.11.3" />
   </ItemGroup>
 </Project>

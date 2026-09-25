@@ -1,0 +1,104 @@
+@model InvoiceEditPage
+@using System.Text.Json
+@inject Microsoft.Extensions.Options.IOptions<Modulus.Ui.Abstractions.Theming.ModulusThemeOptions> ThemeOptions
+@{
+    var input = Model.Input;
+    var seller = SampleContent.Seller;
+    var action = Model.Id is { } id ? $"/apps/invoice/edit/{id}" : "/apps/invoice/add";
+    var lineErrors = ViewData.ModelState
+        .Where(e => e.Key.StartsWith("Input.Lines[") && e.Value!.Errors.Count > 0)
+        .ToDictionary(e => e.Key["Input.".Length..], e => e.Value!.Errors[0].ErrorMessage);
+    var init = JsonSerializer.Serialize(new
+    {
+        lines = input.Lines.Select(l => new { item = l.Item, description = l.Description, cost = l.Cost, qty = l.Qty }),
+        discount = input.DiscountPercent,
+        tax = input.TaxPercent,
+        errors = lineErrors,
+    });
+}
+<app-page-header pretitle="Invoice" title="@(Model.Id is null ? "Create invoice" : $"Edit invoice #{Model.Number}")">
+    <a class="ant-btn ant-btn-default" href="@(Model.Id is null ? "/apps/invoice/list" : $"/apps/invoice/preview/{Model.Id}")"><app-ti name="arrow-left" /><span>@(Model.Id is null ? "All invoices" : "Back to invoice")</span></a>
+</app-page-header>
+
+<form method="post" action="@action" asp-antiforgery="true" class="m-invoice-layout ant-form ant-form-vertical ant-form-hide-required-mark" novalidate x-data="invoiceForm(@init)">
+    <div class="m-card">
+        <div class="m-invoice">
+            <div class="m-invoice-head">
+                <div>
+                    <div class="m-invoice-brand">@Html.Raw(ShellRenderer.Brand(ThemeOptions.Value))</div>
+                    <address class="m-invoice-address">@foreach (var line in seller.Address){<div>@line</div>}<div>@seller.Phone</div></address>
+                </div>
+                <div class="m-invoice-dates">
+                    <div class="m-invoice-number">Invoice #@Model.Number</div>
+                    <app-form-item asp-for="Input.IssuedAt" label="Date issued" layout="horizontal"><input type="date" class="ant-input" name="Input.IssuedAt" id="Input_IssuedAt" value="@input.IssuedAt?.ToString("yyyy-MM-dd")" /></app-form-item>
+                    <app-form-item asp-for="Input.DueAt" label="Date due" layout="horizontal"><input type="date" class="ant-input" name="Input.DueAt" id="Input_DueAt" value="@input.DueAt?.ToString("yyyy-MM-dd")" /></app-form-item>
+                </div>
+            </div>
+
+            <div class="m-subheader m-mb-8">Invoice to</div>
+            <div class="m-form-grid">
+                <app-form-item asp-for="Input.ClientName" label="Client name"><input class="ant-input" name="Input.ClientName" id="Input_ClientName" value="@input.ClientName" placeholder="Jordan Stevenson" /></app-form-item>
+                <app-form-item asp-for="Input.ClientCompany" label="Company"><input class="ant-input" name="Input.ClientCompany" id="Input_ClientCompany" value="@input.ClientCompany" placeholder="Hall-Robbins PLC" /></app-form-item>
+                <app-form-item asp-for="Input.ClientEmail" label="Email"><input class="ant-input" type="email" name="Input.ClientEmail" id="Input_ClientEmail" value="@input.ClientEmail" placeholder="jordan@hallrobbins.com" /></app-form-item>
+                <app-form-item asp-for="Input.ClientCountry" label="Country"><select class="m-select" name="Input.ClientCountry" id="Input_ClientCountry"><option value="">Select country</option>@foreach (var c in Lookups.Countries){<option value="@c" selected="@(c == input.ClientCountry)">@c</option>}</select></app-form-item>
+                <app-form-item asp-for="Input.ClientAddress" label="Address" class="m-span-2"><input class="ant-input" name="Input.ClientAddress" id="Input_ClientAddress" value="@input.ClientAddress" placeholder="7777 Mendez Plains, Florida" /></app-form-item>
+            </div>
+
+            <div class="m-invoice-editor">
+                <div class="m-invoice-editor-head" aria-hidden="true"><span>Item</span><span>Cost</span><span>Qty</span><span>Price</span><span></span></div>
+                <template x-for="(line, i) in lines" :key="i">
+                    <div class="m-invoice-editor-row">
+                        <div class="m-invoice-editor-item">
+                            <input class="ant-input" :class="error(i, 'Item') && 'ant-input-status-error'" :name="`Input.Lines[${i}].Item`" x-model="line.item" placeholder="Item name" :aria-label="`Item ${i + 1}`" />
+                            <div class="ant-form-item-explain-error" x-show="error(i, 'Item')" x-text="error(i, 'Item')"></div>
+                            <textarea class="ant-input m-mt-8" rows="2" :name="`Input.Lines[${i}].Description`" x-model="line.description" placeholder="Description" :aria-label="`Description ${i + 1}`"></textarea>
+                        </div>
+                        <div>
+                            <input class="ant-input" type="number" min="0" step="0.01" :name="`Input.Lines[${i}].Cost`" x-model="line.cost" :aria-label="`Cost ${i + 1}`" />
+                            <div class="ant-form-item-explain-error" x-show="error(i, 'Cost')" x-text="error(i, 'Cost')"></div>
+                        </div>
+                        <div>
+                            <input class="ant-input" type="number" min="1" step="1" :name="`Input.Lines[${i}].Qty`" x-model="line.qty" :aria-label="`Quantity ${i + 1}`" />
+                            <div class="ant-form-item-explain-error" x-show="error(i, 'Qty')" x-text="error(i, 'Qty')"></div>
+                        </div>
+                        <div class="m-invoice-editor-price m-num" x-text="fmt((+line.cost || 0) * (+line.qty || 0))"></div>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" @@click="remove(i)" :aria-label="`Remove item ${i + 1}`" title="Remove"><app-ti name="x" /></button>
+                    </div>
+                </template>
+                <button type="button" class="ant-btn ant-btn-dashed" @@click="add()"><app-ti name="plus" /><span>Add item</span></button>
+            </div>
+
+            <div class="m-invoice-foot">
+                <div class="m-invoice-seller" style="flex:1;min-width:240px;max-width:420px">
+                    <app-form-item asp-for="Input.Note" label="Note"><textarea class="ant-input" name="Input.Note" id="Input_Note" rows="3">@input.Note</textarea></app-form-item>
+                </div>
+                <dl class="m-invoice-totals">
+                    <dt>Subtotal</dt><dd x-text="fmt(subtotal())">@Fmt.Money(input.Lines.Sum(l => l.Total))</dd>
+                    <dt>Discount (<span x-text="+discount || 0">@input.DiscountPercent</span>%)</dt><dd x-text="'−' + fmt(discountAmount())"></dd>
+                    <dt>Tax (<span x-text="+tax || 0">@input.TaxPercent</span>%)</dt><dd x-text="fmt(taxAmount())"></dd>
+                    <dt class="m-invoice-total">Total</dt><dd class="m-invoice-total" x-text="fmt(total())"></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <aside class="m-invoice-side">
+        <div class="m-card">
+            <div class="m-card-body m-invoice-actions">
+                <button type="submit" class="ant-btn ant-btn-primary ant-btn-block"><app-ti name="device-floppy" /><span>@(Model.Id is null ? "Create invoice" : "Save changes")</span></button>
+                @if (Model.Id is { } existing)
+                {
+                    <a class="ant-btn ant-btn-default ant-btn-block" href="/apps/invoice/preview/@existing"><app-ti name="eye" /><span>Preview</span></a>
+                }
+                <a class="ant-btn ant-btn-default ant-btn-block" href="/apps/invoice/list"><span>Cancel</span></a>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-body">
+                <app-form-item asp-for="Input.Status" label="Status"><select class="m-select" name="Input.Status" id="Input_Status">@foreach (var st in Enum.GetValues<InvoiceStatus>()){<option value="@st" selected="@(st == input.Status)">@SampleUi.Label(st)</option>}</select></app-form-item>
+                <app-form-item asp-for="Input.DiscountPercent" label="Discount (%)"><input class="ant-input" type="number" min="0" max="100" step="0.5" name="Input.DiscountPercent" id="Input_DiscountPercent" x-model="discount" value="@input.DiscountPercent" /></app-form-item>
+                <app-form-item asp-for="Input.TaxPercent" label="Tax (%)" class="m-mb-0"><input class="ant-input" type="number" min="0" max="100" step="0.5" name="Input.TaxPercent" id="Input_TaxPercent" x-model="tax" value="@input.TaxPercent" /></app-form-item>
+            </div>
+        </div>
+    </aside>
+</form>

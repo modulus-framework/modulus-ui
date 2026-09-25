@@ -1,0 +1,122 @@
+@page "/apps/invoice/list"
+@inject SampleStore Store
+@inject IMessageService Message
+
+<PageTitle>Invoices · Modulus</PageTitle>
+
+<PageHeading Pretitle="Invoice" Title="Invoices">
+    <Actions>
+        <a class="ant-btn ant-btn-primary" href="/apps/invoice/add"><Ti Name="plus" /><span>Create invoice</span></a>
+    </Actions>
+</PageHeading>
+
+<div class="m-row-cards">
+    <div class="m-card">
+        <div class="m-stat-strip">
+            @foreach (var (label, value, icon) in Strip)
+            {
+                <div class="m-stat-strip-item">
+                    <div><div class="m-h2">@value</div><div class="m-small m-muted">@label</div></div>
+                    <span class="m-icon-tile m-tile-gray-lt"><Ti Name="@icon" /></span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <ProTable TItem="Invoice" @ref="_table" HeaderTitle="All invoices" Request="LoadAsync" RowKey="i => i.Id" Selectable ScrollX="1000">
+        <ToolBar>
+            <Input @bind-Value="_keyword" Placeholder="Search invoices…" AllowClear Class="m-table-toolbar-search" OnPressEnter="SearchAsync" OnClear="SearchAsync" Prefix="@_searchIcon" />
+            <Select TItemValue="InvoiceStatus?" TItem="string" Value="_status" ValueChanged="StatusChangedAsync" Placeholder="Any status" AllowClear Style="width:160px">
+                <SelectOptions>
+                    @foreach (var s in Enum.GetValues<InvoiceStatus>())
+                    {
+                        <SelectOption TItemValue="InvoiceStatus?" TItem="string" Value="s" Label="@SampleUi.Label(s)" />
+                    }
+                </SelectOptions>
+            </Select>
+            <Button Icon="download">Export</Button>
+        </ToolBar>
+        <BatchActions Context="rows">
+            <Popconfirm Title="@($"Delete {rows.Count} invoices?")" OkText="Delete" OnConfirm="() => DeleteAsync(rows.Select(r => r.Id))">
+                <Button Danger Size="@ButtonSize.Small">Delete selected</Button>
+            </Popconfirm>
+        </BatchActions>
+        <Columns Context="row">
+            <PropertyColumn Property="i => i.Id" Title="#" Sortable Width="100">
+                <a class="m-medium" href="/apps/invoice/preview/@row.Id">@row.Number</a>
+            </PropertyColumn>
+            <ActionColumn Width="70" Align="ColumnAlign.Center" Title="">
+                <span class="m-icon-tile m-tile-sm m-tile-round m-tile-@SampleUi.InvoiceTone(row.Status)-lt" title="@SampleUi.Label(row.Status) · due @Fmt.Date(row.DueAt)"><Ti Name="@SampleUi.InvoiceIcon(row.Status)" /><span class="m-sr-only">@SampleUi.Label(row.Status)</span></span>
+            </ActionColumn>
+            <PropertyColumn Property="i => i.ClientName" Title="Client" Sortable Width="280">
+                <div class="m-entity">
+                    <span class="m-avatar m-avatar-sm m-av-@row.Tint">@Fmt.Initials(row.ClientName)</span>
+                    <div class="m-entity-text"><span class="m-entity-title">@row.ClientName</span><span class="m-entity-desc">@row.ClientCompany</span></div>
+                </div>
+            </PropertyColumn>
+            <PropertyColumn Property="i => i.Total" Title="Total" Sortable Align="ColumnAlign.Right">
+                <span class="m-num">@Fmt.Money(row.Total)</span>
+            </PropertyColumn>
+            <PropertyColumn Property="i => i.IssuedAt" Title="Issued" Sortable>
+                <span class="m-muted">@Fmt.Date(row.IssuedAt)</span>
+            </PropertyColumn>
+            <PropertyColumn Property="i => i.Balance" Title="Balance" Sortable Align="ColumnAlign.Right">
+                @if (row.Balance == 0)
+                {
+                    <span class="m-badge m-badge-green-lt">Paid</span>
+                }
+                else
+                {
+                    <span class="m-num m-heading">@Fmt.Money(row.Balance)</span>
+                }
+            </PropertyColumn>
+            <ActionColumn Title="Actions" Width="130" Align="ColumnAlign.Right">
+                <div class="m-row-actions">
+                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/invoice/preview/@row.Id" aria-label="Preview invoice @row.Number" title="Preview"><Ti Name="eye" /></a>
+                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/invoice/edit/@row.Id" aria-label="Edit invoice @row.Number" title="Edit"><Ti Name="edit" /></a>
+                    <Popconfirm Title="@($"Delete invoice {row.Number}?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => DeleteAsync([row.Id])">
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete invoice @row.Number" title="Delete"><Ti Name="trash" /></button>
+                    </Popconfirm>
+                </div>
+            </ActionColumn>
+        </Columns>
+    </ProTable>
+</div>
+
+@code {
+    private ProTable<Invoice>? _table;
+    private InvoiceStats _stats = default!;
+    private string? _keyword;
+    private InvoiceStatus? _status;
+    private readonly RenderFragment _searchIcon = @<Ti Name="search" />;
+
+    private (string Label, string Value, string Icon)[] Strip =>
+    [
+        ("Clients", _stats.Clients.ToString("N0"), "users"),
+        ("Invoices", _stats.Invoices.ToString("N0"), "file-invoice"),
+        ("Paid", Fmt.Money0(_stats.Paid), "circle-check"),
+        ("Unpaid", Fmt.Money0(_stats.Unpaid), "clock-dollar"),
+    ];
+
+    protected override void OnInitialized() => _stats = Store.InvoiceStats();
+
+    private Task<ProTableResponse<Invoice>> LoadAsync(ProTableRequest request) =>
+        Task.FromResult(Store.QueryInvoices(new InvoiceQuery(_keyword, _status), request));
+
+    private Task SearchAsync() => _table!.ReloadAsync(resetPage: true);
+
+    private Task StatusChangedAsync(InvoiceStatus? status)
+    {
+        _status = status;
+        return _table!.ReloadAsync(resetPage: true);
+    }
+
+    private async Task DeleteAsync(IEnumerable<int> ids)
+    {
+        var count = Store.DeleteInvoices(ids);
+        _table!.ClearSelection();
+        _ = Message.SuccessAsync(count == 1 ? "Invoice deleted" : $"{count} invoices deleted");
+        _stats = Store.InvoiceStats();
+        await _table.ReloadAsync();
+    }
+}

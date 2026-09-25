@@ -1,0 +1,24 @@
+@model RegisterInput
+<div class="m-auth-card">
+    <div class="m-auth-card-body">
+        <h1 class="m-auth-title">Create new account</h1>
+        <form method="post" class="ant-form ant-form-vertical ant-form-hide-required-mark" novalidate>
+            <app-form-item asp-for="Username" label="Username">
+                <app-input asp-for="Username" placeholder="Choose a username" prefix-icon="user" autocomplete="username" />
+            </app-form-item>
+            <app-form-item asp-for="Email" label="Email address">
+                <app-input asp-for="Email" placeholder="your@email.com" prefix-icon="mail" autocomplete="email" />
+            </app-form-item>
+            <app-form-item asp-for="Password" label="Password" help="Use 8 or more characters with a mix of letters and numbers.">
+                <app-input asp-for="Password" type="password" placeholder="Create a password" prefix-icon="lock" autocomplete="new-password" />
+            </app-form-item>
+            <app-form-item asp-for="Terms" label="">
+                <app-checkbox asp-for="Terms">Agree the <a href="/pages/faq">terms and policy</a>.</app-checkbox>
+            </app-form-item>
+            <div class="m-auth-actions">
+                <app-button type="primary" html-type="submit" block>Create new account</app-button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="m-auth-foot">Already have account? <a href="/auth/login">Sign in</a></div>

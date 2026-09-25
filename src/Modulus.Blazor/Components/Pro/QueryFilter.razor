@@ -1,25 +1,60 @@
-@inherits ComponentBase
+@*
+    Search panel above a ProTable (Ant Design Pro QueryFilter): responsive grid of
+    fields, Query/Reset, and an Expand toggle for rarely used fields.
 
-<div @attributes="AdditionalAttributes" 
-     style="background: white; border: 1px solid #d9d9d9; border-radius: 4px; padding: 16px; margin-bottom: 16px;">
-    <div style="display: flex; align-items: center; justify-content: space-between;">
-        <h4 style="margin: 0;">Advanced Filters</h4>
-        <div style="display: flex; gap: 8px;">
-            <button class="ant-btn ant-btn-primary">Search</button>
-            <button class="ant-btn">Reset</button>
-            <button class="ant-btn">More Filters</button>
+    <QueryFilter Model="_query" OnSearch="Search" OnReset="Reset">
+        <ChildContent><FormItem Label="Name"><Input @bind-Value="_query.Name" /></FormItem></ChildContent>
+        <Advanced>...</Advanced>
+    </QueryFilter>
+*@
+@typeparam TModel
+
+<Card Bordered="false" Class="m-query-filter">
+    <Form TModel="TModel" Model="Model" Layout="@FormLayout.Horizontal" OnFinish="SearchAsync" @ref="_form">
+        <div class="m-query-filter-grid">
+            @ChildContent
+            @if (_expanded && Advanced is not null)
+            {
+                @Advanced
+            }
+            <div class="m-query-filter-actions">
+                <Button OnClick="ResetAsync">Reset</Button>
+                <Button Type="@ButtonType.Primary" HtmlType="submit" Loading="Loading">Query</Button>
+                @if (Advanced is not null)
+                {
+                    <button type="button" class="ant-btn ant-btn-link m-query-filter-toggle" aria-expanded="@(_expanded ? "true" : "false")" @onclick="() => _expanded = !_expanded">
+                        <span>@(_expanded ? "Collapse" : "Expand")</span> <Icon Type="@(_expanded ? "up" : "down")" />
+                    </button>
+                }
+            </div>
         </div>
-    </div>
-    
-    <div style="margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-        @ChildContent
-    </div>
-</div>
+    </Form>
+</Card>
 
 @code {
-    [Parameter]
-    public RenderFragment? ChildContent { get; set; }
+    [Parameter, EditorRequired] public TModel Model { get; set; } = default!;
 
-    [Parameter(CaptureUnmatchedValues = true)]
-    public Dictionary<string, object> AdditionalAttributes { get; set; } = [];
+    /// <summary>Always-visible fields (FormItem elements).</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Fields revealed by "Expand".</summary>
+    [Parameter] public RenderFragment? Advanced { get; set; }
+
+    [Parameter] public EventCallback OnSearch { get; set; }
+
+    /// <summary>Called after the form is reset — clear your model here, then reload.</summary>
+    [Parameter] public EventCallback OnReset { get; set; }
+
+    [Parameter] public bool Loading { get; set; }
+
+    private Form<TModel>? _form;
+    private bool _expanded;
+
+    private Task SearchAsync() => OnSearch.InvokeAsync();
+
+    private async Task ResetAsync()
+    {
+        _form?.Reset();
+        await OnReset.InvokeAsync();
+    }
 }

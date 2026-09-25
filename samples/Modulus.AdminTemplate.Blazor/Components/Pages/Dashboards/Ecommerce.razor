@@ -1,0 +1,161 @@
+@page "/dashboards/ecommerce"
+@inject SampleStore Store
+
+<PageTitle>eCommerce · Modulus</PageTitle>
+
+<PageHeading Pretitle="Dashboards" Title="eCommerce">
+    <Actions>
+        <a class="ant-btn ant-btn-default" href="/apps/ecommerce/orders"><Ti Name="truck-delivery" /><span>Orders</span></a>
+        <a class="ant-btn ant-btn-primary" href="/apps/ecommerce/products"><Ti Name="package" /><span>Products</span></a>
+    </Actions>
+</PageHeading>
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-side">
+        <div class="m-card m-welcome">
+            <div class="m-card-body">
+                <div class="m-h3">Congratulations Serena! 🎉</div>
+                <div class="m-muted m-mt-4">Best seller of the month</div>
+                <div class="m-welcome-value">@Fmt.Money0(_d.MonthBest)</div>
+                <div class="m-small m-muted">@Fmt.Percent(_d.MonthTarget) of the monthly target</div>
+                <div class="m-progress m-mt-12" style="max-width:220px"><div class="m-progress-bar" style="width:@(_d.MonthTarget * 100)%"></div></div>
+                <a class="ant-btn ant-btn-primary m-mt-16" href="/apps/ecommerce/orders"><span>View sales</span></a>
+                <span class="m-welcome-art" aria-hidden="true"><Ti Name="trophy" /></span>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <h3 class="m-card-title">Statistics</h3>
+                <div class="m-card-actions"><span class="m-small m-muted">Updated 1 month ago</span></div>
+            </div>
+            <div class="m-card-body m-center-y">
+                <div class="m-stats-grid">
+                    @foreach (var t in _d.Tiles)
+                    {
+                        <div class="m-stat">
+                            <span class="m-icon-tile m-tile-@t.Tone-lt m-tile-round"><Ti Name="@t.Icon" /></span>
+                            <div class="m-stat-text"><div class="m-h3">@t.Value</div><div class="m-stat-sub">@t.Caption</div></div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-8-4">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div>
+                    <h3 class="m-card-title">Revenue report</h3>
+                    <p class="m-card-subtitle">Earning and expense per month</p>
+                </div>
+                <div class="m-card-actions">
+                    <div class="m-report-total"><span class="m-subheader">Earning</span><span class="m-h3">@Fmt.Money0(_d.YearEarning)</span></div>
+                    <div class="m-report-total"><span class="m-subheader">Expense</span><span class="m-h3">@Fmt.Money0(_d.YearExpense)</span></div>
+                </div>
+            </div>
+            <div class="m-card-body">
+                <ColumnChart Labels="_d.Months" Series="_d.EarningExpense" Prefix="$" Title="Earning and expense per month" Height="280" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Sales by category</h3></div>
+            <div class="m-card-body">
+                <DonutChart Slices="_d.Categories" Prefix="$" CenterLabel="This month" Title="Sales by category" Size="168" />
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-3">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Popular products</h3><p class="m-card-subtitle">Units sold this year</p></div>
+            </div>
+            <div class="m-card-body m-card-body-flush">
+                <ul class="m-list">
+                    @foreach (var p in _d.Popular)
+                    {
+                        <li class="m-list-item">
+                            <span class="m-icon-tile m-tile-sm m-tile-@SampleUi.Tone(p.Tint)-lt"><Ti Name="@p.Icon" /></span>
+                            <div class="m-list-item-text"><span class="m-list-item-title">@p.Name</span><span class="m-list-item-sub">@p.Sku · @p.Sold.ToString("N0") sold</span></div>
+                            <span class="m-heading m-medium m-num">@Fmt.Money(p.Price)</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Orders by status</h3></div>
+            <div class="m-card-body">
+                @{ var totalOrders = Math.Max(1, _d.OrderCounts.Values.Sum()); }
+                <div class="m-progress m-progress-lg">
+                    @foreach (var (status, count) in _d.OrderCounts)
+                    {
+                        <div class="m-progress-bar" style="width:@Fmt.Pct(count, totalOrders)%;--c:@SampleUi.StatusColor(status)" title="@SampleUi.Label(status): @count"></div>
+                    }
+                </div>
+                <ul class="m-list m-list-plain m-mt-12">
+                    @foreach (var (status, count) in _d.OrderCounts)
+                    {
+                        <li class="m-list-item">
+                            <span class="m-key m-key-rect" style="--c:@SampleUi.StatusColor(status)"></span>
+                            <span class="m-list-item-text">@SampleUi.Label(status)</span>
+                            <span class="m-heading m-medium m-num">@count</span>
+                            <span class="m-muted m-num" style="width:40px;text-align:right">@Fmt.Percent(count / (double)totalOrders)</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Transactions</h3></div>
+            <div class="m-card-body m-card-body-flush">
+                <ul class="m-list">
+                    @foreach (var t in _d.Transactions)
+                    {
+                        <li class="m-list-item">
+                            <span class="m-icon-tile m-tile-sm m-tile-@SampleUi.Tone(t.Tint)-lt"><Ti Name="@t.Icon" /></span>
+                            <div class="m-list-item-text"><span class="m-list-item-title">@t.Title</span><span class="m-list-item-sub">@t.Subtitle</span></div>
+                            <span class="m-medium m-num @(t.Amount >= 0 ? "m-text-success" : "m-text-danger")">@(t.Amount >= 0 ? "+" : "")@Fmt.Money(t.Amount)</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header">
+            <h3 class="m-card-title">Latest orders</h3>
+            <div class="m-card-actions"><a class="ant-btn ant-btn-default ant-btn-sm" href="/apps/ecommerce/orders"><span>View all</span></a></div>
+        </div>
+        <div class="ant-table-wrapper m-table-flush">
+            <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                <table style="table-layout:auto">
+                    <thead class="ant-table-thead">
+                        <tr><th class="ant-table-cell">Order</th><th class="ant-table-cell">Customer</th><th class="ant-table-cell">Items</th><th class="ant-table-cell">Status</th><th class="ant-table-cell">Payment</th><th class="ant-table-cell" style="text-align:right">Total</th></tr>
+                    </thead>
+                    <tbody class="ant-table-tbody">
+                        @foreach (var o in _d.RecentOrders)
+                        {
+                            <tr class="ant-table-row">
+                                <td class="ant-table-cell"><a class="m-medium" href="/apps/ecommerce/orders/@o.Id">@o.Number</a><div class="m-xsmall m-muted">@Fmt.DateTime(o.PlacedAt)</div></td>
+                                <td class="ant-table-cell"><div class="m-flex m-gap-12"><span class="m-avatar m-avatar-sm m-av-@o.Tint">@Fmt.Initials(o.CustomerName)</span><div class="m-truncate"><div class="m-heading m-medium">@o.CustomerName</div><div class="m-xsmall m-muted">@o.CustomerEmail</div></div></div></td>
+                                <td class="ant-table-cell m-muted">@o.Lines.Sum(l => l.Qty) items</td>
+                                <td class="ant-table-cell"><span class="m-badge @SampleUi.OrderBadge(o.Status)">@SampleUi.Label(o.Status)</span></td>
+                                <td class="ant-table-cell"><span class="m-status"><span class="m-status-dot m-status-@SampleUi.PaymentTone(o.Payment)"></span>@o.Payment</span></td>
+                                <td class="ant-table-cell m-num m-heading" style="text-align:right">@Fmt.Money(o.Total)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div></div></div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private EcommerceDashboard _d = default!;
+
+    protected override void OnInitialized() => _d = Store.Ecommerce();
+}

@@ -1,0 +1,6 @@
+@page "/apps/roles/{handler?}/{id:int?}"
+@model RolesModel
+@{
+    ViewData["Title"] = "Roles";
+}
+<partial name="Ui/Apps/Roles/Roles" model="Model.View" />

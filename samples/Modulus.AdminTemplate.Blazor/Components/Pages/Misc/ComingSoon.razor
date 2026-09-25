@@ -1,0 +1,53 @@
+@page "/misc/coming-soon"
+@layout AuthLayout
+@implements IDisposable
+@inject IMessageService Message
+
+<PageTitle>Coming soon · Modulus</PageTitle>
+
+<div class="m-status-page">
+    <span class="m-status-art m-bg-primary-lt m-text-primary"><Ti Name="rocket" /></span>
+    <h1 class="m-status-title">We are launching soon</h1>
+    <p class="m-status-text">Our new workspace is almost ready. Leave your email and we'll let you know the moment it's live.</p>
+    <div class="m-countdown" role="timer" aria-live="off">
+        @foreach (var (value, label) in Parts())
+        {
+            <div class="m-countdown-cell"><span class="m-countdown-value">@value.ToString("00")</span><span class="m-countdown-label">@label</span></div>
+        }
+    </div>
+    <form class="m-subscribe" @onsubmit="NotifyAsync">
+        <input class="ant-input" type="email" placeholder="your@email.com" aria-label="Email address" @bind="_email" />
+        <button type="submit" class="ant-btn ant-btn-primary"><span>Notify me</span></button>
+    </form>
+</div>
+
+@code {
+    private string _email = "";
+    private Timer? _timer;
+
+    protected override void OnInitialized() =>
+        _timer = new Timer(_ => InvokeAsync(StateHasChanged), null, 1000, 1000);
+
+    private static IEnumerable<(int, string)> Parts()
+    {
+        var left = LaunchDate.Value - DateTime.UtcNow;
+        if (left < TimeSpan.Zero) left = TimeSpan.Zero;
+        yield return (left.Days, "Days");
+        yield return (left.Hours, "Hours");
+        yield return (left.Minutes, "Minutes");
+        yield return (left.Seconds, "Seconds");
+    }
+
+    private async Task NotifyAsync()
+    {
+        if (!System.Text.RegularExpressions.Regex.IsMatch(_email, EmailPattern.Value))
+        {
+            await Message.ErrorAsync("Enter a valid email");
+            return;
+        }
+        _email = "";
+        await Message.SuccessAsync("Thanks! We'll email you at launch.");
+    }
+
+    public void Dispose() => _timer?.Dispose();
+}

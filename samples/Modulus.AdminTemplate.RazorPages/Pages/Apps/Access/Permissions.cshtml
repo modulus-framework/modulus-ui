@@ -1,0 +1,6 @@
+@page "/apps/permissions/{handler?}/{id:int?}"
+@model PermissionsModel
+@{
+    ViewData["Title"] = "Permissions";
+}
+<partial name="Ui/Apps/Roles/Permissions" model="Model.View" />

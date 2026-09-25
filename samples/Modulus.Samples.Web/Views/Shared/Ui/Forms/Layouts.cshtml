@@ -1,0 +1,105 @@
+@model FormLayoutsPage
+@using Microsoft.AspNetCore.Mvc.Rendering
+@* Vertical, horizontal and multi-column forms. Each form posts on its own; errors come back from the server. The Blazor sample renders the same page. *@
+@{
+    static IEnumerable<SelectListItem> Items(IEnumerable<string> values) => values.Select(v => new SelectListItem(v, v));
+}
+<app-page-header pretitle="Forms" title="Form layouts" subtitle="Vertical, horizontal and multi-column forms with server-side validation."></app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card" id="vertical">
+            <div class="m-card-header"><div><h2 class="m-card-title">Vertical</h2><p class="m-card-subtitle">Labels above the fields. The default for most forms.</p></div></div>
+            <div class="m-card-body">
+                <form method="post" action="/forms/layouts/contact" asp-antiforgery="true" class="ant-form ant-form-vertical" novalidate>
+                    <app-form-item asp-for="Contact.FullName" label="Full name">
+                        <app-input asp-for="Contact.FullName" placeholder="Serena Park" autocomplete="name" />
+                    </app-form-item>
+                    <app-form-item asp-for="Contact.Email" label="Email">
+                        <app-input asp-for="Contact.Email" placeholder="you@company.com" autocomplete="email" prefix-icon="mail" />
+                    </app-form-item>
+                    <div class="m-form-grid">
+                        <app-form-item asp-for="Contact.Company" label="Company" help="Optional">
+                            <app-input asp-for="Contact.Company" placeholder="Company name" autocomplete="organization" />
+                        </app-form-item>
+                        <app-form-item asp-for="Contact.Topic" label="Topic">
+                            <app-select asp-for="Contact.Topic" items="Items(ContactFormInput.Topics)" placeholder="Choose a topic" />
+                        </app-form-item>
+                    </div>
+                    <app-form-item asp-for="Contact.Message" label="Message">
+                        <app-textarea asp-for="Contact.Message" rows="4" maxlength="500" show-count placeholder="How can we help?" />
+                    </app-form-item>
+                    <div class="m-form-actions">
+                        <app-button type="primary" html-type="submit">Send message</app-button>
+                        <a class="ant-btn ant-btn-default" href="/forms/layouts"><span>Reset</span></a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="m-card" id="horizontal">
+            <div class="m-card-header"><div><h2 class="m-card-title">Horizontal</h2><p class="m-card-subtitle">Labels beside the fields. Good for short settings forms.</p></div></div>
+            <div class="m-card-body">
+                <form method="post" action="/forms/layouts/signup" asp-antiforgery="true" class="ant-form ant-form-horizontal m-form-horizontal" novalidate>
+                    <app-form-item asp-for="Signup.Username" label="Username" layout="horizontal">
+                        <app-input asp-for="Signup.Username" placeholder="serena.park" autocomplete="username" prefix-icon="user" />
+                    </app-form-item>
+                    <app-form-item asp-for="Signup.Email" label="Email" layout="horizontal">
+                        <app-input asp-for="Signup.Email" placeholder="you@company.com" autocomplete="email" />
+                    </app-form-item>
+                    <app-form-item asp-for="Signup.Password" label="Password" layout="horizontal">
+                        <app-input asp-for="Signup.Password" type="password" placeholder="At least 8 characters" autocomplete="new-password" />
+                    </app-form-item>
+                    <app-form-item asp-for="Signup.ConfirmPassword" label="Confirm" layout="horizontal">
+                        <app-input asp-for="Signup.ConfirmPassword" type="password" placeholder="Repeat the password" autocomplete="new-password" />
+                    </app-form-item>
+                    <app-form-item class="m-form-offset" layout="horizontal">
+                        <app-checkbox asp-for="Signup.Newsletter">Send me product news</app-checkbox>
+                    </app-form-item>
+                    <app-form-item class="m-form-offset" layout="horizontal">
+                        <div class="m-form-actions">
+                            <app-button type="primary" html-type="submit">Create account</app-button>
+                            <a class="ant-btn ant-btn-default" href="/forms/layouts"><span>Cancel</span></a>
+                        </div>
+                    </app-form-item>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card" id="multi-column">
+        <div class="m-card-header"><div><h2 class="m-card-title">Multi-column with sections</h2><p class="m-card-subtitle">Group long forms into titled sections with a two-column grid.</p></div></div>
+        <form method="post" action="/forms/layouts/shipping" asp-antiforgery="true" class="ant-form ant-form-vertical" novalidate>
+            <div class="m-card-body">
+                <h3 class="m-form-section">1. Contact details</h3>
+                <div class="m-form-grid">
+                    <app-form-item asp-for="Shipping.FirstName" label="First name"><app-input asp-for="Shipping.FirstName" autocomplete="given-name" /></app-form-item>
+                    <app-form-item asp-for="Shipping.LastName" label="Last name"><app-input asp-for="Shipping.LastName" autocomplete="family-name" /></app-form-item>
+                    <app-form-item asp-for="Shipping.Email" label="Email"><app-input asp-for="Shipping.Email" autocomplete="email" /></app-form-item>
+                    <app-form-item asp-for="Shipping.Phone" label="Phone" help="Optional. Used only for delivery updates."><app-input asp-for="Shipping.Phone" autocomplete="tel" /></app-form-item>
+                </div>
+                <h3 class="m-form-section">2. Shipping address</h3>
+                <div class="m-form-grid">
+                    <app-form-item asp-for="Shipping.Address" label="Street address" class="m-span-2"><app-input asp-for="Shipping.Address" autocomplete="street-address" /></app-form-item>
+                    <app-form-item asp-for="Shipping.City" label="City"><app-input asp-for="Shipping.City" autocomplete="address-level2" /></app-form-item>
+                    <app-form-item asp-for="Shipping.Zip" label="Postal code"><app-input asp-for="Shipping.Zip" autocomplete="postal-code" /></app-form-item>
+                    <app-form-item asp-for="Shipping.Country" label="Country" class="m-span-2"><app-select asp-for="Shipping.Country" items="Items(Lookups.Countries)" placeholder="Choose a country" /></app-form-item>
+                </div>
+                <h3 class="m-form-section">3. Delivery</h3>
+                <div class="m-choice-cards" role="radiogroup" aria-label="Delivery option">
+                    @foreach (var (value, label, note) in ShippingFormInput.DeliveryOptions)
+                    {
+                        <label class="m-choice-card">
+                            <input type="radio" name="Shipping.Delivery" value="@value" checked="@(Model.Shipping.Delivery == value)" />
+                            <span><span class="m-heading m-medium">@label</span><span class="m-small m-muted">@note</span></span>
+                        </label>
+                    }
+                </div>
+            </div>
+            <div class="m-card-footer m-form-actions" style="justify-content:flex-end">
+                <a class="ant-btn ant-btn-default" href="/forms/layouts"><span>Cancel</span></a>
+                <app-button type="primary" html-type="submit">Save address</app-button>
+            </div>
+        </form>
+    </div>
+</div>

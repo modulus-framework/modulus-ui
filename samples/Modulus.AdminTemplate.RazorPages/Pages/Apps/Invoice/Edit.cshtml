@@ -1,0 +1,6 @@
+@page "/apps/invoice/{mode:regex(^(add|edit)$)}/{id:int?}"
+@model InvoiceEditModel
+@{
+    ViewData["Title"] = Model.View.Id is null ? "Create invoice" : "Edit invoice";
+}
+<partial name="Ui/Apps/Invoice/InvoiceEdit" model="Model.View" />

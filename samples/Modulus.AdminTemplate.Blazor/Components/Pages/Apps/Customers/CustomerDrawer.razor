@@ -1,0 +1,57 @@
+@* Add / edit customer drawer (Customers list and customer view). *@
+@inject SampleStore Store
+@inject IMessageService Message
+
+<DrawerForm TModel="CustomerInput" Title="@(CustomerId is null ? "Add customer" : "Edit customer")" Visible="Visible" VisibleChanged="VisibleChanged" Model="_input" OnFinish="SaveAsync" SubmitText="@(CustomerId is null ? "Add customer" : "Save changes")">
+    <FormItem Label="Contact name"><Input @bind-Value="context.Name" Placeholder="Olivia Bennett" /></FormItem>
+    <FormItem Label="Email"><Input @bind-Value="context.Email" Placeholder="olivia@northwind.com" /></FormItem>
+    <FormItem Label="Company"><Input @bind-Value="context.Company" Placeholder="Northwind" /></FormItem>
+    <FormItem Label="City"><Input @bind-Value="context.City" Placeholder="London" /></FormItem>
+    <FormItem Label="Tier">
+        <RadioGroup @bind-Value="context.Tier" ButtonStyle="RadioButtonStyle.Solid">
+            @foreach (var t in Enum.GetValues<CustomerTier>())
+            {
+                <Radio RadioButton Value="t">@t</Radio>
+            }
+        </RadioGroup>
+    </FormItem>
+    <FormItem Label="Status">
+        <RadioGroup @bind-Value="context.Status" ButtonStyle="RadioButtonStyle.Solid">
+            @foreach (var s in Enum.GetValues<CustomerStatus>())
+            {
+                <Radio RadioButton Value="s">@s</Radio>
+            }
+        </RadioGroup>
+    </FormItem>
+</DrawerForm>
+
+@code {
+    [Parameter] public bool Visible { get; set; }
+
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+
+    /// <summary>The customer to edit, or null to add one.</summary>
+    [Parameter] public int? CustomerId { get; set; }
+
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private CustomerInput _input = new();
+    private bool _wasVisible;
+
+    protected override void OnParametersSet()
+    {
+        // Fresh form each time the drawer opens.
+        if (Visible && !_wasVisible)
+            _input = CustomerId is { } id && Store.FindCustomer(id) is { } c ? CustomerInput.From(c) : new CustomerInput();
+        _wasVisible = Visible;
+    }
+
+    private async Task<bool> SaveAsync(CustomerInput input)
+    {
+        if (CustomerId is { } id) Store.UpdateCustomer(id, input);
+        else Store.AddCustomer(input);
+        _ = Message.SuccessAsync(CustomerId is null ? $"Added {input.Name}" : $"Saved {input.Name}");
+        await OnSaved.InvokeAsync();
+        return true;
+    }
+}

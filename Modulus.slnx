@@ -2,6 +2,9 @@
   <Folder Name="/samples/">
     <Project Path="samples/Modulus.AdminTemplate.Blazor/Modulus.AdminTemplate.Blazor.csproj" />
     <Project Path="samples/Modulus.AdminTemplate.Mvc/Modulus.AdminTemplate.Mvc.csproj" />
+    <Project Path="samples/Modulus.AdminTemplate.RazorPages/Modulus.AdminTemplate.RazorPages.csproj" />
+    <Project Path="samples/Modulus.Samples.Shared/Modulus.Samples.Shared.csproj" />
+    <Project Path="samples/Modulus.Samples.Web/Modulus.Samples.Web.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Modulus.AspNetCore.Mvc/Modulus.AspNetCore.Mvc.csproj" />
@@ -10,6 +13,7 @@
     <Project Path="src/Modulus.Ui.Assets/Modulus.Ui.Assets.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Modulus.AspNetCore.Mvc.Tests/Modulus.AspNetCore.Mvc.Tests.csproj" />
     <Project Path="tests/Modulus.Blazor.Tests/Modulus.Blazor.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">

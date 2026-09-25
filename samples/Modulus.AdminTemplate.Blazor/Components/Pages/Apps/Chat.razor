@@ -1,0 +1,124 @@
+@page "/apps/chat"
+@page "/apps/chat/{Id:int}"
+@inject SampleStore Store
+@inject NavigationManager Navigation
+
+<PageTitle>Chat · Modulus</PageTitle>
+
+<PageHeading Pretitle="Apps" Title="Chat" />
+
+<div class="m-card m-app m-app-chat">
+    <aside class="m-app-side">
+        <div class="m-chat-me">
+            <span class="m-presence"><span class="m-avatar m-av-@Fmt.Tint(CurrentUser.Name)">@Fmt.Initials(CurrentUser.Name)</span><span class="m-avatar-status m-status-online"></span></span>
+            <div class="m-truncate"><div class="m-heading m-medium">@CurrentUser.Name</div><div class="m-small m-muted">Available</div></div>
+        </div>
+        <div class="m-app-side-head" style="padding-bottom:12px">
+            <Input @bind-Value="_keyword" BindOnInput Placeholder="Search contacts" AllowClear Prefix="@_searchIcon" aria-label="Search contacts" />
+        </div>
+        <nav class="m-app-side-body" aria-label="Chats">
+            <div class="m-subheader m-app-nav-title" style="margin-top:0">Chats</div>
+            @{ var contacts = Contacts; }
+            @if (contacts.Count == 0)
+            {
+                <div class="m-small m-muted" style="padding:8px">No contacts found</div>
+            }
+            @foreach (var (c, last) in contacts)
+            {
+                var active = _active?.Id == c.Id;
+                <a class="m-chat-contact@(active ? " active" : "")" href="/apps/chat/@c.Id" aria-current="@(active ? "page" : null)">
+                    <span class="m-presence"><span class="m-avatar m-av-@c.Tint">@Fmt.Initials(c.Name)</span><span class="m-avatar-status m-status-@c.Presence.ToString().ToLowerInvariant()"></span></span>
+                    <span class="m-chat-contact-text">
+                        <span class="m-chat-contact-name"><span class="m-truncate">@c.Name</span>@if (last is not null) { <time datetime="@last.At.ToString("o")">@SampleUi.ChatTime(last.At)</time> }</span>
+                        <span class="m-chat-contact-sub" style="display:block">@(last is null ? c.About : (last.FromMe ? "You: " : "") + last.Text)</span>
+                    </span>
+                </a>
+            }
+        </nav>
+    </aside>
+
+    <section class="m-app-main" aria-label="Conversation">
+        @if (_active is not { } a)
+        {
+            <div class="m-chat-empty">
+                <span class="m-icon-tile m-tile-primary-lt m-tile-round" style="width:64px;height:64px"><Ti Name="messages" /></span>
+                <div class="m-h3" style="color:var(--m-heading)">Start a conversation</div>
+                <div>Pick a contact on the left to see your messages.</div>
+            </div>
+        }
+        else
+        {
+            <div class="m-app-bar m-chat-head">
+                <span class="m-presence"><span class="m-avatar m-av-@a.Tint">@Fmt.Initials(a.Name)</span><span class="m-avatar-status m-status-@a.Presence.ToString().ToLowerInvariant()"></span></span>
+                <div class="m-truncate" style="flex:1">
+                    <div class="m-heading m-medium">@a.Name</div>
+                    <div class="m-small m-muted">@a.Presence · @a.About</div>
+                </div>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Call" title="Call"><Ti Name="phone" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Video call" title="Video call"><Ti Name="video" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="More" title="More"><Ti Name="dots-vertical" /></button>
+            </div>
+            <div class="m-chat-log" role="log" aria-live="polite">
+                <div class="m-chat-log-inner">
+                    @foreach (var day in _conversation.GroupBy(m => m.At.Date))
+                    {
+                        <div class="m-chat-day">@SampleUi.ChatDay(day.Key)</div>
+                        @foreach (var m in day)
+                        {
+                            <div class="m-chat-msg@(m.FromMe ? " me" : "")">
+                                @if (m.FromMe)
+                                {
+                                    <span class="m-avatar m-avatar-sm m-av-@Fmt.Tint(CurrentUser.Name)">@Fmt.Initials(CurrentUser.Name)</span>
+                                }
+                                else
+                                {
+                                    <span class="m-avatar m-avatar-sm m-av-@a.Tint">@Fmt.Initials(a.Name)</span>
+                                }
+                                <div><div class="m-chat-bubble">@m.Text</div><time class="m-chat-time" datetime="@m.At.ToString("o")">@Fmt.Time(m.At)</time></div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+            <form class="m-chat-compose" @onsubmit="Send" autocomplete="off">
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Attach a file" title="Attach"><Ti Name="paperclip" /></button>
+                <input class="ant-input" @bind="_text" placeholder="Type your message…" aria-label="Message" maxlength="1000" />
+                <button type="submit" class="ant-btn ant-btn-primary"><Ti Name="send" /><span>Send</span></button>
+            </form>
+        }
+    </section>
+</div>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private ChatContact? _active;
+    private IReadOnlyList<ChatMessage> _conversation = [];
+    private string? _keyword;
+    private string? _text;
+    private readonly RenderFragment _searchIcon = @<Ti Name="search" />;
+
+    private List<(ChatContact Contact, ChatMessage? Last)> Contacts =>
+        Store.ChatContacts()
+            .Where(c => string.IsNullOrWhiteSpace(_keyword) || c.Name.Contains(_keyword.Trim(), StringComparison.OrdinalIgnoreCase))
+            .Select(c => (c, Store.LastMessage(c.Id))).ToList();
+
+    protected override void OnParametersSet()
+    {
+        _active = Id is { } id ? Store.FindContact(id) : null;
+        if (Id is not null && _active is null)
+        {
+            Navigation.NotFound();
+            return;
+        }
+        _conversation = _active is null ? [] : Store.Conversation(_active.Id);
+    }
+
+    private void Send()
+    {
+        if (_active is null || string.IsNullOrWhiteSpace(_text)) return;
+        Store.SendChat(_active.Id, _text);
+        _text = null;
+        _conversation = Store.Conversation(_active.Id);
+    }
+}

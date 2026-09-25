@@ -13,7 +13,9 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" />
     <PackageReference Include="AntDesign" />
+    <PackageReference Include="AntDesign.ProLayout" />
     <ProjectReference Include="..\Modulus.Ui.Abstractions\Modulus.Ui.Abstractions.csproj" />
     <ProjectReference Include="..\Modulus.Ui.Assets\Modulus.Ui.Assets.csproj" />
   </ItemGroup>

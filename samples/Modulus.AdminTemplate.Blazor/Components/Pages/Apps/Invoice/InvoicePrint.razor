@@ -1,0 +1,29 @@
+@page "/apps/invoice/print/{Id:int}"
+@layout BlankLayout
+@inject SampleStore Store
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+@* Print / "download" view: the invoice alone on a blank page; opens the print dialog. *@
+@if (_invoice is not null)
+{
+    <PageTitle>Invoice @_invoice.Number · Modulus</PageTitle>
+    <div class="m-invoice-print"><InvoicePaper Invoice="_invoice" /></div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Invoice? _invoice;
+
+    protected override void OnParametersSet()
+    {
+        _invoice = Store.FindInvoice(Id);
+        if (_invoice is null) Navigation.NotFound();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _invoice is not null) await JS.InvokeVoidAsync("print");
+    }
+}

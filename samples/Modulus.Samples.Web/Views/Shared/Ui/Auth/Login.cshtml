@@ -1,0 +1,33 @@
+@model LoginInput
+@if (Context.Request.Query["reset"] == "1")
+{
+    <app-alert type="success" show-icon message="Your password has been reset. Sign in with your new password." class="m-mb-16" />
+}
+<div class="m-auth-card">
+    <div class="m-auth-card-body">
+        <h1 class="m-auth-title">Login to your account</h1>
+        <form method="post" class="ant-form ant-form-vertical ant-form-hide-required-mark" novalidate>
+            <app-form-item asp-for="Email" label="Email address">
+                <app-input asp-for="Email" placeholder="your@email.com" prefix-icon="mail" autocomplete="username" />
+            </app-form-item>
+            <app-form-item asp-for="Password" label="Password">
+                <app-input asp-for="Password" type="password" placeholder="Your password" prefix-icon="lock" autocomplete="current-password" />
+            </app-form-item>
+            <div class="m-flex m-between">
+                <app-checkbox asp-for="Remember">Remember me on this device</app-checkbox>
+                <a href="/auth/forgot-password" class="m-small">I forgot password</a>
+            </div>
+            <div class="m-auth-actions">
+                <app-button type="primary" html-type="submit" block>Sign in</app-button>
+            </div>
+        </form>
+    </div>
+    <div class="m-hr-text"><span>or</span></div>
+    <div class="m-auth-card-body">
+        <div class="m-social">
+            <a class="ant-btn ant-btn-default" href="/"><app-ti name="brand-github" /><span>GitHub</span></a>
+            <a class="ant-btn ant-btn-default" href="/"><app-ti name="brand-google" /><span>Google</span></a>
+        </div>
+    </div>
+</div>
+<div class="m-auth-foot">Don't have account yet? <a href="/auth/register">Sign up</a></div>

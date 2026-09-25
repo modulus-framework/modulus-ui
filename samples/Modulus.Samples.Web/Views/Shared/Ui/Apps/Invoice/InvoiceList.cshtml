@@ -1,0 +1,156 @@
+@model InvoiceListPage
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    const string Base = "/apps/invoice/list";
+    var grid = new Grid(Context.Request, Model.Request);
+    var q = Model.Query;
+    var s = Model.Stats;
+    (string Label, string Value, string Icon)[] strip =
+    [
+        ("Clients", s.Clients.ToString("N0"), "users"),
+        ("Invoices", s.Invoices.ToString("N0"), "file-invoice"),
+        ("Paid", Fmt.Money0(s.Paid), "circle-check"),
+        ("Unpaid", Fmt.Money0(s.Unpaid), "clock-dollar"),
+    ];
+}
+<app-page-header pretitle="Invoice" title="Invoices">
+    <a class="ant-btn ant-btn-primary" href="/apps/invoice/add"><app-ti name="plus" /><span>Create invoice</span></a>
+</app-page-header>
+
+<div id="invoices-page" class="m-row-cards"
+     hx-boost="true" hx-target="#invoices-page" hx-select="#invoices-page" hx-swap="outerHTML" hx-push-url="true">
+    <div hidden hx-get="@grid.Current" hx-trigger="invoices:refresh from:body" hx-push-url="false"></div>
+    <div class="m-card">
+        <div class="m-stat-strip">
+            @foreach (var (label, value, icon) in strip)
+            {
+                <div class="m-stat-strip-item">
+                    <div><div class="m-h2">@value</div><div class="m-small m-muted">@label</div></div>
+                    <span class="m-icon-tile m-tile-gray-lt"><app-ti name="@icon" /></span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="ant-card m-table-card" x-data="tableSelection" @@change="sync()">
+        <div class="ant-card-body">
+            <div class="m-table-toolbar">
+                <div class="m-table-toolbar-title">All invoices</div>
+                <div class="m-table-toolbar-actions">
+                    <span class="m-table-toolbar-search ant-input-affix-wrapper">
+                        <span class="ant-input-prefix"><app-ti name="search" /></span>
+                        <input class="ant-input" type="search" name="keyword" value="@q.Keyword" placeholder="Search invoices…" aria-label="Search invoices" form="invoices-filter" />
+                    </span>
+                    <form id="invoices-filter" method="get" action="@Base" @@change="$el.requestSubmit()" class="m-table-toolbar-filter">
+                        <app-select name="status" items="Enum.GetValues<InvoiceStatus>().Select(v => new SelectListItem(SampleUi.Label(v), v.ToString(), v == q.Status))" placeholder="Any status" aria-label="Status" />
+                        @if (Model.Request.SortField is { } sortField)
+                        {
+                            <input type="hidden" name="sortField" value="@sortField" />
+                            <input type="hidden" name="sortOrder" value="@Model.Request.SortOrder" />
+                        }
+                        <input type="hidden" name="pageSize" value="@Model.Request.PageSize" />
+                    </form>
+                    <app-button icon="download">Export</app-button>
+                    <div class="m-table-toolbar-settings">
+                        <a class="ant-btn ant-btn-text ant-btn-icon-only" href="@grid.Current" aria-label="Reload" title="Reload"><app-icon type="reload" /></a>
+                        <app-dropdown placement="bottomRight">
+                            <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Table density" title="Density"><app-icon type="column-height" /></button>
+                            <dropdown-menu>
+                                <app-dropdown-item @@click="setDensity('')">Default</app-dropdown-item>
+                                <app-dropdown-item @@click="setDensity('ant-table-middle')">Middle</app-dropdown-item>
+                                <app-dropdown-item @@click="setDensity('ant-table-small')">Compact</app-dropdown-item>
+                            </dropdown-menu>
+                        </app-dropdown>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ant-alert ant-alert-info m-table-alert" role="status" x-show="count > 0" x-cloak>
+                <div class="ant-alert-content">
+                    <div class="ant-alert-message">
+                        <span>Selected <strong x-text="count"></strong> <span x-text="count === 1 ? 'item' : 'items'"></span></span>
+                        <button type="button" class="ant-btn ant-btn-link ant-btn-sm" @@click="clear()"><span>Clear</span></button>
+                        <span class="m-spacer"></span>
+                        <app-button danger size="small"
+                                    hx-post="@Base/delete" hx-include="#invoices-table input[name='ids']:checked" hx-swap="none"
+                                    hx-confirm="Delete the selected invoices?" data-confirm-danger data-confirm-ok="Delete">Delete selected</app-button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ant-table-wrapper" id="invoices-table">
+                <div class="ant-table ant-table-scroll-horizontal" :class="density">
+                    <div class="ant-table-container">
+                        <div class="ant-table-content" style="overflow: auto hidden;">
+                            <table style="width: 1000px; min-width: 100%; table-layout: fixed;">
+                                <colgroup>
+                                    <col style="width:48px" /><col style="width:100px" /><col style="width:70px" /><col style="width:280px" />
+                                    @for (var i = 0; i < 3; i++) { <col style="width: calc((1000px - 628px) / 3)" /> }
+                                    <col style="width:130px" />
+                                </colgroup>
+                                <thead class="ant-table-thead">
+                                    <tr>
+                                        <th class="ant-table-cell ant-table-selection-column">
+                                            <app-checkbox aria-label="Select all rows" data-select-all @@change="toggleAll($event.target.checked)" />
+                                        </th>
+                                        @grid.SortTh("Id", "#")
+                                        <th class="ant-table-cell" style="text-align:center"><span class="m-sr-only">Status</span></th>
+                                        @grid.SortTh(nameof(Invoice.ClientName), "Client")
+                                        @grid.SortTh(nameof(Invoice.Total), "Total", "text-align: right")
+                                        @grid.SortTh(nameof(Invoice.IssuedAt), "Issued")
+                                        @grid.SortTh(nameof(Invoice.Balance), "Balance", "text-align: right")
+                                        <th class="ant-table-cell" style="text-align:right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="ant-table-tbody">
+                                    @if (Model.Page.Data.Count == 0)
+                                    {
+                                        <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="8"><div class="m-table-empty">No invoices match these filters</div></td></tr>
+                                    }
+                                    @foreach (var i in Model.Page.Data)
+                                    {
+                                        <tr class="ant-table-row ant-table-row-level-0">
+                                            <td class="ant-table-cell ant-table-selection-column"><app-checkbox name="ids" value="@i.Id.ToString()" aria-label="@($"Select invoice {i.Number}")" /></td>
+                                            <td class="ant-table-cell@(grid.SortClass("Id"))"><a class="m-medium" href="/apps/invoice/preview/@i.Id" hx-boost="false">@i.Number</a></td>
+                                            <td class="ant-table-cell" style="text-align:center">
+                                                <span class="m-icon-tile m-tile-sm m-tile-round m-tile-@SampleUi.InvoiceTone(i.Status)-lt" title="@SampleUi.Label(i.Status) · due @Fmt.Date(i.DueAt)"><app-ti name="@SampleUi.InvoiceIcon(i.Status)" /><span class="m-sr-only">@SampleUi.Label(i.Status)</span></span>
+                                            </td>
+                                            <td class="ant-table-cell@(grid.SortClass(nameof(Invoice.ClientName)))">
+                                                <div class="m-entity">
+                                                    <span class="m-avatar m-avatar-sm m-av-@i.Tint">@Fmt.Initials(i.ClientName)</span>
+                                                    <div class="m-entity-text"><span class="m-entity-title">@i.ClientName</span><span class="m-entity-desc">@i.ClientCompany</span></div>
+                                                </div>
+                                            </td>
+                                            <td class="ant-table-cell@(grid.SortClass(nameof(Invoice.Total)))" style="text-align:right"><span class="m-num">@Fmt.Money(i.Total)</span></td>
+                                            <td class="ant-table-cell m-muted@(grid.SortClass(nameof(Invoice.IssuedAt)))">@Fmt.Date(i.IssuedAt)</td>
+                                            <td class="ant-table-cell@(grid.SortClass(nameof(Invoice.Balance)))" style="text-align:right">
+                                                @if (i.Balance == 0)
+                                                {
+                                                    <span class="m-badge m-badge-green-lt">Paid</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="m-num m-heading">@Fmt.Money(i.Balance)</span>
+                                                }
+                                            </td>
+                                            <td class="ant-table-cell" style="text-align:right">
+                                                <div class="m-row-actions">
+                                                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/invoice/preview/@i.Id" hx-boost="false" aria-label="Preview invoice @i.Number" title="Preview"><app-ti name="eye" /></a>
+                                                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/invoice/edit/@i.Id" hx-boost="false" aria-label="Edit invoice @i.Number" title="Edit"><app-ti name="edit" /></a>
+                                                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete invoice @i.Number" title="Delete"
+                                                            hx-post="@Base/delete" hx-vals='{"ids": @i.Id}' hx-swap="none"
+                                                            hx-confirm="@($"Delete invoice {i.Number}?")" data-confirm-danger data-confirm-ok="Delete"><app-ti name="trash" /></button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                @grid.Pager(Model.Page.Total)
+            </div>
+        </div>
+    </div>
+</div>

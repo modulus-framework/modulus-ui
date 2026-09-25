@@ -10,6 +10,8 @@
     <ProjectReference Include="..\..\src\Modulus.AspNetCore.Mvc\Modulus.AspNetCore.Mvc.csproj" />
     <ProjectReference Include="..\..\src\Modulus.Ui.Assets\Modulus.Ui.Assets.csproj" />
     <ProjectReference Include="..\..\src\Modulus.Ui.Abstractions\Modulus.Ui.Abstractions.csproj" />
+    <ProjectReference Include="..\Modulus.Samples.Shared\Modulus.Samples.Shared.csproj" />
+    <ProjectReference Include="..\Modulus.Samples.Web\Modulus.Samples.Web.csproj" />
   </ItemGroup>
 
 </Project>

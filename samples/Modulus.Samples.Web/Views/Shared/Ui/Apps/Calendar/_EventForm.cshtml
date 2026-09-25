@@ -1,0 +1,24 @@
+@model EventInput
+@using Microsoft.AspNetCore.Mvc.Rendering
+@* Add / edit event drawer. Delete lives here too for existing events. *@
+<form class="m-drawer-form ant-form ant-form-vertical ant-form-hide-required-mark" hx-post="/apps/calendar/save" hx-target="#modulus-drawer-body" hx-swap="innerHTML" novalidate>
+    @if (Model.Id is { } id) { <input type="hidden" name="Id" value="@id" /> }
+    <div class="m-drawer-form-body">
+        <app-form-item asp-for="Title" label="Title"><app-input asp-for="Title" placeholder="Event title" autocomplete="off" /></app-form-item>
+        <app-form-item asp-for="Category" label="Category"><app-select asp-for="Category" items="CalendarView.AllCategories.Select(c => new SelectListItem(c.ToString(), c.ToString()))" /></app-form-item>
+        <app-form-item asp-for="AllDay" label="All day"><app-switch asp-for="AllDay" aria-label="All day" /></app-form-item>
+        <app-form-item asp-for="Start" label="Starts"><app-date-picker asp-for="Start" show-time /></app-form-item>
+        <app-form-item asp-for="End" label="Ends"><app-date-picker asp-for="End" show-time /></app-form-item>
+        <app-form-item asp-for="Location" label="Location"><app-input asp-for="Location" placeholder="Room, address or link" /></app-form-item>
+        <app-form-item asp-for="Description" label="Description"><app-textarea asp-for="Description" rows="3" /></app-form-item>
+    </div>
+    <div class="m-drawer-form-footer">
+        @if (Model.Id is { } existing)
+        {
+            <app-button danger hx-post="/apps/calendar/delete/@existing" hx-swap="none" hx-confirm="Delete this event?" data-confirm-danger data-confirm-ok="Delete">Delete</app-button>
+            <span class="m-spacer"></span>
+        }
+        <app-button @@click="$store.drawer.hide()">Cancel</app-button>
+        <app-button type="primary" html-type="submit">@(Model.Id is null ? "Add event" : "Save changes")</app-button>
+    </div>
+</form>

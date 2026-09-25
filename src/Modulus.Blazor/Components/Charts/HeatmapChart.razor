@@ -1,0 +1,12 @@
+@* Rows × columns of magnitudes on a sequential ramp: <HeatmapChart Rows="days" Columns="hours" Values="counts" /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.Heatmap(Rows, Columns, Values, Options()))
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<string> Rows { get; set; } = [];
+
+    [Parameter, EditorRequired] public IReadOnlyList<string> Columns { get; set; } = [];
+
+    [Parameter, EditorRequired] public IReadOnlyList<IReadOnlyList<double>> Values { get; set; } = [];
+}

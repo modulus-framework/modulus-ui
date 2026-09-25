@@ -1,0 +1,44 @@
+@page "/auth/register"
+@layout AuthLayout
+@inject NavigationManager Navigation
+
+<PageTitle>Sign up · Modulus</PageTitle>
+
+<div class="m-auth-card">
+    <div class="m-auth-card-body">
+        <h1 class="m-auth-title">Create new account</h1>
+        <Form Model="_model" Layout="@FormLayout.Vertical" OnFinish="RegisterAsync" RequiredMark="FormRequiredMark.None">
+            <FormItem Label="Username">
+                <Input @bind-Value="context.Username" Placeholder="Choose a username" Prefix="@_user" />
+            </FormItem>
+            <FormItem Label="Email address">
+                <Input @bind-Value="context.Email" Placeholder="your@email.com" Prefix="@_mail" />
+            </FormItem>
+            <FormItem Label="Password" Help="Use 8 or more characters with a mix of letters and numbers.">
+                <InputPassword @bind-Value="context.Password" Placeholder="Create a password" Prefix="@_lock" />
+            </FormItem>
+            <FormItem>
+                <Checkbox @bind-Value="context.Terms">Agree the <a href="/pages/faq">terms and policy</a>.</Checkbox>
+            </FormItem>
+            <div class="m-auth-actions">
+                <Button Type="@ButtonType.Primary" HtmlType="submit" Block Loading="_busy">Create new account</Button>
+            </div>
+        </Form>
+    </div>
+</div>
+<div class="m-auth-foot">Already have account? <a href="/auth/login">Sign in</a></div>
+
+@code {
+    private readonly RegisterInput _model = new();
+    private bool _busy;
+    private readonly RenderFragment _user = @<Icon Type="user" />;
+    private readonly RenderFragment _mail = @<Icon Type="mail" />;
+    private readonly RenderFragment _lock = @<Icon Type="lock" />;
+
+    private async Task RegisterAsync()
+    {
+        _busy = true;
+        await Task.Delay(400);
+        Navigation.NavigateTo("/auth/verify-email?email=" + Uri.EscapeDataString(_model.Email));
+    }
+}

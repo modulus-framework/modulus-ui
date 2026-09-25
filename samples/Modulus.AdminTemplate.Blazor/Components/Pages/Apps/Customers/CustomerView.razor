@@ -1,0 +1,107 @@
+@page "/apps/customers/{Id:int}"
+@inject SampleStore Store
+@inject NavigationManager Navigation
+
+@if (_customer is null) return;
+@{
+    var c = _customer;
+    var spent = _orders.Where(o => o.Payment == PaymentStatus.Paid).Sum(o => o.Total);
+}
+<PageTitle>@c.Name · Modulus</PageTitle>
+
+<PageHeading Pretitle="Customers" Title="@c.Name" Subtitle="@($"Customer since {Fmt.Date(c.CreatedAt)}")">
+    <Actions>
+        <a class="ant-btn ant-btn-default" href="/apps/customers"><Ti Name="arrow-left" /><span>All customers</span></a>
+    </Actions>
+</PageHeading>
+
+<div class="m-row-cards m-cols-side m-align-start">
+    <div class="m-card">
+        <div class="m-card-body">
+            <div class="m-user-card">
+                <span class="m-avatar m-avatar-xl m-av-@Fmt.Tint(c.Name)">@Fmt.Initials(c.Name)</span>
+                <h2 class="m-user-card-name">@c.Name</h2>
+                <div class="m-flex m-gap-8 m-mt-8">
+                    <span class="m-badge m-badge-@SampleUi.TierTone(c.Tier)-lt">@c.Tier</span>
+                    <span class="m-badge @SampleUi.CustomerBadge(c.Status)">@c.Status</span>
+                </div>
+                <div class="m-user-stats">
+                    <div class="m-user-stat">
+                        <span class="m-icon-tile m-tile-primary-lt"><Ti Name="shopping-cart" /></span>
+                        <div><div class="m-h3">@_orders.Count</div><div class="m-xsmall m-muted">Orders</div></div>
+                    </div>
+                    <div class="m-user-stat">
+                        <span class="m-icon-tile m-tile-primary-lt"><Ti Name="currency-dollar" /></span>
+                        <div><div class="m-h3">@Fmt.Money0(spent)</div><div class="m-xsmall m-muted">Spent</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="m-card-body m-card-body-divided">
+            <div class="m-subheader m-mb-12">Details</div>
+            <dl class="m-dl">
+                <dt>Email</dt><dd class="m-truncate">@c.Email</dd>
+                <dt>Company</dt><dd>@c.Company</dd>
+                <dt>City</dt><dd>@(c.City is { Length: > 0 } ? c.City : "—")</dd>
+                <dt>Lifetime value</dt><dd class="m-num">@Fmt.Money0(c.Revenue)</dd>
+                <dt>Joined</dt><dd>@Fmt.Date(c.CreatedAt)</dd>
+            </dl>
+            <div class="m-user-actions">
+                <button type="button" class="ant-btn ant-btn-primary" @onclick="() => _drawerOpen = true"><Ti Name="edit" /><span>Edit</span></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header">
+            <h3 class="m-card-title">Orders placed</h3>
+            <div class="m-card-actions"><span class="m-small m-muted">@_orders.Count @(_orders.Count == 1 ? "order" : "orders")</span></div>
+        </div>
+        <div class="ant-table-wrapper m-table-flush">
+            <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                <table style="table-layout:auto">
+                    <thead class="ant-table-thead">
+                        <tr><th class="ant-table-cell">Order</th><th class="ant-table-cell">Date</th><th class="ant-table-cell">Status</th><th class="ant-table-cell">Payment</th><th class="ant-table-cell" style="text-align:right">Total</th></tr>
+                    </thead>
+                    <tbody class="ant-table-tbody">
+                        @if (_orders.Count == 0)
+                        {
+                            <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="5"><div class="m-table-empty">No orders yet</div></td></tr>
+                        }
+                        @foreach (var o in _orders)
+                        {
+                            <tr class="ant-table-row">
+                                <td class="ant-table-cell"><a class="m-medium" href="/apps/ecommerce/orders/@o.Id">@o.Number</a></td>
+                                <td class="ant-table-cell m-muted">@Fmt.DateTime(o.PlacedAt)</td>
+                                <td class="ant-table-cell"><span class="m-badge @SampleUi.OrderBadge(o.Status)">@SampleUi.Label(o.Status)</span></td>
+                                <td class="ant-table-cell"><span class="m-status"><span class="m-status-dot m-status-@SampleUi.PaymentTone(o.Payment)"></span>@o.Payment</span></td>
+                                <td class="ant-table-cell m-num m-heading" style="text-align:right">@Fmt.Money(o.Total)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div></div></div>
+        </div>
+    </div>
+</div>
+
+<CustomerDrawer @bind-Visible="_drawerOpen" CustomerId="Id" />
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Customer? _customer;
+    private IReadOnlyList<Order> _orders = [];
+    private bool _drawerOpen;
+
+    protected override void OnParametersSet()
+    {
+        _customer = Store.FindCustomer(Id);
+        if (_customer is null)
+        {
+            Navigation.NotFound();
+            return;
+        }
+        _orders = Store.CustomerOrders(Id);
+    }
+}

@@ -1,0 +1,255 @@
+@* Card patterns (Tabler cards, Vuexy basic / statistics / advanced cards). The Blazor sample renders the same page. *@
+<app-page-header pretitle="User interface" title="Cards" subtitle="Card building blocks: headers, footers, status edges, tabs, statistics and interactive actions."></app-page-header>
+
+<div class="m-row-cards">
+    <h2 class="m-section-title">Basic</h2>
+    <div class="m-row-cards m-cols-3">
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Weekly digest</h3></div>
+            <div class="m-card-body">
+                <p class="m-muted m-mb-0">Every Monday you get a summary of new customers, top products and open support tickets. Turn it off from account settings at any time.</p>
+            </div>
+            <div class="m-card-footer m-flex m-between">
+                <span class="m-small m-muted">Last sent 3 days ago</span>
+                <a class="m-small" href="/pages/account-settings?tab=notifications">Manage</a>
+            </div>
+        </div>
+
+        <div class="m-card">
+            <div class="m-card-header">
+                <div>
+                    <h3 class="m-card-title">Team plan</h3>
+                    <p class="m-card-subtitle">Billed yearly · renews Jan 1</p>
+                </div>
+                <div class="m-card-actions">
+                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/pages/pricing" aria-label="Compare plans" title="Compare plans"><app-ti name="arrows-exchange" /></a>
+                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/pages/account-settings?tab=billing" aria-label="Billing settings" title="Billing settings"><app-ti name="settings" /></a>
+                </div>
+            </div>
+            <div class="m-card-body">
+                <div class="m-flex m-gap-8" style="align-items:baseline"><span class="m-h1">$240</span><span class="m-muted">/ year · 25 seats</span></div>
+                <div class="m-progress m-mt-12"><div class="m-progress-bar" style="width:88%"></div></div>
+                <div class="m-small m-muted m-mt-8">22 of 25 seats in use</div>
+            </div>
+            <div class="m-card-footer m-flex" style="justify-content:flex-end">
+                <a class="ant-btn ant-btn-default ant-btn-sm" href="/pages/pricing"><span>Change plan</span></a>
+                <a class="ant-btn ant-btn-primary ant-btn-sm" href="/apps/users"><span>Add seats</span></a>
+            </div>
+        </div>
+
+        <div class="m-card m-card-status-top" style="--c:var(--m-success)">
+            <div class="m-card-stamp" aria-hidden="true"><app-ti name="rocket" /></div>
+            <div class="m-card-body">
+                <span class="m-badge m-badge-green-lt">Deployed</span>
+                <div class="m-h3 m-mt-12">Release 2.14.0</div>
+                <p class="m-muted m-mt-4 m-mb-0">Rolled out to all regions in 6 minutes with zero failed health checks.</p>
+                <div class="m-flex m-gap-16 m-mt-16 m-small m-muted">
+                    <span class="m-flex m-gap-6"><app-ti name="git-commit" />a3f9c12</span>
+                    <span class="m-flex m-gap-6"><app-ti name="clock" />Today, 09:42</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-3">
+        <div class="m-card m-card-status-start" style="--c:var(--m-warning)">
+            <div class="m-card-body">
+                <div class="m-flex m-between">
+                    <span class="m-subheader">Approval needed</span>
+                    <span class="m-badge m-badge-orange-lt">Pending</span>
+                </div>
+                <div class="m-h3 m-mt-8">Refund for order #10482</div>
+                <p class="m-muted m-mt-4">Customer reports a damaged item. Amount $149.00 to the original card.</p>
+                <div class="m-flex m-gap-8">
+                    <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" hx-post="/ui/cards/demo/approve" hx-swap="none"><span>Approve</span></button>
+                    <button type="button" class="ant-btn ant-btn-default ant-btn-sm" hx-post="/ui/cards/demo/decline" hx-swap="none"><span>Decline</span></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="m-card">
+            <div class="m-card-cover m-tile-indigo-lt" aria-hidden="true"><app-ti name="book" /></div>
+            <div class="m-card-body">
+                <div class="m-h3">Getting started guide</div>
+                <p class="m-muted m-mt-4">Invite your team, connect a payment provider and publish your first product in under ten minutes.</p>
+                <div class="m-flex m-between">
+                    <span class="m-avatar-list">
+                        @foreach (var who in new[] { "Serena Park", "Omar Hartmann", "Yuki Tanaka" })
+                        {
+                            <span class="m-avatar m-avatar-sm m-av-@Fmt.Tint(who)" title="@who">@Fmt.Initials(who)</span>
+                        }
+                    </span>
+                    <a class="ant-btn ant-btn-link ant-btn-sm" href="/pages/help-center"><span>Read guide</span><app-ti name="arrow-right" /></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="m-card m-card-tabs" x-data="{ tab: 'overview' }">
+            <nav class="m-tabs-nav" aria-label="Project sections">
+                @foreach (var (key, label) in UiShowcase.CardTabs)
+                {
+                    <a href="#@key" @@click.prevent="tab = '@key'" :aria-current="tab === '@key' ? 'page' : null" aria-current="@(key == "overview" ? "page" : null)">@label</a>
+                }
+            </nav>
+            <div class="m-card-body">
+                <div x-show="tab === 'overview'">
+                    <div class="m-h3">Modulus UI v2</div>
+                    <p class="m-muted m-mt-4">128 of 164 tasks done. The launch is planned for October 13.</p>
+                    <div class="m-progress"><div class="m-progress-bar" style="width:78%"></div></div>
+                </div>
+                <div x-show="tab === 'activity'" x-cloak>
+                    <ul class="m-list m-list-plain">
+                        <li class="m-list-item"><span class="m-status-dot m-status-green"></span><span class="m-list-item-text">Noah merged the table density PR</span><span class="m-xsmall m-muted">2h</span></li>
+                        <li class="m-list-item"><span class="m-status-dot m-status-blue"></span><span class="m-list-item-text">Yuki opened a review for charts</span><span class="m-xsmall m-muted">5h</span></li>
+                        <li class="m-list-item"><span class="m-status-dot m-status-orange"></span><span class="m-list-item-text">Omar flagged a dark-mode issue</span><span class="m-xsmall m-muted">1d</span></li>
+                    </ul>
+                </div>
+                <div x-show="tab === 'settings'" x-cloak x-data="{ comments: true, dashboard: false }">
+                    <div class="m-flex m-between"><span id="set-comments">Email me about new comments</span><button type="button" role="switch" class="ant-switch" :class="comments && 'ant-switch-checked'" :aria-checked="comments" aria-labelledby="set-comments" @@click="comments = !comments"><div class="ant-switch-handle"></div><span class="ant-switch-inner"></span></button></div>
+                    <div class="m-flex m-between m-mt-12"><span id="set-dashboard">Show on the team dashboard</span><button type="button" role="switch" class="ant-switch" :class="dashboard && 'ant-switch-checked'" :aria-checked="dashboard" aria-labelledby="set-dashboard" @@click="dashboard = !dashboard"><div class="ant-switch-handle"></div><span class="ant-switch-inner"></span></button></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="m-section-title">Statistics</h2>
+    <div class="m-row-cards m-cols-4">
+        @foreach (var s in UiShowcase.Stats)
+        {
+            <div class="m-card">
+                <div class="m-card-body">
+                    <div class="m-flex m-between">
+                        <span class="m-icon-tile m-tile-@s.Tone-lt"><app-ti name="@s.Icon" /></span>
+                        <span class="m-delta @(s.Delta >= 0 ? "m-delta-up" : "m-delta-down")">@Fmt.Delta(s.Delta) <app-ti name="@(s.Delta >= 0 ? "trending-up" : "trending-down")" /></span>
+                    </div>
+                    <div class="m-h2 m-mt-16">@s.Value</div>
+                    <div class="m-heading m-medium">@s.Label</div>
+                    <div class="m-small m-muted m-mt-4">@s.Note</div>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="m-row-cards m-cols-4">
+        @foreach (var u in UiShowcase.Usage)
+        {
+            <div class="m-card m-card-sm">
+                <div class="m-card-body">
+                    <div class="m-stat">
+                        <span class="m-icon-tile m-tile-@u.Tone m-tile-round"><app-ti name="@u.Icon" /></span>
+                        <div class="m-stat-text"><div class="m-stat-value">@u.Label</div><div class="m-stat-sub">@u.Value</div></div>
+                        <span class="m-heading m-medium m-num" style="margin-left:auto">@Fmt.Percent(u.Share)</span>
+                    </div>
+                    <div class="m-progress m-progress-xs m-mt-12"><div class="m-progress-bar" style="width:@(u.Share * 100)%;--c:var(--m-@u.Tone)"></div></div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <h2 class="m-section-title">Advanced</h2>
+    <div class="m-row-cards m-cols-3">
+        <div class="m-card">
+            <div class="m-card-body m-center">
+                <span class="m-avatar m-avatar-xl m-av-@Fmt.Tint("Serena Park")">SP</span>
+                <div class="m-h3 m-mt-12">Serena Park</div>
+                <div class="m-muted">Head of Sales · Berlin</div>
+                <div class="m-flex m-mt-8" style="justify-content:center"><span class="m-badge m-badge-blue-lt">Admin</span><span class="m-badge m-badge-green-lt">Verified</span></div>
+            </div>
+            <div class="m-card-body m-card-body-divided">
+                <div class="m-profile-stats">
+                    <div><div class="m-h3">28</div><div class="m-small m-muted">Projects</div></div>
+                    <div><div class="m-h3">1.2k</div><div class="m-small m-muted">Followers</div></div>
+                    <div><div class="m-h3">312</div><div class="m-small m-muted">Following</div></div>
+                </div>
+            </div>
+            <div class="m-card-footer m-flex" style="justify-content:center">
+                <a class="ant-btn ant-btn-primary ant-btn-sm" href="/pages/profile"><app-ti name="user" /><span>Profile</span></a>
+                <a class="ant-btn ant-btn-default ant-btn-sm" href="/apps/chat"><app-ti name="message" /><span>Message</span></a>
+            </div>
+        </div>
+
+        <div class="m-card">
+            <div class="m-card-header">
+                <h3 class="m-card-title">Upcoming meetings</h3>
+                <div class="m-card-actions"><a class="ant-btn ant-btn-default ant-btn-sm" href="/apps/calendar"><span>Calendar</span></a></div>
+            </div>
+            <div class="m-card-body m-card-body-flush">
+                <ul class="m-list">
+                    @foreach (var m in UiShowcase.Meetings)
+                    {
+                        <li class="m-list-item">
+                            <span class="m-icon-tile m-tile-sm m-tile-@m.Tone-lt"><app-ti name="@m.Icon" /></span>
+                            <div class="m-list-item-text"><span class="m-list-item-title">@m.Title</span><span class="m-list-item-sub">@m.When</span></div>
+                            <span class="m-avatar-list">
+                                @foreach (var who in m.People.Take(3))
+                                {
+                                    <span class="m-avatar m-avatar-sm m-av-@Fmt.Tint(who)" title="@who">@Fmt.Initials(who)</span>
+                                }
+                            </span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Quarter goals</h3><p class="m-card-subtitle">Q4 · 38 days left</p></div>
+            </div>
+            <div class="m-card-body">
+                <ul class="m-goals">
+                    @foreach (var g in UiShowcase.Goals)
+                    {
+                        <li>
+                            <div class="m-flex m-between"><span class="m-heading m-medium">@g.Title</span><span class="m-small m-muted m-num">@g.Done / @g.Target</span></div>
+                            <div class="m-progress m-mt-8"><div class="m-progress-bar" style="width:@Fmt.Pct(g.Done, g.Target)%;--c:var(--m-@g.Tone)"></div></div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-3">
+        <div x-data="{ collapsed: false, loading: false, removed: false }">
+            <div class="m-card" x-show="!removed">
+                <div class="m-card-header">
+                    <div><h3 class="m-card-title">Card actions</h3><p class="m-card-subtitle">Collapse, reload or remove</p></div>
+                    <div class="m-card-actions">
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" @@click="collapsed = !collapsed" :aria-expanded="!collapsed" aria-expanded="true" aria-label="Collapse card" title="Collapse"><app-ti name="chevron-up" /></button>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" @@click="loading = true; setTimeout(() => loading = false, 900)" aria-label="Reload card" title="Reload"><app-ti name="refresh" /></button>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" @@click="removed = true" aria-label="Remove card" title="Remove"><app-ti name="x" /></button>
+                    </div>
+                </div>
+                <div class="m-card-body m-card-collapsible" x-show="!collapsed" :class="loading && 'm-card-loading'">
+                    <p class="m-muted m-mb-0">Header actions change the card in place: collapse hides the body, reload shows a spinner while data refreshes, remove takes the card off the page.</p>
+                    <div class="m-card-spinner" x-show="loading" x-cloak><span class="ant-spin ant-spin-spinning" role="status" aria-label="Loading"><span class="ant-spin-dot ant-spin-dot-spin"><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i></span></span></div>
+                </div>
+            </div>
+            <div class="m-card m-card-removed" x-show="removed" x-cloak>
+                <div class="m-card-body m-flex m-between">
+                    <span class="m-muted">Card removed</span>
+                    <button type="button" class="ant-btn ant-btn-link ant-btn-sm" @@click="removed = false; collapsed = false"><span>Restore</span></button>
+                </div>
+            </div>
+        </div>
+
+        <div class="m-card">
+            <div class="m-ribbon">Popular</div>
+            <div class="m-card-body">
+                <span class="m-icon-tile m-tile-lg m-tile-orange-lt"><app-ti name="crown" /></span>
+                <div class="m-h3 m-mt-12">Business plan</div>
+                <p class="m-muted m-mt-4">Unlimited projects, SSO, audit log and priority support for growing teams.</p>
+                <a class="ant-btn ant-btn-primary ant-btn-block" href="/pages/pricing"><span>Upgrade</span></a>
+            </div>
+        </div>
+
+        <div class="m-card">
+            <div class="m-empty">
+                <div class="m-empty-icon"><app-ti name="mood-empty" /></div>
+                <p class="m-empty-title">No reports yet</p>
+                <p class="m-empty-subtitle">Reports you schedule show up here. Start with a weekly sales summary.</p>
+                <button type="button" class="ant-btn ant-btn-primary" hx-post="/ui/cards/demo/report" hx-swap="none"><app-ti name="plus" /><span>Create report</span></button>
+            </div>
+        </div>
+    </div>
+</div>

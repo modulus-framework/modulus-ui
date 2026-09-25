@@ -1,0 +1,23 @@
+@model ProductInput
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    var id = ViewData["Id"] as int?;
+}
+@* Add / edit product drawer. An invalid post re-renders it with errors; a valid one returns 204. *@
+<form class="m-drawer-form ant-form ant-form-vertical ant-form-hide-required-mark" hx-post="/apps/ecommerce/products/save/@id" hx-target="#modulus-drawer-body" hx-swap="innerHTML" novalidate>
+    <div class="m-drawer-form-body">
+        <app-form-item asp-for="Name" label="Product name"><app-input asp-for="Name" placeholder="Edge Gateway X2" autocomplete="off" /></app-form-item>
+        <div class="m-form-grid">
+            <app-form-item asp-for="Sku" label="SKU"><app-input asp-for="Sku" placeholder="MD-1234" /></app-form-item>
+            <app-form-item asp-for="Category" label="Category"><app-select asp-for="Category" items="ProductInput.Categories.Select(c => new SelectListItem(c, c))" placeholder="Select category" /></app-form-item>
+            <app-form-item asp-for="Price" label="Price ($)"><app-input asp-for="Price" type="number" step="0.01" min="0" placeholder="99.99" /></app-form-item>
+            <app-form-item asp-for="Stock" label="Stock"><app-input asp-for="Stock" type="number" step="1" min="0" placeholder="100" /></app-form-item>
+        </div>
+        <app-form-item asp-for="Description" label="Description"><app-textarea asp-for="Description" rows="3" placeholder="What makes this product great" /></app-form-item>
+        <app-form-item asp-for="Status" label="Status"><app-radio-group asp-for="Status" items="Enum.GetNames<ProductStatus>().Select(v => new SelectListItem(v, v))" button-style="solid" /></app-form-item>
+    </div>
+    <div class="m-drawer-form-footer">
+        <app-button @@click="$store.drawer.hide()">Cancel</app-button>
+        <app-button type="primary" html-type="submit">@(id is null ? "Add product" : "Save changes")</app-button>
+    </div>
+</form>

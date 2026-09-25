@@ -1,0 +1,125 @@
+@model WizardPage
+@using Microsoft.AspNetCore.Mvc.Rendering
+@* Four-step wizard in one form: each Next validates the current step on the server; the other steps ride along as hidden fields. The Blazor sample renders the same page. *@
+@{
+    var step = Model.Step;
+    var input = Model.Input;
+    static IEnumerable<SelectListItem> Items(IEnumerable<string> values) => values.Select(v => new SelectListItem(v, v));
+    static string Or(string? value) => string.IsNullOrWhiteSpace(value) ? "—" : value;
+}
+<app-page-header pretitle="Forms" title="Wizard" subtitle="A multi-step form. Each step is checked before you can move on."></app-page-header>
+
+@if (step > WizardPage.ReviewStep)
+{
+    <div class="m-card">
+        <div class="m-empty m-wizard-done">
+            <span class="m-icon-tile m-tile-lg m-tile-green-lt m-tile-round"><app-ti name="check" /></span>
+            <p class="m-empty-title">Account created</p>
+            <p class="m-empty-subtitle">Welcome aboard, @input.Username. We sent a confirmation link to your email.</p>
+            <div class="m-form-actions" style="justify-content:center">
+                <a class="ant-btn ant-btn-default" href="/forms/wizard"><span>Start over</span></a>
+                <a class="ant-btn ant-btn-primary" href="/dashboards/analytics"><span>Go to dashboard</span></a>
+            </div>
+        </div>
+    </div>
+    return;
+}
+
+<div class="m-card">
+    <ol class="m-wizard-steps">
+        @for (var i = 0; i < WizardInput.Steps.Length; i++)
+        {
+            var s = WizardInput.Steps[i];
+            <li class="@(i < step ? "done" : i == step ? "active" : null)" aria-current="@(i == step ? "step" : null)">
+                <span class="m-wizard-num">@if (i < step) { <app-ti name="check" /> } else { @(i + 1) }</span>
+                <span class="m-wizard-label"><span class="m-wizard-title">@s.Title</span><span class="m-wizard-desc">@s.Description</span></span>
+            </li>
+        }
+    </ol>
+    <form method="post" action="/forms/wizard" asp-antiforgery="true" class="ant-form ant-form-vertical" novalidate>
+        <input type="hidden" name="step" value="@step" />
+        @* Enter in a field means "Next" (the first submit button in the form is the default one). *@
+        <button type="submit" name="go" value="@(step + 1)" hidden tabindex="-1" aria-hidden="true"></button>
+        @foreach (var (name, value) in Model.HiddenFields())
+        {
+            <input type="hidden" name="Input.@name" value="@value" />
+        }
+        <div class="m-card-body">
+            @switch (step)
+            {
+                case 0:
+                    <h2 class="m-h3">Account details</h2>
+                    <p class="m-muted m-mt-4">Choose how you'll sign in.</p>
+                    <div class="m-form-grid m-mt-16">
+                        <app-form-item asp-for="Input.Username" label="Username"><app-input asp-for="Input.Username" placeholder="serena.park" autocomplete="username" /></app-form-item>
+                        <app-form-item asp-for="Input.Email" label="Email"><app-input asp-for="Input.Email" placeholder="you@company.com" autocomplete="email" /></app-form-item>
+                        <app-form-item asp-for="Input.Password" label="Password"><app-input asp-for="Input.Password" type="password" placeholder="At least 8 characters" autocomplete="new-password" /></app-form-item>
+                        <app-form-item asp-for="Input.ConfirmPassword" label="Confirm password"><app-input asp-for="Input.ConfirmPassword" type="password" placeholder="Repeat the password" autocomplete="new-password" /></app-form-item>
+                    </div>
+                    break;
+                case 1:
+                    <h2 class="m-h3">Personal info</h2>
+                    <p class="m-muted m-mt-4">Tell us a little about yourself.</p>
+                    <div class="m-form-grid m-mt-16">
+                        <app-form-item asp-for="Input.FirstName" label="First name"><app-input asp-for="Input.FirstName" autocomplete="given-name" /></app-form-item>
+                        <app-form-item asp-for="Input.LastName" label="Last name"><app-input asp-for="Input.LastName" autocomplete="family-name" /></app-form-item>
+                        <app-form-item asp-for="Input.Country" label="Country"><app-select asp-for="Input.Country" items="Items(Lookups.Countries)" placeholder="Choose a country" /></app-form-item>
+                        <app-form-item asp-for="Input.Language" label="Language"><app-select asp-for="Input.Language" items="Items(Lookups.Languages)" placeholder="Choose a language" /></app-form-item>
+                    </div>
+                    break;
+                case 2:
+                    <h2 class="m-h3">Social links</h2>
+                    <p class="m-muted m-mt-4">Optional. Shown on your public profile.</p>
+                    <div class="m-form-grid m-mt-16">
+                        <app-form-item asp-for="Input.Twitter" label="X (Twitter)"><app-input asp-for="Input.Twitter" placeholder="https://x.com/you" /></app-form-item>
+                        <app-form-item asp-for="Input.LinkedIn" label="LinkedIn"><app-input asp-for="Input.LinkedIn" placeholder="https://linkedin.com/in/you" /></app-form-item>
+                        <app-form-item asp-for="Input.GitHub" label="GitHub"><app-input asp-for="Input.GitHub" placeholder="https://github.com/you" /></app-form-item>
+                    </div>
+                    break;
+                default:
+                    <h2 class="m-h3">Review and submit</h2>
+                    <p class="m-muted m-mt-4">Check your details before creating the account.</p>
+                    <div class="m-review-section m-mt-16"><span class="m-heading m-medium">Account</span><button type="submit" name="go" value="0" class="ant-btn ant-btn-link ant-btn-sm"><span>Edit</span></button></div>
+                    <dl class="m-review-list">
+                        <div><dt>Username</dt><dd>@Or(input.Username)</dd></div>
+                        <div><dt>Email</dt><dd>@Or(input.Email)</dd></div>
+                    </dl>
+                    <div class="m-review-section"><span class="m-heading m-medium">Personal</span><button type="submit" name="go" value="1" class="ant-btn ant-btn-link ant-btn-sm"><span>Edit</span></button></div>
+                    <dl class="m-review-list">
+                        <div><dt>Name</dt><dd>@Or($"{input.FirstName} {input.LastName}".Trim())</dd></div>
+                        <div><dt>Country</dt><dd>@Or(input.Country)</dd></div>
+                        <div><dt>Language</dt><dd>@Or(input.Language)</dd></div>
+                    </dl>
+                    <div class="m-review-section"><span class="m-heading m-medium">Social</span><button type="submit" name="go" value="2" class="ant-btn ant-btn-link ant-btn-sm"><span>Edit</span></button></div>
+                    <dl class="m-review-list">
+                        <div><dt>X (Twitter)</dt><dd>@Or(input.Twitter)</dd></div>
+                        <div><dt>LinkedIn</dt><dd>@Or(input.LinkedIn)</dd></div>
+                        <div><dt>GitHub</dt><dd>@Or(input.GitHub)</dd></div>
+                    </dl>
+                    <app-form-item asp-for="Input.AcceptTerms" label="">
+                        <app-checkbox asp-for="Input.AcceptTerms">I agree to the <a href="/pages/faq">terms and privacy policy</a></app-checkbox>
+                    </app-form-item>
+                    break;
+            }
+        </div>
+        <div class="m-card-footer m-flex m-between">
+            @if (step > 0)
+            {
+                <button type="submit" name="go" value="@(step - 1)" class="ant-btn ant-btn-default"><app-ti name="arrow-left" /><span>Back</span></button>
+            }
+            else
+            {
+                <span></span>
+            }
+            <span class="m-small m-muted">Step @(step + 1) of @WizardInput.Steps.Length</span>
+            @if (step < WizardPage.ReviewStep)
+            {
+                <button type="submit" name="go" value="@(step + 1)" class="ant-btn ant-btn-primary"><span>Next</span><app-ti name="arrow-right" /></button>
+            }
+            else
+            {
+                <button type="submit" name="go" value="@(step + 1)" class="ant-btn ant-btn-primary"><app-ti name="check" /><span>Create account</span></button>
+            }
+        </div>
+    </form>
+</div>

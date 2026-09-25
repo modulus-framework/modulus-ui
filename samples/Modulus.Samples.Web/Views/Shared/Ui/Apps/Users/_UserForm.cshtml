@@ -1,0 +1,24 @@
+@model UserInput
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    var id = ViewData["Id"] as int?;
+    static IEnumerable<SelectListItem> Items(IEnumerable<string> values) => values.Select(v => new SelectListItem(v, v));
+}
+@* Add / edit user drawer (Users list and user view). Loaded into the layout drawer; an invalid post
+   re-renders it with errors in place, a valid one returns 204 and refreshes the page behind. *@
+<form class="m-drawer-form ant-form ant-form-vertical ant-form-hide-required-mark" hx-post="/apps/users/list/save/@id" hx-target="#modulus-drawer-body" hx-swap="innerHTML" novalidate>
+    <div class="m-drawer-form-body">
+        <app-form-item asp-for="Name" label="Full name"><app-input asp-for="Name" placeholder="John Doe" autocomplete="off" /></app-form-item>
+        <app-form-item asp-for="Email" label="Email"><app-input asp-for="Email" type="email" placeholder="john.doe@example.com" /></app-form-item>
+        <app-form-item asp-for="Company" label="Company"><app-input asp-for="Company" placeholder="Modulus Inc." /></app-form-item>
+        <app-form-item asp-for="Country" label="Country"><app-select asp-for="Country" items="Items(Lookups.Countries)" placeholder="Select country" /></app-form-item>
+        <app-form-item asp-for="Phone" label="Contact"><app-input asp-for="Phone" type="tel" placeholder="+1 (609) 988-44-11" /></app-form-item>
+        <app-form-item asp-for="Role" label="Role"><app-select asp-for="Role" items="Items(Lookups.Roles)" /></app-form-item>
+        <app-form-item asp-for="Plan" label="Plan"><app-select asp-for="Plan" items="Items(Lookups.Plans)" /></app-form-item>
+        <app-form-item asp-for="Status" label="Status"><app-radio-group asp-for="Status" items="Items(Enum.GetNames<UserStatus>())" button-style="solid" /></app-form-item>
+    </div>
+    <div class="m-drawer-form-footer">
+        <app-button @@click="$store.drawer.hide()">Cancel</app-button>
+        <app-button type="primary" html-type="submit">@(id is null ? "Add user" : "Save changes")</app-button>
+    </div>
+</form>

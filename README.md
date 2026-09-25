@@ -1,267 +1,232 @@
-# Modulus UI Framework v3.0.0
+# Modulus UI
 
-**Production-ready, enterprise-grade admin UI framework for ASP.NET** with complete **Ant Design catalog** across three rendering modes: **Blazor Server/WASM/Auto**, **MVC**, and **Razor Pages**.
+Admin-panel UI for **Blazor**, **ASP.NET Core MVC** and **Razor Pages**, built on
+[Ant Design Blazor](https://antblazor.com) 1.6.2 and its official Pro layout, on .NET 10.
 
-## Features
+One theme, one menu definition and one set of design tokens produce the same [Tabler](https://tabler.io/admin-template)-style
+admin template in every flavor. Blazor uses the real Ant Design Blazor components. MVC and Razor Pages use tag helpers that
+emit the same Ant Design DOM, with htmx and Alpine.js for interactivity. The three sample apps render the same 44 pages,
+pixel-for-pixel where the controls allow it.
 
-- ✅ **95+ Ant Design components** planned; 20+ fully implemented, rest scaffolded
-  - **DataEntry** (21): Form, Input, Select, Checkbox, Radio, DatePicker, InputNumber, TextArea, Cascader, TreeSelect, AutoComplete, Upload, Transfer, etc.
-  - **DataDisplay** (21): Card, Table, Tag, Avatar, Badge, Statistic, List, Tree, Timeline, Collapse, Descriptions, Calendar, etc.
-  - **Layout** (12): Grid, Space, Layout, Flex, Splitter, Divider, etc.
-  - **Navigation** (8): Menu, Breadcrumb, Pagination, Tabs, Steps, Dropdown, Anchor, etc.
-  - **Feedback** (9): Alert, Modal, Drawer, Message, Notification, Result, Spin, Progress, Popconfirm
-  - **Pro** (18): ProTable, ProForm, ProCard, ProLayout, PageContainer, ProDescriptions, EditableProTable, QueryFilter, etc.
-  - **General** (8): Button, Icon, Typography, FloatButton, BackTop, Watermark, ConfigProvider, App
-- ✅ **Full three-flavor parity** — identical component APIs across Blazor, MVC, and Razor Pages
-- ✅ **Schema-driven forms & tables** (ProForm, ProTable) with pagination, filtering, search, and inline editing
-- ✅ **Server-driven interactivity** — htmx + Alpine.js bridge for server round-trips without page reloads
-- ✅ **Light/dark theme system** with CSS variables only (no AntDesign CSS patching)
-- ✅ **Single version pin strategy** — AntDesign 1.6.2 pinned centrally, drift detection on updates
-- ✅ **Modular DI architecture** — ABP-style `AddModulusBlazor()` entry point
-- ✅ **ERP-ready samples** — Dashboard, Products, Customers, Analytics, Settings, Profile
-- ✅ **Automated drift detection** with GitHub Actions CI/CD pipeline
-- ✅ **Comprehensive documentation** with maintainer upgrade guides
-- ✅ **Test suite** with bUnit for core components
+| Blazor — analytics dashboard | MVC — eCommerce dashboard (dark) |
+|---|---|
+| ![Blazor analytics dashboard](docs/screenshots/blazor-dashboard.png) | ![MVC eCommerce dashboard, dark theme](docs/screenshots/mvc-ecommerce-dark.png) |
+| **Razor Pages — kanban** | **Blazor — data table (dark)** |
+| ![Razor Pages kanban board](docs/screenshots/razorpages-kanban.png) | ![Blazor data table, dark theme](docs/screenshots/blazor-data-table-dark.png) |
+| **MVC — form wizard** | **Razor Pages — sign-in** |
+| ![MVC form wizard](docs/screenshots/mvc-wizard.png) | ![Razor Pages sign-in](docs/screenshots/razorpages-login.png) |
 
-## Quick Start
+## What you get
 
-### Blazor Web App
+- **Every Ant Design Blazor component**, as-is. Modulus adds thin `App*` aliases (`AppButton : AntDesign.Button`),
+  so every upstream parameter works and new ones arrive automatically on upgrade. The coverage manifest lists 90 aliases;
+  CI verifies them against the pinned AntDesign package.
+- **Tabler-style shell**: header with page search (Ctrl K), notifications and account menu; a horizontal navbar or a
+  vertical sidebar, boxed or fluid width and a light or dark nav, all switchable in a settings panel and remembered in
+  cookies; footer; light/dark mode with no flash on load. One renderer (`ShellRenderer`) produces the markup for
+  Blazor's `AppShell` and MVC's `_ModulusLayout`. The Ant Design Pro `ModulusLayout` is still available for Blazor.
+- **Pro components** following ProComponents conventions: `ProTable` (server paging, sorting, selection and batch actions,
+  density, reload), `QueryFilter` (collapsible search form), `ModalForm` / `DrawerForm` (validated, async submit),
+  `StatisticCard` + `Trend`, `FooterToolbar`.
+- **Charts with no JS dependency**: `LineChart` (line/area, crosshair tooltip), `ColumnChart` (grouped/stacked),
+  `BarChart`, `DonutChart`, `HeatmapChart`, `Sparkline`, `MiniBar`. The geometry is shared by Blazor and MVC,
+  hover tooltips are CSS-only, and each chart carries a screen-reader data table.
+- **Theming from one options object**: primary, success, warning, error and info colours plus border radius.
+  The 10-step palette is generated with a C# port of `@ant-design/colors` (tested against the official palettes).
+  Light/dark mode persists in a cookie, so the server renders the correct theme on the first byte.
+- **MVC / Razor Pages parity**: the same layout (`_ModulusLayout`), menu, header, theme toggle, drawer, confirm dialog
+  and toast messages, driven by `Response.HxMessage()`, `HxCloseDrawer()` and `HxTrigger()`.
+- **Full Ant Design markup for MVC**: 80+ tag helpers render the same DOM as Ant Design Blazor, so one stylesheet
+  styles both flavours. Interactive pieces (tabs, dropdowns, collapse, modal, upload, rate) use small Alpine
+  components with keyboard support. They need no build step.
+- **Responsive shell**: below 992 px the navigation moves behind a menu button that slides the sidebar in as a drawer.
+  Wide tables and segmented controls scroll inside their card instead of widening the page.
+- **Three complete sample admin apps** (Blazor, MVC and Razor Pages) with the same pages and URLs:
+  - **Dashboards**: analytics, CRM, eCommerce.
+  - **Apps**: email, chat, calendar, kanban, invoices (list, preview, add, edit), users (list, view), roles,
+    permissions, customers CRUD, eCommerce products and orders.
+  - **Pages**: profile, account settings, pricing, FAQ, help center; sign-in, register, forgot/reset password,
+    verify email, two-step verification; 404, 403, 500, maintenance and coming soon.
+  - **Interface, forms and tables**: component gallery (every Ant Design category), cards, charts, form layouts,
+    a validated multi-step wizard, a validation showcase, and a data table (search, filters, sorting, paging,
+    column picker, density, selection and CSV export).
+
+## Quick start — Blazor
 
 ```csharp
 // Program.cs
-builder.Services.AddAntDesign();
-builder.Services.AddModulusBlazor();
-
-var app = builder.Build();
-app.MapBlazorHub();
-app.MapFallbackToPage("/_Host");
-app.Run();
-```
-
-```razor
-<!-- App.razor or Layout component -->
-@using Modulus.Blazor.Core.Theme
-
-<ThemeProvider>
-    @Body
-</ThemeProvider>
-```
-
-```razor
-<!-- Your component -->
-@using Modulus.Blazor.Components.General
-@using Modulus.Blazor.Components.DataDisplay
-
-<AppButton Type="@ButtonType.Primary" OnClick="HandleClick">
-    Click me
-</AppButton>
-
-<AppCard Title="Dashboard">
-    <p>Your content here</p>
-</AppCard>
-```
-
-### MVC / Razor Pages
-
-```html
-<!-- _ViewImports.cshtml -->
-@addTagHelper *, Modulus.AspNetCore.Mvc
-```
-
-```html
-<!-- Your view -->
-<app-button type="primary" onclick="htmx.ajax('GET', '/api/data', '#content')">
-    Load Data
-</app-button>
-
-<app-card title="Customers">
-    <table class="ant-table">
-        <!-- table content -->
-    </table>
-</app-card>
-
-<!-- Alpine modal for add/edit -->
-<div x-data="{ modal: modal() }">
-    <button x-on:click="modal.open('Add Customer')">Add</button>
-    
-    <div class="ant-modal-wrap" x-show="modal.visible" x-transition>
-        <!-- modal content -->
-    </div>
-</div>
-```
-
-```javascript
-// Load Alpine components
-import { ModulusAlpine } from '/lib/modulus-alpine.js';
-
-document.addEventListener('alpine:init', () => {
-    Alpine.data('modal', ModulusAlpine.modal);
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+builder.Services.AddModulusBlazor(theme =>
+{
+    theme.Title = "Contoso ERP";
+    theme.PrimaryColor = "#1677ff";
 });
+builder.Services.AddTransient<IMenuContributor, AppMenuContributor>();
 ```
 
-## Architecture
+```razor
+@* App.razor <head> *@
+<ModulusHead />
+@* before </body> *@
+<script src="_content/AntDesign/js/ant-design-blazor.js"></script>
 
-### Projects
+@* Routes.razor — once, after the Router *@
+<AntContainer />
+
+@* MainLayout.razor — the Tabler shell (or <ModulusLayout> for the Ant Design Pro BasicLayout) *@
+<AppShell>@Body</AppShell>
+```
+
+```csharp
+public sealed class AppMenuContributor : IMenuContributor
+{
+    public Task ConfigureMenuAsync(MenuConfigurationContext context)
+    {
+        context.Add(new MenuItemDefinition("dashboard", "Dashboard", "", "dashboard") { Order = 0, ExactMatch = true })
+               .Add(new MenuItemDefinition("customers", "Customers", "customers", "team") { Order = 10, RequiredPolicy = "Customers.Read" });
+        return Task.CompletedTask;
+    }
+}
+```
+
+A page:
+
+```razor
+<PageContainer Title="Customers">
+    <ProTable TItem="Customer" HeaderTitle="Customer list" RowKey="c => c.Id" Request="LoadAsync">
+        <Columns>
+            <PropertyColumn Property="c => c.Name" Sortable />
+            <PropertyColumn Property="c => c.Company" />
+        </Columns>
+    </ProTable>
+</PageContainer>
+
+@code {
+    private Task<ProTableResponse<Customer>> LoadAsync(ProTableRequest request) =>
+        Task.FromResult(_customers.SortBy(request, "Name", c => c.Name).ToPage(request));
+}
+```
+
+See `samples/Modulus.AdminTemplate.Blazor/Components/Pages/Apps/Customers/CustomerList.razor` for the full pattern:
+filter, table, batch delete and drawer form.
+
+## Quick start — MVC / Razor Pages
+
+```csharp
+builder.Services.AddControllersWithViews();   // or AddRazorPages()
+builder.Services.AddModulusMvc(theme => theme.Title = "Contoso ERP");
+builder.Services.AddTransient<IMenuContributor, AppMenuContributor>();
+```
+
+```cshtml
+@* _ViewImports.cshtml *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+
+@* _ViewStart.cshtml *@
+@{ Layout = "_ModulusLayout"; }
+```
+
+```cshtml
+<app-page-container title="Customers">
+  <app-card title="Customer list">
+    <app-card-extra>
+      <app-button type="primary" icon="plus" hx-get="/customers/new" hx-target="#modulus-drawer-body"
+                  x-on:click="$store.drawer.show('New customer')">New customer</app-button>
+    </app-card-extra>
+    <div id="table" hx-get="/customers/table" hx-trigger="load, customers:refresh from:body"></div>
+  </app-card>
+</app-page-container>
+```
+
+```csharp
+// Controller, after a successful save:
+Response.HxMessage(MessageType.Success, $"Created {customer.Name}");
+Response.HxCloseDrawer();
+Response.HxTrigger("customers:refresh");
+return NoContent();
+```
+
+Tag helpers. `/ui/components` in the MVC and Razor Pages samples shows each one; the Blazor sample shows its twin at the same URL:
+
+| Category | Tag helpers |
+|---|---|
+| General | `app-button` (`loading`), `app-icon`, `app-title`, `app-text`, `app-paragraph`, `app-link` |
+| Layout | `app-divider`, `app-space`, `app-row` / `app-col` (24-column grid, gutters, xs–xxl), `app-flex` |
+| Navigation | `app-breadcrumb`, `app-tabs` / `app-tab`, `app-steps` / `app-step`, `app-dropdown` / `app-dropdown-item`, `app-pagination` (htmx or plain links) |
+| Data entry | `app-form-item` (`asp-for` + validation), `app-input` (affixes, addons, clear, password, datalist AutoComplete), `app-input-search`, `app-textarea` (count), `app-input-number`, `app-select`, `app-date-picker` (date/week/month/time), `app-range-picker`, `app-checkbox`, `app-checkbox-group`, `app-radio-group`, `app-switch`, `app-slider`, `app-rate`, `app-segmented`, `app-upload` |
+| Data display | `app-card`, `app-avatar` / `app-avatar-group`, `app-badge` / `app-badge-ribbon`, `app-tag`, `app-statistic`, `app-descriptions`, `app-table`, `app-list`, `app-timeline`, `app-collapse` / `app-panel`, `app-image`, `app-tooltip`, `app-popover`, `app-empty` |
+| Feedback | `app-alert`, `app-progress` (line/circle/dashboard), `app-result`, `app-skeleton`, `app-spin`, `app-modal`, `app-watermark`; plus `Response.HxMessage`, `HxNotify`, `HxCloseModal` and `hx-confirm` |
+| Pro | `app-page-container`, `app-page-header`, `app-statistic-card`, `app-trend` |
+| Charts | `app-line-chart`, `app-column-chart`, `app-bar-chart`, `app-donut-chart`, `app-heatmap`, `app-sparkline`, `app-mini-bar` |
+| Icons | `app-icon` (Ant Design), `app-ti` (Tabler sprite, 270+ icons) |
+
+Controls bind with `asp-for` (name, id, value and validation state) or a plain `name`. Any other attributes you add,
+such as `placeholder`, `hx-*` or `x-*`, go to the real `<input>`. Forms stay plain HTML and post normally.
+
+## Theme options
+
+Bind the options from configuration or set them in code:
+
+```json
+"Modulus": { "Theme": { "Title": "Modulus Admin", "PrimaryColor": "#1677ff", "BorderRadius": 6,
+                        "DefaultMode": "Light", "NavTheme": "Light" } }
+```
+
+| Option | Default | |
+|---|---|---|
+| `Title`, `LogoUrl` | "Modulus Admin", built-in mark | Sider header |
+| `PrimaryColor`, `SuccessColor`, `WarningColor`, `ErrorColor`, `InfoColor` | antd v5 palette | 10-step palettes generated server-side |
+| `BorderRadius` | 6 | Controls, cards, menus (sm/lg derived) |
+| `DefaultMode` | `Light` | `Light`, `Dark` or `System`; the user's choice is stored in the `modulus-theme` cookie |
+| `NavTheme` | `Light` | Sider theme |
+| `SiderWidth`, `HeaderHeight` | 208, 56 | Ant Design Pro defaults |
+
+## Projects
 
 | Project | Purpose |
-|---------|---------|
-| `Modulus.Blazor` | Blazor components, Pro composites, theme system |
-| `Modulus.AspNetCore.Mvc` | MVC/Razor Pages TagHelpers, Alpine components |
-| `Modulus.Ui.Abstractions` | Shared schemas (Menu, ProForm, ProTable) |
-| `Modulus.Ui.Assets` | Theme tokens, Alpine.js library, htmx |
-| `Modulus.AdminTemplate.Blazor` | Sample Blazor Web App admin template |
-| `Modulus.AdminTemplate.Mvc` | Sample MVC admin template with htmx |
-| `tools/antd-drift` | Component drift detector |
-| `tests/Modulus.Blazor.Tests` | bUnit component tests |
+|---|---|
+| `src/Modulus.Ui.Abstractions` | Flavor-agnostic: theme options and palette generation, menu contributors, `ProTableRequest/Response`, chart geometry |
+| `src/Modulus.Ui.Assets` | `modulus.css` design layer, `modulus-theme.js`, `modulus-mvc.js`, vendored htmx 2.0.11 and Alpine.js 3.17.4 |
+| `src/Modulus.Blazor` | `AddModulusBlazor`, `App*` aliases, ProLayout shell, Pro components, charts (no server framework dependency, so it is WASM-compatible) |
+| `src/Modulus.AspNetCore.Mvc` | `AddModulusMvc`, tag helpers, `_ModulusLayout` and partials, htmx response helpers, `AntIcons` |
+| `samples/Modulus.AdminTemplate.*` | The Blazor, MVC and Razor Pages admin templates |
+| `samples/Modulus.Samples.Shared` | Models, in-memory stores, menu and page data shared by all three samples |
+| `samples/Modulus.Samples.Web` | Page bodies (`Views/Shared/Ui/**`) shared by MVC and Razor Pages: controllers and page models only bind input and pick the view |
+| `tests/*` | bUnit component tests, palette/menu/table/chart unit tests, tag helper and icon tests |
+| `tools/antd-drift` | Checks the manifest and aliases against the pinned AntDesign package (see [UPGRADING](docs/UPGRADING.md)) |
 
-### Component Coverage (95 Total, 20+ Implemented)
-
-**Implemented & Working:**
-- **DataEntry**: Select, Checkbox, Radio, DatePicker, InputNumber, TextArea ✅
-- **DataDisplay**: Statistic ✅
-- **Feedback**: Message, Result, Spin ✅
-- **Pro**: ProLayout, PageContainer, ProDescriptions ✅
-- **Plus**: All v2.2.0 components (Button, Card, Table, Form, Modal, Drawer, Tabs, etc.)
-
-**Scaffolded (Ready for Implementation):**
-- **DataEntry** (15 more): AutoComplete, Cascader, ColorPicker, Mentions, Rate, Slider, Switch, TimePicker, Transfer, TreeSelect, Upload, Password, Search, OTP, InputGroup
-- **DataDisplay** (15 more): Avatar, Badge, Collapse, Descriptions, Empty, Image, List, Popover, Skeleton, Timeline, Tooltip, Tree, Calendar, Carousel, QRCode, Segmented, Tour
-- **Layout** (9 more): Layout, Flex, Splitter, Layout.Header, Layout.Sider, Layout.Content, Layout.Footer, Affix, Space.Compact
-- **Navigation** (4 more): Anchor, Dropdown, Steps, Menu enhancements
-- **Pro** (8 more): ProList, StatisticCard, QueryFilter, LightFilter, StepsForm, ProField, EditableProTable, FooterToolbar, SettingDrawer
-- **Feedback** (3 more): Notification, Popconfirm, Progress
-
-Full list with status: see `manifest/antd-coverage-full.json`
-
-## Three-Flavor Comparison
-
-| Aspect | Blazor | MVC | Razor Pages |
-|--------|--------|-----|-------------|
-| **Component Model** | Native Razor components | TagHelpers | TagHelpers |
-| **Client State** | Blazor built-in | Alpine.js | Alpine.js |
-| **Server Updates** | Blazor events | htmx | htmx |
-| **Learning Curve** | Blazor knowledge required | HTML/CSS/JS | HTML/CSS/JS |
-| **Performance** | Real-time, WebSocket | HTTP (cached) | HTTP (cached) |
-| **Use Case** | Interactive dashboards | Traditional web | Traditional web |
-
-## Updating Ant Design
-
-When AntDesign updates, Modulus stays compatible automatically thanks to the wrapper pattern:
-
-1. **Bump version** in `Directory.Packages.props`
-2. **Run drift check**: `dotnet run --project tools/antd-drift`
-3. **Review report**: `drift-reports/drift-report-*.md`
-4. **Update wrappers** for breaking changes (rare)
-5. **Test**: `dotnet build && dotnet test`
-6. **CI validates** on every push
-
-See `docs/UPGRADING.md` for detailed checklist.
-
-## Samples
-
-### Blazor: Dashboard + Customers CRUD
+## Build, test, run
 
 ```bash
-cd samples/Modulus.AdminTemplate.Blazor
-dotnet run
-# Open http://localhost:5000
+dotnet build Modulus.slnx
+dotnet test --solution Modulus.slnx
+dotnet run --project tools/antd-drift
+
+dotnet run --project samples/Modulus.AdminTemplate.Blazor       # http://localhost:5100
+dotnet run --project samples/Modulus.AdminTemplate.Mvc          # http://localhost:5101
+dotnet run --project samples/Modulus.AdminTemplate.RazorPages   # http://localhost:5102
 ```
 
-Features:
-- Dashboard with stat cards
-- Customer list with ProTable
-- Add/Edit modal with ProForm
-- Light/dark theme toggle
+Run the samples in the **Development** environment (the default launch profile does this) or publish them;
+`dotnet run` in Production does not serve library static assets.
 
-### MVC: Admin Panel with htmx
+## Known limitations
 
-```bash
-cd samples/Modulus.AdminTemplate.Mvc
-dotnet run
-# Open http://localhost:5001
-```
-
-Features:
-- Customer list table
-- Search with htmx filter
-- Alpine modal for add/edit
-- Form validation with server rerender
-- Delete with confirmation
-- No page reloads
-
-## Testing
-
-Run component tests:
-
-```bash
-dotnet test tests/Modulus.Blazor.Tests
-```
-
-Tests cover:
-- Component rendering
-- Parameter binding
-- Property forwarding
-- Instance creation
+- **Ant Design Blazor 1.6 ships antd v4 styling.** Modulus adds a v5-style refresh layer (6 px radius, softer shadows,
+  v5 menu and table styling) over it. The result looks like modern Ant Design Pro, but it is not pixel-identical to antd v5.
+- **Brand colour in dark mode.** `PrimaryColor` drives the light theme. AntDesign's dark stylesheet hard-codes antd blue,
+  so dark mode stays blue until AntDesign ships a variable-based dark theme.
+- **Icons in MVC** reuse Ant Design Blazor's icon store through reflection, because the API is internal. A unit test fails
+  if an AntDesign upgrade moves it.
+- **Blazor-only widgets.** Cascader, TreeSelect, Transfer, Mentions, Tree, Calendar, Carousel, Anchor, Affix, BackTop and
+  Splitter need a component runtime and have no tag helper. In MVC, use a native control or render a Blazor component
+  with `<component type="…" render-mode="Server" />`. The manifest lists the MVC equivalent (or none) for every component.
+- **Native pickers in MVC.** `app-date-picker` and `app-range-picker` use the browser's date/time inputs inside antd chrome,
+  so the calendar popup follows the browser, not antd.
+- **Authorization** is wired for menus (`RequiredPolicy`). The sample sign-in page is a demo and does not authenticate.
 
 ## Documentation
 
-- **`docs/PLAN.md`** — Comprehensive architecture and design decisions
-- **`docs/UPGRADING.md`** — Step-by-step guide for maintaining across Ant Design updates
-- **`manifest/antd-coverage.json`** — Component status (done, in-progress, gap)
-
-## CI/CD
-
-GitHub Actions workflows:
-
-- **`ci.yml`** — Build, test, drift check on every push
-- **`antd-drift.yml`** — Weekly drift reports with auto-issue creation
-
-## Version Pinning
-
-AntDesign version is pinned in **one place only**:
-
-```xml
-<!-- Directory.Packages.props -->
-<PackageVersion Include="AntDesign" Version="1.6.2" />
-```
-
-All projects use central package management. Updates are coordinated via the drift tool and CI.
-
-## Contributing
-
-1. Create a feature branch
-2. Make changes to components
-3. Run `dotnet build -c Release`
-4. Run `dotnet test`
-5. Commit with atomic messages
-6. Push and create PR
-7. CI validates, drift tool checks for component changes
-8. Merge when green
-
-## License
-
-This framework is provided as-is for use in ASP.NET applications.
-
-## Support & Documentation
-
-- **API Docs**: See component parameters in `src/Modulus.Blazor/Components/`
-- **Examples**: See sample apps in `samples/`
-- **Drift Tool**: `tools/antd-drift` reports component changes
-- **CI Pipeline**: `.github/workflows/` shows build, test, drift checks
-
-## Roadmap
-
-- ✅ Phase 1-8: Complete (core framework, tests)
-- Phase 9: E2E tests (Playwright)
-- Phase 10: API documentation (Docfx)
-- Phase 11: Advanced layout examples
-- Phase 12: Auth/Permission integration (ABP)
-
----
-
-**Status**: Production-Ready  
-**Latest Release**: v2.2.0  
-**Target**: .NET 10.0  
-**Components**: 40+  
-**Tests**: 13  
-**Build**: Clean (0 errors)
+- [docs/DESIGN.md](docs/DESIGN.md): design decisions and the analysis of other Ant Design-based libraries they come from
+- [docs/UPGRADING.md](docs/UPGRADING.md): upgrading AntDesign, htmx and Alpine.js safely
+- `manifest/antd-coverage.json`: component-by-component coverage, verified in CI

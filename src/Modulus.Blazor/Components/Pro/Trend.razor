@@ -1,0 +1,18 @@
+@* Up/down change indicator: <Trend Direction="TrendDirection.Up">12%</Trend> *@
+
+<span class="@CssClass">
+    @ChildContent
+    <Icon Type="@(Direction == TrendDirection.Up ? "caret-up" : "caret-down")" Theme="IconThemeType.Fill" />
+    <span class="m-sr-only">@(Direction == TrendDirection.Up ? "increase" : "decrease")</span>
+</span>
+
+@code {
+    [Parameter] public TrendDirection Direction { get; set; }
+
+    /// <summary>Treat "up" as bad (e.g. churn, cost): swaps the colours.</summary>
+    [Parameter] public bool Inverse { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string CssClass => $"m-trend m-trend-{(Direction == TrendDirection.Up ? "up" : "down")}{(Inverse ? " m-trend-inverse" : "")}";
+}

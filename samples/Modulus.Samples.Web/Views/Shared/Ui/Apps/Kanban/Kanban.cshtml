@@ -1,0 +1,69 @@
+@model IReadOnlyList<KanbanTask>
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    const string Base = "/apps/kanban";
+}
+<app-page-header pretitle="Apps" title="Kanban" subtitle="Drag cards between columns, or use a card's menu to move it."></app-page-header>
+
+@* Every change (add, move, delete) posts over htmx and fires kanban:refresh, which reloads the board. *@
+<div id="kanban-board" class="m-kanban" x-data="kanbanBoard('@Base/move')">
+    <div hidden hx-get="@Base" hx-trigger="kanban:refresh from:body" hx-select="#kanban-board" hx-target="#kanban-board" hx-swap="outerHTML"></div>
+    @foreach (var col in SampleStore.KanbanColumns)
+    {
+        var tasks = Model.Where(t => t.Column == col.Id).OrderBy(t => t.Order).ToList();
+        <section class="m-kanban-col" aria-label="@col.Title" :class="over === '@col.Id' && 'drop'"
+                 @@dragover.prevent="over = '@col.Id'" @@dragleave.self="over = null" @@drop.prevent="drop($event, '@col.Id')">
+            <div class="m-kanban-head">
+                <h3>@col.Title</h3>
+                <span class="m-badge m-badge-gray-lt">@tasks.Count</span>
+            </div>
+            <div class="m-kanban-list">
+                @foreach (var t in tasks)
+                {
+                    var (due, late) = SampleUi.KanbanDue(t);
+                    <article class="m-kanban-card" draggable="true" data-id="@t.Id" @@dragstart="start($event, @t.Id)" @@dragend="end($event)">
+                        <div class="m-kanban-card-top">
+                            <span class="m-badge m-badge-@SampleUi.KanbanLabelTone(t.Label)-lt">@t.Label</span>
+                            <app-dropdown placement="bottomRight">
+                                <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Actions for @t.Title" title="Actions"><app-ti name="dots" /></button>
+                                <dropdown-menu>
+                                    @foreach (var target in SampleStore.KanbanColumns.Where(c => c.Id != t.Column))
+                                    {
+                                        <app-dropdown-item hx-post="@Base/move" hx-vals='{"id": @t.Id, "column": "@target.Id", "index": 999}' hx-swap="none">Move to @target.Title</app-dropdown-item>
+                                    }
+                                    <app-dropdown-item danger hx-post="@Base/delete/@t.Id" hx-swap="none" hx-confirm="@($"Delete \"{t.Title}\"?")" data-confirm-danger data-confirm-ok="Delete">Delete</app-dropdown-item>
+                                </dropdown-menu>
+                            </app-dropdown>
+                        </div>
+                        <div class="m-kanban-card-title">@t.Title</div>
+                        <div class="m-kanban-meta">
+                            @if (due.Length > 0) { <span class="m-kanban-due@(late ? " late" : "")" title="@(late ? "Overdue" : "Due")"><app-ti name="calendar" />@due</span> }
+                            @if (t.Comments > 0) { <span title="Comments"><app-ti name="message" />@t.Comments</span> }
+                            @if (t.Attachments > 0) { <span title="Attachments"><app-ti name="paperclip" />@t.Attachments</span> }
+                            <span class="m-avatar-list">
+                                @foreach (var who in t.Assignees.Take(3))
+                                {
+                                    <span class="m-avatar m-avatar-xs m-av-@Fmt.Tint(who)" title="@who">@Fmt.Initials(who)</span>
+                                }
+                            </span>
+                        </div>
+                    </article>
+                }
+            </div>
+            <div class="m-kanban-add" x-data="{ open: false }">
+                <button type="button" class="ant-btn ant-btn-text ant-btn-block" x-show="!open" @@click="open = true; $nextTick(() => $refs.title.focus())"><app-ti name="plus" /><span>Add task</span></button>
+                <form x-show="open" x-cloak hx-post="@Base/add" hx-swap="none" @@htmx:after-request="if (event.detail.successful) { $el.reset(); open = false }" class="m-kanban-add" style="padding:0">
+                    <input type="hidden" name="Column" value="@col.Id" />
+                    <input class="ant-input" name="Title" x-ref="title" placeholder="Task title" aria-label="Task title in @col.Title" required maxlength="120" @@keydown.escape="open = false" />
+                    <select class="m-select" name="Label" aria-label="Label">
+                        @foreach (var label in Lookups.KanbanLabels) { <option value="@label">@label</option> }
+                    </select>
+                    <div class="m-flex m-gap-8">
+                        <button type="submit" class="ant-btn ant-btn-primary ant-btn-sm"><span>Add</span></button>
+                        <button type="button" class="ant-btn ant-btn-default ant-btn-sm" @@click="open = false"><span>Cancel</span></button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    }
+</div>

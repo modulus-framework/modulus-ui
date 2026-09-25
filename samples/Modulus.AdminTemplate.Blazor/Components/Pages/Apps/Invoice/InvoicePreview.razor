@@ -1,0 +1,91 @@
+@page "/apps/invoice/preview/{Id:int}"
+@inject SampleStore Store
+@inject IMessageService Message
+@inject NavigationManager Navigation
+
+@if (_invoice is null) return;
+@{
+    var i = _invoice;
+}
+<PageTitle>Invoice @i.Number · Modulus</PageTitle>
+
+<PageHeading Pretitle="Invoice" Title="@($"Invoice {i.Number}")">
+    <Actions>
+        <a class="ant-btn ant-btn-default" href="/apps/invoice/list"><Ti Name="arrow-left" /><span>All invoices</span></a>
+    </Actions>
+</PageHeading>
+
+<div class="m-invoice-layout">
+    <div class="m-card"><InvoicePaper Invoice="i" /></div>
+    <aside class="m-invoice-side">
+        <div class="m-card">
+            <div class="m-card-body m-invoice-actions">
+                <button type="button" class="ant-btn ant-btn-primary ant-btn-block" disabled="@(i.Status != InvoiceStatus.Draft)" @onclick="SendAsync"><Ti Name="send" /><span>@(i.Status == InvoiceStatus.Draft ? "Send invoice" : "Invoice sent")</span></button>
+                <a class="ant-btn ant-btn-default ant-btn-block" href="/apps/invoice/print/@i.Id" target="_blank" rel="noopener"><Ti Name="download" /><span>Download</span></a>
+                <div class="m-invoice-actions-row">
+                    <a class="ant-btn ant-btn-default" href="/apps/invoice/print/@i.Id" target="_blank" rel="noopener"><Ti Name="printer" /><span>Print</span></a>
+                    <a class="ant-btn ant-btn-default" href="/apps/invoice/edit/@i.Id"><Ti Name="edit" /><span>Edit</span></a>
+                </div>
+                <button type="button" class="ant-btn ant-btn-default ant-btn-block m-btn-success" disabled="@(i.Balance == 0)" @onclick="OpenPayment"><Ti Name="currency-dollar" /><span>Add payment</span></button>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-body">
+                <div class="m-subheader m-mb-12">Payment</div>
+                <div class="m-flex m-between m-small"><span class="m-muted">Paid</span><span class="m-num">@Fmt.Money(i.Paid) of @Fmt.Money(i.Total)</span></div>
+                <div class="m-progress m-mt-8"><div class="m-progress-bar" style="width:@Fmt.Pct((double)i.Paid, (double)Math.Max(0.01m, i.Total))%;--c:var(--m-success)"></div></div>
+                <div class="m-flex m-between m-mt-12"><span class="m-muted">Balance due</span><span class="m-h3 m-num">@Fmt.Money(i.Balance)</span></div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<DrawerForm TModel="PaymentInput" Title="Add payment" @bind-Visible="_paymentOpen" Model="_payment" OnFinish="RecordPaymentAsync" SubmitText="Record payment">
+    <div class="m-plan-box m-flex m-between m-mb-16"><span class="m-muted">Invoice balance</span><span class="m-h3 m-num">@Fmt.Money(i.Balance)</span></div>
+    <FormItem Label="Payment amount">
+        <AntDesign.InputNumber TValue="decimal?" @bind-Value="context.Amount" Min="0" Step="0.01m" Formatter="@(v => v is null ? "" : $"$ {v}")" Parser="@(s => s.Replace("$", "").Trim())" Style="width:100%" />
+    </FormItem>
+    <FormItem Label="Payment date">
+        <DatePicker TValue="DateTime?" @bind-Value="context.PaidAt" Style="width:100%" />
+    </FormItem>
+    <FormItem Label="Payment method">
+        <Select TItemValue="string" TItem="string" @bind-Value="context.Method" DataSource="PaymentInput.Methods" />
+    </FormItem>
+    <FormItem Label="Internal note">
+        <TextArea @bind-Value="context.Note" Rows="3" Placeholder="Visible to your team only" />
+    </FormItem>
+</DrawerForm>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Invoice? _invoice;
+    private PaymentInput _payment = new();
+    private bool _paymentOpen;
+
+    protected override void OnParametersSet()
+    {
+        _invoice = Store.FindInvoice(Id);
+        if (_invoice is null) Navigation.NotFound();
+    }
+
+    private async Task SendAsync()
+    {
+        Store.MarkInvoiceSent(Id);
+        await Message.SuccessAsync($"Invoice {_invoice!.Number} sent to {_invoice.ClientEmail}");
+    }
+
+    private void OpenPayment()
+    {
+        _payment = new PaymentInput { Amount = _invoice!.Balance };
+        _paymentOpen = true;
+    }
+
+    private async Task<bool> RecordPaymentAsync(PaymentInput input)
+    {
+        Store.RecordPayment(Id, input.Amount!.Value);
+        _ = Message.SuccessAsync($"Payment of {Fmt.Money(input.Amount.Value)} recorded");
+        await Task.CompletedTask;
+        return true;
+    }
+}

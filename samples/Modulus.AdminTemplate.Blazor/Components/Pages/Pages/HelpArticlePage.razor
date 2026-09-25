@@ -1,0 +1,65 @@
+@page "/pages/help-center/{Slug}"
+@inject NavigationManager Navigation
+
+@if (_article is not null && _category is not null)
+{
+    <PageTitle>@_article.Title · Modulus</PageTitle>
+
+    <PageHeading Pretitle="@_category.Title" Title="@_article.Title">
+        <Actions>
+            <a class="ant-btn ant-btn-default" href="/pages/help-center"><Ti Name="arrow-left" /><span>Help center</span></a>
+        </Actions>
+    </PageHeading>
+
+    <div class="m-row-cards m-cols-8-4">
+        <div class="m-card">
+            <div class="m-card-body m-article">
+                <p class="m-mt-0">@_article.Excerpt</p>
+                <ol class="m-article-steps">
+                    @foreach (var step in _article.Body)
+                    {
+                        <li>@step</li>
+                    }
+                </ol>
+            </div>
+            <div class="m-card-footer m-feedback">
+                <span class="m-muted">Was this article helpful?</span>
+                @if (_voted)
+                {
+                    <span class="m-text-success m-medium"><Ti Name="circle-check" /> Thanks for your feedback!</span>
+                }
+                else
+                {
+                    <button type="button" class="ant-btn ant-btn-default ant-btn-sm" @onclick="() => _voted = true"><Ti Name="thumb-up" /><span>Yes</span></button>
+                    <button type="button" class="ant-btn ant-btn-default ant-btn-sm" @onclick="() => _voted = true"><span>No</span></button>
+                }
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h2 class="m-card-title">In this section</h2></div>
+            <div class="m-card-body">
+                <ul class="m-link-list">
+                    @foreach (var a in _category.Articles)
+                    {
+                        <li><a href="/pages/help-center/@a.Slug" class="@(a.Slug == Slug ? "m-text-primary m-medium" : "")"><Ti Name="file-text" />@a.Title</a></li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+
+    private HelpArticle? _article;
+    private HelpCategory? _category;
+    private bool _voted;
+
+    protected override void OnParametersSet()
+    {
+        _article = SampleContent.FindArticle(Slug, out _category);
+        _voted = false;
+        if (_article is null) Navigation.NotFound();
+    }
+}

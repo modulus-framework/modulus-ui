@@ -1,0 +1,90 @@
+@inject IOptions<ModulusThemeOptions> ThemeOptions
+
+@* The printable invoice (preview and print pages). *@
+<div class="m-invoice">
+    <div class="m-invoice-head">
+        <div>
+            <div class="m-invoice-brand">@((MarkupString)ShellRenderer.Brand(ThemeOptions.Value))</div>
+            <address class="m-invoice-address">
+                @foreach (var line in Seller.Address)
+                {
+                    <div>@line</div>
+                }
+                <div>@Seller.Phone</div>
+            </address>
+        </div>
+        <div class="m-invoice-meta">
+            <div class="m-invoice-number">Invoice @Invoice.Number</div>
+            <dl>
+                <dt>Date issued</dt><dd>@Fmt.Date(Invoice.IssuedAt)</dd>
+                <dt>Date due</dt><dd>@Fmt.Date(Invoice.DueAt)</dd>
+            </dl>
+            <span class="m-badge @SampleUi.InvoiceBadge(Invoice.Status)">@SampleUi.Label(Invoice.Status)</span>
+        </div>
+    </div>
+
+    <div class="m-invoice-parties">
+        <div>
+            <div class="m-subheader m-mb-8">Invoice to</div>
+            <div class="m-heading m-medium">@Invoice.ClientName</div>
+            <div class="m-muted">@Invoice.ClientCompany</div>
+            <div class="m-muted">@Invoice.ClientAddress</div>
+            <div class="m-muted">@Invoice.ClientCountry</div>
+            <div class="m-muted">@Invoice.ClientEmail</div>
+        </div>
+        <div>
+            <div class="m-subheader m-mb-8">Bill to</div>
+            <dl class="m-invoice-kv">
+                <dt>Total due</dt><dd class="m-heading">@Fmt.Money(Invoice.Balance)</dd>
+                @foreach (var (label, value) in SampleContent.BankDetails)
+                {
+                    <dt>@label</dt><dd>@value</dd>
+                }
+            </dl>
+        </div>
+    </div>
+
+    <div class="m-invoice-lines">
+        <table>
+            <thead><tr><th>Item</th><th>Description</th><th class="m-num-col">Cost</th><th class="m-num-col">Qty</th><th class="m-num-col">Price</th></tr></thead>
+            <tbody>
+                @foreach (var l in Invoice.Lines)
+                {
+                    <tr><td class="m-heading m-medium">@l.Item</td><td class="m-muted">@l.Description</td><td class="m-num-col">@Fmt.Money(l.Cost)</td><td class="m-num-col">@l.Qty</td><td class="m-num-col m-heading">@Fmt.Money(l.Total)</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="m-invoice-foot">
+        <div class="m-invoice-seller">
+            <div><span class="m-heading m-medium">Salesperson:</span> <span class="m-muted">@Invoice.Salesperson</span></div>
+            <div class="m-muted m-mt-4">Thanks for your business</div>
+        </div>
+        <dl class="m-invoice-totals">
+            <dt>Subtotal</dt><dd>@Fmt.Money(Invoice.Subtotal)</dd>
+            @if (Invoice.Discount > 0)
+            {
+                <dt>Discount (@((Invoice.DiscountRate * 100).ToString("0.#"))%)</dt><dd>−@Fmt.Money(Invoice.Discount)</dd>
+            }
+            <dt>Tax (@((Invoice.TaxRate * 100).ToString("0.#"))%)</dt><dd>@Fmt.Money(Invoice.Tax)</dd>
+            <dt class="m-invoice-total">Total</dt><dd class="m-invoice-total">@Fmt.Money(Invoice.Total)</dd>
+            @if (Invoice.Paid > 0)
+            {
+                <dt>Paid</dt><dd>−@Fmt.Money(Invoice.Paid)</dd>
+                <dt class="m-heading">Balance due</dt><dd class="m-heading">@Fmt.Money(Invoice.Balance)</dd>
+            }
+        </dl>
+    </div>
+
+    @if (Invoice.Note.Length > 0)
+    {
+        <div class="m-invoice-note"><span class="m-heading m-medium">Note:</span> <span class="m-muted">@Invoice.Note</span></div>
+    }
+</div>
+
+@code {
+    private static readonly (string Name, string[] Address, string Email, string Phone) Seller = SampleContent.Seller;
+
+    [Parameter, EditorRequired] public Invoice Invoice { get; set; } = default!;
+}

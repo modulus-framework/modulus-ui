@@ -1,0 +1,6 @@
+@page "/apps/users/list/{handler?}/{id:int?}"
+@model UserListModel
+@{
+    ViewData["Title"] = "Users";
+}
+<partial name="Ui/Apps/Users/UserList" model="Model.View" />

@@ -1,0 +1,21 @@
+@page "/auth/verify-email"
+@layout AuthLayout
+@inject IMessageService Message
+
+<PageTitle>Verify email · Modulus</PageTitle>
+
+<div class="m-auth-card">
+    <div class="m-auth-card-body m-center">
+        <span class="m-auth-icon m-bg-primary-lt m-text-primary"><Ti Name="mail-opened" /></span>
+        <h1 class="m-auth-title">Verify your email</h1>
+        <p class="m-auth-lead">We sent an activation link to <strong>@(Email ?? CurrentUser.Email)</strong>. Follow the link inside to continue.</p>
+        <a class="ant-btn ant-btn-primary ant-btn-block" href="/"><span>Skip for now</span></a>
+        <div class="m-auth-foot">Didn't get the mail? <a href="/auth/verify-email" @onclick="ResendAsync" @onclick:preventDefault>Resend</a></div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? Email { get; set; }
+
+    private Task ResendAsync() => Message.SuccessAsync("Verification email sent again.");
+}

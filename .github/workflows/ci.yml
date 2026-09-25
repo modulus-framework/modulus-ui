@@ -7,72 +7,33 @@ on:
     branches: [ main, master ]
 
 jobs:
-  build:
+  build-test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+    - uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '10.0.x'
 
-    - name: Restore dependencies
-      run: dotnet restore
+    - name: Restore
+      run: dotnet restore Modulus.slnx
 
-    - name: Build (Debug)
-      run: dotnet build --configuration Debug --no-restore
+    - name: Build
+      run: dotnet build Modulus.slnx --configuration Release --no-restore
 
-    - name: Build (Release)
-      run: dotnet build --configuration Release --no-restore
+    - name: Test
+      run: dotnet test --solution Modulus.slnx --configuration Release --no-build
 
-    - name: Run drift check
-      run: |
-        cd tools/antd-drift
-        dotnet run
-      continue-on-error: true
+    # Fails when the manifest, the App* aliases and the pinned AntDesign disagree.
+    - name: Ant Design drift check
+      run: dotnet run --project tools/antd-drift --configuration Release --no-build
 
     - name: Upload drift report
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: drift-reports
+        name: drift-report
         path: drift-reports/
-
-    - name: Publish drift report as comment
-      if: github.event_name == 'pull_request' && always()
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const fs = require('fs');
-          const path = require('path');
-          const reports = fs.readdirSync('drift-reports').sort().reverse();
-          if (reports.length > 0) {
-            const latest = reports[0];
-            const content = fs.readFileSync(path.join('drift-reports', latest), 'utf8');
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: content
-            });
-          }
-
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: '10.0.x'
-
-    - name: Run tests
-      run: dotnet test --configuration Release --no-build --verbosity normal
-      continue-on-error: true
+        if-no-files-found: ignore

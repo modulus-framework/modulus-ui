@@ -1,0 +1,145 @@
+@page "/apps/kanban"
+@inject SampleStore Store
+@inject IMessageService Message
+
+<PageTitle>Kanban · Modulus</PageTitle>
+
+<PageHeading Pretitle="Apps" Title="Kanban" Subtitle="Drag cards between columns, or use a card's menu to move it." />
+
+<div class="m-kanban">
+    @foreach (var col in SampleStore.KanbanColumns)
+    {
+        var column = col;
+        var tasks = _tasks.Where(t => t.Column == col.Id).OrderBy(t => t.Order).ToList();
+        <section class="m-kanban-col@(_over == col.Id ? " drop" : "")" aria-label="@col.Title"
+                 @ondragover="() => _over = column.Id" @ondragover:preventDefault @ondrop="() => Drop(column.Id, tasks.Count)" @ondrop:preventDefault>
+            <div class="m-kanban-head">
+                <h3>@col.Title</h3>
+                <span class="m-badge m-badge-gray-lt">@tasks.Count</span>
+            </div>
+            <div class="m-kanban-list">
+                @for (var i = 0; i < tasks.Count; i++)
+                {
+                    var t = tasks[i];
+                    var index = i;
+                    var (due, late) = SampleUi.KanbanDue(t);
+                    <article class="m-kanban-card@(_dragId == t.Id ? " dragging" : "")" draggable="true" @key="t.Id"
+                             @ondragstart="() => _dragId = t.Id" @ondragend="() => { _dragId = null; _over = null; }"
+                             @ondrop="() => Drop(column.Id, index)" @ondrop:preventDefault @ondrop:stopPropagation>
+                        <div class="m-kanban-card-top">
+                            <span class="m-badge m-badge-@SampleUi.KanbanLabelTone(t.Label)-lt">@t.Label</span>
+                            <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight">
+                                <Overlay>
+                                    <Menu>
+                                        @foreach (var target in SampleStore.KanbanColumns.Where(c => c.Id != t.Column))
+                                        {
+                                            <MenuItem OnClick="() => Move(t.Id, target.Id, 999)">Move to @target.Title</MenuItem>
+                                        }
+                                        <MenuItem Class="ant-dropdown-menu-item-danger" OnClick="() => _confirmDelete = t">Delete</MenuItem>
+                                    </Menu>
+                                </Overlay>
+                                <ChildContent>
+                                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Actions for @t.Title" title="Actions"><Ti Name="dots" /></button>
+                                </ChildContent>
+                            </Dropdown>
+                        </div>
+                        <div class="m-kanban-card-title">@t.Title</div>
+                        <div class="m-kanban-meta">
+                            @if (due.Length > 0) { <span class="m-kanban-due@(late ? " late" : "")" title="@(late ? "Overdue" : "Due")"><Ti Name="calendar" />@due</span> }
+                            @if (t.Comments > 0) { <span title="Comments"><Ti Name="message" />@t.Comments</span> }
+                            @if (t.Attachments > 0) { <span title="Attachments"><Ti Name="paperclip" />@t.Attachments</span> }
+                            <span class="m-avatar-list">
+                                @foreach (var who in t.Assignees.Take(3))
+                                {
+                                    <span class="m-avatar m-avatar-xs m-av-@Fmt.Tint(who)" title="@who">@Fmt.Initials(who)</span>
+                                }
+                            </span>
+                        </div>
+                    </article>
+                }
+            </div>
+            <div class="m-kanban-add">
+                @if (_adding == col.Id)
+                {
+                    <form class="m-kanban-add" style="padding:0" @onsubmit="Add">
+                        <input class="ant-input" @bind="_newTitle" placeholder="Task title" aria-label="Task title in @col.Title" maxlength="120" @onkeydown="OnTitleKey" />
+                        <select class="m-select" @bind="_newLabel" aria-label="Label">
+                            @foreach (var label in Lookups.KanbanLabels) { <option value="@label">@label</option> }
+                        </select>
+                        <div class="m-flex m-gap-8">
+                            <button type="submit" class="ant-btn ant-btn-primary ant-btn-sm"><span>Add</span></button>
+                            <button type="button" class="ant-btn ant-btn-default ant-btn-sm" @onclick="() => _adding = null"><span>Cancel</span></button>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-block" @onclick="() => StartAdd(column.Id)"><Ti Name="plus" /><span>Add task</span></button>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+<Modal Title="@("Delete task?")" Visible="_confirmDelete is not null" OkText="@("Delete")" OkButtonProps="@(new ButtonProps { Danger = true })"
+       OnOk="Delete" OnCancel="() => _confirmDelete = null" Width="416">
+    @if (_confirmDelete is not null) { <p style="margin:0">Delete "@_confirmDelete.Title"?</p> }
+</Modal>
+
+@code {
+    private IReadOnlyList<KanbanTask> _tasks = [];
+    private int? _dragId;
+    private string? _over;
+    private string? _adding;
+    private string? _newTitle;
+    private string _newLabel = Lookups.KanbanLabels[0];
+    private KanbanTask? _confirmDelete;
+
+    protected override void OnInitialized() => _tasks = Store.Tasks();
+
+    private void Drop(string column, int index)
+    {
+        if (_dragId is { } id) Move(id, column, index);
+        _dragId = null;
+        _over = null;
+    }
+
+    private void Move(int id, string column, int index)
+    {
+        Store.MoveTask(id, column, index);
+        _tasks = Store.Tasks();
+    }
+
+    private void StartAdd(string column)
+    {
+        _adding = column;
+        _newTitle = null;
+        _newLabel = Lookups.KanbanLabels[0];
+    }
+
+    private void OnTitleKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") _adding = null;
+    }
+
+    private void Add()
+    {
+        if (string.IsNullOrWhiteSpace(_newTitle))
+        {
+            _ = Message.ErrorAsync("Give the task a title");
+            return;
+        }
+        Store.AddTask(new KanbanTaskInput { Title = _newTitle, Column = _adding!, Label = _newLabel });
+        _ = Message.SuccessAsync("Task added");
+        _adding = null;
+        _tasks = Store.Tasks();
+    }
+
+    private void Delete()
+    {
+        Store.DeleteTask(_confirmDelete!.Id);
+        _ = Message.SuccessAsync("Task deleted");
+        _confirmDelete = null;
+        _tasks = Store.Tasks();
+    }
+}

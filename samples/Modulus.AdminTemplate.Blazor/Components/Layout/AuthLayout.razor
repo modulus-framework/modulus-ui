@@ -1,0 +1,14 @@
+@* Tabler sign-in frame: brand above a narrow centred card. *@
+@using Microsoft.Extensions.Options
+@using Modulus.Ui.Abstractions.Shell
+@using Modulus.Ui.Abstractions.Theming
+@inherits LayoutComponentBase
+@layout BlankLayout
+@inject IOptions<ModulusThemeOptions> ThemeOptions
+
+<main class="m-auth-page">
+    <div class="m-auth-container">
+        <div class="m-auth-brand">@((MarkupString)ShellRenderer.Brand(ThemeOptions.Value))</div>
+        @Body
+    </div>
+</main>

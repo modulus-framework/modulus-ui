@@ -1,0 +1,5 @@
+@* Default header actions. Override by adding Views/Shared/_ModulusHeaderActions.cshtml to your app. *@
+<div class="m-header-actions">
+    <partial name="_ModulusThemeToggle" />
+    <partial name="_ModulusAccountMenu" model="@(User.Identity?.Name ?? "Admin")" />
+</div>

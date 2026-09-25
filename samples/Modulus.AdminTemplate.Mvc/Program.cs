@@ -1,29 +1,34 @@
+using Modulus.AspNetCore.Mvc;
+using Modulus.Samples.Shared;
+using Modulus.Ui.Abstractions.Navigation;
+using Modulus.Ui.Abstractions.Shell;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllersWithViews();
+// Validate from explicit [Required] attributes only, exactly like Blazor's DataAnnotations validator,
+// so the same model produces the same errors in both flavors.
+builder.Services.AddControllersWithViews(o => o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
+
+// Modulus UI for MVC / Razor Pages: same theme options and menu contributors as the Blazor sample.
+builder.Services.AddModulusMvc(theme => builder.Configuration.GetSection("Modulus:Theme").Bind(theme));
+builder.Services.AddTransient<IMenuContributor, AdminMenuContributor>();
+builder.Services.AddSingleton<IShellContentProvider, SampleShellContentProvider>();
+
+builder.Services.AddSingleton<SampleStore>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
+    app.UseExceptionHandler("/error");
     app.UseHsts();
 }
-
+app.UseStatusCodePagesWithReExecute("/not-found");
 app.UseHttpsRedirection();
 app.UseRouting();
-
 app.UseAuthorization();
 
 app.MapStaticAssets();
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
-
+app.MapControllers().WithStaticAssets();
 
 app.Run();

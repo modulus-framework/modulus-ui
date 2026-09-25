@@ -1,0 +1,467 @@
+@page "/ui/components"
+@inject IMessageService Message
+@inject INotificationService Notification
+
+<PageTitle>Components · Modulus</PageTitle>
+
+@* Every Ant Design component family on one page. MVC and Razor Pages render the same gallery with tag helpers (Samples.Web Views/Shared/Ui/Ui/Components.cshtml). *@
+<PageHeading Pretitle="User interface" Title="Components" Subtitle="The Ant Design component set as it looks in Modulus. The same page is rendered by all three samples." />
+
+<nav class="m-demo-nav" aria-label="Component categories">
+    @foreach (var (id, label) in Sections)
+    {
+        <a href="components#@id">@label</a>
+    }
+</nav>
+
+<section id="general" class="m-demo-section">
+    <h2 class="m-section-title">General</h2>
+    <div class="m-demo-grid">
+        <Card Bordered="false" Title="Button">
+            <p class="m-demo-desc">One primary action per area. Dashed for "add", text and link for low emphasis.</p>
+            <div class="m-demo-row">
+                <Button Type="@ButtonType.Primary">Primary</Button>
+                <Button>Default</Button>
+                <Button Type="@ButtonType.Dashed">Dashed</Button>
+                <Button Type="@ButtonType.Text">Text</Button>
+                <Button Type="@ButtonType.Link">Link</Button>
+            </div>
+            <div class="m-demo-row">
+                <Button Type="@ButtonType.Primary" Icon="search">Search</Button>
+                <Button Type="@ButtonType.Primary" Danger>Delete</Button>
+                <Button Loading>Saving</Button>
+                <Button Disabled>Disabled</Button>
+                <Button Shape="@ButtonShape.Circle" Icon="download" />
+            </div>
+            <div class="m-demo-row">
+                <Button Type="@ButtonType.Primary" Size="@ButtonSize.Small">Small</Button>
+                <Button Type="@ButtonType.Primary">Middle</Button>
+                <Button Type="@ButtonType.Primary" Size="@ButtonSize.Large">Large</Button>
+            </div>
+        </Card>
+
+        <Card Bordered="false" Title="Typography">
+            <p class="m-demo-desc">Five heading levels, semantic text colours and inline marks.</p>
+            <Title Level="3">Quarterly report</Title>
+            <Title Level="5">Revenue grew in every region</Title>
+            <Paragraph>
+                Ant Design uses a 14&nbsp;px base size with a 22&nbsp;px line height. Use <Text Strong>strong</Text>,
+                <Text Code>code</Text>, <Text Mark>mark</Text>, <Text Underline>underline</Text> and <Text Delete>delete</Text>
+                for inline emphasis.
+            </Paragraph>
+            <div class="m-demo-row">
+                <Text Type="@TextElementType.Secondary">Secondary</Text>
+                <Text Type="@TextElementType.Success">Success</Text>
+                <Text Type="@TextElementType.Warning">Warning</Text>
+                <Text Type="@TextElementType.Danger">Danger</Text>
+                <Text Disabled>Disabled</Text>
+            </div>
+        </Card>
+
+        <Card Bordered="false" Title="Icon">
+            <p class="m-demo-desc">The full Ant Design icon set, outlined, filled and two-tone.</p>
+            <div class="m-demo-icons">
+                @foreach (var icon in Icons)
+                {
+                    <div class="m-demo-icon"><Icon Type="@icon" /><span>@icon</span></div>
+                }
+            </div>
+        </Card>
+    </div>
+</section>
+
+<section id="layout" class="m-demo-section">
+    <h2 class="m-section-title">Layout</h2>
+    <div class="m-demo-grid">
+        <Card Bordered="false" Title="Grid">
+            <p class="m-demo-desc">24-column grid with gutters and responsive spans.</p>
+            <Row Gutter="16">
+                <Col Span="8"><div class="m-demo-block">col-8</div></Col>
+                <Col Span="8"><div class="m-demo-block">col-8</div></Col>
+                <Col Span="8"><div class="m-demo-block">col-8</div></Col>
+            </Row>
+            <Row Gutter="16" Style="margin-top: 16px">
+                <Col Span="6"><div class="m-demo-block">col-6</div></Col>
+                <Col Span="12"><div class="m-demo-block m-demo-block-strong">col-12</div></Col>
+                <Col Span="6"><div class="m-demo-block">col-6</div></Col>
+            </Row>
+        </Card>
+
+        <Card Bordered="false" Title="Space and Divider">
+            <p class="m-demo-desc">Consistent spacing between inline items, and dividers between groups.</p>
+            <Space Wrap>
+                <SpaceItem><Button>Cancel</Button></SpaceItem>
+                <SpaceItem><Button Type="@ButtonType.Primary">Submit</Button></SpaceItem>
+                <SpaceItem><Text Type="@TextElementType.Secondary">Last saved 2 min ago</Text></SpaceItem>
+            </Space>
+            <Divider Orientation="DividerOrientation.Left">Billing</Divider>
+            <Text>Invoices</Text>
+            <Divider Type="DividerType.Vertical" />
+            <Text>Payment methods</Text>
+            <Divider Type="DividerType.Vertical" />
+            <Text>Tax settings</Text>
+            <Divider Dashed />
+        </Card>
+    </div>
+</section>
+
+<section id="navigation" class="m-demo-section">
+    <h2 class="m-section-title">Navigation</h2>
+    <div class="m-demo-grid">
+        <Card Bordered="false" Title="Breadcrumb and Tabs">
+            <p class="m-demo-desc">Show where the user is, and switch between views of the same object.</p>
+            <Breadcrumb>
+                <BreadcrumbItem Href="">Home</BreadcrumbItem>
+                <BreadcrumbItem Href="customers">Customers</BreadcrumbItem>
+                <BreadcrumbItem>Acme Corporation</BreadcrumbItem>
+            </Breadcrumb>
+            @* A Tabs inside a Card becomes the card's header tabs; reset the cascade to keep them in the body. *@
+            <CascadingValue TValue="Card" Value="null" IsFixed="true">
+                <Tabs DefaultActiveKey="overview" Style="margin-top: 12px">
+                    <TabPane Key="overview" Tab="Overview">Account summary, owner and health score.</TabPane>
+                    <TabPane Key="orders" Tab="Orders">42 orders in the last 12 months.</TabPane>
+                    <TabPane Key="activity" Tab="Activity">Latest changes by your team.</TabPane>
+                </Tabs>
+                <Tabs DefaultActiveKey="day" Type="@TabType.Card" Size="TabSize.Small">
+                    <TabPane Key="day" Tab="Today">Card tabs suit toolbars and dense panels.</TabPane>
+                    <TabPane Key="week" Tab="This week">Week view</TabPane>
+                    <TabPane Key="month" Tab="This month">Month view</TabPane>
+                </Tabs>
+            </CascadingValue>
+        </Card>
+
+        <Card Bordered="false" Title="Steps">
+            <p class="m-demo-desc">Guide users through a multi-step task.</p>
+            <Steps Current="1">
+                <Step Title="Account" Description="Completed" />
+                <Step Title="Billing" Description="In progress" />
+                <Step Title="Review" Description="Waiting" />
+            </Steps>
+            <Steps Current="2" Size="@StepsSize.Small" Status="@StepsStatus.Error" Style="margin-top: 24px">
+                <Step Title="Upload" />
+                <Step Title="Validate" />
+                <Step Title="Import" />
+            </Steps>
+        </Card>
+
+        <Card Bordered="false" Title="Dropdown and Pagination">
+            <p class="m-demo-desc">Secondary actions in a menu; paging for long lists.</p>
+            <div class="m-demo-row">
+                <Dropdown>
+                    <Overlay>
+                        <Menu>
+                            <MenuItem Icon="edit">Edit</MenuItem>
+                            <MenuItem Icon="copy">Duplicate</MenuItem>
+                            <MenuDivider />
+                            <MenuItem Icon="delete" Danger>Delete</MenuItem>
+                        </Menu>
+                    </Overlay>
+                    <ChildContent>
+                        <Button>Actions <Icon Type="down" /></Button>
+                    </ChildContent>
+                </Dropdown>
+            </div>
+            <Pagination Total="85" DefaultCurrent="2" ShowSizeChanger="false" Style="margin-top: 16px" />
+            <Pagination Total="85" DefaultCurrent="2" ShowSizeChanger="false" Size="PaginationSize.Small" Style="margin-top: 16px" />
+        </Card>
+    </div>
+</section>
+
+<section id="data-entry" class="m-demo-section">
+    <h2 class="m-section-title">Data Entry</h2>
+    <div class="m-demo-grid">
+        <Card Bordered="false" Title="Input">
+            <p class="m-demo-desc">Text fields with prefixes, addons, passwords, search and counters.</p>
+            <Form Model="_form" Layout="@FormLayout.Vertical">
+                <FormItem Label="Username">
+                    <Input @bind-Value="context.Name" Placeholder="Enter a username" Prefix="@UserIcon" AllowClear />
+                </FormItem>
+                <FormItem Label="Website">
+                    <Input @bind-Value="context.Website" AddOnBefore="@SiteBefore" AddOnAfter="@SiteAfter" />
+                </FormItem>
+                <FormItem Label="Password">
+                    <InputPassword @bind-Value="context.Password" Placeholder="At least 8 characters" />
+                </FormItem>
+                <FormItem Label="Search">
+                    <Search @bind-Value="context.Query" Placeholder="Search customers" EnterButton="true" />
+                </FormItem>
+                <FormItem Label="Notes">
+                    <TextArea @bind-Value="context.Notes" Rows="3" MaxLength="200" ShowCount />
+                </FormItem>
+            </Form>
+        </Card>
+
+        <Card Bordered="false" Title="Select, Number and Date">
+            <p class="m-demo-desc">Choose from a list, enter numbers with steppers, pick dates and times.</p>
+            <Form Model="_form" Layout="@FormLayout.Vertical">
+                <FormItem Label="Plan">
+                    <Select TItem="string" TItemValue="string" DataSource="Plans" @bind-Value="context.Plan" />
+                </FormItem>
+                <FormItem Label="Seats">
+                    <AntDesign.InputNumber TValue="int" @bind-Value="context.Seats" Min="1" Max="500" Style="width: 100%" />
+                </FormItem>
+                <FormItem Label="Start date">
+                    <DatePicker TValue="DateTime?" @bind-Value="context.Start" Style="width: 100%" />
+                </FormItem>
+                <FormItem Label="Billing period">
+                    <RangePicker TValue="DateTime?[]" @bind-Value="context.Period" Style="width: 100%" />
+                </FormItem>
+                <FormItem Label="Daily report at">
+                    <TimePicker TValue="DateTime?" @bind-Value="context.ReportAt" Style="width: 100%" />
+                </FormItem>
+            </Form>
+        </Card>
+
+        <Card Bordered="false" Title="Choice controls">
+            <p class="m-demo-desc">Switches apply immediately; checkboxes and radios are submitted with the form.</p>
+            <Form Model="_form" Layout="@FormLayout.Vertical">
+                <FormItem Label="Email alerts">
+                    <Switch @bind-Checked="context.Alerts" />
+                </FormItem>
+                <FormItem Label="Channels">
+                    <div class="m-demo-row">
+                        <Checkbox Checked="context.Email" CheckedChanged="v => context.Email = v">Email</Checkbox>
+                        <Checkbox Checked="context.Sms" CheckedChanged="v => context.Sms = v">SMS</Checkbox>
+                        <Checkbox Disabled>Push (coming soon)</Checkbox>
+                    </div>
+                </FormItem>
+                <FormItem Label="Priority">
+                    <RadioGroup @bind-Value="context.Priority">
+                        <Radio Value="@("low")">Low</Radio>
+                        <Radio Value="@("normal")">Normal</Radio>
+                        <Radio Value="@("high")">High</Radio>
+                    </RadioGroup>
+                </FormItem>
+                <FormItem Label="Size">
+                    <RadioGroup @bind-Value="context.Size" ButtonStyle="RadioButtonStyle.Solid">
+                        <Radio RadioButton Value="@("s")">Small</Radio>
+                        <Radio RadioButton Value="@("m")">Medium</Radio>
+                        <Radio RadioButton Value="@("l")">Large</Radio>
+                    </RadioGroup>
+                </FormItem>
+                <FormItem Label="View">
+                    <Segmented TValue="string" Labels="Views" @bind-Value="context.View" />
+                </FormItem>
+            </Form>
+        </Card>
+
+        <Card Bordered="false" Title="Slider, Rate and Upload">
+            <p class="m-demo-desc">Pick a value in a range, rate, or attach files.</p>
+            <Form Model="_form" Layout="@FormLayout.Vertical">
+                <FormItem Label="Discount">
+                    <Slider TValue="double" @bind-Value="context.Discount" />
+                </FormItem>
+                <FormItem Label="Satisfaction">
+                    <AppRate @bind-Value="context.Rating" />
+                </FormItem>
+                <FormItem Label="Attachments">
+                    <Upload Name="files" Drag Multiple>
+                        <p class="ant-upload-drag-icon"><Icon Type="inbox" /></p>
+                        <p class="ant-upload-text">Click or drag files here to upload</p>
+                        <p class="ant-upload-hint">PDF or images, up to 10 MB each.</p>
+                    </Upload>
+                </FormItem>
+            </Form>
+        </Card>
+    </div>
+</section>
+
+<section id="data-display" class="m-demo-section">
+    <h2 class="m-section-title">Data Display</h2>
+    <div class="m-demo-grid">
+        <Card Bordered="false" Title="Avatar, Badge and Tag">
+            <p class="m-demo-desc">People, counts, statuses and labels.</p>
+            <div class="m-demo-row">
+                <AvatarGroup MaxCount="3">
+                    <Avatar Style="background: #1677ff">SP</Avatar>
+                    <Avatar Style="background: #52c41a">JL</Avatar>
+                    <Avatar Style="background: #faad14">MK</Avatar>
+                    <Avatar Style="background: #eb2f96">AR</Avatar>
+                    <Avatar Style="background: #722ed1">TN</Avatar>
+                </AvatarGroup>
+                <Badge Count="5"><Avatar Shape="@AvatarShape.Square" Icon="user" /></Badge>
+                <Badge Dot><Avatar Shape="@AvatarShape.Square" Icon="bell" /></Badge>
+                <Badge Count="120" OverflowCount="99"><Avatar Shape="@AvatarShape.Square" Icon="mail" /></Badge>
+            </div>
+            <div class="m-demo-row">
+                <Badge Status="BadgeStatus.Success" Text="Active" />
+                <Badge Status="BadgeStatus.Processing" Text="Syncing" />
+                <Badge Status="BadgeStatus.Warning" Text="Trial" />
+                <Badge Status="BadgeStatus.Error" Text="Suspended" />
+                <Badge Status="BadgeStatus.Default" Text="Archived" />
+            </div>
+            <div class="m-demo-row">
+                <Tag Color="@("blue")">Enterprise</Tag>
+                <Tag Color="@("green")">Paid</Tag>
+                <Tag Color="@("orange")">Pending</Tag>
+                <Tag Color="@("red")">Overdue</Tag>
+                <Tag Color="@("purple")">Beta</Tag>
+                <Tag>Default</Tag>
+            </div>
+        </Card>
+
+        <Card Bordered="false" Title="Statistic and Ribbon">
+            <p class="m-demo-desc">Headline numbers, and a ribbon to flag a featured item.</p>
+            <Row Gutter="16">
+                <Col Span="12"><Statistic Title="Active users" Value="112893" /></Col>
+                <Col Span="12"><Statistic Title="Conversion" Value="9.3" Precision="1" Suffix="%" /></Col>
+            </Row>
+            <div style="margin-top: 16px">
+                <BadgeRibbon Text="Recommended">
+                    <Card Bordered Size="CardSize.Small" Title="Business plan">$49 per seat per month, billed yearly.</Card>
+                </BadgeRibbon>
+            </div>
+        </Card>
+
+        <Card Bordered="false" Title="Descriptions">
+            <p class="m-demo-desc">Read-only key/value details of a single record.</p>
+            <Descriptions Bordered Column="2" Size="DescriptionsSize.Small">
+                <DescriptionsItem Title="Customer">Acme Corporation</DescriptionsItem>
+                <DescriptionsItem Title="Plan">Enterprise</DescriptionsItem>
+                <DescriptionsItem Title="Owner">Serena Park</DescriptionsItem>
+                <DescriptionsItem Title="Status"><Badge Status="BadgeStatus.Success" Text="Active" /></DescriptionsItem>
+                <DescriptionsItem Title="Address" Span="2">1 Market Street, San Francisco, CA</DescriptionsItem>
+            </Descriptions>
+        </Card>
+
+        <Card Bordered="false" Title="Table">
+            <p class="m-demo-desc">Tabular data. For server paging, filters and batch actions use ProTable (see Customers).</p>
+            <Table TItem="GalleryInvoice" DataSource="Invoices" HidePagination Size="TableSize.Small" RowKey="i => i.Number">
+                <PropertyColumn Property="i => i.Number" Title="Invoice" />
+                <PropertyColumn Property="i => i.Customer" Title="Customer" />
+                <PropertyColumn Property="i => i.Amount" Title="Amount" Align="ColumnAlign.Right">
+                    <span class="m-num">@context.Amount.ToString("C0")</span>
+                </PropertyColumn>
+                <PropertyColumn Property="i => i.Status" Title="Status">
+                    <Tag Color="@(context.Status == "Paid" ? "green" : context.Status == "Overdue" ? "red" : "orange")">@context.Status</Tag>
+                </PropertyColumn>
+            </Table>
+        </Card>
+
+        <Card Bordered="false" Title="List">
+            <p class="m-demo-desc">A list of records with an avatar, a description and actions.</p>
+            <AntList TItem="GalleryInvoice" DataSource="Invoices.Take(3)" ItemLayout="ListItemLayout.Horizontal">
+                <ListItem Actions="@(new[] { ListAction })">
+                    <ListItemMeta Description="@($"{context.Number} · {context.Amount:C0}")">
+                        <AvatarTemplate><Avatar Style="background: #1677ff">@context.Customer[..1]</Avatar></AvatarTemplate>
+                        <TitleTemplate>@context.Customer</TitleTemplate>
+                    </ListItemMeta>
+                </ListItem>
+            </AntList>
+        </Card>
+
+        <Card Bordered="false" Title="Timeline">
+            <p class="m-demo-desc">Events in time order.</p>
+            <Timeline>
+                <TimelineItem Color="@("var(--m-success)")">Invoice INV-1042 paid · 09:12</TimelineItem>
+                <TimelineItem Color="@("var(--m-primary)")">Plan upgraded to Enterprise · yesterday</TimelineItem>
+                <TimelineItem Color="@("var(--m-error)")">Payment failed · 3 days ago</TimelineItem>
+                <TimelineItem Color="@("var(--m-text-tertiary)")">Account created · Jan 2026</TimelineItem>
+            </Timeline>
+        </Card>
+
+        <Card Bordered="false" Title="Collapse">
+            <p class="m-demo-desc">Progressive disclosure for secondary content.</p>
+            <Collapse DefaultActiveKey="@(new[] { "1" })">
+                <Panel Header="How is billing calculated?" Key="1">Per active seat, prorated daily.</Panel>
+                <Panel Header="Can I change plans later?" Key="2">Yes, at any time. Changes apply to the next invoice.</Panel>
+                <Panel Header="Where is my data stored?" Key="3">In the region you selected when the workspace was created.</Panel>
+            </Collapse>
+        </Card>
+
+        <Card Bordered="false" Title="Tooltip, Popover and Empty">
+            <p class="m-demo-desc">Extra context on hover, and a clear empty state.</p>
+            <div class="m-demo-row">
+                <Tooltip Title="@("Copies the invoice link")"><Button Icon="link">Hover me</Button></Tooltip>
+                <Popover Title="@("Seats")" Content="@("18 of 25 seats used. Add seats from Billing.")"><Button>Popover</Button></Popover>
+            </div>
+            <Empty Simple Description="@("No invoices yet")" Style="margin-top: 16px" />
+        </Card>
+    </div>
+</section>
+
+<section id="feedback" class="m-demo-section">
+    <h2 class="m-section-title">Feedback</h2>
+    <div class="m-demo-grid">
+        <Card Bordered="false" Title="Alert">
+            <p class="m-demo-desc">Page-level messages that stay until dismissed.</p>
+            <div class="m-stack m-stack-sm">
+                <Alert Type="@AlertType.Success" Message="Payment received" ShowIcon="true" />
+                <Alert Type="@AlertType.Info" Message="A new version is available" ShowIcon="true" Closable />
+                <Alert Type="@AlertType.Warning" Message="Your trial ends in 3 days" ShowIcon="true" />
+                <Alert Type="@AlertType.Error" Message="Import failed" Description="Row 14: the email address is not valid. Fix the file and upload it again." ShowIcon="true" />
+            </div>
+        </Card>
+
+        <Card Bordered="false" Title="Progress">
+            <p class="m-demo-desc">Completion of a task or usage of a quota.</p>
+            <Progress Percent="30" />
+            <Progress Percent="70" Status="ProgressStatus.Active" />
+            <Progress Percent="45" Status="ProgressStatus.Exception" />
+            <Progress Percent="100" />
+            <div class="m-demo-row" style="margin-top: 16px">
+                <Progress Type="ProgressType.Circle" Percent="75" Width="96" />
+                <Progress Type="ProgressType.Circle" Percent="100" Width="96" />
+                <Progress Type="ProgressType.Dashboard" Percent="62" Width="96" />
+            </div>
+        </Card>
+
+        <Card Bordered="false" Title="Message, Notification, Modal and Popconfirm">
+            <p class="m-demo-desc">Transient feedback, dialogs and confirmation of destructive actions.</p>
+            <div class="m-demo-row">
+                <Button OnClick="@(() => Message.SuccessAsync("Changes saved"))">Message</Button>
+                <Button OnClick="Notify">Notification</Button>
+                <Button Type="@ButtonType.Primary" OnClick="@(() => _modal = true)">Open modal</Button>
+                <Popconfirm Title="Delete this invoice?" OkText="Delete" CancelText="Cancel" OnConfirm="@(() => Message.SuccessAsync("Invoice deleted"))">
+                    <Button Danger>Delete</Button>
+                </Popconfirm>
+            </div>
+            <Modal Title="@("Invite teammates")" @bind-Visible="_modal" OkText="@("Send invites")" OnOk="@(() => { _modal = false; Message.SuccessAsync("Invites sent"); })">
+                <p>Invitations expire after 7 days. Teammates join with the Member role.</p>
+            </Modal>
+        </Card>
+
+        <Card Bordered="false" Title="Skeleton and Spin">
+            <p class="m-demo-desc">Placeholders while content loads.</p>
+            <Skeleton Active Avatar />
+            <Spin Tip="Loading…" Style="margin-top: 16px; display: block">
+                <Alert Type="@AlertType.Info" Message="Loading content" Description="Spin wraps content while it refreshes." />
+            </Spin>
+        </Card>
+
+        <Card Bordered="false" Title="Result">
+            <p class="m-demo-desc">The outcome of an operation, with next steps.</p>
+            <Result Status="ResultStatus.Success" Title="@("Order placed")" SubTitle="@("Order 2026-0142 is being processed. It usually ships within two days.")">
+                <Extra>
+                    <Button Type="@ButtonType.Primary">View order</Button>
+                    <Button>Buy again</Button>
+                </Extra>
+            </Result>
+        </Card>
+    </div>
+</section>
+
+@code {
+    private static readonly (string Id, string Label)[] Sections =
+        [("general", "General"), ("layout", "Layout"), ("navigation", "Navigation"), ("data-entry", "Data Entry"), ("data-display", "Data Display"), ("feedback", "Feedback")];
+
+    private static readonly string[] Icons = GalleryData.Icons;
+    private static readonly string[] Plans = GalleryData.Plans;
+    private static readonly string[] Views = GalleryData.Views;
+    private static readonly GalleryInvoice[] Invoices = GalleryData.Invoices;
+
+    private readonly GalleryForm _form = new();
+    private bool _modal;
+
+    private static readonly RenderFragment UserIcon = @<Icon Type="user" />;
+    private static readonly RenderFragment SiteBefore = @<span>https://</span>;
+    private static readonly RenderFragment SiteAfter = @<span>.com</span>;
+    private static readonly RenderFragment ListAction = @<a>View</a>;
+
+    private Task Notify() => Notification.Open(new NotificationConfig
+    {
+        Message = "Export ready",
+        Description = "customers-2026-09.csv (1,204 rows) is ready to download.",
+        NotificationType = NotificationType.Success,
+    });
+}

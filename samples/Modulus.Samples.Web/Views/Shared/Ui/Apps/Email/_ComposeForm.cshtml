@@ -1,0 +1,14 @@
+@model ComposeInput
+@* Compose / reply drawer. "Save draft" and "Send" post the same form; an invalid send re-renders it. *@
+<form class="m-drawer-form ant-form ant-form-vertical ant-form-hide-required-mark" hx-post="/apps/email/send" hx-target="#modulus-drawer-body" hx-swap="innerHTML" novalidate>
+    <div class="m-drawer-form-body">
+        <app-form-item asp-for="To" label="To"><app-input asp-for="To" type="email" placeholder="name@company.com" /></app-form-item>
+        <app-form-item asp-for="Subject" label="Subject"><app-input asp-for="Subject" placeholder="What's it about?" /></app-form-item>
+        <app-form-item asp-for="Body" label="Message"><app-textarea asp-for="Body" rows="12" placeholder="Write your message…" /></app-form-item>
+    </div>
+    <div class="m-drawer-form-footer">
+        <app-button @@click="$store.drawer.hide()">Discard</app-button>
+        <app-button html-type="submit" name="draft" value="true">Save draft</app-button>
+        <app-button type="primary" html-type="submit">Send</app-button>
+    </div>
+</form>

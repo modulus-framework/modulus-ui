@@ -1,0 +1,62 @@
+@model PermissionsPage
+<app-page-header pretitle="Users & access" title="Permissions" subtitle="Each permission is granted to one or more roles. Core permissions can't be removed."></app-page-header>
+
+<div id="permissions-page" hx-boost="true" hx-target="#permissions-page" hx-select="#permissions-page" hx-swap="outerHTML" hx-push-url="true">
+    <div hidden hx-get="@(Context.Request.Path + Context.Request.QueryString)" hx-trigger="permissions:refresh from:body" hx-push-url="false"></div>
+    <div class="ant-card m-table-card">
+        <div class="ant-card-body">
+            <div class="m-table-toolbar">
+                <div class="m-table-toolbar-title">All permissions <span class="m-badge m-badge-gray-lt">@Model.Permissions.Count</span></div>
+                <div class="m-table-toolbar-actions">
+                    <form method="get" action="/apps/permissions" role="search">
+                        <span class="m-table-toolbar-search ant-input-affix-wrapper">
+                            <span class="ant-input-prefix"><app-ti name="search" /></span>
+                            <input class="ant-input" type="search" name="keyword" value="@Model.Keyword" placeholder="Search permissions…" aria-label="Search permissions" />
+                        </span>
+                    </form>
+                    <app-button type="primary" icon="plus" @@click="$store.drawer.load('/apps/permissions/form', 'Add permission')">Add permission</app-button>
+                </div>
+            </div>
+            <div class="ant-table-wrapper">
+                <div class="ant-table ant-table-middle"><div class="ant-table-container"><div class="ant-table-content" style="overflow-x:auto">
+                    <table style="table-layout:fixed;min-width:760px">
+                        <colgroup><col style="width:32%" /><col style="width:34%" /><col /><col style="width:110px" /></colgroup>
+                        <thead class="ant-table-thead">
+                            <tr><th class="ant-table-cell">Name</th><th class="ant-table-cell">Assigned to</th><th class="ant-table-cell">Created</th><th class="ant-table-cell" style="text-align:right">Actions</th></tr>
+                        </thead>
+                        <tbody class="ant-table-tbody">
+                            @if (Model.Permissions.Count == 0)
+                            {
+                                <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="4"><div class="m-table-empty">No permissions match “@Model.Keyword”</div></td></tr>
+                            }
+                            @foreach (var p in Model.Permissions)
+                            {
+                                <tr class="ant-table-row">
+                                    <td class="ant-table-cell"><span class="m-heading m-medium">@p.Name</span>@if (p.Core) { <span class="m-badge m-badge-gray-lt m-ml-8">Core</span> }</td>
+                                    <td class="ant-table-cell">
+                                        <div class="m-tag-list">
+                                            @foreach (var role in p.Roles)
+                                            {
+                                                <span class="m-badge m-badge-@SampleUi.RoleTone(role)-lt">@role</span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="ant-table-cell m-muted">@Fmt.Date(p.CreatedAt), @Fmt.Time(p.CreatedAt)</td>
+                                    <td class="ant-table-cell" style="text-align:right">
+                                        <div class="m-row-actions">
+                                            <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Edit @p.Name" title="Edit"
+                                                    @@click="$store.drawer.load('/apps/permissions/form/@p.Id', 'Edit permission')"><app-ti name="edit" /></button>
+                                            <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @p.Name" title="@(p.Core ? "Core permissions can't be deleted" : "Delete")" disabled="@p.Core"
+                                                    hx-post="/apps/permissions/delete/@p.Id" hx-swap="none"
+                                                    hx-confirm="@($"Delete the “{p.Name}” permission?")" data-confirm-danger data-confirm-ok="Delete"><app-ti name="trash" /></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div></div></div>
+            </div>
+        </div>
+    </div>
+</div>

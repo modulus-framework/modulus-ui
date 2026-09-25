@@ -1,0 +1,6 @@
+@page "/apps/chat/{id:int?}/{handler?}"
+@model ChatModel
+@{
+    ViewData["Title"] = "Chat";
+}
+<partial name="Ui/Apps/Chat/Chat" model="Model.View" />

@@ -1,0 +1,154 @@
+@page "/apps/invoice/add"
+@page "/apps/invoice/edit/{Id:int}"
+@inject SampleStore Store
+@inject IMessageService Message
+@inject NavigationManager Navigation
+@inject IOptions<ModulusThemeOptions> ThemeOptions
+
+@if (_input is null) return;
+<PageTitle>@(Id is null ? "Create invoice" : "Edit invoice") · Modulus</PageTitle>
+
+<PageHeading Pretitle="Invoice" Title="@(Id is null ? "Create invoice" : $"Edit invoice #{Id}")">
+    <Actions>
+        <a class="ant-btn ant-btn-default" href="@(Id is null ? "/apps/invoice/list" : $"/apps/invoice/preview/{Id}")"><Ti Name="arrow-left" /><span>@(Id is null ? "All invoices" : "Back to invoice")</span></a>
+    </Actions>
+</PageHeading>
+
+<Form TModel="InvoiceInput" Model="_input" Layout="@FormLayout.Vertical" RequiredMark="FormRequiredMark.None" OnFinish="SaveAsync" OnFinishFailed="_ => ValidateLines()" Class="m-invoice-layout">
+    <div class="m-card">
+        <div class="m-invoice">
+            <div class="m-invoice-head">
+                <div>
+                    <div class="m-invoice-brand">@((MarkupString)ShellRenderer.Brand(ThemeOptions.Value))</div>
+                    <address class="m-invoice-address">@foreach (var line in SampleContent.Seller.Address){<div>@line</div>}<div>@SampleContent.Seller.Phone</div></address>
+                </div>
+                <div class="m-invoice-dates">
+                    <div class="m-invoice-number">Invoice #@(Id ?? Store.NextInvoiceNumber)</div>
+                    <FormItem Label="Date issued"><DatePicker TValue="DateTime?" @bind-Value="context.IssuedAt" Style="width:100%" /></FormItem>
+                    <FormItem Label="Date due"><DatePicker TValue="DateTime?" @bind-Value="context.DueAt" Style="width:100%" /></FormItem>
+                </div>
+            </div>
+
+            <div class="m-subheader m-mb-8">Invoice to</div>
+            <div class="m-form-grid">
+                <FormItem Label="Client name"><Input @bind-Value="context.ClientName" Placeholder="Jordan Stevenson" /></FormItem>
+                <FormItem Label="Company"><Input @bind-Value="context.ClientCompany" Placeholder="Hall-Robbins PLC" /></FormItem>
+                <FormItem Label="Email"><Input @bind-Value="context.ClientEmail" Placeholder="jordan@hallrobbins.com" /></FormItem>
+                <FormItem Label="Country"><Select TItemValue="string" TItem="string" @bind-Value="context.ClientCountry" DataSource="Lookups.Countries" Placeholder="Select country" AllowClear /></FormItem>
+                <FormItem Label="Address" Class="m-span-2"><Input @bind-Value="context.ClientAddress" Placeholder="7777 Mendez Plains, Florida" /></FormItem>
+            </div>
+
+            <div class="m-invoice-editor">
+                <div class="m-invoice-editor-head" aria-hidden="true"><span>Item</span><span>Cost</span><span>Qty</span><span>Price</span><span></span></div>
+                @for (var n = 0; n < context.Lines.Count; n++)
+                {
+                    var i = n;
+                    var line = context.Lines[i];
+                    <div class="m-invoice-editor-row" @key="line">
+                        <div class="m-invoice-editor-item">
+                            <Input @bind-Value="line.Item" Placeholder="Item name" Class="@(LineError(i, "Item") is null ? null : "ant-input-status-error")" aria-label="@($"Item {i + 1}")" />
+                            @if (LineError(i, "Item") is { } itemError) { <div class="ant-form-item-explain-error">@itemError</div> }
+                            <TextArea @bind-Value="line.Description" Rows="2" Placeholder="Description" Class="m-mt-8" aria-label="@($"Description {i + 1}")" />
+                        </div>
+                        <div><AntDesign.InputNumber TValue="decimal" @bind-Value="line.Cost" Min="0" Step="0.01m" Style="width:100%" aria-label="@($"Cost {i + 1}")" /></div>
+                        <div><AntDesign.InputNumber TValue="int" @bind-Value="line.Qty" Min="1" Style="width:100%" aria-label="@($"Quantity {i + 1}")" /></div>
+                        <div class="m-invoice-editor-price m-num">@Fmt.Money(line.Total)</div>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" @onclick="() => RemoveLine(i)" aria-label="@($"Remove item {i + 1}")" title="Remove"><Ti Name="x" /></button>
+                    </div>
+                }
+                <button type="button" class="ant-btn ant-btn-dashed" @onclick="AddLine"><Ti Name="plus" /><span>Add item</span></button>
+            </div>
+
+            <div class="m-invoice-foot">
+                <div class="m-invoice-seller" style="flex:1;min-width:240px;max-width:420px">
+                    <FormItem Label="Note"><TextArea @bind-Value="context.Note" Rows="3" /></FormItem>
+                </div>
+                <dl class="m-invoice-totals">
+                    <dt>Subtotal</dt><dd>@Fmt.Money(Subtotal)</dd>
+                    <dt>Discount (@context.DiscountPercent.ToString("0.#")%)</dt><dd>−@Fmt.Money(Discount)</dd>
+                    <dt>Tax (@context.TaxPercent.ToString("0.#")%)</dt><dd>@Fmt.Money(Tax)</dd>
+                    <dt class="m-invoice-total">Total</dt><dd class="m-invoice-total">@Fmt.Money(Subtotal - Discount + Tax)</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <aside class="m-invoice-side">
+        <div class="m-card">
+            <div class="m-card-body m-invoice-actions">
+                <button type="submit" class="ant-btn ant-btn-primary ant-btn-block"><Ti Name="device-floppy" /><span>@(Id is null ? "Create invoice" : "Save changes")</span></button>
+                @if (Id is { } existing)
+                {
+                    <a class="ant-btn ant-btn-default ant-btn-block" href="/apps/invoice/preview/@existing"><Ti Name="eye" /><span>Preview</span></a>
+                }
+                <a class="ant-btn ant-btn-default ant-btn-block" href="/apps/invoice/list"><span>Cancel</span></a>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-body">
+                <FormItem Label="Status">
+                    <Select TItemValue="InvoiceStatus" TItem="string" @bind-Value="context.Status">
+                        <SelectOptions>
+                            @foreach (var s in Enum.GetValues<InvoiceStatus>())
+                            {
+                                <SelectOption TItemValue="InvoiceStatus" TItem="string" Value="s" Label="@SampleUi.Label(s)" />
+                            }
+                        </SelectOptions>
+                    </Select>
+                </FormItem>
+                <FormItem Label="Discount (%)"><AntDesign.InputNumber TValue="decimal" @bind-Value="context.DiscountPercent" Min="0" Max="100" Step="0.5m" Style="width:100%" /></FormItem>
+                <FormItem Label="Tax (%)" Class="m-mb-0"><AntDesign.InputNumber TValue="decimal" @bind-Value="context.TaxPercent" Min="0" Max="100" Step="0.5m" Style="width:100%" /></FormItem>
+            </div>
+        </div>
+    </aside>
+</Form>
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private InvoiceInput? _input;
+    private Dictionary<string, string> _lineErrors = [];
+
+    private decimal Subtotal => _input!.Lines.Sum(l => l.Total);
+    private decimal Discount => Math.Round(Subtotal * _input!.DiscountPercent / 100, 2);
+    private decimal Tax => Math.Round((Subtotal - Discount) * _input!.TaxPercent / 100, 2);
+
+    protected override void OnParametersSet()
+    {
+        if (Id is { } id)
+        {
+            if (Store.FindInvoice(id) is { } invoice) _input = InvoiceInput.From(invoice);
+            else Navigation.NotFound();
+        }
+        else _input = new InvoiceInput();
+    }
+
+    private string? LineError(int index, string field) => _lineErrors.GetValueOrDefault($"{index}.{field}");
+
+    private void AddLine() => _input!.Lines.Add(new InvoiceLine());
+
+    private void RemoveLine(int index)
+    {
+        _input!.Lines.RemoveAt(index);
+        if (_input.Lines.Count == 0) AddLine();
+        _lineErrors.Clear();
+    }
+
+    // Line items are validated here (the form validator checks the top-level fields only),
+    // on both a valid and an invalid submit so all errors show at once.
+    private bool ValidateLines()
+    {
+        _lineErrors = _input!.Lines.Select((l, i) => (l, i)).Where(x => string.IsNullOrWhiteSpace(x.l.Item))
+            .ToDictionary(x => $"{x.i}.Item", _ => "Describe the item");
+        return _lineErrors.Count == 0;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (!ValidateLines()) return;
+
+        var invoice = Store.SaveInvoice(Id, _input!);
+        await Message.SuccessAsync(Id is null ? $"Invoice {invoice.Number} created" : $"Invoice {invoice.Number} saved");
+        Navigation.NavigateTo($"/apps/invoice/preview/{invoice.Id}");
+    }
+}

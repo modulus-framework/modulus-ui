@@ -1,0 +1,195 @@
+@model AnalyticsDashboard
+@{
+    var d = Model;
+    string PaymentBadge(string status) => status switch { "Paid" => "m-badge-green-lt", "Refunded" => "m-badge-gray-lt", _ => "m-badge-yellow-lt" };
+}
+<app-page-header pretitle="Dashboards" title="Analytics">
+    <div class="ant-segmented" role="group" aria-label="Date range">
+        <div class="ant-segmented-group">
+            @foreach (var days in new[] { 7, 30, 90 })
+            {
+                <a class="ant-segmented-item @(days == d.RangeDays ? "ant-segmented-item-selected" : "")" href="/?range=@days" aria-current="@(days == d.RangeDays ? "true" : null)">
+                    <div class="ant-segmented-item-label">@days days</div>
+                </a>
+            }
+        </div>
+    </div>
+    <a class="ant-btn ant-btn-primary" href="/apps/invoice/add"><app-ti name="plus" /><span>Create invoice</span></a>
+</app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-4">
+        @for (var i = 0; i < d.Kpis.Count; i++)
+        {
+            var k = d.Kpis[i];
+            <div class="m-card">
+                <div class="m-card-body">
+                    <div class="m-kpi-head">
+                        <span class="m-subheader">@k.Label</span>
+                        <span class="m-delta @(k.Delta >= 0 ? "m-delta-up" : "m-delta-down")" style="margin-left:auto">
+                            @(k.Delta >= 0 ? "+" : "")@k.Delta.ToString("0.0")% <app-ti name="@(k.Delta >= 0 ? "trending-up" : "trending-down")" />
+                        </span>
+                    </div>
+                    <div class="m-kpi-value"><span class="m-h1">@k.Value</span></div>
+                    <div class="m-kpi-foot">@k.Note</div>
+                    <div class="m-kpi-chart">
+                        @if (i == 2)
+                        {
+                            <app-mini-bar data="k.Trend" aria-label="@($"{k.Label} trend")" />
+                        }
+                        else
+                        {
+                            <app-sparkline data="k.Trend" area="i != 3" aria-label="@($"{k.Label} trend")" />
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="m-row-cards m-cols-4">
+        @foreach (var t in d.Tiles)
+        {
+            <div class="m-card m-card-sm">
+                <div class="m-card-body">
+                    <div class="m-stat">
+                        <span class="m-icon-tile m-tile-@t.Tone"><app-ti name="@t.Icon" /></span>
+                        <div class="m-stat-text">
+                            <div class="m-stat-value">@t.Value</div>
+                            <div class="m-stat-sub">@t.Caption</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="m-row-cards m-cols-8-4">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div>
+                    <h3 class="m-card-title">Revenue</h3>
+                    <p class="m-card-subtitle">Last @d.RangeDays days compared with the @d.RangeDays days before</p>
+                </div>
+            </div>
+            <div class="m-card-body">
+                <app-line-chart labels="d.Labels" series="d.Revenue" area="true" prefix="$" title="Revenue by day" height="280" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Traffic sources</h3></div>
+            <div class="m-card-body">
+                <app-donut-chart slices="d.Channels" center-label="Sessions" title="Sessions by channel" size="168" />
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-8-4">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div>
+                    <h3 class="m-card-title">Busiest hours</h3>
+                    <p class="m-card-subtitle">Orders by weekday and time of day</p>
+                </div>
+            </div>
+            <div class="m-card-body">
+                <app-heatmap rows="d.HeatRows" columns="d.HeatColumns" values="d.Heat" suffix=" orders" title="Orders by weekday and hour" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Browsers</h3></div>
+            <div class="m-card-body m-card-body-flush">
+                <ul class="m-list">
+                    @foreach (var b in d.Browsers)
+                    {
+                        <li class="m-list-item">
+                            <span class="m-icon-tile m-tile-sm"><app-ti name="@b.Icon" /></span>
+                            <div class="m-list-item-text">
+                                <div class="m-flex m-between"><span class="m-list-item-title">@b.Name</span><span class="m-medium m-heading">@b.Share.ToString("P0")</span></div>
+                                <div class="m-progress m-progress-xs m-mt-8"><div class="m-progress-bar" style="width:@(b.Share * 100)%"></div></div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-8-4">
+        <div class="m-card">
+            <div class="m-card-header">
+                <h3 class="m-card-title">Top pages</h3>
+                <div class="m-card-actions"><span class="m-badge m-badge-green-lt"><span class="m-status-dot m-status-green"></span>Live</span></div>
+            </div>
+            <div class="ant-table-wrapper m-table-flush">
+                <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                    <table style="table-layout:auto">
+                        <thead class="ant-table-thead">
+                            <tr><th class="ant-table-cell">Page</th><th class="ant-table-cell" style="text-align:right">Views</th><th class="ant-table-cell" style="text-align:right">Visitors</th><th class="ant-table-cell" style="width:180px">Bounce rate</th></tr>
+                        </thead>
+                        <tbody class="ant-table-tbody">
+                            @foreach (var p in d.TopPages)
+                            {
+                                <tr class="ant-table-row">
+                                    <td class="ant-table-cell"><span class="m-medium m-heading">@p.Path</span></td>
+                                    <td class="ant-table-cell m-num" style="text-align:right">@p.Views.ToString("N0")</td>
+                                    <td class="ant-table-cell m-num" style="text-align:right">@p.Visitors.ToString("N0")</td>
+                                    <td class="ant-table-cell">
+                                        <div class="m-flex"><div class="m-progress m-progress-xs m-grow"><div class="m-progress-bar" style="width:@(p.BounceRate * 100)%;--c:var(--m-series-2)"></div></div><span class="m-num m-small m-muted" style="width:36px;text-align:right">@p.BounceRate.ToString("P0")</span></div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div></div></div>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Activity</h3></div>
+            <div class="m-card-body">
+                <ul class="m-timeline">
+                    @foreach (var a in d.Activity)
+                    {
+                        <li class="m-timeline-item">
+                            <span class="m-timeline-icon"><app-ti name="@a.Icon" /></span>
+                            <div class="m-timeline-body">
+                                <div><strong>@a.Who</strong> <span class="m-secondary">@a.What</span> @a.Target</div>
+                                <div class="m-timeline-time">@Fmt.Relative(a.At)</div>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header">
+            <h3 class="m-card-title">Recent orders</h3>
+            <div class="m-card-actions"><a class="ant-btn ant-btn-default ant-btn-sm" href="/apps/ecommerce/orders"><span>View all orders</span></a></div>
+        </div>
+        <div class="ant-table-wrapper m-table-flush">
+            <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                <table style="table-layout:auto">
+                    <thead class="ant-table-thead">
+                        <tr><th class="ant-table-cell">Order</th><th class="ant-table-cell">Customer</th><th class="ant-table-cell">Placed</th><th class="ant-table-cell">Payment</th><th class="ant-table-cell" style="text-align:right">Amount</th></tr>
+                    </thead>
+                    <tbody class="ant-table-tbody">
+                        @foreach (var o in d.RecentOrders)
+                        {
+                            <tr class="ant-table-row">
+                                <td class="ant-table-cell"><a href="/apps/ecommerce/orders/@o.Number.TrimStart('#')" class="m-medium">@o.Number</a></td>
+                                <td class="ant-table-cell">
+                                    <div class="m-flex m-gap-12"><span class="m-avatar m-avatar-sm m-av-@Fmt.Tint(o.Customer)">@Fmt.Initials(o.Customer)</span><span class="m-heading">@o.Customer</span></div>
+                                </td>
+                                <td class="ant-table-cell m-muted">@Fmt.DateTime(o.PlacedAt)</td>
+                                <td class="ant-table-cell"><span class="m-badge @PaymentBadge(o.Status)">@o.Status</span></td>
+                                <td class="ant-table-cell m-num m-heading" style="text-align:right">@Fmt.Money(o.Amount)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div></div></div>
+        </div>
+    </div>
+</div>

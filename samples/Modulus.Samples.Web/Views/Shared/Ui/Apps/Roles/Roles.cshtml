@@ -1,0 +1,104 @@
+@model RolesPage
+@{
+    static string LevelTone(Access a) => a switch { Access.Read => "azure", Access.Write => "orange", _ => "green" };
+}
+<app-page-header pretitle="Users & access" title="Roles" subtitle="A role gives access to menus and features; assign one to each user."></app-page-header>
+
+<div id="roles-page" class="m-row-cards">
+    <div hidden hx-get="/apps/roles" hx-trigger="roles:refresh from:body" hx-select="#roles-page" hx-target="#roles-page" hx-swap="outerHTML"></div>
+    <div class="m-row-cards m-cols-3">
+        @foreach (var r in Model.Roles)
+        {
+            var members = Model.Users.Where(u => u.Role == r.Name).ToList();
+            <div class="m-card">
+                <div class="m-card-body">
+                    <div class="m-flex m-between">
+                        <span class="m-small m-muted">Total @members.Count @(members.Count == 1 ? "user" : "users")</span>
+                        <div class="m-avatar-list">
+                            @foreach (var m in members.Take(4))
+                            {
+                                <span class="m-avatar m-avatar-sm m-av-@m.Tint" title="@m.Name">@Fmt.Initials(m.Name)</span>
+                            }
+                            @if (members.Count > 4)
+                            {
+                                <span class="m-avatar m-avatar-sm">+@(members.Count - 4)</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="m-flex m-between m-mt-16" style="align-items:flex-end">
+                        <div class="m-truncate">
+                            <div class="m-h3">@r.Name</div>
+                            <div class="m-small m-muted m-mt-4 m-truncate">@r.Description</div>
+                            <button type="button" class="m-link-btn m-small m-mt-8" @@click="$store.drawer.load('/apps/roles/form/@r.Id', 'Edit role', 720)">Edit role</button>
+                        </div>
+                        <span class="m-icon-tile m-tile-@SampleUi.RoleTone(r.Name)-lt"><app-ti name="@SampleUi.RoleIcon(r.Name)" /></span>
+                    </div>
+                </div>
+            </div>
+        }
+        <div class="m-card m-role-add">
+            <div class="m-card-body">
+                <span class="m-icon-tile m-tile-primary-lt"><app-ti name="shield-plus" /></span>
+                <div>
+                    <div class="m-h3">New role</div>
+                    <div class="m-small m-muted m-mt-4">Add a role if none of these fit.</div>
+                    <button type="button" class="ant-btn ant-btn-primary ant-btn-sm m-mt-8" @@click="$store.drawer.load('/apps/roles/form', 'Add role', 720)"><app-ti name="plus" /><span>Add role</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header">
+            <div><h3 class="m-card-title">Access by module</h3><p class="m-card-subtitle">What each role can do in every module</p></div>
+            <div class="m-card-actions m-access-legend">
+                @foreach (var a in RoleInput.AccessLevels)
+                {
+                    <span class="m-badge m-badge-@LevelTone(a)-lt">@a</span>
+                }
+            </div>
+        </div>
+        <div class="ant-table-wrapper m-table-flush">
+            <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content" style="overflow-x:auto">
+                <table style="table-layout:auto;min-width:760px">
+                    <thead class="ant-table-thead">
+                        <tr>
+                            <th class="ant-table-cell">Module</th>
+                            @foreach (var r in Model.Roles)
+                            {
+                                <th class="ant-table-cell" style="text-align:center">@r.Name</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody class="ant-table-tbody">
+                        @foreach (var module in Lookups.PermissionModules)
+                        {
+                            <tr class="ant-table-row">
+                                <td class="ant-table-cell m-heading m-medium">@module</td>
+                                @foreach (var r in Model.Roles)
+                                {
+                                    var access = r.Permissions.GetValueOrDefault(module);
+                                    <td class="ant-table-cell" style="text-align:center">
+                                        @if (access == Access.None)
+                                        {
+                                            <span class="m-text-quaternary" aria-label="No access">—</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="m-access">
+                                                @foreach (var a in RoleInput.AccessLevels.Where(a => access.HasFlag(a)))
+                                                {
+                                                    <span class="m-badge m-badge-@LevelTone(a)-lt" title="@a">@a.ToString()[0]</span>
+                                                }
+                                            </span>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div></div></div>
+        </div>
+    </div>
+</div>

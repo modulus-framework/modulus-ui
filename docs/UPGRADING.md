@@ -1,106 +1,74 @@
-# Upgrading Ant Design (and htmx / Alpine.js)
+# Upgrading Ant Design Blazor, htmx and Alpine.js
 
-## Automated Checks
-A GitHub Actions workflow (`antd-drift.yml`) runs weekly and on every dependency bump PR. It generates a drift report showing:
-- New components in AntDesign that are not yet wrapped
-- Parameter changes (additions, removals, renames) in wrapped components
-- htmx and Alpine.js version updates
+Modulus pins every third-party UI dependency in one place, so upgrades are deliberate and checked.
 
-Check the drift report in the PR or in the issue opened by the action.
+| Dependency | Pinned in | Current |
+|---|---|---|
+| `AntDesign`, `AntDesign.ProLayout` | `Directory.Packages.props` (keep both on the same version) | 1.6.2 |
+| htmx | `src/Modulus.Ui.Assets/wwwroot/lib/htmx/` | 2.0.11 |
+| Alpine.js | `src/Modulus.Ui.Assets/wwwroot/lib/alpinejs/` | 3.17.4 |
 
-## Manual Upgrade Checklist
+## What protects you
 
-### 1. Bump Version (5 min)
-```bash
-# Edit Directory.Packages.props
-# Change: <PackageVersion Include="AntDesign" Version="X.Y.Z" />
-```
-Commit: `chore: bump AntDesign to X.Y.Z`
+- **Aliases, not wrappers.** `App*` types are empty subclasses, so upstream parameter changes need no Modulus changes.
+  Only a removed or renamed component breaks them, and the compiler reports it.
+- **`tools/antd-drift`** (runs in CI on every push) compares the pinned AntDesign assembly with
+  `manifest/antd-coverage.json`:
+  - component types added or removed since the recorded baseline;
+  - every `alias` entry has an `App*` type that really derives from that component;
+  - every `App*` type is listed in the manifest;
+  - every `app-*` tag named in an entry's `mvc` field is a real tag helper in `Modulus.AspNetCore.Mvc`.
+- **Weekly drift workflow** (`.github/workflows/antd-drift.yml`) builds against the **latest** AntDesign release and opens
+  or updates an `antd-drift` issue when something needs attention, before anyone bumps the pin.
+- **Tests** cover palette generation against the official antd palettes, alias rendering, Pro components, tag helpers
+  and the `AntIcons` reflection hook.
 
-### 2. Run Drift Detection (2 min)
-```bash
-cd tools/antd-drift
-dotnet run --configuration Release
-# Read drift-reports/drift-report-*.md
-```
-The report shows:
-- **Missing Components**: Components in AntDesign not yet wrapped (add to manifest + create wrapper)
-- **Parameter Changes**: Parameters added/removed in existing components (update wrapper)
+## Upgrading AntDesign
 
-### 3. Update Wrappers (Variable time)
-For each parameter change:
-1. Open `src/Modulus.Blazor/Components/{Category}/App{Component}.razor`
-2. Check if the parameter is exposed (it probably shouldn't be if it's internal)
-3. If the parameter is on the wrapper public API, update the `[Parameter]` declaration
-4. Rebuild: `dotnet build -c Release`
+1. Bump both versions in `Directory.Packages.props`.
+2. Build and test:
+   ```bash
+   dotnet build Modulus.slnx -c Release
+   dotnet test --solution Modulus.slnx -c Release --no-build
+   ```
+   - **`AntIconsTests` fails**: AntDesign moved `IconService.GetIconImg`. Update the lookup in
+     `src/Modulus.AspNetCore.Mvc/AntIcons.cs`, or switch to a public API if one now exists.
+   - **An alias does not compile**: the component was renamed or made generic. Update the alias and its manifest entry.
+3. Run the drift check:
+   ```bash
+   dotnet run --project tools/antd-drift
+   ```
+   - *New component types*: for user-facing components, add `public class AppX : AntDesign.X { }` in the matching
+     `src/Modulus.Blazor/Components/<Category>/Aliases.cs` and a manifest entry with `"status": "alias"`. Sub-components
+     and internals only need the baseline update.
+   - *Removed types*: remove the alias and manifest entry, and note the breaking change in the release notes.
+   - When everything is classified, accept the new surface:
+     ```bash
+     dotnet run --project tools/antd-drift -- --update-baseline
+     ```
+4. **Check the styling layer.** `modulus.css` refines antd's v4 CSS and depends on its class names. If AntDesign moves to
+   antd v5 CSS (CSS-in-JS tokens), review the "v5 refresh" section of `modulus.css`; most of it becomes unnecessary. Also
+   review `ThemeCss.Build`, which writes the v4 variable names that `ant-design-blazor.variable.css` reads.
+5. **Visual check** in all three samples, in light and dark mode, with the horizontal and the vertical layout: dashboards,
+   customers (filter expand, drawer form with validation errors, batch selection), `/forms/validation`, `/tables/advanced`,
+   account settings, sign-in and 404. Then open `/ui/components` in the Blazor and MVC samples next to each other: every
+   Ant Design category is on one page, so a markup change upstream shows up as a visible difference between them.
+   ```bash
+   dotnet run --project samples/Modulus.AdminTemplate.Blazor       # :5100
+   dotnet run --project samples/Modulus.AdminTemplate.Mvc          # :5101
+   dotnet run --project samples/Modulus.AdminTemplate.RazorPages   # :5102
+   ```
+   The MVC tag helpers emit AntDesign's DOM by hand. If a component's markup changed upstream (compare the Blazor
+   sample's HTML), update the matching tag helper in `src/Modulus.AspNetCore.Mvc/TagHelpers/`.
 
-For each new public component:
-1. Add to `manifest/antd-coverage.json` with status `in-progress`
-2. Create `src/Modulus.Blazor/Components/{Category}/App{Component}.razor` using the wrapper pattern
-3. Add `[AntdComponent("{ComponentName}")]` attribute
-4. Create MVC TagHelper in `src/Modulus.AspNetCore.Mvc/TagHelpers/App{Component}TagHelper.cs` (or Alpine component if interactive)
-5. Update sample gallery page
-6. Mark as `done` in manifest when complete
+## Upgrading htmx or Alpine.js
 
-### 4. Check Themes (3 min)
-If antd released new token names or deprecated old ones:
-1. Review `antd` changelog for CSS variable changes (https://github.com/ant-design/ant-design/releases)
-2. Update `src/Modulus.Blazor/wwwroot/css/modulus-theme.css` to reference only existing tokens
-3. Run test: `dotnet test Modulus.Coverage.Tests` (if exists)
-
-### 5. Build & Test (5 min)
-```bash
-dotnet clean
-dotnet build -c Release          # All 6 projects must build
-dotnet test                      # Blazor + coverage tests
-```
-
-### 6. Visual Check (10 min)
-Open the sample gallery apps in **light, dark, and compact modes**:
-- `samples/Modulus.AdminTemplate.Blazor` (dotnet run, http://localhost:5000)
-- `samples/Modulus.AdminTemplate.Mvc` (dotnet run, http://localhost:5001)
-
-Check:
-- No visual regressions
-- New components render correctly
-- Theme colors apply correctly in both light/dark
-- Responsive layout still works
-
-### 7. Document & Commit (3 min)
-```bash
-git add -A
-git commit -m "chore: upgrade AntDesign to X.Y.Z
-
-- Updated AppXxx wrappers for parameter changes
-- Added [component list] wrappers
-- Updated modulus-theme.css tokens
-- All tests pass, gallery verified in light/dark/compact"
-```
-
-Optionally, tag a release:
-```bash
-git tag -a vX.Y.Z-antd-X.Y.Z -m "Supports AntDesign X.Y.Z"
-git push origin vX.Y.Z-antd-X.Y.Z
-```
-
-## Troubleshooting
-
-**Q: Drift report shows 30 missing components — is this bad?**
-A: No. The drift report is conservative and shows all public types in AntDesign that *might* be components. Most are utilities, hooks, or internal types. Ignore types that are not in the official Ant Design component catalog (https://ant.design/components/overview/). Update the drift tool's heuristics if needed.
-
-**Q: A wrapper stopped compiling after the upgrade.**
-A: The upstream component removed or renamed a parameter. Check the AntDesign changelog and update the wrapper's `[Parameter]` to match. If the parameter was public API of our wrapper, document the breaking change.
-
-**Q: The theme looks broken in dark mode.**
-A: Check `modulus-theme.css` for references to removed CSS variables. Run a diff against the latest antd CSS to see what changed. The antd team publishes their CSS variable mapping in each release.
-
-**Q: A `Pro*` composite stopped working.**
-A: `Pro*` components use only public `AppXxx` components. They should not break if you've updated all the `AppXxx` wrappers correctly. If a `Pro*` broke, it's likely using an `AppXxx` that was not updated fully. Re-run the drift check and ensure all wrappers match the new AntDesign API.
-
-## Version Pinning Strategy
-
-- **Modulus.Blazor**: Pins `AntDesign` via central package management (`Directory.Packages.props`).
-- **Drift detection**: Weekly GitHub Actions workflow reports on new components and parameter changes.
-- **Backwards compatibility**: We use semantic versioning. A new minor version (e.g., v2.2.0) may drop support for an older AntDesign version; this will be documented in the release notes.
-
-See `docs/PLAN.md` §8 for the full update safety strategy.
+1. Replace the file in `wwwroot/lib/<name>/` with the new minified build from the official release, and update the
+   version in the table above (the minified files carry no version banner, so this table is the record).
+2. Read the release notes for changes to events Modulus relies on:
+   - htmx: `htmx:confirm` (`issueRequest`), `htmx:responseError`, `HX-Trigger` JSON events, `hx-headers`
+   - Alpine: `Alpine.data`, `Alpine.store`, `x-cloak`, `alpine:init`
+3. Run the MVC sample and exercise: create a customer (toast, drawer close, table refresh), delete with the confirm dialog,
+   sort, paginate, switch the layout in the settings panel and toggle the theme, then reload to confirm both persist.
+   On `/ui/components`, check tabs (click and arrow keys), the dropdown delete (confirm → toast), notification, modal
+   (focus, Escape, submit closes it), collapse, switch, segmented, rate, upload and the input clear/reveal buttons.

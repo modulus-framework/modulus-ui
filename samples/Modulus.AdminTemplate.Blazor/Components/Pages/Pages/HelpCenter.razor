@@ -1,0 +1,95 @@
+@page "/pages/help-center"
+
+<PageTitle>Help center · Modulus</PageTitle>
+
+<div class="m-hero">
+    <h1 class="m-hero-title">Hello, how can we help?</h1>
+    <p class="m-hero-text">Common troubleshooting topics: getting started, billing, security and the apps.</p>
+    <form class="m-hero-search" method="get" action="/pages/help-center" role="search">
+        <Ti Name="search" />
+        <input class="ant-input" type="search" name="q" value="@Q" placeholder="Search articles…" aria-label="Search articles" />
+    </form>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Q))
+{
+    var results = SampleContent.SearchHelp(Q);
+    <div class="m-card m-mt-24">
+        <div class="m-card-header">
+            <div><h2 class="m-card-title">Results for “@Q”</h2><p class="m-card-subtitle">@results.Count @(results.Count == 1 ? "article" : "articles") found</p></div>
+            <div class="m-card-actions"><a class="ant-btn ant-btn-default ant-btn-sm" href="/pages/help-center"><span>Clear search</span></a></div>
+        </div>
+        @if (results.Count == 0)
+        {
+            <div class="m-empty"><span class="m-empty-icon"><Ti Name="search" /></span><p class="m-empty-title">No articles found</p><p class="m-empty-subtitle">Try different keywords or browse the categories.</p></div>
+        }
+        else
+        {
+            <ul class="m-list">
+                @foreach (var (category, article) in results)
+                {
+                    <li class="m-list-item">
+                        <span class="m-icon-tile m-tile-sm m-tile-@SampleUi.Tone(category.Tint)-lt"><Ti Name="@category.Icon" /></span>
+                        <div class="m-list-item-text"><a class="m-list-item-title" href="/pages/help-center/@article.Slug">@article.Title</a><span class="m-list-item-sub">@category.Title · @article.Excerpt</span></div>
+                        <Ti Name="chevron-right" />
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+}
+
+<div class="m-section-head m-mt-24"><h2 class="m-h3">Popular articles</h2></div>
+<div class="m-row-cards m-cols-3">
+    @foreach (var (category, article) in Popular)
+    {
+        <a class="m-card m-card-link" href="/pages/help-center/@article.Slug">
+            <div class="m-card-body">
+                <span class="m-icon-tile m-tile-@SampleUi.Tone(category.Tint)-lt"><Ti Name="@category.Icon" /></span>
+                <div class="m-h3 m-mt-16">@article.Title</div>
+                <p class="m-muted m-mt-4 m-mb-0">@article.Excerpt</p>
+                <div class="m-small m-medium m-mt-16 m-text-primary">Read more <Ti Name="arrow-right" /></div>
+            </div>
+        </a>
+    }
+</div>
+
+<div class="m-section-head m-mt-24"><h2 class="m-h3">Knowledge base</h2></div>
+<div class="m-help-grid">
+    @foreach (var c in SampleContent.Help)
+    {
+        <div class="m-card">
+            <div class="m-card-body">
+                <div class="m-flex m-gap-12 m-mb-16">
+                    <span class="m-icon-tile m-tile-@SampleUi.Tone(c.Tint)-lt"><Ti Name="@c.Icon" /></span>
+                    <div><div class="m-h3">@c.Title</div><div class="m-xsmall m-muted">@c.Articles.Count articles</div></div>
+                </div>
+                <ul class="m-link-list">
+                    @foreach (var a in c.Articles)
+                    {
+                        <li><a href="/pages/help-center/@a.Slug"><Ti Name="chevron-right" />@a.Title</a></li>
+                    }
+                </ul>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="m-card m-mt-24">
+    <div class="m-card-body m-center">
+        <span class="m-icon-tile m-tile-lg m-tile-primary-lt" style="margin:0 auto 12px"><Ti Name="lifebuoy" /></span>
+        <div class="m-h2">Still need help?</div>
+        <p class="m-muted m-mt-4">Our specialists are always happy to help. Contact us during business hours, or email us 24/7.</p>
+        <div class="m-status-actions m-mt-16">
+            <a class="ant-btn ant-btn-default" href="/apps/chat"><Ti Name="messages" /><span>Chat with us</span></a>
+            <a class="ant-btn ant-btn-primary" href="/apps/email"><Ti Name="mail" /><span>Contact support</span></a>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? Q { get; set; }
+
+    private static IEnumerable<(HelpCategory, HelpArticle)> Popular =>
+        SampleContent.Help.Take(3).Select(c => (c, c.Articles[0]));
+}

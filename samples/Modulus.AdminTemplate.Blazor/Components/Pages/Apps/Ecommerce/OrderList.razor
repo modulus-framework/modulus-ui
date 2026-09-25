@@ -1,0 +1,105 @@
+@page "/apps/ecommerce/orders"
+@inject SampleStore Store
+
+<PageTitle>Orders · Modulus</PageTitle>
+
+<PageHeading Pretitle="eCommerce" Title="Orders">
+    <Actions>
+        <a class="ant-btn ant-btn-default" href="/dashboards/ecommerce"><Ti Name="chart-bar" /><span>Sales overview</span></a>
+    </Actions>
+</PageHeading>
+
+<div class="m-row-cards">
+    <div class="m-card">
+        <div class="m-stat-strip">
+            @foreach (var (label, value, icon) in Strip)
+            {
+                <div class="m-stat-strip-item">
+                    <div><div class="m-h2">@value</div><div class="m-small m-muted">@label</div></div>
+                    <span class="m-icon-tile m-tile-gray-lt"><Ti Name="@icon" /></span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <ProTable TItem="Order" @ref="_table" HeaderTitle="All orders" Request="LoadAsync" RowKey="o => o.Id" ScrollX="1000">
+        <ToolBar>
+            <Input @bind-Value="_keyword" Placeholder="Search orders…" AllowClear Class="m-table-toolbar-search" OnPressEnter="SearchAsync" OnClear="SearchAsync" Prefix="@_searchIcon" />
+            <Select TItemValue="OrderStatus?" TItem="string" Value="_status" ValueChanged="v => FilterAsync(() => _status = v)" Placeholder="Any status" AllowClear Style="width:160px">
+                <SelectOptions>
+                    @foreach (var s in Enum.GetValues<OrderStatus>())
+                    {
+                        <SelectOption TItemValue="OrderStatus?" TItem="string" Value="s" Label="@SampleUi.Label(s)" />
+                    }
+                </SelectOptions>
+            </Select>
+            <Select TItemValue="PaymentStatus?" TItem="string" Value="_payment" ValueChanged="v => FilterAsync(() => _payment = v)" Placeholder="Any payment" AllowClear Style="width:160px">
+                <SelectOptions>
+                    @foreach (var p in Enum.GetValues<PaymentStatus>())
+                    {
+                        <SelectOption TItemValue="PaymentStatus?" TItem="string" Value="p" Label="@p.ToString()" />
+                    }
+                </SelectOptions>
+            </Select>
+            <Button Icon="download">Export</Button>
+        </ToolBar>
+        <Columns Context="row">
+            <PropertyColumn Property="o => o.Id" Title="Order" Sortable Width="100">
+                <a class="m-medium" href="/apps/ecommerce/orders/@row.Id">@row.Number</a>
+            </PropertyColumn>
+            <PropertyColumn Property="o => o.PlacedAt" Title="Date" Sortable Width="150">
+                <span class="m-muted">@Fmt.DateTime(row.PlacedAt)</span>
+            </PropertyColumn>
+            <PropertyColumn Property="o => o.CustomerName" Title="Customer" Sortable Width="280">
+                <div class="m-entity">
+                    <span class="m-avatar m-avatar-sm m-av-@row.Tint">@Fmt.Initials(row.CustomerName)</span>
+                    <div class="m-entity-text"><span class="m-entity-title">@row.CustomerName</span><span class="m-entity-desc">@row.CustomerEmail</span></div>
+                </div>
+            </PropertyColumn>
+            <PropertyColumn Property="o => o.Payment" Title="Payment">
+                <span class="m-status"><span class="m-status-dot m-status-@SampleUi.PaymentTone(row.Payment)"></span>@row.Payment</span>
+            </PropertyColumn>
+            <PropertyColumn Property="o => o.Status" Title="Status">
+                <span class="m-badge @SampleUi.OrderBadge(row.Status)">@SampleUi.Label(row.Status)</span>
+            </PropertyColumn>
+            <PropertyColumn Property="o => o.Total" Title="Total" Sortable Align="ColumnAlign.Right">
+                <span class="m-num m-heading">@Fmt.Money(row.Total)</span>
+            </PropertyColumn>
+            <ActionColumn Title="Actions" Width="80" Align="ColumnAlign.Right">
+                <div class="m-row-actions">
+                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/ecommerce/orders/@row.Id" aria-label="View order @row.Number" title="View"><Ti Name="eye" /></a>
+                </div>
+            </ActionColumn>
+        </Columns>
+    </ProTable>
+</div>
+
+@code {
+    private ProTable<Order>? _table;
+    private OrderStats _stats = default!;
+    private string? _keyword;
+    private OrderStatus? _status;
+    private PaymentStatus? _payment;
+    private readonly RenderFragment _searchIcon = @<Ti Name="search" />;
+
+    private (string Label, string Value, string Icon)[] Strip =>
+    [
+        ("Pending payment", _stats.PendingPayment.ToString("N0"), "calendar-time"),
+        ("Completed", _stats.Completed.ToString("N0"), "checks"),
+        ("Refunded", _stats.Refunded.ToString("N0"), "arrow-back-up"),
+        ("Failed", _stats.Failed.ToString("N0"), "alert-octagon"),
+    ];
+
+    protected override void OnInitialized() => _stats = Store.OrderStats();
+
+    private Task<ProTableResponse<Order>> LoadAsync(ProTableRequest request) =>
+        Task.FromResult(Store.QueryOrders(new OrderQuery(_keyword, _status, _payment), request));
+
+    private Task SearchAsync() => _table!.ReloadAsync(resetPage: true);
+
+    private async Task FilterAsync(Action set)
+    {
+        set();
+        await _table!.ReloadAsync(resetPage: true);
+    }
+}

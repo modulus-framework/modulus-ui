@@ -1,0 +1,145 @@
+@page "/forms/wizard"
+
+<PageTitle>Wizard · Modulus</PageTitle>
+
+@* Four-step wizard: Next validates only the current step (WizardInput.Validate). MVC and Razor Pages render the same page from Samples.Web Views/Shared/Ui/Forms/Wizard.cshtml. *@
+<PageHeading Pretitle="Forms" Title="Wizard" Subtitle="A multi-step form. Each step is checked before you can move on." />
+
+@if (_step > ReviewStep)
+{
+    <div class="m-card">
+        <div class="m-empty m-wizard-done">
+            <span class="m-icon-tile m-tile-lg m-tile-green-lt m-tile-round"><Ti Name="check" /></span>
+            <p class="m-empty-title">Account created</p>
+            <p class="m-empty-subtitle">Welcome aboard, @_input.Username. We sent a confirmation link to your email.</p>
+            <div class="m-form-actions" style="justify-content:center">
+                <button type="button" class="ant-btn ant-btn-default" @onclick="StartOver"><span>Start over</span></button>
+                <a class="ant-btn ant-btn-primary" href="/dashboards/analytics"><span>Go to dashboard</span></a>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="m-card">
+        <ol class="m-wizard-steps">
+            @for (var i = 0; i < WizardInput.Steps.Length; i++)
+            {
+                var s = WizardInput.Steps[i];
+                var n = i + 1;
+                <li class="@(i < _step ? "done" : i == _step ? "active" : null)" aria-current="@(i == _step ? "step" : null)">
+                    <span class="m-wizard-num">@if (i < _step) { <Ti Name="check" /> } else { @n }</span>
+                    <span class="m-wizard-label"><span class="m-wizard-title">@s.Title</span><span class="m-wizard-desc">@s.Description</span></span>
+                </li>
+            }
+        </ol>
+        <form class="ant-form ant-form-vertical" novalidate @onsubmit="Next">
+            <div class="m-card-body">
+                @switch (_step)
+                {
+                    case 0:
+                        <h2 class="m-h3">Account details</h2>
+                        <p class="m-muted m-mt-4">Choose how you'll sign in.</p>
+                        <div class="m-form-grid m-mt-16">
+                            <FieldItem Label="Username" For="Input_Username" Required Errors="@Err(nameof(WizardInput.Username))"><Input Id="Input_Username" @bind-Value="_input.Username" Placeholder="serena.park" /></FieldItem>
+                            <FieldItem Label="Email" For="Input_Email" Required Errors="@Err(nameof(WizardInput.Email))"><Input Id="Input_Email" @bind-Value="_input.Email" Placeholder="you@company.com" /></FieldItem>
+                            <FieldItem Label="Password" For="Input_Password" Required Errors="@Err(nameof(WizardInput.Password))"><InputPassword Id="Input_Password" @bind-Value="_input.Password" Placeholder="At least 8 characters" /></FieldItem>
+                            <FieldItem Label="Confirm password" For="Input_ConfirmPassword" Required Errors="@Err(nameof(WizardInput.ConfirmPassword))"><InputPassword Id="Input_ConfirmPassword" @bind-Value="_input.ConfirmPassword" Placeholder="Repeat the password" /></FieldItem>
+                        </div>
+                        break;
+                    case 1:
+                        <h2 class="m-h3">Personal info</h2>
+                        <p class="m-muted m-mt-4">Tell us a little about yourself.</p>
+                        <div class="m-form-grid m-mt-16">
+                            <FieldItem Label="First name" For="Input_FirstName" Required Errors="@Err(nameof(WizardInput.FirstName))"><Input Id="Input_FirstName" @bind-Value="_input.FirstName" /></FieldItem>
+                            <FieldItem Label="Last name" For="Input_LastName" Required Errors="@Err(nameof(WizardInput.LastName))"><Input Id="Input_LastName" @bind-Value="_input.LastName" /></FieldItem>
+                            <FieldItem Label="Country" For="Input_Country" Required Errors="@Err(nameof(WizardInput.Country))"><Select Id="Input_Country" TItemValue="string" TItem="string" @bind-Value="_input.Country" DataSource="Lookups.Countries" Placeholder="Choose a country" /></FieldItem>
+                            <FieldItem Label="Language" For="Input_Language" Required Errors="@Err(nameof(WizardInput.Language))"><Select Id="Input_Language" TItemValue="string" TItem="string" @bind-Value="_input.Language" DataSource="Lookups.Languages" Placeholder="Choose a language" /></FieldItem>
+                        </div>
+                        break;
+                    case 2:
+                        <h2 class="m-h3">Social links</h2>
+                        <p class="m-muted m-mt-4">Optional. Shown on your public profile.</p>
+                        <div class="m-form-grid m-mt-16">
+                            <FieldItem Label="X (Twitter)" For="Input_Twitter" Errors="@Err(nameof(WizardInput.Twitter))"><Input Id="Input_Twitter" @bind-Value="_input.Twitter" Placeholder="https://x.com/you" /></FieldItem>
+                            <FieldItem Label="LinkedIn" For="Input_LinkedIn" Errors="@Err(nameof(WizardInput.LinkedIn))"><Input Id="Input_LinkedIn" @bind-Value="_input.LinkedIn" Placeholder="https://linkedin.com/in/you" /></FieldItem>
+                            <FieldItem Label="GitHub" For="Input_GitHub" Errors="@Err(nameof(WizardInput.GitHub))"><Input Id="Input_GitHub" @bind-Value="_input.GitHub" Placeholder="https://github.com/you" /></FieldItem>
+                        </div>
+                        break;
+                    default:
+                        <h2 class="m-h3">Review and submit</h2>
+                        <p class="m-muted m-mt-4">Check your details before creating the account.</p>
+                        <div class="m-review-section m-mt-16"><span class="m-heading m-medium">Account</span><button type="button" class="ant-btn ant-btn-link ant-btn-sm" @onclick="() => GoTo(0)"><span>Edit</span></button></div>
+                        <dl class="m-review-list">
+                            <div><dt>Username</dt><dd>@Or(_input.Username)</dd></div>
+                            <div><dt>Email</dt><dd>@Or(_input.Email)</dd></div>
+                        </dl>
+                        <div class="m-review-section"><span class="m-heading m-medium">Personal</span><button type="button" class="ant-btn ant-btn-link ant-btn-sm" @onclick="() => GoTo(1)"><span>Edit</span></button></div>
+                        <dl class="m-review-list">
+                            <div><dt>Name</dt><dd>@Or($"{_input.FirstName} {_input.LastName}".Trim())</dd></div>
+                            <div><dt>Country</dt><dd>@Or(_input.Country)</dd></div>
+                            <div><dt>Language</dt><dd>@Or(_input.Language)</dd></div>
+                        </dl>
+                        <div class="m-review-section"><span class="m-heading m-medium">Social</span><button type="button" class="ant-btn ant-btn-link ant-btn-sm" @onclick="() => GoTo(2)"><span>Edit</span></button></div>
+                        <dl class="m-review-list">
+                            <div><dt>X (Twitter)</dt><dd>@Or(_input.Twitter)</dd></div>
+                            <div><dt>LinkedIn</dt><dd>@Or(_input.LinkedIn)</dd></div>
+                            <div><dt>GitHub</dt><dd>@Or(_input.GitHub)</dd></div>
+                        </dl>
+                        <FieldItem Errors="@Err(nameof(WizardInput.AcceptTerms))">
+                            <Checkbox @bind-Value="_input.AcceptTerms">I agree to the <a href="/pages/faq">terms and privacy policy</a></Checkbox>
+                        </FieldItem>
+                        break;
+                }
+            </div>
+            <div class="m-card-footer m-flex m-between">
+                @if (_step > 0)
+                {
+                    <button type="button" class="ant-btn ant-btn-default" @onclick="() => GoTo(_step - 1)"><Ti Name="arrow-left" /><span>Back</span></button>
+                }
+                else
+                {
+                    <span></span>
+                }
+                <span class="m-small m-muted">Step @(_step + 1) of @WizardInput.Steps.Length</span>
+                @if (_step < ReviewStep)
+                {
+                    <button type="submit" class="ant-btn ant-btn-primary"><span>Next</span><Ti Name="arrow-right" /></button>
+                }
+                else
+                {
+                    <button type="submit" class="ant-btn ant-btn-primary"><Ti Name="check" /><span>Create account</span></button>
+                }
+            </div>
+        </form>
+    </div>
+}
+
+@code {
+    private const int ReviewStep = 3;
+    private WizardInput _input = new();
+    private int _step;
+    private Dictionary<string, string[]> _errors = [];
+
+    private string[]? Err(string field) => _errors.GetValueOrDefault(field);
+
+    private static string Or(string? value) => string.IsNullOrWhiteSpace(value) ? "—" : value;
+
+    private void GoTo(int step)
+    {
+        _errors = [];
+        _step = step;
+    }
+
+    private void Next()
+    {
+        _errors = _input.Validate(_step);
+        if (_errors.Count == 0) _step++;
+    }
+
+    private void StartOver()
+    {
+        _input = new();
+        GoTo(0);
+    }
+}

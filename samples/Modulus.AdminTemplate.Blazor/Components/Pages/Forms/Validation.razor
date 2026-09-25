@@ -1,0 +1,91 @@
+@page "/forms/validation"
+@inject IMessageService Message
+
+<PageTitle>Validation · Modulus</PageTitle>
+
+@* Every common validation rule on one form (data annotations on ValidationDemoInput). After the first submit,
+   errors update as you type. MVC and Razor Pages render the same page from Samples.Web Views/Shared/Ui/Forms/Validation.cshtml. *@
+<PageHeading Pretitle="Forms" Title="Validation" Subtitle="Required fields, formats, ranges, comparisons and custom rules, checked on submit." />
+
+<div class="m-row-cards m-cols-8-4">
+    <div class="m-card">
+        <div class="m-card-header"><div><h2 class="m-card-title">Create profile</h2><p class="m-card-subtitle">Submit the empty form to see every message.</p></div></div>
+        <form class="ant-form ant-form-vertical" novalidate @onsubmit="Submit">
+            <div class="m-card-body">
+                <div class="m-form-grid">
+                    <FieldItem Label="Name" For="Name" Required Errors="@Err(nameof(ValidationDemoInput.Name))"><Input Id="Name" @bind-Value="_input.Name" Placeholder="Serena Park" /></FieldItem>
+                    <FieldItem Label="Email" For="Email" Required Errors="@Err(nameof(ValidationDemoInput.Email))"><Input Id="Email" @bind-Value="_input.Email" Placeholder="you@company.com" /></FieldItem>
+                    <FieldItem Label="Password" For="Password" Required Errors="@Err(nameof(ValidationDemoInput.Password))"><InputPassword Id="Password" @bind-Value="_input.Password" Placeholder="8+ characters, A–z and 0–9" /></FieldItem>
+                    <FieldItem Label="Confirm password" For="ConfirmPassword" Required Errors="@Err(nameof(ValidationDemoInput.ConfirmPassword))"><InputPassword Id="ConfirmPassword" @bind-Value="_input.ConfirmPassword" Placeholder="Repeat the password" /></FieldItem>
+                    <FieldItem Label="Age" For="Age" Required Errors="@Err(nameof(ValidationDemoInput.Age))"><AntDesign.InputNumber Id="Age" TValue="int?" @bind-Value="_input.Age" Min="0" Max="150" Style="width: 100%" /></FieldItem>
+                    <FieldItem Label="Start date" For="StartDate" Required Errors="@Err(nameof(ValidationDemoInput.StartDate))"><DatePicker Id="StartDate" TValue="DateTime?" @bind-Value="_input.StartDate" Style="width: 100%" /></FieldItem>
+                    <FieldItem Label="Website" For="Website" Help="Optional" Errors="@Err(nameof(ValidationDemoInput.Website))"><Input Id="Website" @bind-Value="_input.Website" Placeholder="https://example.com" /></FieldItem>
+                    <FieldItem Label="Phone" For="Phone" Help="Optional" Errors="@Err(nameof(ValidationDemoInput.Phone))"><Input Id="Phone" @bind-Value="_input.Phone" Placeholder="+1 202 555 0111" /></FieldItem>
+                    <FieldItem Label="Plan" For="Plan" Required Errors="@Err(nameof(ValidationDemoInput.Plan))"><Select Id="Plan" TItemValue="string" TItem="string" @bind-Value="_input.Plan" DataSource="ValidationDemoInput.Plans" Placeholder="Choose a plan" /></FieldItem>
+                    <FieldItem Label="Billing cycle" For="Billing" Required Errors="@Err(nameof(ValidationDemoInput.Billing))">
+                        <RadioGroup @bind-Value="_input.Billing">
+                            @foreach (var (value, label) in ValidationDemoInput.BillingCycles)
+                            {
+                                <Radio Value="@value">@label</Radio>
+                            }
+                        </RadioGroup>
+                    </FieldItem>
+                    <FieldItem Label="Interests" For="Interests" Class="m-span-2" Errors="@Err(nameof(ValidationDemoInput.Interests))">
+                        <div class="m-flex m-flex-wrap m-gap-16">
+                            @foreach (var interest in ValidationDemoInput.InterestOptions)
+                            {
+                                <Checkbox Checked="_input.Interests.Contains(interest)" CheckedChanged="on => ToggleInterest(interest, on)">@interest</Checkbox>
+                            }
+                        </div>
+                    </FieldItem>
+                    <FieldItem Label="Bio" For="Bio" Required Class="m-span-2" Errors="@Err(nameof(ValidationDemoInput.Bio))"><TextArea Id="Bio" @bind-Value="_input.Bio" Rows="3" MaxLength="300" ShowCount Placeholder="What do you work on?" /></FieldItem>
+                    <FieldItem Class="m-span-2" Errors="@Err(nameof(ValidationDemoInput.AcceptTerms))"><Checkbox @bind-Value="_input.AcceptTerms">I accept the terms of service</Checkbox></FieldItem>
+                </div>
+            </div>
+            <div class="m-card-footer m-form-actions">
+                <Button Type="@ButtonType.Primary" HtmlType="submit">Submit</Button>
+                <Button OnClick="Reset">Reset</Button>
+            </div>
+        </form>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><h2 class="m-card-title">Rules on this form</h2></div>
+        <div class="m-card-body">
+            <ul class="m-check-list m-mt-0 m-small">
+                @foreach (var (rule, where) in ValidationDemoInput.Rules)
+                {
+                    <li><Ti Name="check" /><span><span class="m-heading m-medium">@rule</span><br /><span class="m-muted">@where</span></span></li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ValidationDemoInput _input = new();
+    private bool _submitted;
+
+    // After the first submit the errors follow the input on every render (live validation).
+    private string[]? Err(string field) => _submitted ? ModelValidation.Validate(_input).GetValueOrDefault(field) : null;
+
+    private void ToggleInterest(string interest, bool on)
+    {
+        if (on) _input.Interests.Add(interest);
+        else _input.Interests.Remove(interest);
+    }
+
+    private void Submit()
+    {
+        _submitted = true;
+        if (ModelValidation.Validate(_input).Count > 0) return;
+        _ = Message.SuccessAsync($"Profile for {_input.Name} submitted");
+        Reset();
+    }
+
+    private void Reset()
+    {
+        _input = new();
+        _submitted = false;
+    }
+}

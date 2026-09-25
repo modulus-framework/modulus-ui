@@ -1,0 +1,79 @@
+@{
+    var Q = Context.Request.Query["q"].ToString();
+    var Category = Context.Request.Query["category"].ToString();
+    var Searching = !string.IsNullOrWhiteSpace(Q);
+    var Current = SampleContent.Faq.FirstOrDefault(c => c.Key == Category) ?? SampleContent.Faq[0];
+    var Results = SampleContent.SearchFaq(Q);
+}
+<div class="m-hero">
+    <h1 class="m-hero-title">Hello, how can we help?</h1>
+    <p class="m-hero-text">Answers to common questions about payments, delivery, returns and your account.</p>
+    <form class="m-hero-search" method="get" action="/pages/faq" role="search">
+        <app-ti name="search" />
+        <input class="ant-input" type="search" name="q" value="@Q" placeholder="Search a question…" aria-label="Search questions" />
+    </form>
+</div>
+
+<div class="m-faq m-mt-24">
+    <nav class="m-card" aria-label="FAQ categories">
+        <ul class="m-nav-list">
+            @foreach (var c in SampleContent.Faq)
+            {
+                <li><a href="/pages/faq?category=@c.Key" aria-current="@(Searching || c.Key != Current.Key ? null : "true")"><app-ti name="@c.Icon" /><span>@c.Title</span><span class="m-count">@c.Items.Count</span></a></li>
+            }
+        </ul>
+    </nav>
+    <div>
+        @if (Searching)
+        {
+            <div class="m-section-head">
+                <span class="m-icon-tile m-tile-primary-lt"><app-ti name="search" /></span>
+                <div><h2 class="m-h3">Results for “@Q”</h2><div class="m-muted m-small">@Results.Count @(Results.Count == 1 ? "question" : "questions") found · <a href="/pages/faq">Clear search</a></div></div>
+            </div>
+            @if (Results.Count == 0)
+            {
+                <div class="m-card"><div class="m-empty"><span class="m-empty-icon"><app-ti name="help-circle" /></span><p class="m-empty-title">No matching questions</p><p class="m-empty-subtitle">Try other words, or ask our support team below.</p></div></div>
+            }
+            else
+            {
+                <div class="m-accordion">
+                    @foreach (var (category, item) in Results)
+                    {
+                        <details open><summary>@item.Question <span class="m-badge m-badge-gray-lt">@category</span></summary><div class="m-accordion-body">@item.Answer</div></details>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="m-section-head">
+                <span class="m-icon-tile m-tile-primary-lt"><app-ti name="@Current.Icon" /></span>
+                <div><h2 class="m-h3">@Current.Title</h2><div class="m-muted m-small">@Current.Subtitle</div></div>
+            </div>
+            <div class="m-accordion">
+                @for (var i = 0; i < Current.Items.Count; i++)
+                {
+                    <details open="@(i == 0 ? "open" : null)"><summary>@Current.Items[i].Question</summary><div class="m-accordion-body">@Current.Items[i].Answer</div></details>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+<div class="m-center m-mt-24">
+    <span class="m-badge m-badge-primary-lt">Question?</span>
+    <h2 class="m-h2 m-mt-8">You still have a question?</h2>
+    <p class="m-muted">If you can't find the answer in our FAQ, you can always contact us. We answer quickly!</p>
+</div>
+<div class="m-row-cards m-cols-2 m-mt-16" style="max-width:760px;margin-left:auto;margin-right:auto">
+    <div class="m-card"><div class="m-card-body m-center">
+        <span class="m-icon-tile m-tile-lg m-tile-primary-lt" style="margin:0 auto 12px"><app-ti name="phone" /></span>
+        <div class="m-h3">+1 (202) 555-0111</div>
+        <div class="m-muted m-small m-mt-4">We are always happy to help</div>
+    </div></div>
+    <div class="m-card"><div class="m-card-body m-center">
+        <span class="m-icon-tile m-tile-lg m-tile-primary-lt" style="margin:0 auto 12px"><app-ti name="mail" /></span>
+        <div class="m-h3">help@modulus.dev</div>
+        <div class="m-muted m-small m-mt-4">Best way to get an answer faster</div>
+    </div></div>
+</div>

@@ -1,0 +1,13 @@
+@* App layout for the MVC and Razor Pages samples: the Modulus shell plus the sample page scripts. *@
+@{
+    Layout = "_ModulusLayout";
+}
+@RenderBody()
+@section Head {
+    @await RenderSectionAsync("Head", required: false)
+}
+@section Scripts {
+    <script src="/_content/Modulus.Samples.Web/js/samples.js"></script>
+    <partial name="_Flash" />
+    @await RenderSectionAsync("Scripts", required: false)
+}

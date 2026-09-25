@@ -13,7 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../src/Modulus.Ui.Abstractions/Modulus.Ui.Abstractions.csproj" />
+    <ProjectReference Include="../../src/Modulus.Blazor/Modulus.Blazor.csproj" />
+    <ProjectReference Include="../../src/Modulus.AspNetCore.Mvc/Modulus.AspNetCore.Mvc.csproj" />
   </ItemGroup>
 
 </Project>

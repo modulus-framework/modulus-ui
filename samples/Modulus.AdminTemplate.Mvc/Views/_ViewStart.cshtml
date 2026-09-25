@@ -1,3 +1,4 @@
-﻿@{
-    Layout = "_Layout";
+@{
+    // SampleController.Page picks the layout: the app shell by default, the auth frame for sign-in and status pages.
+    Layout = ViewData["Layout"] as string ?? "_SampleLayout";
 }

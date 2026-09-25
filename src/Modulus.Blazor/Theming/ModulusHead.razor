@@ -1,0 +1,46 @@
+@*
+    Place inside <head> in App.razor, before <HeadOutlet />:
+
+        <ModulusHead Cookie="@(name => HttpContext.Request.Cookies[name])" />
+
+    Emits the official Ant Design stylesheets (light + dark, toggled by `media`), the ProLayout
+    stylesheet, the Modulus design layer and shell, the generated brand tokens and the theme and
+    shell scripts. The theme script runs synchronously, so the saved light/dark choice and theme
+    settings (layout, width, navigation) are applied before first paint. Pass Cookie so the server
+    renders the user's colour scheme and radius too; omit it to always render the configured theme.
+*@
+@inject IOptions<ModulusThemeOptions> ThemeOptions
+
+@* Hrefs are deliberately NOT fingerprinted: AntDesign's and ProLayout's JS initializers look for
+   these exact paths and would inject duplicate stylesheets otherwise. *@
+<link rel="preload" href="_content/Modulus.Ui.Assets/fonts/inter/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="stylesheet" href="_content/AntDesign/css/ant-design-blazor.variable.min.css" data-theme-css="light" media="@(Dark ? "not all" : "all")" />
+<link rel="stylesheet" href="_content/AntDesign/css/ant-design-blazor.dark.min.css" data-theme-css="dark" media="@(Dark ? "all" : "not all")" />
+<link rel="stylesheet" href="_content/AntDesign.ProLayout/css/ant-design-pro-layout-blazor.css" />
+<link rel="stylesheet" href="_content/Modulus.Ui.Assets/css/modulus.css" />
+<link rel="stylesheet" href="_content/Modulus.Ui.Assets/css/modulus-shell.css" />
+<link rel="stylesheet" href="_content/Modulus.Ui.Assets/css/modulus-pages.css" />
+<style id="modulus-brand">@((MarkupString)ThemeCss.Build(_options))</style>
+<script src="_content/Modulus.Ui.Assets/js/modulus-theme.js" data-default="@DefaultAttr" data-layout="@Lower(_options.Layout)" data-width="@Lower(_options.ContentWidth)" data-nav="@Lower(_options.NavTheme)"></script>
+<script src="_content/Modulus.Ui.Assets/js/modulus-shell.js" defer></script>
+
+@code {
+    /// <summary>Reads a request cookie (theme settings). Null renders the configured options only.</summary>
+    [Parameter] public Func<string, string?>? Cookie { get; set; }
+
+    private ModulusThemeOptions _options = default!;
+
+    private bool Dark => ThemeCss.ResolveMode(Cookie?.Invoke(ThemeCss.ModeCookie), _options.DefaultMode) == "dark";
+
+    protected override void OnParametersSet() =>
+        _options = Cookie is null ? ThemeOptions.Value : ThemeCss.ResolveOptions(ThemeOptions.Value, Cookie);
+
+    private string? DefaultAttr => _options.DefaultMode switch
+    {
+        ThemeMode.Dark => "dark",
+        ThemeMode.Light => "light",
+        _ => null,
+    };
+
+    private static string Lower<T>(T value) where T : struct, Enum => value.ToString().ToLowerInvariant();
+}

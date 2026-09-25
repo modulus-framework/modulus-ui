@@ -1,0 +1,34 @@
+@* Fields for the add / edit user drawer (Users list and user view). *@
+<FormItem Label="Full name">
+    <Input @bind-Value="Model.Name" Placeholder="John Doe" />
+</FormItem>
+<FormItem Label="Email">
+    <Input @bind-Value="Model.Email" Placeholder="john.doe@example.com" />
+</FormItem>
+<FormItem Label="Company">
+    <Input @bind-Value="Model.Company" Placeholder="Modulus Inc." />
+</FormItem>
+<FormItem Label="Country">
+    <Select TItemValue="string" TItem="string" @bind-Value="Model.Country" DataSource="Lookups.Countries" Placeholder="Select country" AllowClear />
+</FormItem>
+<FormItem Label="Contact">
+    <Input @bind-Value="Model.Phone" Placeholder="+1 (609) 988-44-11" />
+</FormItem>
+<FormItem Label="Role">
+    <Select TItemValue="string" TItem="string" @bind-Value="Model.Role" DataSource="Lookups.Roles" />
+</FormItem>
+<FormItem Label="Plan">
+    <Select TItemValue="string" TItem="string" @bind-Value="Model.Plan" DataSource="Lookups.Plans" />
+</FormItem>
+<FormItem Label="Status">
+    <RadioGroup @bind-Value="Model.Status" ButtonStyle="RadioButtonStyle.Solid">
+        @foreach (var s in Enum.GetValues<UserStatus>())
+        {
+            <Radio RadioButton Value="s">@s</Radio>
+        }
+    </RadioGroup>
+</FormItem>
+
+@code {
+    [Parameter, EditorRequired] public UserInput Model { get; set; } = default!;
+}
