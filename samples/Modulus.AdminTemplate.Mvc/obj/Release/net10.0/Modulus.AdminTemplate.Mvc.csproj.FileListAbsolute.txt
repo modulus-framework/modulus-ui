@@ -108,3 +108,4 @@
 /home/azimmahmud/projects/ui_template/samples/Modulus.AdminTemplate.Mvc/obj/Release/net10.0/Modulus.AdminTemplate.Mvc.pdb
 /home/azimmahmud/projects/ui_template/samples/Modulus.AdminTemplate.Mvc/obj/Release/net10.0/Modulus.AdminTemplate.Mvc.genruntimeconfig.cache
 /home/azimmahmud/projects/ui_template/samples/Modulus.AdminTemplate.Mvc/obj/Release/net10.0/ref/Modulus.AdminTemplate.Mvc.dll
+/home/azimmahmud/projects/ui_template/samples/Modulus.AdminTemplate.Mvc/obj/Release/net10.0/compressed/yyguz87741-{0}-3isax8t8iq-3isax8t8iq.gz

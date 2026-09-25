@@ -1,0 +1,16 @@
+﻿<Project>
+  <ItemGroup>
+    <StaticWebAssetEndpoint Include="_content/Modulus.Ui.Assets/js/modulus-alpine.3isax8t8iq.js">
+      <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\js\modulus-alpine.js'))</AssetFile>
+      <Selectors><![CDATA[[]]]></Selectors>
+      <EndpointProperties><![CDATA[[{"Name":"fingerprint","Value":"3isax8t8iq"},{"Name":"integrity","Value":"sha256-NaCERadSY5Gry8lNBK34zUNFnp1EYWvbnWsAgf750mE="},{"Name":"label","Value":"_content/Modulus.Ui.Assets/js/modulus-alpine.js"}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Cache-Control","Value":"max-age=31536000, immutable"},{"Name":"Content-Length","Value":"7267"},{"Name":"Content-Type","Value":"text/javascript"},{"Name":"ETag","Value":"\u0022NaCERadSY5Gry8lNBK34zUNFnp1EYWvbnWsAgf750mE=\u0022"},{"Name":"Last-Modified","Value":"Fri, 25 Sep 2026 04:14:56 GMT"},{"Name":"Vary","Value":"Accept-Encoding"}]]]></ResponseHeaders>
+    </StaticWebAssetEndpoint>
+    <StaticWebAssetEndpoint Include="_content/Modulus.Ui.Assets/js/modulus-alpine.js">
+      <AssetFile>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\staticwebassets\js\modulus-alpine.js'))</AssetFile>
+      <Selectors><![CDATA[[]]]></Selectors>
+      <EndpointProperties><![CDATA[[{"Name":"integrity","Value":"sha256-NaCERadSY5Gry8lNBK34zUNFnp1EYWvbnWsAgf750mE="}]]]></EndpointProperties>
+      <ResponseHeaders><![CDATA[[{"Name":"Cache-Control","Value":"no-cache"},{"Name":"Content-Length","Value":"7267"},{"Name":"Content-Type","Value":"text/javascript"},{"Name":"ETag","Value":"\u0022NaCERadSY5Gry8lNBK34zUNFnp1EYWvbnWsAgf750mE=\u0022"},{"Name":"Last-Modified","Value":"Fri, 25 Sep 2026 04:14:56 GMT"},{"Name":"Vary","Value":"Accept-Encoding"}]]]></ResponseHeaders>
+    </StaticWebAssetEndpoint>
+  </ItemGroup>
+</Project>

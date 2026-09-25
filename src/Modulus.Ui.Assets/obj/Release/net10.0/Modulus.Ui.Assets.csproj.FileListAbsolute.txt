@@ -30,3 +30,4 @@
 /home/azimmahmud/projects/ui_template/src/Modulus.Ui.Assets/obj/Release/net10.0/refint/Modulus.Ui.Assets.dll
 /home/azimmahmud/projects/ui_template/src/Modulus.Ui.Assets/obj/Release/net10.0/Modulus.Ui.Assets.pdb
 /home/azimmahmud/projects/ui_template/src/Modulus.Ui.Assets/obj/Release/net10.0/ref/Modulus.Ui.Assets.dll
+/home/azimmahmud/projects/ui_template/src/Modulus.Ui.Assets/obj/Release/net10.0/compressed/tn8r3k4p35-{0}-3isax8t8iq-3isax8t8iq.gz

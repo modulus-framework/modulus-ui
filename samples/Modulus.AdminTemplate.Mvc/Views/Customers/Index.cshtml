@@ -2,11 +2,16 @@
     ViewData["Title"] = "Customers";
 }
 
-<div class="customers-container">
+<div class="customers-container" x-data="{ modal: modal() }">
     <h1>Customers</h1>
 
     <div style="margin-top: 16px;">
-        <app-button type="primary" icon="plus" href="@Url.Action("Create")">Add Customer</app-button>
+        <button class="ant-btn ant-btn-primary" x-on:click="modal.open('Add Customer')" title="Opens modal with Alpine.js">
+            <span class="ant-icon">➕</span> Add Customer (Alpine)
+        </button>
+        <a href="@Url.Action("Create")" class="ant-btn ant-btn-default" style="margin-left: 8px;">
+            <span class="ant-icon">📄</span> Traditional Form
+        </a>
     </div>
 
     <app-card title="Customer List" class="mt-24">
@@ -48,10 +53,72 @@
     </app-card>
 </div>
 
+    <!-- Alpine Modal for adding customers -->
+    <div class="ant-modal-wrap" x-show="modal.visible" x-transition>
+        <div class="ant-modal ant-modal-centered" style="display: block;" x-on:click="if ($event.target === $el) modal.close()">
+            <div class="ant-modal-content">
+                <div class="ant-modal-header">
+                    <div class="ant-modal-title" x-text="modal.title"></div>
+                    <button class="ant-modal-close" x-on:click="modal.close()" type="button">
+                        <span class="ant-modal-close-x"></span>
+                    </button>
+                </div>
+                <div class="ant-modal-body">
+                    <form x-on:submit.prevent="modal.handleSubmit()">
+            <div class="ant-form-item" style="margin-bottom: 16px;">
+                <label class="ant-form-item-label">
+                    <span class="ant-form-item-required">Name</span>
+                </label>
+                <input type="text" class="ant-input" placeholder="Enter name" required />
+            </div>
+            <div class="ant-form-item" style="margin-bottom: 16px;">
+                <label class="ant-form-item-label">
+                    <span class="ant-form-item-required">Email</span>
+                </label>
+                <input type="email" class="ant-input" placeholder="Enter email" required />
+            </div>
+            <div class="ant-form-item" style="margin-bottom: 16px;">
+                <label class="ant-form-item-label">Phone</label>
+                <input type="tel" class="ant-input" placeholder="Enter phone" />
+            </div>
+            <div class="ant-form-item">
+                <label class="ant-form-item-label">City</label>
+                <input type="text" class="ant-input" placeholder="Enter city" />
+                    </form>
+                </div>
+                <div class="ant-modal-footer">
+                    <button class="ant-btn ant-btn-default" x-on:click="modal.close()" :disabled="modal.loading">Close</button>
+                    <button class="ant-btn ant-btn-primary" x-on:click="modal.handleSubmit()" :disabled="modal.loading" :class="{ 'ant-btn-loading': modal.loading }">Save</button>
+                </div>
+            </div>
+        </div>
+        <div class="ant-modal-mask" x-transition x-transition.opacity></div>
+    </div>
+</div>
+
 <style>
     .customers-container {
         max-width: 1200px;
     }
 
     .mt-24 { margin-top: 24px; }
+
+    .ant-icon {
+        margin-right: 4px;
+    }
+
+    .ant-form-item-required::before {
+        content: "* ";
+        color: #ff7875;
+    }
 </style>
+
+@section Scripts {
+    <script type="module">
+        import { ModulusAlpine } from '/lib/modulus-alpine.js';
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('modal', ModulusAlpine.modal);
+        });
+    </script>
+}
