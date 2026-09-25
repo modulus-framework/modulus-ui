@@ -32,3 +32,19 @@ public class HomeController : Controller
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 }
+
+public class DashboardController : Controller
+{
+    public IActionResult Analytics()
+    {
+        return View();
+    }
+}
+
+public class ProductsController : Controller
+{
+    public IActionResult Index()
+    {
+        return View();
+    }
+}

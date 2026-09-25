@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Html;
+using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 
 namespace Modulus.AspNetCore.Mvc.TagHelpers;

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("antd-drift")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a07860dc4ac8660a7f1c81a1b0585817c639bf1c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e431fb101ac537d5a2ed4a698affc22230078805")]
 [assembly: System.Reflection.AssemblyProductAttribute("antd-drift")]
 [assembly: System.Reflection.AssemblyTitleAttribute("antd-drift")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

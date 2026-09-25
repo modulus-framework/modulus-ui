@@ -1,0 +1,53 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "Modulus.AspNetCore.Mvc/1.0.0": {
+        "dependencies": {
+          "Modulus.Ui.Abstractions": "1.0.0",
+          "Modulus.Ui.Assets": "1.0.0"
+        },
+        "runtime": {
+          "Modulus.AspNetCore.Mvc.dll": {}
+        }
+      },
+      "Modulus.Ui.Abstractions/1.0.0": {
+        "runtime": {
+          "Modulus.Ui.Abstractions.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "Modulus.Ui.Assets/1.0.0": {
+        "runtime": {
+          "Modulus.Ui.Assets.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Modulus.AspNetCore.Mvc/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Modulus.Ui.Abstractions/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Modulus.Ui.Assets/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Modulus.Ui.Abstractions")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0e5a9ed8e22e63a11a4901813864d406f11aed8f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e431fb101ac537d5a2ed4a698affc22230078805")]
 [assembly: System.Reflection.AssemblyProductAttribute("Modulus.Ui.Abstractions")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Modulus.Ui.Abstractions")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,0 +1,92 @@
+@{
+    ViewData["Title"] = "Product Management";
+}
+
+<div style="max-width: 1400px;">
+    <h1>Products Inventory</h1>
+
+    <div style="margin: 24px 0; display: flex; gap: 12px;">
+        <input type="text" class="ant-input" style="width: 250px;" placeholder="Search products..." />
+        <select class="ant-input" style="width: 180px;">
+            <option>All Categories</option>
+            <option>Electronics</option>
+            <option>Clothing</option>
+            <option>Books</option>
+        </select>
+        <select class="ant-input" style="width: 150px;">
+            <option>All Status</option>
+            <option>Active</option>
+            <option>Inactive</option>
+        </select>
+        <button class="ant-btn ant-btn-primary">🔍 Filter</button>
+        <button class="ant-btn ant-btn-primary">➕ Add Product</button>
+    </div>
+
+    <div class="ant-card">
+        <table class="ant-table" style="width: 100%; border-collapse: collapse;">
+            <thead style="background-color: #fafafa;">
+                <tr>
+                    <th style="width: 80px; padding: 12px; text-align: left; border-bottom: 1px solid #d9d9d9;">SKU</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #d9d9d9;">Product Name</th>
+                    <th style="width: 100px; padding: 12px; text-align: left; border-bottom: 1px solid #d9d9d9;">Category</th>
+                    <th style="width: 100px; padding: 12px; text-align: right; border-bottom: 1px solid #d9d9d9;">Price</th>
+                    <th style="width: 100px; padding: 12px; text-align: right; border-bottom: 1px solid #d9d9d9;">Stock</th>
+                    <th style="width: 100px; padding: 12px; text-align: center; border-bottom: 1px solid #d9d9d9;">Status</th>
+                    <th style="width: 150px; padding: 12px; text-align: left; border-bottom: 1px solid #d9d9d9;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="padding: 12px;">PROD-001</td>
+                    <td style="padding: 12px;">Laptop Pro</td>
+                    <td style="padding: 12px;">Electronics</td>
+                    <td style="padding: 12px; text-align: right;">$1,299.99</td>
+                    <td style="padding: 12px; text-align: right;"><span style="color: #1890ff; font-weight: bold;">45</span></td>
+                    <td style="padding: 12px; text-align: center;">
+                        <span class="ant-tag ant-tag-success">Active</span>
+                    </td>
+                    <td style="padding: 12px;">
+                        <button class="ant-btn ant-btn-primary ant-btn-sm">Edit</button>
+                        <button class="ant-btn ant-btn-dangerous ant-btn-sm" style="margin-left: 4px;">Delete</button>
+                    </td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f0f0f0;">
+                    <td style="padding: 12px;">PROD-002</td>
+                    <td style="padding: 12px;">Wireless Mouse</td>
+                    <td style="padding: 12px;">Electronics</td>
+                    <td style="padding: 12px; text-align: right;">$29.99</td>
+                    <td style="padding: 12px; text-align: right;"><span style="color: #ff7875; font-weight: bold;">5</span></td>
+                    <td style="padding: 12px; text-align: center;">
+                        <span class="ant-tag ant-tag-warning">Low Stock</span>
+                    </td>
+                    <td style="padding: 12px;">
+                        <button class="ant-btn ant-btn-primary ant-btn-sm">Edit</button>
+                        <button class="ant-btn ant-btn-dangerous ant-btn-sm" style="margin-left: 4px;">Delete</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div style="margin-top: 16px; display: flex; justify-content: flex-end;">
+        <nav class="ant-pagination" style="display: flex; gap: 4px;">
+            <button class="ant-pagination-item">← Previous</button>
+            <button class="ant-pagination-item ant-pagination-item-active">1</button>
+            <button class="ant-pagination-item">2</button>
+            <button class="ant-pagination-item">3</button>
+            <button class="ant-pagination-item">Next →</button>
+        </nav>
+    </div>
+</div>
+
+<style>
+    .ant-tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+    .ant-tag-success { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+    .ant-tag-warning { background: #fffbe6; color: #faad14; border: 1px solid #ffd591; }
+    .ant-tag-error { background: #fff1f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+</style>
