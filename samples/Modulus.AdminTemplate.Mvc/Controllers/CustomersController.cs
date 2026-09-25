@@ -61,6 +61,42 @@ public class CustomersController : Controller
         return View(customer);
     }
 
+    /// <summary>
+    /// htmx endpoint: Returns filtered/paginated customer table body as partial
+    /// </summary>
+    [HttpGet]
+    public IActionResult GetTableBody(string? search = null, int page = 1, int pageSize = 10)
+    {
+        var filtered = Customers.AsEnumerable();
+
+        // Apply search filter
+        if (!string.IsNullOrEmpty(search))
+        {
+            var term = search.ToLower();
+            filtered = filtered.Where(c =>
+                c.Name.ToLower().Contains(term) ||
+                c.Email.ToLower().Contains(term) ||
+                c.City.ToLower().Contains(term));
+        }
+
+        // Apply pagination
+        var total = filtered.Count();
+        var paginated = filtered
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        ViewBag.Total = total;
+        ViewBag.Page = page;
+        ViewBag.PageSize = pageSize;
+
+        return PartialView("~/Views/Components/ProTableBody.cshtml", paginated);
+    }
+
+    /// <summary>
+    /// htmx endpoint: Delete customer via htmx and return empty response (row removed)
+    /// </summary>
+    [HttpDelete]
     public IActionResult Delete(int id)
     {
         var customer = Customers.FirstOrDefault(c => c.Id == id);
@@ -68,7 +104,54 @@ public class CustomersController : Controller
         {
             Customers.Remove(customer);
         }
-        return RedirectToAction(nameof(Index));
+        return Ok(); // htmx will remove the row after this response
+    }
+
+    /// <summary>
+    /// htmx endpoint: Return form content for modal
+    /// </summary>
+    [HttpGet]
+    public IActionResult FormPartial(int? id = null)
+    {
+        var customer = id.HasValue ? Customers.FirstOrDefault(c => c.Id == id.Value) : new Customer { Status = "active" };
+        return PartialView("~/Views/Components/ProFormContent.cshtml", customer);
+    }
+
+    /// <summary>
+    /// htmx endpoint: Handle form submission and return validation errors or success
+    /// </summary>
+    [HttpPost]
+    public IActionResult FormSubmit(Customer customer)
+    {
+        if (!ModelState.IsValid)
+        {
+            // Return form with validation errors
+            return PartialView("~/Views/Components/ProFormContent.cshtml", customer);
+        }
+
+        if (customer.Id == 0)
+        {
+            // Create new
+            customer.Id = Customers.Max(c => c.Id) + 1;
+            Customers.Add(customer);
+        }
+        else
+        {
+            // Update existing
+            var existing = Customers.FirstOrDefault(c => c.Id == customer.Id);
+            if (existing is not null)
+            {
+                existing.Name = customer.Name;
+                existing.Email = customer.Email;
+                existing.Phone = customer.Phone;
+                existing.City = customer.City;
+                existing.Status = customer.Status;
+            }
+        }
+
+        // Signal modal close and table refresh
+        Response.Headers.Append("HX-Trigger", "formSuccess");
+        return Ok();
     }
 }
 

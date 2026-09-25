@@ -1,0 +1,29 @@
+@using Modulus.AdminTemplate.Mvc.Controllers
+@model IEnumerable<Customer>
+
+@foreach (var customer in Model ?? Enumerable.Empty<Customer>())
+{
+    <tr>
+        <td>@customer.Id</td>
+        <td>@customer.Name</td>
+        <td>@customer.Email</td>
+        <td>@customer.Phone</td>
+        <td>@customer.City</td>
+        <td>
+            <span class="ant-tag @(customer.Status == "active" ? "ant-tag-success" : "ant-tag-error")">
+                @(customer.Status == "active" ? "Active" : "Inactive")
+            </span>
+        </td>
+        <td>
+            <a href="/Customers/Edit/@customer.Id" class="ant-btn ant-btn-primary ant-btn-sm">Edit</a>
+            <button class="ant-btn ant-btn-dangerous ant-btn-sm"
+                    style="margin-left: 8px;"
+                    hx-delete="/Customers/@customer.Id"
+                    hx-confirm="Delete this customer?"
+                    hx-target="closest tr"
+                    hx-swap="outerHTML swap:1s">
+                Delete
+            </button>
+        </td>
+    </tr>
+}
