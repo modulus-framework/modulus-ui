@@ -143,7 +143,7 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 | Item | Area | Status |
 |---|---|---|
 | Column picker and density control built into the library: `app-table-columns`, `app-table-settings`, `app-table hidden-columns / density / scroll-x / table-footer` | MVC library | ✅ |
-| Keep filters in the URL (`hx-push-url` with the query) on the remaining MVC list pages | MVC samples | ⬜ |
+| Keep filters in the URL (`hx-push-url` with the query) on the MVC list pages: all ten already push the URL; empty filter fields are now left out of it | MVC samples | ✅ |
 | MVC equivalents for Blazor-only widgets (Cascader, TreeSelect, Transfer, Tree, Calendar, Carousel, Anchor) | MVC library | ⬜ |
 | Localization: bind `LocaleProvider` to the request culture | Both | ⬜ |
 | Brand colour in dark mode (AntD dark CSS hard-codes blue) | Theming | ⬜ |
@@ -157,6 +157,7 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 
 | Date | Change |
 |---|---|
+| 2026-09-26 | Filters in the URL: filter, sort and page state survives reload and back on the data table, Customers, Users, Products, Orders and Invoices (MVC and Razor Pages). GET filter forms now leave empty fields out of the pushed URL. The Razor Pages sample gets its missing `favicon.ico`. |
 | 2026-09-26 | MVC library: `app-table-columns` (column picker whose links carry the hidden set in the URL) and `app-table-settings` (reload + density with ProTable's Comfortable / Standard / Compact); `app-table` gains `hidden-columns` (drops `data-col` cells), `density`, `scroll-x`, `layout` and a `table-footer` slot. The data table and every list page use them; `_TableSettings.cshtml` is gone. `TableColumns` moves the hidden-set logic into `Modulus.Ui.Abstractions`. |
 | 2026-09-25 | Fix: MVC and Razor Pages pages could not be scrolled. The layout's shared drawer always carried `ant-drawer-open`, which triggers AntD's `body { overflow: hidden }` scroll lock; the lock now applies only while the drawer is open. |
 | 2026-09-25 | Library rebuilt on AntDesign 1.6.2 aliases; Tabler shell; three samples with all pages; docs, tests and CI; first push to GitHub (`83c8ca2`). |

@@ -263,6 +263,17 @@
             .then(function (ok) { if (ok) e.detail.issueRequest(true); });
     });
 
+    // Filter forms submit with GET and push the URL: leave out empty fields so the pushed,
+    // shareable URL carries only the active filters (?status=Active, not ?keyword=&status=Active&tier=).
+    document.addEventListener('htmx:configRequest', function (e) {
+        if (e.detail.verb !== 'get' || e.detail.elt.tagName !== 'FORM') return;
+        var data = e.detail.formData;
+        if (!data) return;
+        Array.from(data.keys()).forEach(function (key) {
+            if (data.getAll(key).every(function (v) { return v === ''; })) data.delete(key);
+        });
+    });
+
     document.body.addEventListener('modulus:drawer-close', function () {
         window.Alpine.store('drawer').hide();
     });
