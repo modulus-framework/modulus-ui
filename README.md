@@ -28,6 +28,10 @@ pixel-for-pixel where the controls allow it.
 - **Pro components** following ProComponents conventions: `ProTable` (server paging, sorting, selection and batch actions,
   density, reload), `QueryFilter` (collapsible search form), `ModalForm` / `DrawerForm` (validated, async submit),
   `StatisticCard` + `Trend`, `FooterToolbar`.
+- **Editable grid** (`EditableGrid` / `app-editable-grid`): columns are data (`GridColumn`: text, number, currency,
+  percent, select, multi-select, tag, date, switch, progress, rating). Cells edit in place with the matching control
+  and are validated; rows expand into a detail template; columns pin left or right, hide, reorder and are added or
+  removed at run time. Blazor and MVC share one schema, formatter and validator (`GridSchema`).
 - **Charts with no JS dependency**: `LineChart` (line/area, crosshair tooltip), `ColumnChart` (grouped/stacked),
   `BarChart`, `DonutChart`, `HeatmapChart`, `Sparkline`, `MiniBar`. The geometry is shared by Blazor and MVC,
   hover tooltips are CSS-only, and each chart carries a screen-reader data table.
@@ -156,7 +160,7 @@ Tag helpers. `/ui/components` in the MVC and Razor Pages samples shows each one;
 | Data entry | `app-form-item` (`asp-for` + validation), `app-input` (affixes, addons, clear, password, datalist AutoComplete), `app-input-search`, `app-textarea` (count), `app-input-number`, `app-select`, `app-date-picker` (date/week/month/time), `app-range-picker`, `app-checkbox`, `app-checkbox-group`, `app-radio-group`, `app-switch`, `app-slider`, `app-rate`, `app-segmented`, `app-upload`, `app-cascader`, `app-tree-select`, `app-transfer` |
 | Data display | `app-card`, `app-avatar` / `app-avatar-group`, `app-badge` / `app-badge-ribbon`, `app-tag`, `app-statistic`, `app-descriptions`, `app-table` (`hidden-columns`, `density`, `scroll-x`, `table-footer`), `app-table-columns` (column picker), `app-table-settings` (reload, density), `app-list`, `app-timeline`, `app-collapse` / `app-panel`, `app-image`, `app-tooltip`, `app-popover`, `app-empty`, `app-tree` (checkable), `app-calendar`, `app-carousel` / `carousel-slide` |
 | Feedback | `app-alert`, `app-progress` (line/circle/dashboard), `app-result`, `app-skeleton`, `app-spin`, `app-modal`, `app-watermark`; plus `Response.HxMessage`, `HxNotify`, `HxCloseModal` and `hx-confirm` |
-| Pro | `app-page-container`, `app-page-header`, `app-statistic-card`, `app-trend` |
+| Pro | `app-page-container`, `app-page-header`, `app-statistic-card`, `app-trend`, `app-editable-grid` (`grid-toolbar`, `grid-title-extra`, `grid-summary`; read posts with `EditableGridForm.Read` / `Apply`) |
 | Charts | `app-line-chart`, `app-column-chart`, `app-bar-chart`, `app-donut-chart`, `app-heatmap`, `app-sparkline`, `app-mini-bar` |
 | Icons | `app-icon` (Ant Design), `app-ti` (Tabler sprite, 270+ icons) |
 

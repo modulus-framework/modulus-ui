@@ -1,0 +1,625 @@
+@*
+    Schema-driven editable grid: the columns are data (GridColumn), so they can be built at runtime, stored,
+    or added by the user. Click a cell to edit it with the control for its type (Input, InputNumber, Select,
+    multiple Select, DatePicker); switches and ratings change in place. Rows expand to a detail template.
+    Columns can be pinned left or right (Ant Design fixed columns), hidden, reordered, removed and added.
+
+    <EditableGrid Columns="_columns" Rows="_rows" HeaderTitle="Projects" OnSave="SaveAsync">
+        <RowDetail>…@context["notes"]…</RowDetail>
+    </EditableGrid>
+
+    The MVC equivalent is <app-editable-grid> with the same model and validation (GridSchema).
+*@
+@using System.Globalization
+@using AntDesign.TableModels
+@inject IJSRuntime JS
+
+<Card Bordered="false" Id="@_gridId" Class="@($"m-table-card m-grid {Class}")">
+    <div class="m-table-toolbar">
+        <div class="m-table-toolbar-title">
+            @HeaderTitle
+            @TitleExtra
+            @if (_dirty)
+            {
+                <span class="m-grid-dirty"><Badge Status="BadgeStatus.Warning" Text="Unsaved changes" /></span>
+            }
+        </div>
+        <div class="m-table-toolbar-actions">
+            @ToolBar
+            @if (AllowAddRow)
+            {
+                <Button Icon="plus" OnClick="AddRow">Add row</Button>
+            }
+            @if (AllowColumnEdit)
+            {
+                <Button Icon="insert-row-right" OnClick="() => { _newTitleError = null; _addColumnOpen = true; }">Add column</Button>
+            }
+            @if (OnDiscard.HasDelegate)
+            {
+                <Button Disabled="!_dirty" OnClick="DiscardAsync">Discard</Button>
+            }
+            @if (OnSave.HasDelegate)
+            {
+                <Button Type="@ButtonType.Primary" Icon="save" Loading="_saving" OnClick="SaveAsync">Save</Button>
+            }
+            <div class="m-table-toolbar-settings">
+                <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight">
+                    <Overlay>
+                        <Menu SelectedKeys="@(new[] { _size.ToString() })" OnMenuItemClicked="OnDensity">
+                            <MenuItem Key="@nameof(TableSize.Default)">Comfortable</MenuItem>
+                            <MenuItem Key="@nameof(TableSize.Middle)">Standard</MenuItem>
+                            <MenuItem Key="@nameof(TableSize.Small)">Compact</MenuItem>
+                        </Menu>
+                    </Overlay>
+                    <ChildContent>
+                        <AntDesign.Tooltip Title="@("Density")">
+                            <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Table density"><Icon Type="column-height" /></button>
+                        </AntDesign.Tooltip>
+                    </ChildContent>
+                </Dropdown>
+                @if (AllowColumnEdit)
+                {
+                    <Popover Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight" OverlayClassName="m-grid-columns-popover">
+                        <TitleTemplate>
+                            <div class="m-grid-columns-head"><span>Columns</span><span class="m-muted">@Columns.Count(c => !c.Hidden) of @Columns.Count shown</span></div>
+                        </TitleTemplate>
+                        <ContentTemplate>
+                            <ul class="m-grid-columns" role="list">
+                                @for (var i = 0; i < Columns.Count; i++)
+                                {
+                                    var column = Columns[i];
+                                    var first = i == 0;
+                                    var last = i == Columns.Count - 1;
+                                    <li class="m-grid-columns-item" @key="column.Key">
+                                        <Checkbox Checked="!column.Hidden" CheckedChanged="v => SetHidden(column, !v)">@column.Title</Checkbox>
+                                        <span class="m-grid-columns-tools">
+                                            @ToolButton("vertical-align-top", -90, $"Pin {column.Title} to the left", column.Fixed == GridFixed.Left, false, () => Pin(column, column.Fixed == GridFixed.Left ? GridFixed.None : GridFixed.Left))
+                                            @ToolButton("vertical-align-top", 90, $"Pin {column.Title} to the right", column.Fixed == GridFixed.Right, false, () => Pin(column, column.Fixed == GridFixed.Right ? GridFixed.None : GridFixed.Right))
+                                            @ToolButton("arrow-up", 0, $"Move {column.Title} up", false, first, () => Move(column, -1))
+                                            @ToolButton("arrow-down", 0, $"Move {column.Title} down", false, last, () => Move(column, 1))
+                                        </span>
+                                    </li>
+                                }
+                            </ul>
+                        </ContentTemplate>
+                        <ChildContent>
+                            <AntDesign.Tooltip Title="@("Columns")">
+                                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Column settings"><Icon Type="setting" /></button>
+                            </AntDesign.Tooltip>
+                        </ChildContent>
+                    </Popover>
+                }
+            </div>
+        </div>
+    </div>
+
+    @if (_errors.Count > 0)
+    {
+        <Alert Type="@AlertType.Error" Class="m-table-alert" ShowIcon Message="@($"{_errors.Count} {(_errors.Count == 1 ? "cell needs" : "cells need")} attention before saving.")" />
+    }
+
+    <Table @key="_schemaVersion"
+           TItem="GridRecord"
+           DataSource="_view"
+           RowKey="r => r.Id"
+           Size="_size"
+           ScrollX="@GridSchema.ScrollWidth(Columns, (RowDetail is null ? 0 : 48) + (AllowDeleteRow ? 64 : 0)).ToString(CultureInfo.InvariantCulture)"
+           HidePagination="Rows.Count <= PageSize"
+           PageSize="PageSize"
+           ExpandTemplate="ExpandFragment"
+           RowExpandable="RowExpandableFor"
+           RowClassName="@(r => r.Data.Id == _newRowId ? "m-grid-row-new" : "")">
+        <ChildContent>
+            @foreach (var column in GridSchema.Visible(Columns))
+            {
+                var c = column;
+                <ActionColumn Title="@c.Title" Width="@((c.Width ?? 150).ToString(CultureInfo.InvariantCulture))"
+                              Fixed="@Fix(c.Fixed)" Align="@(c.AlignRight ? ColumnAlign.Right : ColumnAlign.Left)" Class="m-grid-td">
+                    <TitleTemplate>
+                        <span class="m-grid-th">
+                            <span class="m-grid-th-title">@c.Title@if (c.Required) {<span class="m-grid-required" aria-hidden="true">*</span>}</span>
+                            @if (AllowColumnEdit)
+                            {
+                                <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight">
+                                    <Overlay>
+                                        <Menu Selectable="false">
+                                            @if (c.Fixed != GridFixed.Left) { <MenuItem Icon="pushpin" OnClick="() => Pin(c, GridFixed.Left)">Pin left</MenuItem> }
+                                            @if (c.Fixed != GridFixed.Right) { <MenuItem Icon="pushpin" OnClick="() => Pin(c, GridFixed.Right)">Pin right</MenuItem> }
+                                            @if (c.Fixed != GridFixed.None) { <MenuItem Icon="close" OnClick="() => Pin(c, GridFixed.None)">Unpin</MenuItem> }
+                                            <MenuDivider />
+                                            <MenuItem Icon="arrow-left" OnClick="() => Move(c, -1)">Move left</MenuItem>
+                                            <MenuItem Icon="arrow-right" OnClick="() => Move(c, 1)">Move right</MenuItem>
+                                            <MenuItem Icon="eye-invisible" OnClick="() => SetHidden(c, true)">Hide column</MenuItem>
+                                            <MenuDivider />
+                                            <MenuItem Icon="delete" Class="ant-dropdown-menu-item-danger" OnClick="() => RemoveColumn(c)">Remove column</MenuItem>
+                                        </Menu>
+                                    </Overlay>
+                                    <ChildContent>
+                                        <button type="button" class="m-grid-th-menu" aria-label="@($"{c.Title} column options")"><Icon Type="more" /></button>
+                                    </ChildContent>
+                                </Dropdown>
+                            }
+                        </span>
+                    </TitleTemplate>
+                    <ChildContent>
+                        @Cell(context, c)
+                    </ChildContent>
+                </ActionColumn>
+            }
+            @if (AllowDeleteRow)
+            {
+                <ActionColumn Title="" Width="64" Fixed="ColumnFixPlacement.Right" Align="ColumnAlign.Center" Class="m-grid-actions">
+                    <Popconfirm Title="@("Delete this row?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => DeleteRow(context)">
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only ant-btn-dangerous" aria-label="Delete row"><Icon Type="delete" /></button>
+                    </Popconfirm>
+                </ActionColumn>
+            }
+        </ChildContent>
+    </Table>
+
+    @if (Summary is not null)
+    {
+        <div class="m-grid-summary">@Summary</div>
+    }
+</Card>
+
+<Modal Title="@("Add column")" Visible="_addColumnOpen" VisibleChanged="v => _addColumnOpen = v" Footer="@AddColumnFooter" Width="480" DestroyOnClose>
+    <div class="ant-form ant-form-vertical">
+        @* The Add button is never disabled: the Input only binds on keystrokes (not paste), so a disabled button
+           could stay stuck. A blank title shows a message instead. *@
+        <div class="@($"ant-form-item{(_newTitleError is null ? "" : " ant-form-item-has-error")}")">
+            <div class="ant-form-item-label"><label for="m-grid-new-title" class="ant-form-item-required">Title</label></div>
+            <Input Id="m-grid-new-title" @bind-Value="_newTitle" Placeholder="e.g. Region" AutoFocus BindOnInput MaxLength="60"
+                   OnPressEnter="AddColumn" />
+            @if (_newTitleError is not null)
+            {
+                <div class="ant-form-item-explain ant-form-item-explain-error" role="alert">@_newTitleError</div>
+            }
+        </div>
+        <div class="ant-form-item">
+            <div class="ant-form-item-label"><label>Type</label></div>
+            <Select TItem="GridCellType" TItemValue="GridCellType" DataSource="CellTypes" @bind-Value="_newType" LabelName="" ValueName="">
+                <ItemTemplate>@TypeLabel(context)</ItemTemplate>
+                <LabelTemplate>@TypeLabel(context)</LabelTemplate>
+            </Select>
+        </div>
+        @if (_newType is GridCellType.Select or GridCellType.MultiSelect or GridCellType.Tag)
+        {
+            <div class="ant-form-item">
+                <div class="ant-form-item-label"><label for="m-grid-new-options">Options</label></div>
+                <TextArea Id="m-grid-new-options" @bind-Value="_newOptions" Rows="3" Placeholder="One per line, or comma-separated" />
+            </div>
+        }
+        <div class="ant-form-item">
+            <div class="ant-form-item-label"><label>Pin</label></div>
+            <RadioGroup @bind-Value="_newFixed" ButtonStyle="RadioButtonStyle.Solid">
+                <Radio RadioButton Value="GridFixed.None">None</Radio>
+                <Radio RadioButton Value="GridFixed.Left">Left</Radio>
+                <Radio RadioButton Value="GridFixed.Right">Right</Radio>
+            </RadioGroup>
+        </div>
+        <div class="ant-form-item" style="margin-bottom: 0">
+            <Checkbox Checked="_newRequired" CheckedChanged="v => _newRequired = v">Required</Checkbox>
+        </div>
+    </div>
+</Modal>
+
+@code {
+    /// <summary>The schema. The grid edits the list in place (pin, hide, move, add, remove).</summary>
+    [Parameter, EditorRequired] public List<GridColumn> Columns { get; set; } = [];
+
+    /// <summary>The rows. The grid edits the list in place (cells, add, delete).</summary>
+    [Parameter, EditorRequired] public List<GridRecord> Rows { get; set; } = [];
+
+    [Parameter] public string? HeaderTitle { get; set; }
+
+    [Parameter] public RenderFragment? TitleExtra { get; set; }
+
+    /// <summary>Buttons shown before the grid's own actions.</summary>
+    [Parameter] public RenderFragment? ToolBar { get; set; }
+
+    /// <summary>Content of an expanded row. Without it rows do not expand.</summary>
+    [Parameter] public RenderFragment<GridRecord>? RowDetail { get; set; }
+
+    /// <summary>Which rows can expand (default: all, when <see cref="RowDetail"/> is set).</summary>
+    [Parameter] public Func<GridRecord, bool>? RowExpandable { get; set; }
+
+    /// <summary>Content under the table (totals, notes). Re-rendered on every edit.</summary>
+    [Parameter] public RenderFragment? Summary { get; set; }
+
+    [Parameter] public bool AllowAddRow { get; set; } = true;
+
+    [Parameter] public bool AllowDeleteRow { get; set; } = true;
+
+    /// <summary>Column menus, the column settings popover and "Add column".</summary>
+    [Parameter] public bool AllowColumnEdit { get; set; } = true;
+
+    [Parameter] public int PageSize { get; set; } = 50;
+
+    [Parameter] public TableSize Size { get; set; } = TableSize.Middle;
+
+    /// <summary>Called by Save when every cell is valid.</summary>
+    [Parameter] public EventCallback OnSave { get; set; }
+
+    /// <summary>Called by Discard; reload <see cref="Columns"/> and <see cref="Rows"/> from the store.</summary>
+    [Parameter] public EventCallback OnDiscard { get; set; }
+
+    /// <summary>Raised after any cell, row or column change.</summary>
+    [Parameter] public EventCallback OnChange { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    private TableSize _size;
+    private int _schemaVersion;
+    private (string Row, string Key)? _editing;
+    private bool _popupOpen;
+    private readonly string _gridId = "m-grid-" + Guid.NewGuid().ToString("N")[..8];
+    private bool _openPopup;
+    private string? _original;
+    // A fresh array whenever rows come and go: Table only notices a new DataSource, not an insert into the same list.
+    private GridRecord[] _view = [];
+    private List<GridRecord>? _viewOf;
+    private int _viewCount;
+
+    // While a row is expanded, Table shows the new DataSource only on the render after the one that hands it over.
+    private async Task RowsChangedAsync()
+    {
+        _view = [.. Rows];
+        _viewCount = Rows.Count;
+        await Task.Yield();
+        StateHasChanged();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(_viewOf, Rows) || _viewCount != Rows.Count)
+        {
+            _view = [.. Rows];
+            _viewOf = Rows;
+        }
+        _viewCount = Rows.Count;
+    }
+    private string? _newRowId;
+    private bool _dirty;
+    private bool _saving;
+    private Dictionary<(string Row, string Key), string> _errors = [];
+
+    private bool _addColumnOpen;
+    private string? _newTitle;
+    private string? _newTitleError;
+    private RenderFragment AddColumnFooter => @<div class="m-row" style="justify-content:flex-end">
+        <Button OnClick="() => _addColumnOpen = false">Cancel</Button>
+        <Button Type="@ButtonType.Primary" OnClick="AddColumn">Add column</Button>
+    </div>;
+    private GridCellType _newType;
+    private string? _newOptions;
+    private GridFixed _newFixed;
+    private bool _newRequired;
+
+    private static readonly GridCellType[] CellTypes = Enum.GetValues<GridCellType>();
+
+    protected override void OnInitialized() => _size = Size;
+
+    /// <summary>Marks the grid clean (after the parent saved or reloaded) and clears errors.</summary>
+    public void MarkSaved()
+    {
+        _dirty = false;
+        _errors = [];
+        _editing = null;
+        _newRowId = null;
+        _schemaVersion++;
+        StateHasChanged();
+    }
+
+    private RenderFragment<RowData<GridRecord>>? ExpandFragment => RowDetail is null ? null : row => RowDetail(row.Data);
+
+    private bool RowExpandableFor(RowData<GridRecord> row) => RowDetail is not null && (RowExpandable?.Invoke(row.Data) ?? true);
+
+    private static ColumnFixPlacement? Fix(GridFixed f) => f switch
+    {
+        GridFixed.Left => ColumnFixPlacement.Left,
+        GridFixed.Right => ColumnFixPlacement.Right,
+        _ => null,
+    };
+
+    private static string TypeLabel(GridCellType t) => t switch
+    {
+        GridCellType.MultiSelect => "Multi-select",
+        GridCellType.Tag => "Tag (status)",
+        _ => t.ToString(),
+    };
+
+    private RenderFragment ToolButton(string icon, int rotate, string label, bool active, bool disabled, Func<Task> onClick) => __builder =>
+    {
+        <button type="button" class="@($"m-grid-tool{(active ? " m-grid-tool-active" : "")}")" aria-label="@label" title="@label" aria-pressed="@(active ? "true" : null)"
+                disabled="@disabled" @onclick="onClick">
+            <Icon Type="@icon" Rotate="rotate" />
+        </button>
+    };
+
+    // ---- Cells ----
+
+    private RenderFragment Cell(GridRecord row, GridColumn c) => __builder =>
+    {
+        var value = row[c.Key];
+        var error = _errors.GetValueOrDefault((row.Id, c.Key));
+        var editing = _editing == (row.Id, c.Key);
+        var direct = c.Type is GridCellType.Switch or GridCellType.Rating;
+        var cls = $"m-grid-cell{(c.Editable && !direct ? " m-grid-cell-editable" : "")}{(error is not null ? " m-grid-cell-error" : "")}{(editing ? " m-grid-cell-editing" : "")}";
+
+        if (editing && c.Editable)
+        {
+            <div class="@cls" @onkeydown="e => OnEditorKey(e)">@Editor(row, c)</div>
+        }
+        else
+        {
+            <div class="@cls" title="@error" tabindex="@(c.Editable && !direct ? 0 : -1)" role="@(c.Editable && !direct ? "button" : null)"
+                 aria-label="@(c.Editable && !direct ? $"Edit {c.Title}: {GridSchema.Format(c, value)}" : null)"
+                 @onclick="() => BeginEdit(row, c)" @onkeydown="e => OnCellKey(e, row, c)">
+                @View(row, c, value)
+            </div>
+        }
+        if (error is not null)
+        {
+            <div class="m-grid-cell-message" role="alert">@error</div>
+        }
+    };
+
+    private RenderFragment View(GridRecord row, GridColumn c, string? value) => __builder =>
+    {
+        switch (c.Type)
+        {
+            case GridCellType.Switch:
+                <Switch Size="InputSize.Small" Checked="GridSchema.Flag(value)" Disabled="!c.Editable" CheckedChanged="v => SetValue(row, c, GridSchema.FromFlag(v))" />
+                break;
+            case GridCellType.Rating:
+                <Rate Value="(decimal)(GridSchema.Number(value) ?? 0)" Count="(int)(c.Max ?? 5)" Disabled="!c.Editable" Class="m-grid-rate"
+                      ValueChanged="(decimal v) => SetValue(row, c, GridSchema.FromNumber(v))" />
+                break;
+            case GridCellType.Tag when GridSchema.Option(c, value) is { } tag:
+                <Tag Color="@(tag.Color ?? "default")">@tag.Label</Tag>
+                break;
+            case GridCellType.MultiSelect when GridSchema.Many(value).Count > 0:
+                <span class="m-grid-tags">
+                    @foreach (var v in GridSchema.Many(value))
+                    {
+                        var o = GridSchema.Option(c, v);
+                        <Tag Color="@(o?.Color ?? "default")">@(o?.Label ?? v)</Tag>
+                    }
+                </span>
+                break;
+            case GridCellType.Progress when GridSchema.Number(value) is { } p:
+                <Progress Percent="(double)p" Size="ProgressSize.Small" Status="@(p >= 100 ? ProgressStatus.Success : ProgressStatus.Normal)" />
+                break;
+            default:
+                var text = GridSchema.Format(c, value);
+                if (string.IsNullOrEmpty(text))
+                {
+                    <span class="m-grid-empty">@(c.Editable ? "Add" : "—")</span>
+                }
+                else
+                {
+                    <span class="@(c.AlignRight ? "m-num" : null)">@text</span>
+                }
+                break;
+        }
+    };
+
+    private RenderFragment Editor(GridRecord row, GridColumn c) => __builder =>
+    {
+        var value = row[c.Key];
+        switch (c.Type)
+        {
+            case GridCellType.Number or GridCellType.Currency or GridCellType.Percent or GridCellType.Progress:
+                @* A native number input, as in the MVC grid: AntD's InputNumber drops text it cannot parse or clamp,
+                   so a bad value would never reach the shared validator and its message. *@
+                <div @onfocusout="EndEdit">
+                    <input type="number" class="ant-input m-num" step="any" inputmode="decimal" value="@value" aria-label="@c.Title"
+                           min="@c.Min?.ToString(CultureInfo.InvariantCulture)" max="@c.Max?.ToString(CultureInfo.InvariantCulture)"
+                           @oninput="e => SetValue(row, c, e.Value?.ToString())" />
+                </div>
+                break;
+            case GridCellType.Date:
+                <DatePicker TValue="DateTime?" Value="GridSchema.Date(value)?.ToDateTime(TimeOnly.MinValue)" AutoFocus Style="width: 100%"
+                            ValueChanged="async v => { await SetValue(row, c, GridSchema.FromDate(v)); EndEdit(); }"
+                            OnOpenChange="OnPopupChange" />
+                break;
+            case GridCellType.Select or GridCellType.Tag:
+                <Select TItem="GridOption" TItemValue="string" DataSource="c.Options" Value="value" ValueName="@nameof(GridOption.Value)" LabelName="@nameof(GridOption.Label)"
+                        AutoFocus AllowClear="!c.Required" Style="width: 100%"
+                        ValueChanged="async v => { await SetValue(row, c, v); EndEdit(); }" OpenChanged="OnPopupChange" />
+                break;
+            case GridCellType.MultiSelect:
+                <Select TItem="GridOption" TItemValue="string" DataSource="c.Options" Mode="SelectMode.Multiple" Values="GridSchema.Many(value)"
+                        ValueName="@nameof(GridOption.Value)" LabelName="@nameof(GridOption.Label)" AutoFocus Style="width: 100%" MaxTagCount="2"
+                        ValuesChanged="v => SetValue(row, c, GridSchema.FromMany(v))" OpenChanged="OnPopupChange" />
+                break;
+            default:
+                <div @onfocusout="EndEdit">
+                    <Input TValue="string" Value="value" AutoFocus BindOnInput MaxLength="500" aria-label="@c.Title"
+                           ValueChanged="v => SetValue(row, c, v)" OnPressEnter="EndEdit" />
+                </div>
+                break;
+        }
+    };
+
+    private void BeginEdit(GridRecord row, GridColumn c)
+    {
+        if (!c.Editable || c.Type is GridCellType.Switch or GridCellType.Rating) return;
+        _editing = (row.Id, c.Key);
+        _original = row[c.Key];
+        // Select and DatePicker have no open API that works on first render, and InputNumber ignores AutoFocus:
+        // once rendered, JS clicks the popup open or focuses the input.
+        _popupOpen = false;
+        _openPopup = true;
+    }
+
+    // Leaving a cell validates it, like the MVC grid, so a bad value is flagged before Save.
+    private void EndEdit()
+    {
+        if (_editing is { } at && Rows.Find(r => r.Id == at.Row) is { } row && GridSchema.Find(Columns, at.Key) is { } column)
+        {
+            if (GridSchema.ValidateCell(column, row[column.Key]) is { } message) _errors[at] = message;
+            else _errors.Remove(at);
+        }
+        _editing = null;
+        _original = null;
+        _popupOpen = _openPopup = false;
+    }
+
+    // Escape puts the value back.
+    private async Task CancelEdit()
+    {
+        if (_editing is { } at && Rows.Find(r => r.Id == at.Row) is { } row && row[at.Key] != _original)
+        {
+            row[at.Key] = _original;
+            await ChangedAsync();
+        }
+        _editing = null;
+        _original = null;
+        _popupOpen = _openPopup = false;
+    }
+
+    // Closing the popup (a pick, Escape or a click outside) ends the edit.
+    private void OnPopupChange(bool open)
+    {
+        if (!open && _popupOpen) EndEdit();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_openPopup && _editing is not null)
+        {
+            _openPopup = false;
+            _popupOpen = true;
+            try
+            {
+                await JS.InvokeVoidAsync("modulusShell.openPopup", _gridId);
+            }
+            catch (JSException)
+            {
+                // Script not loaded (tests, prerender): the control is still focused and opens on click.
+            }
+        }
+    }
+
+    private void OnCellKey(KeyboardEventArgs e, GridRecord row, GridColumn c)
+    {
+        if (e.Key is "Enter" or "F2") BeginEdit(row, c);
+    }
+
+    private async Task OnEditorKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Escape") await CancelEdit();
+        else if (e.Key is "Enter" && _editing is { } at && GridSchema.Find(Columns, at.Key)?.Type is GridCellType.Number or GridCellType.Currency or GridCellType.Percent or GridCellType.Progress)
+            EndEdit();
+    }
+
+    private async Task SetValue(GridRecord row, GridColumn c, string? value)
+    {
+        // Switch and Rate report their value again when re-rendered: only a real change marks the grid dirty.
+        var normalized = GridSchema.Normalize(c, value);
+        if (normalized == row[c.Key]) return;
+        row[c.Key] = normalized;
+        // Re-validate the cell once it has been flagged, so the message clears as soon as it is fixed.
+        if (_errors.ContainsKey((row.Id, c.Key)))
+        {
+            if (GridSchema.ValidateCell(c, row[c.Key]) is { } message) _errors[(row.Id, c.Key)] = message;
+            else _errors.Remove((row.Id, c.Key));
+        }
+        await ChangedAsync();
+    }
+
+    // ---- Rows ----
+
+    private async Task AddRow()
+    {
+        var row = GridSchema.NewRow(Columns, Rows);
+        Rows.Insert(0, row);
+        _newRowId = row.Id;
+        if (GridSchema.Visible(Columns).FirstOrDefault(c => c.Editable && c.Type is not (GridCellType.Switch or GridCellType.Rating)) is { } first)
+            BeginEdit(row, first);
+        await ChangedAsync();
+        await RowsChangedAsync();
+    }
+
+    private async Task DeleteRow(GridRecord row)
+    {
+        Rows.Remove(row);
+        foreach (var key in _errors.Keys.Where(k => k.Row == row.Id).ToList()) _errors.Remove(key);
+        await ChangedAsync();
+        await RowsChangedAsync();
+    }
+
+    // ---- Columns ----
+
+    private async Task Pin(GridColumn c, GridFixed where) { GridSchema.Pin(Columns, c.Key, where); await SchemaChangedAsync(); }
+
+    private async Task SetHidden(GridColumn c, bool hidden) { GridSchema.SetHidden(Columns, c.Key, hidden); await SchemaChangedAsync(); }
+
+    private async Task Move(GridColumn c, int delta) { GridSchema.Move(Columns, c.Key, delta); await SchemaChangedAsync(); }
+
+    private async Task RemoveColumn(GridColumn c)
+    {
+        GridSchema.Remove(Columns, Rows, c.Key);
+        foreach (var key in _errors.Keys.Where(k => k.Key == c.Key).ToList()) _errors.Remove(key);
+        await SchemaChangedAsync();
+    }
+
+    private async Task AddColumn()
+    {
+        if (GridSchema.Add(Columns, _newTitle, _newType, _newOptions, _newFixed, _newRequired) is null)
+        {
+            _newTitleError = string.IsNullOrWhiteSpace(_newTitle) ? "Enter a column title." : $"A grid can have at most {GridSchema.MaxColumns} columns.";
+            return;
+        }
+        _newTitleError = null;
+        _addColumnOpen = false;
+        _newTitle = _newOptions = null;
+        _newType = GridCellType.Text;
+        _newFixed = GridFixed.None;
+        _newRequired = false;
+        await SchemaChangedAsync();
+    }
+
+    private async Task SchemaChangedAsync()
+    {
+        _schemaVersion++;
+        _editing = null;
+        await ChangedAsync();
+    }
+
+    private async Task ChangedAsync()
+    {
+        _dirty = true;
+        await OnChange.InvokeAsync();
+    }
+
+    // ---- Save ----
+
+    private async Task SaveAsync()
+    {
+        _editing = null;
+        _errors = GridSchema.Validate(Columns, Rows).ToDictionary(e => (e.RowId, e.Key), e => e.Message);
+        if (_errors.Count > 0) return;
+        _saving = true;
+        try
+        {
+            await OnSave.InvokeAsync();
+            _dirty = false;
+            _newRowId = null;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task DiscardAsync()
+    {
+        await OnDiscard.InvokeAsync();
+        MarkSaved();
+    }
+
+    private void OnDensity(MenuItem item) => _size = Enum.Parse<TableSize>(item.Key);
+}

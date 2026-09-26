@@ -63,6 +63,20 @@ charts
 - `ModulusLayout` is the alternative Ant Design Pro shell. It wraps `BasicLayout`, converts `MenuItemDefinition` →
   `MenuDataItem`, hides items the user isn't authorized for and renders the footer via `FooterView`.
 - Pro components are plain Razor over Ant Design components. They never touch AntDesign internals.
+- `EditableGrid` renders its columns from `GridColumn` data over AntD's `Table` (fixed columns, `ExpandTemplate`).
+  Values are invariant strings (`1234.5`, `2026-12-31`, `true`, `a,b`), so Blazor, MVC and the store share
+  `GridSchema` for formatting, normalising and validation. Select and DatePicker ignore `Open` on first render and
+  InputNumber drops text it cannot parse, so the grid opens popups through `modulusShell.openPopup` and edits numbers
+  in a native input.
+
+### Editable grid in MVC
+
+- `app-editable-grid` posts the whole grid on every action: the schema as JSON in `{name}.schema`, row ids in
+  `{name}.index`, cells as `{name}[{id}].{key}` (hidden columns included) and the action in `{name}.op`.
+  `EditableGridForm.Read` validates ids and the schema (falling back to the server's columns), and `Apply` performs
+  row and column operations; save, discard and reset stay with the app. htmx swaps just the grid card.
+- Cell editing is client-side (`modulusGrid` in `modulus-widgets.js`) with the same formatting and validation rules
+  as `GridSchema`, so edits cost no round trip until a structural action or Save.
 
 ### MVC / Razor Pages
 

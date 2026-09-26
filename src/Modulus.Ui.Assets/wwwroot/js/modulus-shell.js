@@ -11,6 +11,10 @@
  *   [data-m-theme-toggle]  light / dark
  *   [data-m-customizer]    theme settings panel (colour mode, scheme, layout, width, radius)
  *   [data-m-mark-read]     marks header notifications as read
+ *
+ * window.modulusShell.openPopup(gridId) opens the Ant Design Select / DatePicker in the grid's editing cell, or
+ * focuses its input (Blazor EditableGrid calls it when a cell switches to its editor; the components ignore Open and
+ * AutoFocus on first render).
  */
 (function () {
     'use strict';
@@ -251,4 +255,28 @@
     // Close the drawer when the viewport grows past the breakpoint.
     var wide = window.matchMedia('(min-width: 992px)');
     if (wide.addEventListener) wide.addEventListener('change', function (e) { if (e.matches) closeNav(); });
+    window.modulusShell = window.modulusShell || {};
+    window.modulusShell.openPopup = function (gridId) {
+        // The component wires up its overlay in its own first after-render, and the table may render a new row a
+        // cycle later, so look for the grid's editing cell for a few frames.
+        var tries = 0;
+        (function attempt() {
+            var cell = document.querySelector('#' + gridId + ' .m-grid-cell-editing');
+            var popup = cell && cell.querySelector('.ant-select-selector, .ant-picker-input input');
+            var input = cell && cell.querySelector('input, textarea');
+            if (!popup && !input) {
+                if (++tries < 20) setTimeout(attempt, 30);
+                return;
+            }
+            if (popup) {
+                setTimeout(function () { popup.click(); if (popup.focus) popup.focus(); }, 30);
+                return;
+            }
+            // Plain inputs (InputNumber ignores AutoFocus): focus and select the text.
+            if (document.activeElement !== input) {
+                input.focus();
+                if (input.select) input.select();
+            }
+        })();
+    };
 })();

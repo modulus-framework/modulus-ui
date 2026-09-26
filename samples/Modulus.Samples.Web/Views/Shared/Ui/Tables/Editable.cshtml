@@ -1,0 +1,49 @@
+@model ProjectGridPage
+@using Microsoft.AspNetCore.Html
+@* Editable grid: the columns are data (GridColumn). Edit cells in place, add and delete rows, add columns, pin them
+   left or right, hide and reorder them, expand a row for details, and save. Every button posts the whole grid
+   (htmx swaps just the card); the Blazor sample renders the same page with <EditableGrid>. *@
+@{
+    var totals = ProjectGridStore.Totals(Model.Rows);
+    Func<GridRecord, IHtmlContent> detail =
+        @<div class="m-grid-detail">
+            <div>
+                <h4>@(item["project"] ?? "New project")</h4>
+                <p>@(string.IsNullOrEmpty(item["notes"]) ? "No notes yet." : item["notes"])</p>
+                @if (ProjectGridStore.BurnRate(item) is { } burn)
+                {
+                    <div style="margin-top: 12px">
+                        <span class="m-small m-muted">Budget used</span>
+                        <app-progress percent="(double)Math.Min(burn, 100)" size="small" status="@(burn > 100 ? "exception" : "normal")" format="@($"{burn:0}%")" />
+                    </div>
+                }
+            </div>
+            <app-descriptions size="small" column="3">
+                @foreach (var c in Model.Columns.Where(c => c.Key is not ("project" or "notes")))
+                {
+                    var text = GridSchema.Format(c, item[c.Key]);
+                    <app-descriptions-item label="@c.Title">@(text.Length > 0 ? text : "—")</app-descriptions-item>
+                }
+            </app-descriptions>
+        </div>;
+}
+<app-page-header pretitle="Tables" title="Editable grid" subtitle="Columns defined as data: edit cells in place, add rows and columns, pin, hide and reorder columns.">
+    <form method="post" hx-post hx-target="#projects" hx-select="#projects" hx-swap="outerHTML" hx-confirm="Restore the sample data?" data-confirm-ok="Reset">
+        @* A hidden field, not the button value: the confirm dialog re-submits the form without its submitter. *@
+        <input type="hidden" name="grid.op" value="reset" />
+        <button type="submit" class="ant-btn ant-btn-default" data-grid-reset><app-icon type="undo" /><span>Reset sample</span></button>
+    </form>
+</app-page-header>
+
+<form method="post" hx-post hx-target="#projects" hx-select="#projects" hx-swap="outerHTML">
+    <app-editable-grid id="projects" name="grid" columns="Model.Columns" rows="Model.Rows" header-title="Projects"
+                       errors="Model.Errors" dirty="Model.Dirty" row-detail="detail">
+        <grid-title-extra><span class="m-badge m-badge-gray-lt">@Model.Rows.Count</span></grid-title-extra>
+        <grid-summary>
+            <span>Projects <strong>@totals.Count</strong></span>
+            <span>Total budget <strong>@Fmt.Money0(totals.Budget)</strong></span>
+            <span>Spent <strong>@Fmt.Money0(totals.Spent)</strong></span>
+            <span>Remaining <strong>@Fmt.Money0(totals.Budget - totals.Spent)</strong></span>
+        </grid-summary>
+    </app-editable-grid>
+</form>

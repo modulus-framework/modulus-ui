@@ -676,6 +676,8 @@ table.m-sr-only { table-layout: fixed; } /* a table grows to fit its content unl
 
 /* Table toolbar (ProTable) — Tabler "card + datagrid": toolbar header, flush table, paging footer */
 .m-table-card .ant-card-body { padding: 0; }
+/* Cards are grids: without this a wide table (scroll-x) stretches the body past the card instead of scrolling. */
+.ant-card > .ant-card-body { min-width: 0; }
 .m-table-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; min-height: 56px; padding: 10px 20px; flex-wrap: wrap; border-bottom: 1px solid var(--m-border-secondary); }
 .m-table-toolbar-search { width: 240px; max-width: 100%; }
 .m-table-toolbar-title { font-size: 15px; font-weight: 600; color: var(--m-heading); display: flex; align-items: center; gap: 8px; }
@@ -699,6 +701,74 @@ a.ant-table-column-sorters:hover { color: inherit; }
 .ant-table-tbody > tr > td.ant-table-column-sort { background: var(--m-fill); }
 th[style*="text-align: right"] > a.ant-table-column-sorters, th[style*="text-align:right"] > a.ant-table-column-sorters { justify-content: flex-end; }
 .m-table-empty { padding: 32px 0; color: var(--m-text-quaternary); text-align: center; }
+
+/* Editable grid (Blazor EditableGrid, MVC app-editable-grid). A cell reads as text and shows an outline on hover,
+   as in Ant Design's editable-cells demo; the control replaces it while editing. */
+.m-grid .ant-table-tbody > tr > td.m-grid-td { padding-top: 6px; padding-bottom: 6px; }
+.m-grid .ant-table-small .ant-table-tbody > tr > td.m-grid-td { padding-top: 2px; padding-bottom: 2px; }
+.m-grid-cell { display: flex; align-items: center; min-height: 32px; margin: 0 -12px; padding: 4px 11px; border: 1px solid transparent; border-radius: var(--m-radius-sm, 4px); min-width: 0; }
+td[style*="text-align: right"] .m-grid-cell, .m-grid-td.ant-table-cell[style*="right"] .m-grid-cell.m-num { justify-content: flex-end; }
+.m-grid-cell > span:not(.ant-tag):not(.ant-progress):not(.m-grid-tags) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-grid-cell-editable { cursor: pointer; }
+.m-grid-cell-editable:hover { border-color: var(--m-border); background: var(--m-bg-container); }
+.m-grid-cell-editable:focus-visible { outline: 2px solid var(--m-primary); outline-offset: -1px; }
+.m-grid-cell-editing { padding: 0; margin: 0 -12px; border: 0; }
+.m-grid-cell-editing > * { width: 100%; }
+.m-grid-cell-error, .m-grid-cell-error:hover { border-color: var(--m-error); background: var(--m-error-bg, rgba(255, 77, 79, 0.06)); }
+.m-grid-cell-message { margin: 2px -12px 0; padding: 0 11px; color: var(--m-error); font-size: 12px; line-height: 1.4; white-space: normal; }
+.m-grid-empty { color: var(--m-text-quaternary); font-style: italic; }
+.m-grid-cell-editable:not(:hover) .m-grid-empty { visibility: hidden; }
+.m-grid-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.m-grid-tags .ant-tag { margin: 0; }
+.m-grid-cell .ant-tag { margin-right: 0; }
+.m-grid-cell .ant-progress { display: flex; align-items: center; gap: 8px; width: 100%; margin: 0; font-size: 12px; }
+.m-grid-cell .ant-progress-outer { flex: 1; min-width: 0; margin-right: 0 !important; padding-right: 0 !important; }
+.m-grid-cell .ant-progress-text { flex: none; width: auto; min-width: 2.5em; margin-left: 0; }
+.m-grid-rate.ant-rate, .m-grid-cell .ant-rate { font-size: 16px; }
+.m-grid-cell .ant-rate-star:not(:last-child) { margin-right: 4px; }
+.m-grid-th { display: flex; align-items: center; justify-content: space-between; gap: 4px; min-width: 0; }
+.m-grid-th-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+th[style*="text-align: right"] .m-grid-th { flex-direction: row-reverse; }
+.m-grid-required { margin-left: 2px; color: var(--m-error); }
+.m-grid-th-menu { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--m-text-tertiary); cursor: pointer; opacity: 0; transition: opacity 0.15s, background 0.15s; }
+.ant-table-thead > tr > th:hover .m-grid-th-menu, .m-grid-th-menu:focus-visible, .m-grid-th-menu[aria-expanded="true"], .ant-dropdown-open.m-grid-th-menu { opacity: 1; }
+.m-grid-th-menu:hover { background: var(--m-fill); color: var(--m-text); }
+@media (hover: none) { .m-grid-th-menu { opacity: 1; } }
+.m-grid .ant-table-tbody > tr.m-grid-row-new > td { background: var(--m-primary-bg, #e6f4ff); }
+.m-grid-summary { display: flex; flex-wrap: wrap; gap: 8px 32px; padding: 12px 20px; border-top: 1px solid var(--m-border-secondary); color: var(--m-text-secondary); }
+.m-grid-summary strong { color: var(--m-text); font-variant-numeric: tabular-nums; }
+.m-grid-dirty { font-weight: 400; font-size: 13px; }
+.m-grid-detail { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 16px 32px; padding: 4px 8px; }
+/* The detail row spans the whole scroll width; keep its content in the visible part (like AntD's expanded-row-fixed). */
+.m-grid .ant-table-content { container-type: inline-size; }
+.m-grid-detail { position: sticky; left: 16px; box-sizing: border-box; max-width: calc(100cqi - 32px); }
+@media (max-width: 767px) { .m-grid-detail { grid-template-columns: minmax(0, 1fr); } }
+.m-grid-detail h4 { margin: 0 0 4px; font-size: 14px; font-weight: 600; color: var(--m-heading); }
+.m-grid-detail p { margin: 0; color: var(--m-text-secondary); }
+.m-grid-columns-popover { left: auto; padding-top: 0; }
+.m-grid-columns-popover .ant-popover-inner-content { padding: 4px 0; }
+.m-grid-columns-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-width: 260px; }
+.m-grid-columns-head .m-muted { font-weight: 400; font-size: 12px; }
+.m-grid-columns { list-style: none; margin: 0; padding: 0; max-height: 360px; overflow-y: auto; }
+.m-grid-columns-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 12px 4px 16px; }
+.m-grid-columns-item:hover { background: var(--m-fill-secondary, var(--m-fill)); }
+.m-grid-columns-item .ant-checkbox-wrapper { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-grid-columns-tools { display: inline-flex; gap: 2px; flex: none; }
+.m-grid-tool { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--m-text-tertiary); cursor: pointer; }
+.m-grid-tool:hover:not(:disabled) { background: var(--m-fill); color: var(--m-text); }
+.m-grid-tool:disabled { opacity: 0.35; cursor: not-allowed; }
+.m-grid-tool-active, .m-grid-tool-active:hover:not(:disabled) { color: var(--m-primary); background: var(--m-primary-bg, #e6f4ff); }
+.m-grid .ant-table-tbody > tr > td.m-grid-actions { padding-top: 0; padding-bottom: 0; }
+.m-grid-cell[hidden] { display: none; }
+.m-grid-cell-editing > .ant-input, .m-grid-cell-editing > .m-select { width: 100%; }
+.m-grid-multi { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; width: 100%; padding: 8px 11px; border: 1px solid var(--m-primary); border-radius: var(--m-radius-sm, 4px); background: var(--m-bg-container); box-shadow: 0 0 0 2px var(--m-primary-bg, #e6f4ff); }
+.m-grid-multi .ant-checkbox-wrapper { margin: 0; }
+.m-grid-multi .ant-btn { align-self: flex-end; }
+.m-grid-menu .ant-dropdown-menu-item > button { display: flex; align-items: center; width: 100%; color: inherit; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-align: left; }
+.m-grid-menu .ant-dropdown-menu-title-content { display: flex; align-items: center; gap: 8px; }
+.m-grid-menu .ant-dropdown-menu-item-danger { color: var(--m-error); }
+.m-grid-menu .ant-dropdown-menu-item-danger:hover { color: #fff; background: var(--m-error); }
+.m-grid-columns-item .ant-checkbox-wrapper { cursor: pointer; }
 
 /* Entity cell: avatar + two-line text */
 .m-entity { display: flex; align-items: center; gap: 12px; min-width: 0; }

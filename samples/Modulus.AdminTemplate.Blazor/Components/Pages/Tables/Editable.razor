@@ -1,0 +1,56 @@
+@page "/tables/editable"
+@inject ProjectGridStore Store
+@inject IMessageService Message
+
+<PageTitle>Editable grid · Modulus</PageTitle>
+
+@* Editable grid: the columns are data (GridColumn). Edit cells in place, add and delete rows, add columns, pin them
+   left or right, hide and reorder them, expand a row for details, and save. MVC and Razor Pages render the same page
+   from Samples.Web Views/Shared/Ui/Tables/Editable.cshtml with <app-editable-grid>. *@
+<PageHeading Pretitle="Tables" Title="Editable grid" Subtitle="Columns defined as data: edit cells in place, add rows and columns, pin, hide and reorder columns.">
+    <Actions>
+        <Popconfirm Title="@("Restore the sample data?")" OkText="Reset" OnConfirm="Reset">
+            <Button Icon="undo">Reset sample</Button>
+        </Popconfirm>
+    </Actions>
+</PageHeading>
+
+<EditableGrid @ref="_grid" Columns="_columns" Rows="_rows" HeaderTitle="Projects" OnSave="Save" OnDiscard="Discard">
+    <TitleExtra>
+        <span class="m-badge m-badge-gray-lt">@_rows.Count</span>
+    </TitleExtra>
+    <RowDetail>
+        <ProjectDetail Row="context" Columns="_columns" />
+    </RowDetail>
+    <Summary>
+        @{ var t = ProjectGridStore.Totals(_rows); }
+        <span>Projects <strong>@t.Count</strong></span>
+        <span>Total budget <strong>@Fmt.Money0(t.Budget)</strong></span>
+        <span>Spent <strong>@Fmt.Money0(t.Spent)</strong></span>
+        <span>Remaining <strong>@Fmt.Money0(t.Budget - t.Spent)</strong></span>
+    </Summary>
+</EditableGrid>
+
+@code {
+    private EditableGrid _grid = default!;
+    private List<GridColumn> _columns = [];
+    private List<GridRecord> _rows = [];
+
+    protected override void OnInitialized() => (_columns, _rows) = Store.Load();
+
+    private void Save()
+    {
+        Store.Save(_columns, _rows);
+        _ = Message.SuccessAsync("Projects saved.");
+    }
+
+    private void Discard() => (_columns, _rows) = Store.Load();
+
+    private void Reset()
+    {
+        Store.Reset();
+        (_columns, _rows) = Store.Load();
+        _grid.MarkSaved();
+        _ = Message.InfoAsync("Sample data restored.");
+    }
+}

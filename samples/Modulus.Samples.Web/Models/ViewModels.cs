@@ -168,3 +168,13 @@ public sealed record EmployeeTablePage(ProTableResponse<Employee> Page, ProTable
 
     public bool Shows(string column) => !Hidden.Contains(column);
 }
+
+/// <summary>Editable grid page: the schema and rows (saved, or as posted), cell errors and whether they differ from the saved grid.</summary>
+public sealed record ProjectGridPage(List<GridColumn> Columns, List<GridRecord> Rows, IReadOnlyList<GridError> Errors, bool Dirty)
+{
+    public static ProjectGridPage Saved(ProjectGridStore store)
+    {
+        var (columns, rows) = store.Load();
+        return new(columns, rows, [], false);
+    }
+}
