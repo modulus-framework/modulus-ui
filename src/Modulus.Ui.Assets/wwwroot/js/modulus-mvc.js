@@ -192,8 +192,10 @@
                     openModals++;
                     document.documentElement.classList.add('m-scroll-lock');
                     setTimeout(function () {
-                        var target = self.$root.querySelector('.ant-modal-body [autofocus], .ant-modal-body input:not([type=hidden]), .ant-modal-body select, .ant-modal-body textarea, .ant-modal-footer .ant-btn-primary');
-                        (target || self.$root.querySelector('.ant-modal-close')).focus();
+                        // Also opens <app-drawer> (same component, drawer markup).
+                        var target = self.$root.querySelector(':is(.ant-modal-body, .ant-drawer-body) :is([autofocus], input:not([type=hidden]), select, textarea), .ant-modal-footer .ant-btn-primary');
+                        var fallback = target || self.$root.querySelector('.ant-modal-close, .ant-drawer-close');
+                        if (fallback) fallback.focus();
                     }, 50);
                 },
                 hide: function () {

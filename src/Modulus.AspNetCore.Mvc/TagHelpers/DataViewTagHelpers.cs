@@ -579,6 +579,15 @@ public class ImageTagHelper : TagHelper
             output.Content.SetHtmlContent(img);
             return;
         }
+        // Inside <app-image-group> the group owns the preview (and pages through its images).
+        if (context.Items.TryGetValue(typeof(ImageGroupContext), out var g) && g is ImageGroupContext group)
+        {
+            var index = group.Images.Count;
+            group.Images.Add((Src, Alt));
+            output.Content.SetHtmlContent(img +
+                $"""<button type="button" class="ant-image-mask m-image-mask" @click="show({index})" aria-label="Preview {Html.E(Alt)}"><span class="ant-image-mask-info">{AntIcons.Span("eye")} Preview</span></button>""");
+            return;
+        }
         output.Attributes.SetAttribute("x-data", "{ open: false }");
         output.Content.SetHtmlContent(
             img +

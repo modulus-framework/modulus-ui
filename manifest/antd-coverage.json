@@ -1,5 +1,5 @@
 {
-  "$comment": "Coverage of Ant Design Blazor by Modulus. status: alias = App* subclass in Modulus.Blazor (verified by tools/antd-drift); service = used through an injected AntDesign service; direct = use the AntDesign component as-is; superseded = replaced by a Pro pattern; pro = official AntDesign.ProLayout; modulus = Modulus Pro component. mvc = tag helper (app-*), partial or htmx response helper with the same DOM; entries without mvc are Blazor-only (e.g. Mentions, Affix, BackTop, Splitter). knownComponentTypes is the baseline written by `antd-drift --update-baseline`.",
+  "$comment": "Coverage of Ant Design Blazor by Modulus. status: alias = App* subclass in Modulus.Blazor (verified by tools/antd-drift); service = used through an injected AntDesign service; direct = use the AntDesign component as-is; superseded = replaced by a Pro pattern; pro = official AntDesign.ProLayout; modulus = Modulus Pro component. mvc = tag helper (app-*), partial or htmx response helper with the same DOM; entries without mvc are Blazor-only. knownComponentTypes is the baseline written by `antd-drift --update-baseline`.",
   "antDesignVersion": "1.6.2",
   "components": {
     "General": {
@@ -47,23 +47,23 @@
       },
       "Layout": {
         "status": "alias",
-        "mvc": "_ModulusLayout shell"
+        "mvc": "app-layout (and the _ModulusLayout shell)"
       },
       "Header": {
         "status": "alias",
-        "mvc": "_ModulusLayout shell"
+        "mvc": "app-layout-header"
       },
       "Sider": {
         "status": "alias",
-        "mvc": "_ModulusLayout shell"
+        "mvc": "app-layout-sider"
       },
       "Content": {
         "status": "alias",
-        "mvc": "_ModulusLayout shell"
+        "mvc": "app-layout-content"
       },
       "Footer": {
         "status": "alias",
-        "mvc": "_ModulusLayout shell"
+        "mvc": "app-layout-footer"
       },
       "Space": {
         "status": "alias",
@@ -74,12 +74,14 @@
         "mvc": "app-space (each child)"
       },
       "Splitter": {
-        "status": "alias"
+        "status": "alias",
+        "mvc": "app-splitter / app-splitter-panel"
       }
     },
     "Navigation": {
       "Affix": {
-        "status": "alias"
+        "status": "alias",
+        "mvc": "app-affix"
       },
       "Anchor": {
         "status": "alias",
@@ -95,19 +97,19 @@
       },
       "DropdownButton": {
         "status": "alias",
-        "mvc": "app-dropdown around an app-button"
+        "mvc": "app-dropdown-button"
       },
       "Menu": {
         "status": "alias",
-        "mvc": "_ModulusLayout sider menu (IMenuProvider)"
+        "mvc": "app-menu (and the _ModulusLayout sider menu)"
       },
       "MenuItem": {
         "status": "alias",
-        "mvc": "_ModulusLayout sider menu (IMenuProvider)"
+        "mvc": "app-menu-item"
       },
       "SubMenu": {
         "status": "alias",
-        "mvc": "_ModulusLayout sider menu (IMenuProvider)"
+        "mvc": "app-sub-menu"
       },
       "Pagination": {
         "status": "alias",
@@ -130,13 +132,14 @@
         "mvc": "app-tab"
       },
       "BackTop": {
-        "status": "alias"
+        "status": "alias",
+        "mvc": "app-back-top"
       }
     },
     "DataEntry": {
       "AutoComplete": {
         "status": "alias",
-        "mvc": "app-input items (datalist)"
+        "mvc": "app-auto-complete"
       },
       "Cascader": {
         "status": "alias",
@@ -176,7 +179,7 @@
       },
       "InputGroup": {
         "status": "alias",
-        "mvc": "app-input addon-before/addon-after"
+        "mvc": "app-input-group"
       },
       "InputPassword": {
         "status": "alias",
@@ -195,7 +198,8 @@
         "mvc": "app-input-number"
       },
       "Mentions": {
-        "status": "alias"
+        "status": "alias",
+        "mvc": "app-mentions"
       },
       "Radio": {
         "status": "alias",
@@ -257,7 +261,7 @@
       },
       "Card": {
         "status": "alias",
-        "mvc": "app-card"
+        "mvc": "app-card (app-card-cover, app-card-meta, app-card-action)"
       },
       "Carousel": {
         "status": "alias",
@@ -285,7 +289,7 @@
       },
       "Image": {
         "status": "alias",
-        "mvc": "app-image"
+        "mvc": "app-image / app-image-group"
       },
       "List": {
         "status": "alias",
@@ -305,7 +309,8 @@
         "mvc": "app-statistic"
       },
       "CountDown": {
-        "status": "alias"
+        "status": "alias",
+        "mvc": "app-countdown"
       },
       "Table": {
         "status": "alias",
@@ -339,7 +344,7 @@
       },
       "Drawer": {
         "status": "alias",
-        "mvc": "layout drawer (Alpine store)"
+        "mvc": "app-drawer (and the layout drawer, Alpine store)"
       },
       "Modal": {
         "status": "alias",
@@ -396,7 +401,8 @@
       },
       "Comment": {
         "status": "direct",
-        "note": "Removed from antd v5; not aliased"
+        "note": "Removed from antd v5; not aliased",
+        "mvc": "app-comment"
       },
       "PageHeader": {
         "status": "superseded",

@@ -102,6 +102,44 @@
             <Text>Tax settings</Text>
             <Divider Dashed />
         </Card>
+
+        <Card Bordered="false" Title="Flex">
+            <p class="m-demo-desc">One-dimensional layout: direction, gap, justification and alignment.</p>
+            <Flex Gap="FlexGap.Small" Justify="FlexJustify.SpaceBetween" Align="FlexAlign.Center" Class="m-demo-flex">
+                <div class="m-demo-block">One</div>
+                <div class="m-demo-block m-demo-block-strong">Two</div>
+                <div class="m-demo-block">Three</div>
+            </Flex>
+            <Flex Direction="FlexDirection.Vertical" Gap="FlexGap.Small" Style="margin-top: 16px">
+                <Button Type="@ButtonType.Primary" Block>Vertical</Button>
+                <Button Block>Stacked with a small gap</Button>
+            </Flex>
+        </Card>
+
+        <Card Bordered="false" Title="Splitter">
+            <p class="m-demo-desc">Resizable panes: drag the bar to share the space.</p>
+            <Splitter Class="m-demo-splitter">
+                <SplitterPanel Size="40%" Min="20%" Max="70%"><div class="m-demo-pane">Folders</div></SplitterPanel>
+                <SplitterPanel>
+                    <Splitter Layout="SplitterLayout.Vertical">
+                        <SplitterPanel Size="60%"><div class="m-demo-pane">Message list</div></SplitterPanel>
+                        <SplitterPanel><div class="m-demo-pane">Preview</div></SplitterPanel>
+                    </Splitter>
+                </SplitterPanel>
+            </Splitter>
+        </Card>
+
+        <Card Bordered="false" Title="Layout">
+            <p class="m-demo-desc">Page frame: header, sider, content and footer.</p>
+            <Layout Class="m-demo-layout">
+                <Header>Header</Header>
+                <Layout>
+                    <Sider Width="96" Theme="SiderTheme.Light">Sider</Sider>
+                    <Content>Content</Content>
+                </Layout>
+                <Footer>Footer</Footer>
+            </Layout>
+        </Card>
     </div>
 </section>
 
@@ -173,6 +211,49 @@
                     <AnchorLink Href="@($"components#{id}")" Title="@label" />
                 }
             </Anchor>
+        </Card>
+
+        <Card Bordered="false" Title="Menu">
+            <p class="m-demo-desc">Horizontal for top navigation, inline for side navigation with groups.</p>
+            <Menu Mode="MenuMode.Horizontal" DefaultSelectedKeys="@(new[] { "mail" })">
+                <MenuItem Key="mail" Icon="mail">Mail</MenuItem>
+                <MenuItem Key="apps" Icon="appstore">Apps</MenuItem>
+                <SubMenu Key="settings" Title="Settings">
+                    <MenuItem Key="profile">Profile</MenuItem>
+                    <MenuItem Key="billing">Billing</MenuItem>
+                </SubMenu>
+            </Menu>
+            <Menu Mode="MenuMode.Inline" DefaultSelectedKeys="@(new[] { "inbox" })" DefaultOpenKeys="@(new[] { "mailbox" })" Class="m-demo-menu">
+                <SubMenu Key="mailbox" Title="Mailbox">
+                    <MenuItem Key="inbox" Icon="inbox">Inbox</MenuItem>
+                    <MenuItem Key="sent" Icon="send">Sent</MenuItem>
+                </SubMenu>
+                <SubMenu Key="projects" Title="Projects">
+                    <MenuItem Key="active">Active</MenuItem>
+                    <MenuItem Key="archived">Archived</MenuItem>
+                </SubMenu>
+                <MenuItem Key="team" Icon="team">Team</MenuItem>
+            </Menu>
+        </Card>
+
+        <Card Bordered="false" Title="Dropdown button, Affix and BackTop">
+            <p class="m-demo-desc">A default action with a menu of alternatives; an element that sticks while scrolling; a way back to the top.</p>
+            <div class="m-demo-row">
+                <DropdownButton OnClick="@(() => Message.InfoAsync("Saved"))">
+                    <Overlay>
+                        <Menu>
+                            <MenuItem Key="draft">Save as draft</MenuItem>
+                            <MenuItem Key="template">Save as template</MenuItem>
+                        </Menu>
+                    </Overlay>
+                    <ChildContent>Save</ChildContent>
+                </DropdownButton>
+                <Affix OffsetTop="120">
+                    <Button Type="@ButtonType.Primary" Icon="pushpin">Sticks 120 px from the top</Button>
+                </Affix>
+            </div>
+            <p class="m-demo-desc" style="margin: 16px 0 0">Scroll down: the back-to-top button appears in the bottom-right corner.</p>
+            <BackTop />
         </Card>
     </div>
 </section>
@@ -291,6 +372,38 @@
         <Card Bordered="false" Title="Transfer">
             <p class="m-demo-desc">Move items between two lists, e.g. the permissions a role grants.</p>
             <Transfer DataSource="_permissions" TargetKeys="GalleryData.GrantedPermissions" Titles="@(new[] { "Available", "Granted" })" ShowSearch ListStyle="@(_ => "flex: 1; height: 260px")" />
+        </Card>
+
+        <Card Bordered="false" Title="AutoComplete and Mentions">
+            <p class="m-demo-desc">Suggestions while typing, and @@-mentions in a comment box.</p>
+            <Form Model="_form" Layout="@FormLayout.Vertical">
+                <FormItem Label="Assignee">
+                    <AutoComplete TOption="string" @bind-Value="context.Assignee" Options="PeopleNames" Placeholder="Start typing a name" />
+                </FormItem>
+                <FormItem Label="Comment">
+                    <Mentions @bind-Value="context.Comment" Rows="3" Placeholder="Type @@ to mention a teammate">
+                        @foreach (var p in GalleryData.People)
+                        {
+                            <MentionsOption Value="@p.Handle">@p.Name</MentionsOption>
+                        }
+                    </Mentions>
+                </FormItem>
+            </Form>
+        </Card>
+
+        <Card Bordered="false" Title="Input group and Checkbox group">
+            <p class="m-demo-desc">Controls joined into one field, and a set of checkboxes bound to one value.</p>
+            <Form Model="_form" Layout="@FormLayout.Vertical">
+                <FormItem Label="Webhook URL">
+                    <InputGroup Compact>
+                        <Select TItem="string" TItemValue="string" DataSource="Schemes" @bind-Value="context.Scheme" Style="width: 30%" />
+                        <Input @bind-Value="context.Domain" Style="width: 70%" />
+                    </InputGroup>
+                </FormItem>
+                <FormItem Label="Notify via">
+                    <CheckboxGroup TValue="string" Options="_channels" @bind-Value="context.Channels" />
+                </FormItem>
+            </Form>
         </Card>
     </div>
 </section>
@@ -431,6 +544,44 @@
                 }
             </Carousel>
         </Card>
+
+        <Card Bordered="false" Title="Image">
+            <p class="m-demo-desc">Images that open a full-screen preview; a group pages through its images.</p>
+            <ImagePreviewGroup>
+                <div class="m-demo-images">
+                    @foreach (var (title, src) in GalleryData.Photos)
+                    {
+                        <Image Src="@src" Alt="@title" Width="120" />
+                    }
+                </div>
+            </ImagePreviewGroup>
+        </Card>
+
+        <Card Bordered="false" Title="Countdown and Card meta">
+            <p class="m-demo-desc">A live countdown to a deadline, and a card with a cover, meta and actions.</p>
+            <CountDown Title="Offer ends in" Value="_deadline" Format="hh:mm:ss" />
+            <Card Bordered Hoverable Actions="@CardActions" Style="margin-top: 16px">
+                <Cover><img alt="@GalleryData.Photos[0].Title" src="@GalleryData.Photos[0].Src" /></Cover>
+                <ChildContent>
+                    <CardMeta Title="Alpine lake" Description="Shared by Serena Park · 2 days ago">
+                        <AvatarTemplate><Avatar Style="background: #1677ff">SP</Avatar></AvatarTemplate>
+                    </CardMeta>
+                </ChildContent>
+            </Card>
+        </Card>
+
+        <Card Bordered="false" Title="Comment">
+            <p class="m-demo-desc">A discussion thread: author, time, content, actions and replies.</p>
+            <Comment Author="Liam Okafor" Datetime="2 hours ago" Actions="@CommentActions"
+                     Content="@("The new billing page is ready for review. Can someone check the tax rules for the EU?")">
+                <AvatarTemplate><Avatar Style="background: #52c41a">LO</Avatar></AvatarTemplate>
+                <ChildContent>
+                    <Comment Author="Amelia Lindqvist" Datetime="1 hour ago" Content="@("On it. I'll compare them with last quarter's invoices.")">
+                        <AvatarTemplate><Avatar Style="background: #722ed1">AL</Avatar></AvatarTemplate>
+                    </Comment>
+                </ChildContent>
+            </Comment>
+        </Card>
     </div>
 </section>
 
@@ -492,6 +643,30 @@
                 </Extra>
             </Result>
         </Card>
+
+        <Card Bordered="false" Title="Drawer">
+            <p class="m-demo-desc">A panel that slides in from an edge for details or a form, without leaving the page.</p>
+            <div class="m-demo-row">
+                <Button Type="@ButtonType.Primary" OnClick="@(() => _drawer = DrawerPlacement.Right)">Open right</Button>
+                <Button OnClick="@(() => _drawer = DrawerPlacement.Left)">Open left</Button>
+                <Button OnClick="@(() => _drawer = DrawerPlacement.Bottom)">Open bottom</Button>
+            </div>
+            <Drawer Title="@("Invoice INV-1042")" Visible="_drawer is not null" Placement="@(_drawer ?? DrawerPlacement.Right)"
+                    Height="@("240")" Width="@("360")" OnClose="@(() => _drawer = null)">
+                <p>Acme Corporation · $12,400 · Paid on 12 September 2026.</p>
+                <p class="m-muted">Drawers keep the page in view behind them, so they suit details and short forms.</p>
+            </Drawer>
+        </Card>
+
+        <Card Bordered="false" Title="Watermark">
+            <p class="m-demo-desc">Marks content as confidential or a draft without hiding it.</p>
+            <Watermark Content="@("Confidential")">
+                <div class="m-demo-watermark">
+                    <h4>Q4 forecast</h4>
+                    <p>Revenue is expected to grow 12% quarter over quarter, driven by enterprise renewals.</p>
+                </div>
+            </Watermark>
+        </Card>
     </div>
 </section>
 
@@ -513,6 +688,19 @@
 
     private readonly GalleryForm _form = new();
     private bool _modal;
+    private DrawerPlacement? _drawer;
+    private readonly DateTime _deadline = GalleryData.Deadline();
+
+    private static readonly string[] PeopleNames = GalleryData.People.Select(p => p.Name).ToArray();
+    private static readonly string[] Schemes = ["https://", "http://"];
+    private static readonly CheckboxOption<string>[] _channels =
+        GalleryData.Channels.Select(c => new CheckboxOption<string> { Value = c.Value, Label = c.Label }).ToArray();
+
+    private static readonly IList<RenderFragment> CardActions =
+        [@<span role="button" tabindex="0" aria-label="Like"><Icon Type="like" /></span>,
+         @<span role="button" tabindex="0" aria-label="Share"><Icon Type="share-alt" /></span>,
+         @<span role="button" tabindex="0" aria-label="More"><Icon Type="ellipsis" /></span>];
+    private static readonly IList<RenderFragment> CommentActions = [@<span>Reply</span>, @<span>Like</span>];
 
     private static readonly RenderFragment UserIcon = @<Icon Type="user" />;
     private static readonly RenderFragment SiteBefore = @<span>https://</span>;

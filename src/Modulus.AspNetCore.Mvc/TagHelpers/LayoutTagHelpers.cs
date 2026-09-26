@@ -168,10 +168,16 @@ public class FlexTagHelper : TagHelper
     {
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;
-        output.AddClasses("ant-flex", Vertical ? "ant-flex-vertical" : null, Wrap ? "ant-flex-wrap-wrap" : null);
-        var style = "display:flex;" + (Vertical ? "flex-direction:column;" : "") + (Wrap ? "flex-wrap:wrap;" : "") +
+        // The classes AntD Blazor's Flex emits (its CSS gives ant-flex-gap-small/middle/large their gaps).
+        var named = Gap is "small" or "middle" or "large";
+        var align = Align ?? "normal";
+        var justify = Justify ?? "normal";
+        output.AddClasses("ant-flex", Vertical ? "ant-flex-vertical" : null, Vertical && Align is null ? "ant-flex-align-stretch" : null,
+            $"ant-flex-align-{Html.E(align)}", $"ant-flex-justify-{Html.E(justify)}", named ? $"ant-flex-gap-{Gap}" : null,
+            Wrap ? "ant-flex-wrap-wrap" : "ant-flex-wrap-nowrap");
+        var style = "display:flex;" + (Vertical ? "flex-direction:column;" : "") + $"flex-wrap:{(Wrap ? "wrap" : "nowrap")};" +
                     (Gap is null ? "" : $"gap:{SpaceTagHelper.Gap(Gap)}px;") +
-                    (Justify is null ? "" : $"justify-content:{Justify};") + (Align is null ? "" : $"align-items:{Align};");
+                    $"align-items:{Html.E(align)};justify-content:{Html.E(justify)};";
         output.AddStyle(style);
     }
 }

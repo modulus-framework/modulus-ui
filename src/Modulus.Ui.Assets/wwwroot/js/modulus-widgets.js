@@ -1,7 +1,9 @@
 /*
  * Alpine components behind the MVC widgets in AdvancedEntryTagHelpers.cs:
  * app-tree, app-tree-select, app-cascader, app-transfer, app-calendar, app-carousel, app-anchor,
- * and app-editable-grid (EditableGridTagHelper.cs).
+ * app-editable-grid (EditableGridTagHelper.cs), app-menu (MenuTagHelpers.cs), app-splitter, app-affix,
+ * app-back-top (FrameTagHelpers.cs), app-auto-complete, app-mentions, app-image-group and app-countdown
+ * (ExtraTagHelpers.cs).
  * The server renders the initial DOM; these components keep the Ant Design classes in step with the state.
  * Loaded by <modulus-scripts /> before Alpine.
  */
@@ -579,6 +581,210 @@
                     this.active = current;
                     var title = current && this.$root.querySelector('.ant-anchor-link[data-href="' + CSS.escape(current) + '"] > .ant-anchor-link-title');
                     this.ball = title ? 'top: ' + (title.offsetTop + title.clientHeight / 2 - 4.5) + 'px;' : '';
+                }
+            };
+        });
+
+        // <app-menu>: selected item, open inline submenus, and the popup submenu under the pointer (hover).
+        Alpine.data('modulusMenu', function (cfg) {
+            return {
+                selected: cfg.selected,
+                open: cfg.open.slice(),
+                hover: '',
+                select: function (key) { this.selected = key; this.hover = ''; },
+                isOpen: function (key) { return this.open.indexOf(key) >= 0; },
+                toggle: function (key) {
+                    var i = this.open.indexOf(key);
+                    if (i >= 0) this.open.splice(i, 1); else this.open.push(key);
+                }
+            };
+        });
+
+        // <app-splitter>: drag the bar (pointer capture) or nudge it with the arrow keys; sizes are percentages.
+        Alpine.data('modulusSplitter', function (cfg) {
+            var dim = cfg.vertical ? 'height' : 'width';
+            return {
+                size: cfg.size,
+                clamp: function (v) { return Math.min(cfg.max, Math.max(cfg.min, v)); },
+                first: function () { return dim + ': ' + this.size + '%;'; },
+                second: function () { return dim + ': ' + (100 - this.size) + '%;'; },
+                nudge: function (d) { this.size = this.clamp(this.size + d); },
+                start: function (e) {
+                    var self = this, bar = e.currentTarget, box = this.$root.getBoundingClientRect();
+                    bar.setPointerCapture(e.pointerId);
+                    bar.classList.add('ant-splitter-bar-active');
+                    var move = function (ev) {
+                        var pos = cfg.vertical ? (ev.clientY - box.top) / box.height : (ev.clientX - box.left) / box.width;
+                        self.size = self.clamp(Math.round(pos * 1000) / 10);
+                    };
+                    var up = function () {
+                        bar.classList.remove('ant-splitter-bar-active');
+                        bar.removeEventListener('pointermove', move);
+                        bar.removeEventListener('pointerup', up);
+                        bar.removeEventListener('pointercancel', up);
+                    };
+                    bar.addEventListener('pointermove', move);
+                    bar.addEventListener('pointerup', up);
+                    bar.addEventListener('pointercancel', up);
+                    e.preventDefault();
+                }
+            };
+        });
+
+        // <app-affix>: pins the content (position: fixed) once its placeholder scrolls above offsetTop.
+        Alpine.data('modulusAffix', function (offsetTop) {
+            return {
+                fixed: false,
+                style: '',
+                placeholder: '',
+                init: function () {
+                    var self = this, frame = 0;
+                    this.onScroll = function () { if (!frame) frame = requestAnimationFrame(function () { frame = 0; self.update(); }); };
+                    window.addEventListener('scroll', this.onScroll, { passive: true });
+                    window.addEventListener('resize', this.onScroll);
+                    this.$nextTick(function () { self.update(); });
+                },
+                destroy: function () {
+                    window.removeEventListener('scroll', this.onScroll);
+                    window.removeEventListener('resize', this.onScroll);
+                },
+                update: function () {
+                    var box = this.$root.getBoundingClientRect();
+                    var inner = this.$refs.inner.getBoundingClientRect();
+                    this.fixed = box.top < offsetTop;
+                    this.style = this.fixed ? 'position: fixed; top: ' + offsetTop + 'px; width: ' + box.width + 'px; z-index: 10;' : '';
+                    this.placeholder = this.fixed ? 'width: ' + box.width + 'px; height: ' + inner.height + 'px;' : '';
+                }
+            };
+        });
+
+        // <app-back-top>: visible once the page has scrolled visibilityHeight px; scrolls smoothly to the top.
+        Alpine.data('modulusBackTop', function (visibilityHeight) {
+            return {
+                visible: false,
+                init: function () {
+                    var self = this;
+                    this.onScroll = function () { self.visible = window.scrollY > visibilityHeight; };
+                    window.addEventListener('scroll', this.onScroll, { passive: true });
+                    this.onScroll();
+                },
+                destroy: function () { window.removeEventListener('scroll', this.onScroll); },
+                top: function () { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+            };
+        });
+
+        // <app-auto-complete>: filters the options by substring while typing.
+        Alpine.data('modulusAutoComplete', function (options) {
+            return {
+                open: false,
+                matches: [],
+                active: -1,
+                filter: function (text) {
+                    var q = (text || '').trim().toLowerCase();
+                    this.matches = options.filter(function (o) { return !q || o.toLowerCase().indexOf(q) >= 0; }).slice(0, 10);
+                    this.active = -1;
+                    this.open = this.matches.length > 0 && !(this.matches.length === 1 && this.matches[0] === text);
+                },
+                move: function (d) {
+                    if (!this.open) { this.filter(this.$refs.input.value); return; }
+                    var n = this.matches.length;
+                    if (n) this.active = (this.active + d + n) % n;
+                },
+                pick: function (e) {
+                    if (this.open && this.active >= 0) { e.preventDefault(); this.choose(this.matches[this.active]); }
+                },
+                choose: function (value) {
+                    var input = this.$refs.input;
+                    input.value = value;
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                    this.open = false;
+                }
+            };
+        });
+
+        // <app-mentions>: after the prefix (@), lists the options matching the text typed so far and inserts one.
+        Alpine.data('modulusMentions', function (cfg) {
+            return {
+                open: false,
+                matches: [],
+                active: 0,
+                start: -1,
+                update: function () {
+                    var el = this.$refs.input, caret = el.selectionStart, before = el.value.slice(0, caret);
+                    var at = before.lastIndexOf(cfg.prefix);
+                    var query = at >= 0 ? before.slice(at + cfg.prefix.length) : null;
+                    // A mention starts at the beginning or after whitespace, and holds no whitespace yet.
+                    if (query === null || /\s/.test(query) || (at > 0 && !/\s/.test(before.charAt(at - 1)))) { this.open = false; return; }
+                    var q = query.toLowerCase();
+                    this.matches = cfg.options.filter(function (o) { return o.value.toLowerCase().indexOf(q) === 0 || o.label.toLowerCase().indexOf(q) >= 0; });
+                    this.start = at;
+                    this.active = 0;
+                    this.open = this.matches.length > 0;
+                },
+                move: function (e, d) {
+                    if (!this.open) return;
+                    e.preventDefault();
+                    var n = this.matches.length;
+                    this.active = (this.active + d + n) % n;
+                },
+                pick: function (e) {
+                    if (!this.open) return;
+                    e.preventDefault();
+                    this.choose(this.matches[this.active]);
+                },
+                choose: function (option) {
+                    var el = this.$refs.input, caret = el.selectionStart;
+                    var text = cfg.prefix + option.value + ' ';
+                    el.value = el.value.slice(0, this.start) + text + el.value.slice(caret);
+                    var pos = this.start + text.length;
+                    el.setSelectionRange(pos, pos);
+                    el.focus();
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    this.open = false;
+                }
+            };
+        });
+
+        // <app-image-group>: one preview for the group's images, with previous/next.
+        Alpine.data('modulusImageGroup', function (items) {
+            return {
+                items: items,
+                index: 0,
+                open: false,
+                _opener: null,
+                get current() { return this.items[this.index] || { src: '', alt: '' }; },
+                show: function (i) {
+                    var self = this;
+                    this._opener = document.activeElement;
+                    this.index = i;
+                    this.open = true;
+                    setTimeout(function () { if (self.$refs.close) self.$refs.close.focus(); }, 50);
+                },
+                close: function () {
+                    this.open = false;
+                    if (this._opener && this._opener.focus) this._opener.focus();
+                },
+                go: function (d) { this.index = (this.index + d + this.items.length) % this.items.length; }
+            };
+        });
+
+        // <app-countdown>: time left until `end` (epoch ms), formatted like CountdownTagHelper.FormatSpan.
+        Alpine.data('modulusCountdown', function (end, format) {
+            var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+            return {
+                text: '',
+                init: function () {
+                    var self = this;
+                    this.tick();
+                    this.timer = setInterval(function () { self.tick(); }, 1000);
+                },
+                destroy: function () { clearInterval(this.timer); },
+                tick: function () {
+                    var total = Math.max(0, Math.floor((end - Date.now()) / 1000));
+                    var days = Math.floor(total / 86400);
+                    var hours = format.indexOf('d') >= 0 ? Math.floor(total / 3600) % 24 : Math.floor(total / 3600);
+                    this.text = format.replace('hh', pad(hours)).replace('mm', pad(Math.floor(total / 60) % 60)).replace('ss', pad(total % 60)).replace('d', String(days));
+                    if (total === 0) clearInterval(this.timer);
                 }
             };
         });

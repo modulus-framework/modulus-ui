@@ -70,6 +70,44 @@ public static class GalleryData
 
     /// <summary>The month the Calendar demo shows (fixed, so both samples render the same page).</summary>
     public static readonly DateTime CalendarDate = new(2026, 10, 14);
+
+    /// <summary>People for the AutoComplete, Mentions and Comment demos: handle, name, Tabler avatar tone.</summary>
+    public static readonly (string Handle, string Name, string Tone)[] People =
+    [
+        ("serena", "Serena Park", "blue"), ("liam", "Liam Okafor", "green"), ("amelia", "Amelia Lindqvist", "purple"),
+        ("noah", "Noah Tanaka", "orange"), ("sofia", "Sofia Reyes", "pink"), ("mateo", "Mateo Hartmann", "teal"),
+    ];
+
+    public static readonly string[] EmailDomains = ["modulus.dev", "gmail.com", "outlook.com", "proton.me"];
+
+    /// <summary>Checkbox group options: value, label.</summary>
+    public static readonly (string Value, string Label)[] Channels = [("email", "Email"), ("sms", "SMS"), ("slack", "Slack"), ("webhook", "Webhook")];
+
+    /// <summary>End of the Countdown demo: always a few hours ahead, so the timer is running.</summary>
+    public static DateTime Deadline() => DateTime.Now.AddHours(5).AddMinutes(30);
+
+    /// <summary>Generated SVG "photos" for the Image demo (no binary assets ship with the samples).</summary>
+    public static readonly (string Title, string Src)[] Photos =
+    [
+        ("Alpine lake", Scene("#8ec5fc", "#e0c3fc", "#4b6cb7", "#182848", "#5b86e5")),
+        ("Desert dunes", Scene("#fbd786", "#f7797d", "#c9773d", "#8a4b24", "#e8a060")),
+        ("Pine forest", Scene("#a8e063", "#56ab2f", "#2f6b3a", "#173d22", "#3f8f4e")),
+    ];
+
+    private static string Scene(string sky1, string sky2, string far, string near, string water)
+    {
+        var svg = $"""
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200">
+            <defs><linearGradient id="s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{sky1}"/><stop offset="1" stop-color="{sky2}"/></linearGradient></defs>
+            <rect width="320" height="200" fill="url(#s)"/>
+            <circle cx="248" cy="52" r="22" fill="#fff" fill-opacity=".85"/>
+            <path d="M0 140 L70 70 L120 120 L170 60 L240 130 L320 90 L320 200 L0 200 Z" fill="{far}"/>
+            <path d="M0 160 L60 120 L130 165 L210 115 L320 160 L320 200 L0 200 Z" fill="{near}"/>
+            <rect y="172" width="320" height="28" fill="{water}" fill-opacity=".75"/>
+            </svg>
+            """;
+        return "data:image/svg+xml;base64," + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(svg));
+    }
 }
 
 /// <summary>Form model behind the gallery's data-entry demos.</summary>
@@ -95,4 +133,9 @@ public sealed class GalleryForm
     public decimal Rating { get; set; } = 4;
     public string? Location { get; set; } = "berlin";
     public string? Team { get; set; } = "web";
+    public string? Assignee { get; set; }
+    public string? Comment { get; set; }
+    public string Scheme { get; set; } = "https://";
+    public string? Domain { get; set; } = "modulus.dev";
+    public string[] Channels { get; set; } = ["email", "slack"];
 }

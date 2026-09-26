@@ -6,6 +6,10 @@
     var channels = new[] { new SelectListItem("Email", "email", true), new SelectListItem("SMS", "sms"), new SelectListItem("Push (coming soon)", "push") { Disabled = true } };
     var priorities = new[] { new SelectListItem("Low", "low"), new SelectListItem("Normal", "normal"), new SelectListItem("High", "high") };
     var sizes = new[] { new SelectListItem("Small", "s"), new SelectListItem("Medium", "m"), new SelectListItem("Large", "l") };
+    var people = GalleryData.People.Select(p => new SelectListItem(p.Name, p.Handle)).ToArray();
+    var peopleNames = GalleryData.People.Select(p => p.Name).ToArray();
+    var schemes = new[] { new SelectListItem("https://", "https://"), new SelectListItem("http://", "http://") };
+    var notify = GalleryData.Channels.Select(c => new SelectListItem(c.Label, c.Value)).ToArray();
 }
 
 @* Every Ant Design component family on one page, built with Modulus tag helpers. The Blazor sample renders the same gallery; MVC and Razor Pages share this view. *@
@@ -106,6 +110,44 @@
                 <app-text>Tax settings</app-text>
                 <app-divider dashed />
             </app-card>
+
+            <app-card title="Flex">
+                <p class="m-demo-desc">One-dimensional layout: direction, gap, justification and alignment.</p>
+                <app-flex gap="small" justify="space-between" align="center" class="m-demo-flex">
+                    <div class="m-demo-block">One</div>
+                    <div class="m-demo-block m-demo-block-strong">Two</div>
+                    <div class="m-demo-block">Three</div>
+                </app-flex>
+                <app-flex vertical gap="small" style="margin-top: 16px">
+                    <app-button type="primary" block>Vertical</app-button>
+                    <app-button block>Stacked with a small gap</app-button>
+                </app-flex>
+            </app-card>
+
+            <app-card title="Splitter">
+                <p class="m-demo-desc">Resizable panes: drag the bar to share the space.</p>
+                <app-splitter class="m-demo-splitter">
+                    <app-splitter-panel size="40%" min="20%" max="70%"><div class="m-demo-pane">Folders</div></app-splitter-panel>
+                    <app-splitter-panel>
+                        <app-splitter layout="vertical">
+                            <app-splitter-panel size="60%"><div class="m-demo-pane">Message list</div></app-splitter-panel>
+                            <app-splitter-panel><div class="m-demo-pane">Preview</div></app-splitter-panel>
+                        </app-splitter>
+                    </app-splitter-panel>
+                </app-splitter>
+            </app-card>
+
+            <app-card title="Layout">
+                <p class="m-demo-desc">Page frame: header, sider, content and footer.</p>
+                <app-layout class="m-demo-layout">
+                    <app-layout-header>Header</app-layout-header>
+                    <app-layout>
+                        <app-layout-sider width="96" theme="light">Sider</app-layout-sider>
+                        <app-layout-content>Content</app-layout-content>
+                    </app-layout>
+                    <app-layout-footer>Footer</app-layout-footer>
+                </app-layout>
+            </app-card>
         </div>
     </section>
 
@@ -170,6 +212,44 @@
                         <app-anchor-link href="#@id" title="@label" />
                     }
                 </app-anchor>
+            </app-card>
+
+            <app-card title="Menu">
+                <p class="m-demo-desc">Horizontal for top navigation, inline for side navigation with groups.</p>
+                <app-menu mode="horizontal" selected="mail">
+                    <app-menu-item key="mail" icon="mail">Mail</app-menu-item>
+                    <app-menu-item key="apps" icon="appstore">Apps</app-menu-item>
+                    <app-sub-menu key="settings" title="Settings">
+                        <app-menu-item key="profile">Profile</app-menu-item>
+                        <app-menu-item key="billing">Billing</app-menu-item>
+                    </app-sub-menu>
+                </app-menu>
+                <app-menu mode="inline" selected="inbox" open="mailbox" class="m-demo-menu">
+                    <app-sub-menu key="mailbox" title="Mailbox">
+                        <app-menu-item key="inbox" icon="inbox">Inbox</app-menu-item>
+                        <app-menu-item key="sent" icon="send">Sent</app-menu-item>
+                    </app-sub-menu>
+                    <app-sub-menu key="projects" title="Projects">
+                        <app-menu-item key="active">Active</app-menu-item>
+                        <app-menu-item key="archived">Archived</app-menu-item>
+                    </app-sub-menu>
+                    <app-menu-item key="team" icon="team">Team</app-menu-item>
+                </app-menu>
+            </app-card>
+
+            <app-card title="Dropdown button, Affix and BackTop">
+                <p class="m-demo-desc">A default action with a menu of alternatives; an element that sticks while scrolling; a way back to the top.</p>
+                <div class="m-demo-row">
+                    <app-dropdown-button text="Save" hx-post="/ui/components/demo/message" hx-swap="none">
+                        <app-dropdown-item>Save as draft</app-dropdown-item>
+                        <app-dropdown-item>Save as template</app-dropdown-item>
+                    </app-dropdown-button>
+                    <app-affix offset-top="120">
+                        <app-button type="primary" icon="pushpin">Sticks 120 px from the top</app-button>
+                    </app-affix>
+                </div>
+                <p class="m-demo-desc" style="margin: 16px 0 0">Scroll down: the back-to-top button appears in the bottom-right corner.</p>
+                <app-back-top />
             </app-card>
         </div>
     </section>
@@ -270,6 +350,33 @@
             <app-card title="Transfer">
                 <p class="m-demo-desc">Move items between two lists, e.g. the permissions a role grants.</p>
                 <app-transfer name="permissions" options="GalleryData.Permissions" target-keys="GalleryData.GrantedPermissions" titles="Available,Granted" show-search list-style="flex: 1; height: 260px" />
+            </app-card>
+
+            <app-card title="AutoComplete and Mentions">
+                <p class="m-demo-desc">Suggestions while typing, and @@-mentions in a comment box.</p>
+                <div class="ant-form ant-form-vertical">
+                    <app-form-item asp-for="Assignee" label="Assignee">
+                        <app-auto-complete asp-for="Assignee" options="peopleNames" placeholder="Start typing a name" />
+                    </app-form-item>
+                    <app-form-item asp-for="Comment" label="Comment">
+                        <app-mentions asp-for="Comment" options="people" rows="3" placeholder="Type @@ to mention a teammate" />
+                    </app-form-item>
+                </div>
+            </app-card>
+
+            <app-card title="Input group and Checkbox group">
+                <p class="m-demo-desc">Controls joined into one field, and a set of checkboxes bound to one value.</p>
+                <div class="ant-form ant-form-vertical">
+                    <app-form-item label="Webhook URL">
+                        <app-input-group compact>
+                            <app-select asp-for="Scheme" items="schemes" style="width: 30%" aria-label="Scheme" />
+                            <app-input asp-for="Domain" style="width: 70%" aria-label="Domain" />
+                        </app-input-group>
+                    </app-form-item>
+                    <app-form-item label="Notify via">
+                        <app-checkbox-group asp-for="Channels" items="notify" />
+                    </app-form-item>
+                </div>
             </app-card>
         </div>
     </section>
@@ -412,6 +519,41 @@
                     }
                 </app-carousel>
             </app-card>
+
+            <app-card title="Image">
+                <p class="m-demo-desc">Images that open a full-screen preview; a group pages through its images.</p>
+                <app-image-group>
+                    <div class="m-demo-images">
+                        @foreach (var (title, src) in GalleryData.Photos)
+                        {
+                            <app-image src="@src" alt="@title" width="120" />
+                        }
+                    </div>
+                </app-image-group>
+            </app-card>
+
+            <app-card title="Countdown and Card meta">
+                <p class="m-demo-desc">A live countdown to a deadline, and a card with a cover, meta and actions.</p>
+                <app-countdown title="Offer ends in" value="GalleryData.Deadline()" format="hh:mm:ss" />
+                <app-card bordered hoverable style="margin-top: 16px">
+                    <app-card-cover><img alt="@GalleryData.Photos[0].Title" src="@GalleryData.Photos[0].Src" /></app-card-cover>
+                    <app-card-meta title="Alpine lake" description="Shared by Serena Park · 2 days ago" avatar="SP" avatar-color="#1677ff" />
+                    <app-card-action><span role="button" tabindex="0" aria-label="Like"><app-icon type="like" /></span></app-card-action>
+                    <app-card-action><span role="button" tabindex="0" aria-label="Share"><app-icon type="share-alt" /></span></app-card-action>
+                    <app-card-action><span role="button" tabindex="0" aria-label="More"><app-icon type="ellipsis" /></span></app-card-action>
+                </app-card>
+            </app-card>
+
+            <app-card title="Comment">
+                <p class="m-demo-desc">A discussion thread: author, time, content, actions and replies.</p>
+                <app-comment author="Liam Okafor" datetime="2 hours ago" avatar="LO" avatar-color="#52c41a"
+                             content="The new billing page is ready for review. Can someone check the tax rules for the EU?">
+                    <comment-action>Reply</comment-action>
+                    <comment-action>Like</comment-action>
+                    <app-comment author="Amelia Lindqvist" datetime="1 hour ago" avatar="AL" avatar-color="#722ed1"
+                                 content="On it. I'll compare them with last quarter's invoices." />
+                </app-comment>
+            </app-card>
         </div>
     </section>
 
@@ -473,6 +615,32 @@
                         <app-button>Buy again</app-button>
                     </result-extra>
                 </app-result>
+            </app-card>
+
+            <app-card title="Drawer">
+                <p class="m-demo-desc">A panel that slides in from an edge for details or a form, without leaving the page.</p>
+                <div class="m-demo-row" x-data>
+                    <app-button type="primary" x-on:click="$dispatch('modulus:modal-open', 'drawer-right')">Open right</app-button>
+                    <app-button x-on:click="$dispatch('modulus:modal-open', 'drawer-left')">Open left</app-button>
+                    <app-button x-on:click="$dispatch('modulus:modal-open', 'drawer-bottom')">Open bottom</app-button>
+                </div>
+                @foreach (var side in new[] { "right", "left", "bottom" })
+                {
+                    <app-drawer name="drawer-@side" title="Invoice INV-1042" placement="@side" width="360" height="240">
+                        <p>Acme Corporation · $12,400 · Paid on 12 September 2026.</p>
+                        <p class="m-muted">Drawers keep the page in view behind them, so they suit details and short forms.</p>
+                    </app-drawer>
+                }
+            </app-card>
+
+            <app-card title="Watermark">
+                <p class="m-demo-desc">Marks content as confidential or a draft without hiding it.</p>
+                <app-watermark content="Confidential">
+                    <div class="m-demo-watermark">
+                        <h4>Q4 forecast</h4>
+                        <p>Revenue is expected to grow 12% quarter over quarter, driven by enterprise renewals.</p>
+                    </div>
+                </app-watermark>
             </app-card>
         </div>
     </section>
