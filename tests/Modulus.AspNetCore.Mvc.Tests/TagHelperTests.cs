@@ -2,6 +2,7 @@ using AntDesign;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using Modulus.AspNetCore.Mvc;
 using Modulus.AspNetCore.Mvc.TagHelpers;
+using Modulus.Ui.Abstractions;
 using Xunit;
 
 namespace Modulus.AspNetCore.Mvc.Tests;
@@ -247,6 +248,88 @@ public class CoverageTagHelperTests
         Assert.Contains("<tr class=\"ant-table-row\"", html);
         Assert.Contains("<tr class=\"m-selected\">", html);
         Assert.Contains("<td class=\"num\">", html);
+    }
+
+    [Fact]
+    public async Task Table_LeavesOutHiddenColumns()
+    {
+        var output = await RunAsync(new TableTagHelper { HiddenColumns = ["office"] }, "app-table",
+            "<colgroup><col /><col data-col=\"office\" style=\"width:1px\" /></colgroup>" +
+            "<thead><tr><th>Name</th><th data-col=\"office\" class=\"x\"><a>Office</a></th></tr></thead>" +
+            "<tbody><tr><td>Ann</td><td data-col=\"office\"><span>Berlin</span></td></tr></tbody>");
+
+        var html = output.Content.GetContent();
+        Assert.DoesNotContain("office", html);
+        Assert.DoesNotContain("Berlin", html);
+        Assert.Contains("Ann", html);
+        Assert.Contains("<colgroup><col /></colgroup>", html);
+    }
+
+    [Fact]
+    public async Task Table_BindsDensity_AndScrollsHorizontally()
+    {
+        var output = await RunAsync(new TableTagHelper { Size = "small", Density = true, ScrollX = 1100, Layout = "fixed" }, "app-table",
+            "<tbody><tr><td>A</td></tr></tbody>");
+
+        var html = output.Content.GetContent();
+        Assert.Contains("<div class=\"ant-table ant-table-scroll-horizontal\" :class=\"density\">", html);
+        Assert.Contains("<div class=\"ant-table-content\" style=\"overflow: auto hidden;\">", html);
+        Assert.Contains("<table style=\"width: 1100px; min-width: 100%; table-layout: fixed;\">", html);
+    }
+
+    [Fact]
+    public async Task Table_RendersFooterSlotUnderTheTable()
+    {
+        var output = await RunParentAsync(new TableTagHelper(), "app-table",
+            (new TableFooterTagHelper(), "table-footer", "<ul class=\"ant-pagination\"></ul>"));
+
+        Assert.EndsWith("</table></div></div></div><ul class=\"ant-pagination\"></ul></div></div>", output.Content.GetContent());
+    }
+
+    [Fact]
+    public async Task TableSettings_RendersReloadAndDensityMenu()
+    {
+        var output = await RunAsync(new TableSettingsTagHelper { ReloadHref = "/customers?page=2" }, "app-table-settings");
+
+        var html = output.Content.GetContent();
+        Assert.Equal("m-table-toolbar-settings", Classes(output));
+        Assert.Contains("href=\"/customers?page=2\" aria-label=\"Reload\"", html);
+        Assert.Contains("aria-label=\"Table density\"", html);
+        Assert.Contains("@click=\"setDensity('')\"", html);
+        Assert.Contains("@click=\"setDensity('ant-table-middle')\"", html);
+        Assert.Contains("@click=\"setDensity('ant-table-small')\"", html);
+        Assert.Contains(">Comfortable<", html);
+        Assert.Contains(">Standard<", html);
+        Assert.Contains(">Compact<", html);
+    }
+
+    [Fact]
+    public async Task TableSettings_WithoutReloadOrDensity_IsEmpty()
+    {
+        var output = await RunAsync(new TableSettingsTagHelper { Density = false }, "app-table-settings");
+
+        Assert.Equal("", output.Content.GetContent());
+    }
+
+    [Fact]
+    public async Task TableColumns_LinksToggleEachColumn()
+    {
+        TableColumn[] columns = [new("office", "Office"), new("salary", "Salary")];
+        var output = await RunAsync(new TableColumnsTagHelper
+        {
+            Columns = columns,
+            Hidden = new HashSet<string> { "salary" },
+            Href = hide => $"/t?hide={hide}",
+        }, "app-table-columns");
+
+        var html = output.Content.GetContent();
+        Assert.Null(output.TagName);
+        Assert.Contains("<span>Columns</span>", html);
+        // Office is shown: its link hides it (with salary). Salary is hidden: its link shows everything.
+        Assert.Contains("href=\"/t?hide=office,salary\"", html);
+        Assert.Contains("href=\"/t?hide=\"", html);
+        Assert.Contains("#ti-square-check\"></use></svg>Office", html);
+        Assert.Contains("#ti-square\"></use></svg>Salary", html);
     }
 
     [Fact]

@@ -51,7 +51,7 @@
                         <input type="hidden" name="pageSize" value="@Model.Request.PageSize" />
                     </form>
                     <app-button icon="download">Export</app-button>
-                    <partial name="Ui/_TableSettings" model="grid.Current" />
+                    <app-table-settings reload-href="@grid.Current" />
                 </div>
             </div>
 

@@ -244,11 +244,24 @@ public class DropdownTagHelper : TagHelper
         output.Attributes.SetAttribute("x-data", "dropdown");
         output.Attributes.SetAttribute("@click.outside", "close()");
         output.Attributes.SetAttribute("@keydown.escape", "close()");
-        var side = Placement == "bottomRight" ? "m-dropdown-right" : "m-dropdown-left";
-        output.Content.SetHtmlContent(
-            $"""<div class="m-dropdown-trigger ant-dropdown-trigger" @click="toggle()" :class="open && 'ant-dropdown-open'" aria-haspopup="menu" :aria-expanded="open">{trigger}</div>""" +
-            $"""<div class="ant-dropdown ant-dropdown-placement-{Html.E(Placement)} m-dropdown-panel {side}" x-show="open" x-transition.opacity x-cloak @click="close()">""" +
-            $"""<ul class="ant-dropdown-menu ant-dropdown-menu-root ant-dropdown-menu-vertical ant-dropdown-menu-light" role="menu">{menu}</ul></div>""");
+        output.Content.SetHtmlContent(Inner(trigger, menu, Placement));
+    }
+
+    /// <summary>A complete dropdown (for helpers that render one inside their own markup).</summary>
+    internal static string Render(string trigger, string menu, string placement = "bottomLeft") =>
+        $"""<div class="m-dropdown" x-data="dropdown" @click.outside="close()" @keydown.escape="close()">{Inner(trigger, menu, placement)}</div>""";
+
+    /// <summary>A menu item as <c>app-dropdown-item</c> renders it; <paramref name="attributes"/> is raw (e.g. an @click).</summary>
+    internal static string Item(string body, string? href = null, string attributes = "") => href is null
+        ? $"""<li role="none" class="ant-dropdown-menu-item"><button type="button" role="menuitem"{attributes}><span class="ant-dropdown-menu-title-content">{body}</span></button></li>"""
+        : $"""<li role="none" class="ant-dropdown-menu-item"><a role="menuitem" href="{Html.E(href)}"{attributes}><span class="ant-dropdown-menu-title-content">{body}</span></a></li>""";
+
+    private static string Inner(string trigger, string? menu, string placement)
+    {
+        var side = placement == "bottomRight" ? "m-dropdown-right" : "m-dropdown-left";
+        return $"""<div class="m-dropdown-trigger ant-dropdown-trigger" @click="toggle()" :class="open && 'ant-dropdown-open'" aria-haspopup="menu" :aria-expanded="open">{trigger}</div>""" +
+            $"""<div class="ant-dropdown ant-dropdown-placement-{Html.E(placement)} m-dropdown-panel {side}" x-show="open" x-transition.opacity x-cloak @click="close()">""" +
+            $"""<ul class="ant-dropdown-menu ant-dropdown-menu-root ant-dropdown-menu-vertical ant-dropdown-menu-light" role="menu">{menu}</ul></div>""";
     }
 }
 

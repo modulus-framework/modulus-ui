@@ -3,7 +3,7 @@
 The plan for the Modulus UI admin template and where each piece stands. Update the status tables in the same commit
 as the work they describe.
 
-Last updated: 2026-09-25 · commit `83c8ca2` · CI green on `main`
+Last updated: 2026-09-26 · CI green on `main` at `bf883c9`
 
 **Legend:** ✅ done and verified · 🟡 in progress · ⬜ not started · ➖ not applicable
 
@@ -60,7 +60,7 @@ Details are in [DESIGN.md](DESIGN.md).
 | 10 | Cross-sample parity, mobile and dark-mode sweeps | ✅ |
 | 11 | Tests, docs, screenshots, Release build with 0 warnings | ✅ |
 | 12 | Repository published to GitHub, CI green | ✅ |
-| 13 | Follow-up work (§6) | ⬜ |
+| 13 | Follow-up work (§6) | 🟡 |
 
 ## 4. Page inventory
 
@@ -121,7 +121,7 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 
 | Check | How | Last result |
 |---|---|---|
-| Unit and component tests | `dotnet test --solution Modulus.slnx` | ✅ 68 passed |
+| Unit and component tests | `dotnet test --solution Modulus.slnx` | ✅ 74 passed |
 | Release build | `dotnet build Modulus.slnx -c Release` | ✅ 0 warnings, 0 errors |
 | AntD drift | `dotnet run --project tools/antd-drift` | ✅ no drift (AntDesign 1.6.2) |
 | CI | GitHub Actions `CI` on `main` | ✅ green |
@@ -142,7 +142,7 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 
 | Item | Area | Status |
 |---|---|---|
-| Column-settings popover and density control built into `app-table` (the data table sample builds them from markup) | MVC library | ⬜ |
+| Column picker and density control built into the library: `app-table-columns`, `app-table-settings`, `app-table hidden-columns / density / scroll-x / table-footer` | MVC library | ✅ |
 | Keep filters in the URL (`hx-push-url` with the query) on the remaining MVC list pages | MVC samples | ⬜ |
 | MVC equivalents for Blazor-only widgets (Cascader, TreeSelect, Transfer, Tree, Calendar, Carousel, Anchor) | MVC library | ⬜ |
 | Localization: bind `LocaleProvider` to the request culture | Both | ⬜ |
@@ -157,5 +157,6 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 
 | Date | Change |
 |---|---|
+| 2026-09-26 | MVC library: `app-table-columns` (column picker whose links carry the hidden set in the URL) and `app-table-settings` (reload + density with ProTable's Comfortable / Standard / Compact); `app-table` gains `hidden-columns` (drops `data-col` cells), `density`, `scroll-x`, `layout` and a `table-footer` slot. The data table and every list page use them; `_TableSettings.cshtml` is gone. `TableColumns` moves the hidden-set logic into `Modulus.Ui.Abstractions`. |
 | 2026-09-25 | Fix: MVC and Razor Pages pages could not be scrolled. The layout's shared drawer always carried `ant-drawer-open`, which triggers AntD's `body { overflow: hidden }` scroll lock; the lock now applies only while the drawer is open. |
 | 2026-09-25 | Library rebuilt on AntDesign 1.6.2 aliases; Tabler shell; three samples with all pages; docs, tests and CI; first push to GitHub (`83c8ca2`). |

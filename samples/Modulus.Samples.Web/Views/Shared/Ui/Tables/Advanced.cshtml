@@ -33,29 +33,9 @@
                                 @@click="$refs.input.value = ''; value = ''; document.getElementById('employees-filter').requestSubmit()"><app-icon type="close-circle" theme="Fill" /></button>
                     </span>
                 </span>
-                <app-dropdown placement="bottomRight">
-                    <button type="button" class="ant-btn ant-btn-default"><app-ti name="columns" /><span>Columns</span></button>
-                    <dropdown-menu>
-                        @foreach (var (key, title) in EmployeeDirectory.OptionalColumns)
-                        {
-                            <app-dropdown-item href="@grid.Href(("hide", EmployeeDirectory.ToggleHidden(Model.Hidden, key)), ("current", Model.Request.Current.ToString()))">
-                                <span class="m-column-toggle"><app-ti name="@(Model.Shows(key) ? "square-check" : "square")" />@title</span>
-                            </app-dropdown-item>
-                        }
-                    </dropdown-menu>
-                </app-dropdown>
+                <app-table-columns columns="EmployeeDirectory.OptionalColumns" hidden="Model.Hidden" href="@(hide => grid.Href(("hide", hide), ("current", Model.Request.Current.ToString())))" />
                 <a class="ant-btn ant-btn-default" href="@Base/export@(exportQuery)" hx-boost="false" download><app-ti name="download" /><span>Export CSV</span></a>
-                <div class="m-table-toolbar-settings">
-                    <a class="ant-btn ant-btn-text ant-btn-icon-only" href="@grid.Current" aria-label="Reload" title="Reload"><app-icon type="reload" /></a>
-                    <app-dropdown placement="bottomRight">
-                        <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Table density" title="Density"><app-icon type="column-height" /></button>
-                        <dropdown-menu>
-                            <app-dropdown-item @@click="setDensity('')">Default</app-dropdown-item>
-                            <app-dropdown-item @@click="setDensity('ant-table-middle')">Middle</app-dropdown-item>
-                            <app-dropdown-item @@click="setDensity('ant-table-small')">Compact</app-dropdown-item>
-                        </dropdown-menu>
-                    </app-dropdown>
-                </div>
+                <app-table-settings reload-href="@grid.Current" />
             </div>
         </div>
 
@@ -91,63 +71,55 @@
             </div>
         </div>
 
-        <div class="ant-table-wrapper">
-            <div class="ant-table ant-table-scroll-horizontal" :class="density">
-                <div class="ant-table-container">
-                    <div class="ant-table-content" style="overflow: auto hidden;">
-                        <table style="width: 1100px; min-width: 100%; table-layout: fixed;">
-                            <colgroup>
-                                <col style="@ColStyle("48px")" /><col style="@ColStyle("260px")" />
-                                @if (Model.Shows("position")) { <col style="@ColStyle("190px")" /> }
-                                @if (Model.Shows("department")) { <col style="@ColStyle("150px")" /> }
-                                @if (Model.Shows("office")) { <col style="@ColStyle("150px")" /> }
-                                @if (Model.Shows("start")) { <col style="@ColStyle("130px")" /> }
-                                @if (Model.Shows("salary")) { <col style="@ColStyle("120px")" /> }
-                                <col style="@ColStyle("110px")" />
-                            </colgroup>
-                            <thead class="ant-table-thead">
-                                <tr>
-                                    <th class="ant-table-cell ant-table-selection-column">
-                                        <app-checkbox aria-label="Select all rows" data-select-all @@change="toggleAll($event.target.checked)" />
-                                    </th>
-                                    @grid.SortTh(nameof(Employee.Name), "Employee")
-                                    @if (Model.Shows("position")) { @grid.SortTh(nameof(Employee.Position), "Position") }
-                                    @if (Model.Shows("department")) { @grid.SortTh(nameof(Employee.Department), "Department") }
-                                    @if (Model.Shows("office")) { @grid.SortTh(nameof(Employee.Office), "Office") }
-                                    @if (Model.Shows("start")) { @grid.SortTh(nameof(Employee.StartDate), "Start date") }
-                                    @if (Model.Shows("salary")) { @grid.SortTh(nameof(Employee.Salary), "Salary", "text-align: right") }
-                                    <th class="ant-table-cell">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody class="ant-table-tbody">
-                                @if (Model.Page.Data.Count == 0)
-                                {
-                                    <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="@visible"><div class="m-table-empty">No employees match these filters</div></td></tr>
-                                }
-                                @foreach (var e in Model.Page.Data)
-                                {
-                                    <tr class="ant-table-row ant-table-row-level-0">
-                                        <td class="ant-table-cell ant-table-selection-column"><app-checkbox name="ids" value="@e.Id.ToString()" aria-label="@($"Select {e.Name}")" /></td>
-                                        <td class="ant-table-cell@(grid.SortClass(nameof(Employee.Name)))">
-                                            <div class="m-entity">
-                                                <span class="m-avatar m-avatar-sm m-av-@e.Tint">@Fmt.Initials(e.Name)</span>
-                                                <div class="m-entity-text"><span class="m-entity-title">@e.Name</span><span class="m-entity-desc">@e.Email</span></div>
-                                            </div>
-                                        </td>
-                                        @if (Model.Shows("position")) { <td class="ant-table-cell@(grid.SortClass(nameof(Employee.Position)))">@e.Position</td> }
-                                        @if (Model.Shows("department")) { <td class="ant-table-cell@(grid.SortClass(nameof(Employee.Department)))">@e.Department</td> }
-                                        @if (Model.Shows("office")) { <td class="ant-table-cell@(grid.SortClass(nameof(Employee.Office)))"><span class="m-flex m-gap-6"><app-ti name="@(e.Office == "Remote" ? "home" : "map-pin")" />@e.Office</span></td> }
-                                        @if (Model.Shows("start")) { <td class="ant-table-cell m-muted@(grid.SortClass(nameof(Employee.StartDate)))">@Fmt.Date(e.StartDate)</td> }
-                                        @if (Model.Shows("salary")) { <td class="ant-table-cell@(grid.SortClass(nameof(Employee.Salary)))" style="text-align:right"><span class="m-num m-heading">@Fmt.Money0(e.Salary)</span></td> }
-                                        <td class="ant-table-cell"><span class="m-badge @EmployeeDirectory.StatusBadge(e.Status)">@EmployeeDirectory.StatusLabel(e.Status)</span></td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            @grid.Pager(Model.Page.Total)
-        </div>
+        <app-table density="true" scroll-x="1100" layout="fixed" hidden-columns="Model.Hidden">
+            <colgroup>
+                <col style="@ColStyle("48px")" /><col style="@ColStyle("260px")" />
+                <col data-col="position" style="@ColStyle("190px")" />
+                <col data-col="department" style="@ColStyle("150px")" />
+                <col data-col="office" style="@ColStyle("150px")" />
+                <col data-col="start" style="@ColStyle("130px")" />
+                <col data-col="salary" style="@ColStyle("120px")" />
+                <col style="@ColStyle("110px")" />
+            </colgroup>
+            <thead class="ant-table-thead">
+                <tr>
+                    <th class="ant-table-cell ant-table-selection-column">
+                        <app-checkbox aria-label="Select all rows" data-select-all @@change="toggleAll($event.target.checked)" />
+                    </th>
+                    @grid.SortTh(nameof(Employee.Name), "Employee")
+                    @grid.SortTh(nameof(Employee.Position), "Position", col: "position")
+                    @grid.SortTh(nameof(Employee.Department), "Department", col: "department")
+                    @grid.SortTh(nameof(Employee.Office), "Office", col: "office")
+                    @grid.SortTh(nameof(Employee.StartDate), "Start date", col: "start")
+                    @grid.SortTh(nameof(Employee.Salary), "Salary", "text-align: right", col: "salary")
+                    <th class="ant-table-cell">Status</th>
+                </tr>
+            </thead>
+            <tbody class="ant-table-tbody">
+                @if (Model.Page.Data.Count == 0)
+                {
+                    <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="@visible"><div class="m-table-empty">No employees match these filters</div></td></tr>
+                }
+                @foreach (var e in Model.Page.Data)
+                {
+                    <tr class="ant-table-row ant-table-row-level-0">
+                        <td class="ant-table-cell ant-table-selection-column"><app-checkbox name="ids" value="@e.Id.ToString()" aria-label="@($"Select {e.Name}")" /></td>
+                        <td class="ant-table-cell@(grid.SortClass(nameof(Employee.Name)))">
+                            <div class="m-entity">
+                                <span class="m-avatar m-avatar-sm m-av-@e.Tint">@Fmt.Initials(e.Name)</span>
+                                <div class="m-entity-text"><span class="m-entity-title">@e.Name</span><span class="m-entity-desc">@e.Email</span></div>
+                            </div>
+                        </td>
+                        <td data-col="position" class="ant-table-cell@(grid.SortClass(nameof(Employee.Position)))">@e.Position</td>
+                        <td data-col="department" class="ant-table-cell@(grid.SortClass(nameof(Employee.Department)))">@e.Department</td>
+                        <td data-col="office" class="ant-table-cell@(grid.SortClass(nameof(Employee.Office)))"><span class="m-flex m-gap-6"><app-ti name="@(e.Office == "Remote" ? "home" : "map-pin")" />@e.Office</span></td>
+                        <td data-col="start" class="ant-table-cell m-muted@(grid.SortClass(nameof(Employee.StartDate)))">@Fmt.Date(e.StartDate)</td>
+                        <td data-col="salary" class="ant-table-cell@(grid.SortClass(nameof(Employee.Salary)))" style="text-align:right"><span class="m-num m-heading">@Fmt.Money0(e.Salary)</span></td>
+                        <td class="ant-table-cell"><span class="m-badge @EmployeeDirectory.StatusBadge(e.Status)">@EmployeeDirectory.StatusLabel(e.Status)</span></td>
+                    </tr>
+                }
+            </tbody>
+            <table-footer>@grid.Pager(Model.Page.Total)</table-footer>
+        </app-table>
     </div>
 </div>

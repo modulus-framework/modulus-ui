@@ -46,7 +46,7 @@
                         <input class="ant-input" type="search" name="keyword" value="@q.Keyword" placeholder="Search customers…" aria-label="Search customers" form="customers-filter" />
                     </span>
                     <app-button icon="download">Export</app-button>
-                    <partial name="Ui/_TableSettings" model="grid.Current" />
+                    <app-table-settings reload-href="@grid.Current" />
                 </div>
             </div>
 

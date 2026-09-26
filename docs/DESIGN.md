@@ -113,7 +113,6 @@ charts
 
 ## 4. Roadmap (not built yet)
 
-- Column-settings popover and density control in `app-table` (the data table sample builds them from plain markup).
 - MVC equivalents for the Blazor-only widgets (Cascader, TreeSelect, Transfer, Tree, Calendar, Carousel, Anchor),
   probably as Blazor components hosted in the MVC page rather than re-implemented in Alpine.
 - Keep the query string in `hx-push-url` for the remaining MVC list pages (the data table already does), so filtered lists are linkable.

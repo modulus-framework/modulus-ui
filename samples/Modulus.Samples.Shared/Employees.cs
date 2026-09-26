@@ -21,8 +21,8 @@ public static class EmployeeDirectory
     public static readonly string[] Offices = ["Berlin", "London", "New York", "Singapore", "Tokyo", "Remote"];
 
     /// <summary>Optional columns (key, title); Employee and Status are always shown.</summary>
-    public static readonly (string Key, string Title)[] OptionalColumns =
-        [("position", "Position"), ("department", "Department"), ("office", "Office"), ("start", "Start date"), ("salary", "Salary")];
+    public static readonly TableColumn[] OptionalColumns =
+        [new("position", "Position"), new("department", "Department"), new("office", "Office"), new("start", "Start date"), new("salary", "Salary")];
 
     private static readonly Dictionary<string, string[]> Positions = new()
     {
@@ -48,17 +48,10 @@ public static class EmployeeDirectory
     };
 
     /// <summary>Parses the "hide" query value (comma-separated column keys).</summary>
-    public static HashSet<string> ParseHidden(string? hide) =>
-        (hide ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(k => OptionalColumns.Any(c => c.Key == k)).ToHashSet();
+    public static HashSet<string> ParseHidden(string? hide) => TableColumns.ParseHidden(hide, OptionalColumns);
 
     /// <summary>The "hide" value after toggling one column (null when every column is shown).</summary>
-    public static string? ToggleHidden(IReadOnlySet<string> hidden, string key)
-    {
-        var next = hidden.Contains(key) ? hidden.Where(k => k != key) : hidden.Append(key);
-        var value = string.Join(',', OptionalColumns.Select(c => c.Key).Where(next.Contains));
-        return value.Length == 0 ? null : value;
-    }
+    public static string? ToggleHidden(IReadOnlySet<string> hidden, string key) => TableColumns.ToggleHidden(hidden, key, OptionalColumns);
 
     public static IEnumerable<Employee> Filter(EmployeeQuery query)
     {
