@@ -56,6 +56,7 @@ public class ModulusScriptsTagHelper : TagHelper
         output.Content.SetHtmlContent("""
             <script src="/_content/Modulus.Ui.Assets/lib/htmx/htmx.min.js"></script>
             <script src="/_content/Modulus.Ui.Assets/js/modulus-mvc.js"></script>
+            <script src="/_content/Modulus.Ui.Assets/js/modulus-widgets.js"></script>
             <script defer src="/_content/Modulus.Ui.Assets/lib/alpinejs/alpine.min.js"></script>
             """);
     }

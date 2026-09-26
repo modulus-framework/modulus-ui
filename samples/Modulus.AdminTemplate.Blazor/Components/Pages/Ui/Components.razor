@@ -164,6 +164,16 @@
             <Pagination Total="85" DefaultCurrent="2" ShowSizeChanger="false" Style="margin-top: 16px" />
             <Pagination Total="85" DefaultCurrent="2" ShowSizeChanger="false" Size="PaginationSize.Small" Style="margin-top: 16px" />
         </Card>
+
+        <Card Bordered="false" Title="Anchor">
+            <p class="m-demo-desc">Jump to a section of a long page; the link of the section in view is highlighted.</p>
+            <Anchor Affix="false">
+                @foreach (var (id, label) in Sections)
+                {
+                    <AnchorLink Href="@($"components#{id}")" Title="@label" />
+                }
+            </Anchor>
+        </Card>
     </div>
 </section>
 
@@ -262,6 +272,25 @@
                     </Upload>
                 </FormItem>
             </Form>
+        </Card>
+
+        <Card Bordered="false" Title="Cascader and TreeSelect">
+            <p class="m-demo-desc">Pick a value from a hierarchy: a path of columns, or a tree in a dropdown.</p>
+            <Form Model="_form" Layout="@FormLayout.Vertical">
+                <FormItem Label="Office">
+                    <Cascader Options="_locations" @bind-Value="context.Location" Placeholder="Select a city" />
+                </FormItem>
+                <FormItem Label="Team">
+                    <TreeSelect TItemValue="string" TItem="TreeOption" DataSource="GalleryData.Teams" @bind-Value="context.Team"
+                                KeyExpression="n => n.DataItem.Value" TitleExpression="n => n.DataItem.Title" ChildrenExpression="n => n.DataItem.Children"
+                                IsLeafExpression="n => n.DataItem.IsLeaf" Placeholder="Select a team" TreeDefaultExpandAll />
+                </FormItem>
+            </Form>
+        </Card>
+
+        <Card Bordered="false" Title="Transfer">
+            <p class="m-demo-desc">Move items between two lists, e.g. the permissions a role grants.</p>
+            <Transfer DataSource="_permissions" TargetKeys="GalleryData.GrantedPermissions" Titles="@(new[] { "Available", "Granted" })" ShowSearch ListStyle="@(_ => "flex: 1; height: 260px")" />
         </Card>
     </div>
 </section>
@@ -377,6 +406,31 @@
             </div>
             <Empty Simple Description="@("No invoices yet")" Style="margin-top: 16px" />
         </Card>
+
+        <Card Bordered="false" Title="Tree">
+            <p class="m-demo-desc">Hierarchies such as folders or org charts; check nodes to select branches.</p>
+            <Tree TItem="TreeOption" DataSource="GalleryData.Files" Checkable ShowIcon="false"
+                  KeyExpression="n => n.DataItem.Value" TitleExpression="n => n.DataItem.Title" ChildrenExpression="n => n.DataItem.Children"
+                  IsLeafExpression="n => n.DataItem.IsLeaf" DisabledExpression="n => n.DataItem.Disabled"
+                  DefaultExpandedKeys="GalleryData.FilesExpanded" DefaultCheckedKeys="GalleryData.FilesChecked" />
+        </Card>
+
+        <Card Bordered="false" Title="Calendar">
+            <p class="m-demo-desc">A month at a glance, for picking a day or showing events.</p>
+            <Calendar FullScreen="false" DefaultValue="GalleryData.CalendarDate" />
+        </Card>
+
+        <Card Bordered="false" Title="Carousel">
+            <p class="m-demo-desc">Rotate through a few highlights in the same space.</p>
+            <Carousel Autoplay="TimeSpan.FromSeconds(5)">
+                @foreach (var (title, text, tone) in GalleryData.Slides)
+                {
+                    <CarouselSlick>
+                        <div class="m-demo-slide m-tile-@tone-lt"><h3>@title</h3><p>@text</p></div>
+                    </CarouselSlick>
+                }
+            </Carousel>
+        </Card>
     </div>
 </section>
 
@@ -449,6 +503,13 @@
     private static readonly string[] Plans = GalleryData.Plans;
     private static readonly string[] Views = GalleryData.Views;
     private static readonly GalleryInvoice[] Invoices = GalleryData.Invoices;
+
+    private static readonly CascaderNode[] _locations = GalleryData.Locations.Select(ToCascader).ToArray();
+    private static readonly List<TransferItem> _permissions =
+        GalleryData.Permissions.Select(p => new TransferItem { Key = p.Value, Title = p.Title, Disabled = p.Disabled }).ToList();
+
+    private static CascaderNode ToCascader(TreeOption o) =>
+        new() { Value = o.Value, Label = o.Title, Disabled = o.Disabled, Children = o.Children?.Select(ToCascader).ToArray() };
 
     private readonly GalleryForm _form = new();
     private bool _modal;

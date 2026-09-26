@@ -113,8 +113,6 @@ charts
 
 ## 4. Roadmap (not built yet)
 
-- MVC equivalents for the Blazor-only widgets (Cascader, TreeSelect, Transfer, Tree, Calendar, Carousel, Anchor),
-  probably as Blazor components hosted in the MVC page rather than re-implemented in Alpine.
 - Localization: bind `LocaleProvider` to the request culture.
 - Brand colour in dark mode once AntDesign ships variable-based dark CSS, or a generated dark override.
 - Replace `AntIcons` reflection if AntDesign makes its icon store public.

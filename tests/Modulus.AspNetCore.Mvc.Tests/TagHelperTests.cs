@@ -439,4 +439,112 @@ public class CoverageTagHelperTests
         Assert.Equal("ant-checkbox-wrapper ant-checkbox-wrapper-disabled", Classes(output));
         Assert.Contains("<span class=\"ant-checkbox ant-checkbox-disabled\"><input type=\"checkbox\" class=\"ant-checkbox-input\" name=\"ids\" value=\"1\" disabled", html);
     }
+
+    private static readonly TreeOption[] Files =
+    [
+        new("src", "src", [new("a", "a.cs"), new("b", "b.cs"), new("c", "c.cs", Disabled: true)]),
+        new("docs", "docs", [new("readme", "README.md")]),
+    ];
+
+    [Fact]
+    public async Task Tree_CheckablePostsCheckedLeavesAndHalfChecksTheParent()
+    {
+        var output = await RunAsync(new TreeTagHelper { Options = Files, Checkable = true, Name = "files", Expanded = ["src"], Checked = ["a"] }, "app-tree");
+
+        var html = Render(output);
+        Assert.Contains("ant-tree", Classes(output));
+        Assert.Contains("ant-tree-checkbox ant-tree-checkbox-indeterminate", html);
+        Assert.Contains("<input type=\"hidden\" name=\"files\" value=\"a\" :disabled", html);
+        Assert.Contains("<input type=\"hidden\" name=\"files\" value=\"b\" disabled", html);
+        Assert.Contains("ant-tree-checkbox-disabled", html);
+        // docs is collapsed: its child is rendered hidden.
+        Assert.Matches("ant-tree-treenode[^>]*style=\"display: none;\"[^>]*>(?:(?!treenode).)*README.md", html);
+    }
+
+    [Fact]
+    public async Task TreeSelect_ShowsTheSelectedTitleAndPostsTheValue()
+    {
+        var output = await RunAsync(new TreeSelectTagHelper { Options = Files, Name = "file", Value = "b", Placeholder = "Pick" }, "app-tree-select");
+
+        var html = Render(output);
+        Assert.Contains("m-select-wrap", Classes(output));
+        Assert.Contains("ant-select ant-tree-select", html);
+        Assert.Contains("<span class=\"ant-select-selection-item\"", html);
+        Assert.Contains(">b.cs<", html);
+        Assert.Contains("<input type=\"hidden\" name=\"file\" value=\"b\"", html);
+    }
+
+    [Fact]
+    public async Task Cascader_LabelsThePathAndPostsTheLeaf()
+    {
+        var output = await RunAsync(new CascaderTagHelper { Options = Files, Name = "file", Value = "readme" }, "app-cascader");
+
+        var html = Render(output);
+        Assert.Contains("ant-select ant-cascader", html);
+        Assert.Contains("docs / README.md", html);
+        Assert.Contains("<input type=\"hidden\" name=\"file\" value=\"readme\"", html);
+    }
+
+    [Fact]
+    public async Task Transfer_PostsTargetKeysOnly()
+    {
+        var output = await RunAsync(new TransferTagHelper
+        {
+            Options = [new("r", "Read"), new("w", "Write"), new("d", "Delete", Disabled: true)],
+            TargetKeys = ["w"], Name = "perms", Titles = "Available,Granted", ShowSearch = true,
+        }, "app-transfer");
+
+        var html = Render(output);
+        Assert.Contains("ant-transfer", Classes(output));
+        Assert.Equal(2, System.Text.RegularExpressions.Regex.Count(html, "class=\"ant-transfer-list\""));
+        Assert.Contains("<input type=\"hidden\" name=\"perms\" value=\"w\" :disabled", html);
+        Assert.Contains("<input type=\"hidden\" name=\"perms\" value=\"r\" disabled", html);
+        Assert.Contains("ant-transfer-list-search", html);
+        Assert.Contains("Granted", html);
+    }
+
+    [Fact]
+    public async Task Calendar_RendersTheMonthWithTheSelectedDay()
+    {
+        var culture = System.Globalization.CultureInfo.CurrentCulture;
+        System.Globalization.CultureInfo.CurrentCulture = new("en-US");
+        try
+        {
+            var output = await RunAsync(new CalendarTagHelper { Date = new DateTime(2026, 10, 14), Name = "day" }, "app-calendar");
+
+            var html = Render(output);
+            Assert.Contains("ant-picker-calendar", Classes(output));
+            Assert.Contains("<th>Su</th><th>Mo</th>", html);
+            Assert.Matches("ant-picker-cell-selected[^>]*>.*?14<", html);
+            Assert.Contains("<input type=\"hidden\" name=\"day\" value=\"2026-10-14\"", html);
+        }
+        finally { System.Globalization.CultureInfo.CurrentCulture = culture; }
+    }
+
+    [Fact]
+    public async Task Carousel_RendersSlidesAndDots()
+    {
+        var output = await RunParentAsync(new CarouselTagHelper { Autoplay = 3000 }, "app-carousel",
+            (new CarouselSlideTagHelper(), "carousel-slide", "<p>One</p>"),
+            (new CarouselSlideTagHelper(), "carousel-slide", "<p>Two</p>"));
+
+        var html = Render(output);
+        Assert.Contains("ant-carousel", html);
+        Assert.Equal(2, System.Text.RegularExpressions.Regex.Count(html, "class=\"slick-slide[ \"]"));
+        Assert.Contains("slick-dots", html);
+        Assert.Contains("<p>Two</p>", html);
+    }
+
+    [Fact]
+    public async Task Anchor_RendersLinksWithInk()
+    {
+        var output = await RunParentAsync(new AnchorTagHelper(), "app-anchor",
+            (new AnchorLinkTagHelper { Href = "#a", Title = "A" }, "app-anchor-link", ""),
+            (new AnchorLinkTagHelper { Href = "#b", Title = "B & C" }, "app-anchor-link", ""));
+
+        var html = Render(output);
+        Assert.Contains("ant-anchor-ink", html);
+        Assert.Contains("href=\"#b\" title=\"B &amp; C\">B &amp; C</a>", html);
+        Assert.Contains("modulusAnchor(128)", html);
+    }
 }

@@ -152,9 +152,9 @@ Tag helpers. `/ui/components` in the MVC and Razor Pages samples shows each one;
 |---|---|
 | General | `app-button` (`loading`), `app-icon`, `app-title`, `app-text`, `app-paragraph`, `app-link` |
 | Layout | `app-divider`, `app-space`, `app-row` / `app-col` (24-column grid, gutters, xs–xxl), `app-flex` |
-| Navigation | `app-breadcrumb`, `app-tabs` / `app-tab`, `app-steps` / `app-step`, `app-dropdown` / `app-dropdown-item`, `app-pagination` (htmx or plain links) |
-| Data entry | `app-form-item` (`asp-for` + validation), `app-input` (affixes, addons, clear, password, datalist AutoComplete), `app-input-search`, `app-textarea` (count), `app-input-number`, `app-select`, `app-date-picker` (date/week/month/time), `app-range-picker`, `app-checkbox`, `app-checkbox-group`, `app-radio-group`, `app-switch`, `app-slider`, `app-rate`, `app-segmented`, `app-upload` |
-| Data display | `app-card`, `app-avatar` / `app-avatar-group`, `app-badge` / `app-badge-ribbon`, `app-tag`, `app-statistic`, `app-descriptions`, `app-table` (`hidden-columns`, `density`, `scroll-x`, `table-footer`), `app-table-columns` (column picker), `app-table-settings` (reload, density), `app-list`, `app-timeline`, `app-collapse` / `app-panel`, `app-image`, `app-tooltip`, `app-popover`, `app-empty` |
+| Navigation | `app-breadcrumb`, `app-tabs` / `app-tab`, `app-steps` / `app-step`, `app-dropdown` / `app-dropdown-item`, `app-pagination` (htmx or plain links), `app-anchor` / `app-anchor-link` (scroll-spy) |
+| Data entry | `app-form-item` (`asp-for` + validation), `app-input` (affixes, addons, clear, password, datalist AutoComplete), `app-input-search`, `app-textarea` (count), `app-input-number`, `app-select`, `app-date-picker` (date/week/month/time), `app-range-picker`, `app-checkbox`, `app-checkbox-group`, `app-radio-group`, `app-switch`, `app-slider`, `app-rate`, `app-segmented`, `app-upload`, `app-cascader`, `app-tree-select`, `app-transfer` |
+| Data display | `app-card`, `app-avatar` / `app-avatar-group`, `app-badge` / `app-badge-ribbon`, `app-tag`, `app-statistic`, `app-descriptions`, `app-table` (`hidden-columns`, `density`, `scroll-x`, `table-footer`), `app-table-columns` (column picker), `app-table-settings` (reload, density), `app-list`, `app-timeline`, `app-collapse` / `app-panel`, `app-image`, `app-tooltip`, `app-popover`, `app-empty`, `app-tree` (checkable), `app-calendar`, `app-carousel` / `carousel-slide` |
 | Feedback | `app-alert`, `app-progress` (line/circle/dashboard), `app-result`, `app-skeleton`, `app-spin`, `app-modal`, `app-watermark`; plus `Response.HxMessage`, `HxNotify`, `HxCloseModal` and `hx-confirm` |
 | Pro | `app-page-container`, `app-page-header`, `app-statistic-card`, `app-trend` |
 | Charts | `app-line-chart`, `app-column-chart`, `app-bar-chart`, `app-donut-chart`, `app-heatmap`, `app-sparkline`, `app-mini-bar` |
@@ -218,9 +218,10 @@ Run the samples in the **Development** environment (the default launch profile d
   so dark mode stays blue until AntDesign ships a variable-based dark theme.
 - **Icons in MVC** reuse Ant Design Blazor's icon store through reflection, because the API is internal. A unit test fails
   if an AntDesign upgrade moves it.
-- **Blazor-only widgets.** Cascader, TreeSelect, Transfer, Mentions, Tree, Calendar, Carousel, Anchor, Affix, BackTop and
-  Splitter need a component runtime and have no tag helper. In MVC, use a native control or render a Blazor component
-  with `<component type="…" render-mode="Server" />`. The manifest lists the MVC equivalent (or none) for every component.
+- **Blazor-only widgets.** Mentions, Affix, BackTop and Splitter have no tag helper. In MVC, use a native control or render
+  a Blazor component with `<component type="…" render-mode="Server" />`. The manifest lists the MVC equivalent (or none)
+  for every component. Cascader, TreeSelect, Transfer, Tree, Calendar, Carousel and Anchor have tag helpers backed by small
+  Alpine components (`modulus-widgets.js`); they post through hidden inputs, so forms work without script.
 - **Native pickers in MVC.** `app-date-picker` and `app-range-picker` use the browser's date/time inputs inside antd chrome,
   so the calendar popup follows the browser, not antd.
 - **Authorization** is wired for menus (`RequiredPolicy`). The sample sign-in page is a demo and does not authenticate.

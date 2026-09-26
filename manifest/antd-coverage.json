@@ -1,5 +1,5 @@
 {
-  "$comment": "Coverage of Ant Design Blazor by Modulus. status: alias = App* subclass in Modulus.Blazor (verified by tools/antd-drift); service = used through an injected AntDesign service; direct = use the AntDesign component as-is; superseded = replaced by a Pro pattern; pro = official AntDesign.ProLayout; modulus = Modulus Pro component. mvc = tag helper (app-*), partial or htmx response helper with the same DOM; entries without mvc are Blazor-only (interactive widgets that need a component runtime, e.g. Cascader, Transfer, Tree, Calendar). knownComponentTypes is the baseline written by `antd-drift --update-baseline`.",
+  "$comment": "Coverage of Ant Design Blazor by Modulus. status: alias = App* subclass in Modulus.Blazor (verified by tools/antd-drift); service = used through an injected AntDesign service; direct = use the AntDesign component as-is; superseded = replaced by a Pro pattern; pro = official AntDesign.ProLayout; modulus = Modulus Pro component. mvc = tag helper (app-*), partial or htmx response helper with the same DOM; entries without mvc are Blazor-only (e.g. Mentions, Affix, BackTop, Splitter). knownComponentTypes is the baseline written by `antd-drift --update-baseline`.",
   "antDesignVersion": "1.6.2",
   "components": {
     "General": {
@@ -82,7 +82,8 @@
         "status": "alias"
       },
       "Anchor": {
-        "status": "alias"
+        "status": "alias",
+        "mvc": "app-anchor"
       },
       "Breadcrumb": {
         "status": "alias",
@@ -138,7 +139,8 @@
         "mvc": "app-input items (datalist)"
       },
       "Cascader": {
-        "status": "alias"
+        "status": "alias",
+        "mvc": "app-cascader"
       },
       "Checkbox": {
         "status": "alias",
@@ -220,10 +222,12 @@
         "mvc": "app-switch"
       },
       "Transfer": {
-        "status": "alias"
+        "status": "alias",
+        "mvc": "app-transfer"
       },
       "TreeSelect": {
-        "status": "alias"
+        "status": "alias",
+        "mvc": "app-tree-select"
       },
       "Upload": {
         "status": "alias",
@@ -248,14 +252,16 @@
         "mvc": "app-badge-ribbon"
       },
       "Calendar": {
-        "status": "alias"
+        "status": "alias",
+        "mvc": "app-calendar"
       },
       "Card": {
         "status": "alias",
         "mvc": "app-card"
       },
       "Carousel": {
-        "status": "alias"
+        "status": "alias",
+        "mvc": "app-carousel"
       },
       "Collapse": {
         "status": "alias",
@@ -322,7 +328,8 @@
         "mvc": "app-tooltip"
       },
       "Tree": {
-        "status": "alias"
+        "status": "alias",
+        "mvc": "app-tree"
       }
     },
     "Feedback": {

@@ -161,6 +161,16 @@
                 <app-pagination current="2" total="85" page-size="10" table="false" style="margin-top: 16px" />
                 <app-pagination current="2" total="85" page-size="10" table="false" size="small" show-total="false" style="margin-top: 16px" />
             </app-card>
+
+            <app-card title="Anchor">
+                <p class="m-demo-desc">Jump to a section of a long page; the link of the section in view is highlighted.</p>
+                <app-anchor>
+                    @foreach (var (id, label) in sections)
+                    {
+                        <app-anchor-link href="#@id" title="@label" />
+                    }
+                </app-anchor>
+            </app-card>
         </div>
     </section>
 
@@ -243,6 +253,23 @@
                         <app-upload name="files" drag multiple text="Click or drag files here to upload" hint="PDF or images, up to 10 MB each." />
                     </app-form-item>
                 </div>
+            </app-card>
+
+            <app-card title="Cascader and TreeSelect">
+                <p class="m-demo-desc">Pick a value from a hierarchy: a path of columns, or a tree in a dropdown.</p>
+                <div class="ant-form ant-form-vertical">
+                    <app-form-item asp-for="Location" label="Office">
+                        <app-cascader asp-for="Location" options="GalleryData.Locations" placeholder="Select a city" />
+                    </app-form-item>
+                    <app-form-item asp-for="Team" label="Team">
+                        <app-tree-select asp-for="Team" options="GalleryData.Teams" placeholder="Select a team" tree-default-expand-all />
+                    </app-form-item>
+                </div>
+            </app-card>
+
+            <app-card title="Transfer">
+                <p class="m-demo-desc">Move items between two lists, e.g. the permissions a role grants.</p>
+                <app-transfer name="permissions" options="GalleryData.Permissions" target-keys="GalleryData.GrantedPermissions" titles="Available,Granted" show-search list-style="flex: 1; height: 260px" />
             </app-card>
         </div>
     </section>
@@ -364,6 +391,26 @@
                     <app-popover title="Seats" content="18 of 25 seats used. Add seats from Billing."><app-button>Popover</app-button></app-popover>
                 </div>
                 <app-empty description="No invoices yet" style="margin-top: 16px" />
+            </app-card>
+
+            <app-card title="Tree">
+                <p class="m-demo-desc">Hierarchies such as folders or org charts; check nodes to select branches.</p>
+                <app-tree options="GalleryData.Files" checkable name="files" expanded="GalleryData.FilesExpanded" checked="GalleryData.FilesChecked" />
+            </app-card>
+
+            <app-card title="Calendar">
+                <p class="m-demo-desc">A month at a glance, for picking a day or showing events.</p>
+                <app-calendar date="GalleryData.CalendarDate" />
+            </app-card>
+
+            <app-card title="Carousel">
+                <p class="m-demo-desc">Rotate through a few highlights in the same space.</p>
+                <app-carousel autoplay="5000">
+                    @foreach (var (title, text, tone) in GalleryData.Slides)
+                    {
+                        <carousel-slide><div class="m-demo-slide m-tile-@tone-lt"><h3>@title</h3><p>@text</p></div></carousel-slide>
+                    }
+                </app-carousel>
             </app-card>
         </div>
     </section>

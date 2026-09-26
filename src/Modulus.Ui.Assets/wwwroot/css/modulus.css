@@ -542,6 +542,9 @@ html[data-theme='dark'] .ant-tooltip-inner, html[data-theme='dark'] .ant-tooltip
 .m-demo-desc { margin: -4px 0 16px; color: var(--m-text-tertiary); }
 .m-demo-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 .m-demo-row + .m-demo-row { margin-top: 16px; }
+.m-demo-slide { display: flex; flex-direction: column; justify-content: center; height: 160px; padding: 24px 32px 36px; border-radius: var(--m-radius); }
+.m-demo-slide h3 { margin: 0 0 4px; color: inherit; font-size: 16px; font-weight: 600; }
+.m-demo-slide p { margin: 0; color: var(--m-text-secondary); }
 .m-demo-icons { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }
 .m-demo-icon {
     display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 4px 10px;
@@ -808,6 +811,20 @@ select.m-select.m-select-sm { width: auto; height: 28px; padding: 2px 28px 2px 8
 /* Header dropdowns */
 .m-dropdown { position: relative; display: inline-flex; }
 .m-dropdown-panel { position: absolute; top: calc(100% + 4px); right: 0; z-index: 1050; min-width: 180px; line-height: 1.5715; }
+/* MVC select-like widgets (app-cascader, app-tree-select): the Ant Design dropdown opens under the control, in place. */
+.m-select-wrap { position: relative; }
+.m-select-wrap > .ant-select { width: 100%; }
+.ant-select-dropdown.m-popup { top: calc(100% + 4px); left: 0; min-width: 100%; }
+.ant-cascader-dropdown.m-popup { min-width: 0; width: max-content; }
+.m-popup-scroll { max-height: 256px; overflow-y: auto; }
+/* Transfer on phones: the two lists stack, and the move buttons turn to point up / down. */
+@media (max-width: 575px) {
+    .ant-transfer { flex-direction: column; align-items: stretch; }
+    .ant-transfer .ant-transfer-list { width: 100% !important; flex: none !important; }
+    .ant-transfer .ant-transfer-operation { flex-direction: row-reverse; justify-content: center; gap: 8px; margin: 8px 0; }
+    .ant-transfer .ant-transfer-operation .ant-btn { margin: 0; }
+    .ant-transfer .ant-transfer-operation .anticon { transform: rotate(90deg); }
+}
 .m-dropdown-panel .ant-dropdown-menu-item > a,
 .m-dropdown-panel .ant-dropdown-menu-item > button { display: flex; align-items: center; gap: 8px; width: 100%; color: inherit; background: none; border: 0; padding: 0; font: inherit; cursor: pointer; text-align: left; }
 .m-dropdown-panel .m-notice-panel { box-shadow: var(--m-shadow-popup); }
