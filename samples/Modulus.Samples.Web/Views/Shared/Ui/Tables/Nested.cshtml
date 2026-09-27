@@ -1,0 +1,21 @@
+@model NestedPageModel
+@* Nested grid: one <app-nested-grid> per level, all driven by GarmentGrid.Settings. Expanding a row loads the next
+   level with htmx; each level searches, sorts, pages and saves on its own. The Blazor sample renders the same page
+   with <NestedGrid>. *@
+<app-page-header pretitle="Tables" title="Nested grid" subtitle="Expand a row to load its child table. Each level has its own columns, search, sort, paging and Save."></app-page-header>
+
+<div class="m-nested-settings">
+    <span class="m-muted">Levels</span>
+    <div class="ant-segmented" role="radiogroup" aria-label="Levels">
+        <div class="ant-segmented-group">
+            @for (var d = 1; d <= 4; d++)
+            {
+                var on = d == Model.Depth;
+                <a class="@(on ? "ant-segmented-item ant-segmented-item-selected" : "ant-segmented-item")" href="/tables/nested?depth=@d" role="radio" aria-checked="@(on ? "true" : "false")"><div class="ant-segmented-item-label">@d</div></a>
+            }
+        </div>
+    </div>
+    <span class="m-small m-muted">Orders → Styles → Materials → Items (item columns follow the material's category)</span>
+</div>
+
+<partial name="Ui/Tables/_NestedLevel" model="Model.Top" />

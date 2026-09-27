@@ -1,0 +1,3 @@
+@model NestedLevelModel
+@* One level of the nested grid: the page renders the top level, and each expanded row loads its level from here. *@
+<app-nested-grid view="Model.View" url="@Model.Url" />

@@ -86,6 +86,22 @@ charts
   InputNumber drops text it cannot parse, so the grid opens popups through `modulusShell.openPopup` and edits numbers
   in a native input.
 
+### Nested grid
+
+- One component serves every depth: `NestedGrid` renders a level as an `EditableGrid` whose row detail is another
+  `NestedGrid` for the next level. There are no per-type child tables; `NestedGridSettings` decides the levels, their
+  columns and whether rows expand. A level can take its columns from `ColumnSets` by a field of the parent row, so
+  sibling rows can have differently shaped children.
+- Children load lazily. Blazor calls `Load` when the child grid first renders (AntD only renders an expanded row's
+  template), and MVC puts an `hx-get … hx-trigger="intersect once" hx-target="this"` placeholder in the hidden
+  detail row. `hx-target="this"` matters: the placeholder would otherwise inherit the level form's target and replace
+  the parent.
+- Each MVC level is its own `<form>`, even though it sits inside the parent's form. htmx parses swapped fragments in a
+  `<template>`, so the nested form survives, and its inputs belong to it rather than to the parent. The level stops
+  `submit` and `grid-change` from bubbling, and names its fields `l{level}`, so a parent never sees a child's rows.
+- Save is per level and per page: `NestedGridChanges` carries the page as edited and the ids that were loaded but are
+  gone. Search, sort and paging wait for Save or Discard (Blazor), because they reload the page.
+
 ### Editable grid in MVC
 
 - `app-editable-grid` posts the whole grid on every action: the schema as JSON in `{name}.schema`, row ids in

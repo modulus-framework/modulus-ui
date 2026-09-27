@@ -1599,3 +1599,20 @@ html[data-theme='dark'] :is(.ant-color-picker-color-block, .ant-color-picker-pre
 .m-grid-add-option { position: fixed; z-index: 1050; width: 280px; margin: 0; padding: 8px; border-top: 0; border-radius: var(--m-radius-lg); background: var(--m-bg-elevated); box-shadow: var(--m-shadow-popup); }
 .m-cselect.ant-select-open .ant-select-selection-item { color: inherit; }
 .m-cselect-add-new { display: flex; align-items: center; justify-content: flex-start; gap: 6px; color: var(--m-primary); }
+
+/* Nested grid (NestedGrid / app-nested-grid) ------------------------------------------------------------ */
+
+.m-nested-settings { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 16px; }
+.m-nested .m-nested-search { width: 200px; flex: none; }
+.m-nested .m-nested-sort { width: auto; min-width: 150px; max-width: 220px; flex: none; }
+.m-nested-pager { margin: 0; }
+.m-nested-lazy, .m-nested-note { padding: 12px 4px; color: var(--m-text-tertiary); }
+/* A child level sits in its parent's expanded row: a flat, outlined card with an accent edge per level. */
+.m-nested .m-nested { margin: 4px 0; }
+.m-nested .m-nested > form > .m-grid,
+.m-nested .m-nested > .m-grid { border: 1px solid var(--m-border-secondary); border-left: 3px solid var(--m-nested-accent, var(--m-primary)); box-shadow: none; }
+.m-nested-level-1 { --m-nested-accent: var(--m-primary); }
+.m-nested-level-2 { --m-nested-accent: var(--m-purple); }
+.m-nested-level-3 { --m-nested-accent: var(--m-orange); }
+.m-nested .m-nested .m-table-toolbar { padding-top: 10px; padding-bottom: 10px; }
+.m-nested .m-nested .m-table-toolbar-title { font-size: 14px; }

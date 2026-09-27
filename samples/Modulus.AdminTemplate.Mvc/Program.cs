@@ -16,6 +16,7 @@ builder.Services.AddSingleton<IShellContentProvider, SampleShellContentProvider>
 
 builder.Services.AddSingleton<SampleStore>();
 builder.Services.AddSingleton<ProjectGridStore>();
+builder.Services.AddSingleton<GarmentStore>();
 
 var app = builder.Build();
 

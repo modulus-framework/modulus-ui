@@ -1,0 +1,6 @@
+@page "/tables/nested/{handler?}"
+@model NestedModel
+@{
+    ViewData["Title"] = "Nested grid";
+}
+<partial name="Ui/Tables/Nested" model="Model.Grid" />

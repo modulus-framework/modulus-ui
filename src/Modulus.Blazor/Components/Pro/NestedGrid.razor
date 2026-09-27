@@ -1,0 +1,149 @@
+@*
+    Nested, expandable editable grid driven by NestedGridSettings. Each level is an EditableGrid; a row that can
+    expand renders another NestedGrid for the next level, which loads its rows the first time it is shown.
+    Every level has its own columns (or column set picked by a parent field), search, sort, paging, editing and
+    Save. The number of levels in the settings is the nesting limit.
+
+    <NestedGrid Settings="_settings" Load="LoadAsync" Save="SaveAsync" />
+
+    Task<NestedGridPage> LoadAsync(NestedGridRequest request)   // request.Level, request.ParentId, keyword, sort, page
+    Task SaveAsync(NestedGridChanges changes)                    // rows on the page as edited, and deleted ids
+
+    The MVC equivalent is <app-nested-grid>, which renders the same levels with htmx.
+*@
+@using System.Globalization
+
+<div class="@($"m-nested m-nested-level-{Level}")">
+    <EditableGrid @ref="_grid" Columns="_columns" Rows="_rows" HeaderTitle="@Title" PageSize="LevelPageSize + 50"
+                  AllowAddRow="@(LevelSettings.Editable && LevelSettings.AllowAdd)" AllowDeleteRow="@(LevelSettings.Editable && LevelSettings.AllowDelete)"
+                  AllowColumnEdit="false" Size="@(Level == 0 ? TableSize.Middle : TableSize.Small)"
+                  RowDetail="@(HasChildren ? ChildFragment : null)" RowExpandable="row => Settings.CanExpand(Level, row)"
+                  OnSave="SaveAsync" OnDiscard="ReloadAsync" OnChange="() => _dirty = true" Class="m-nested-grid">
+        <TitleExtra><span class="m-badge m-badge-gray-lt">@_total</span></TitleExtra>
+        <ToolBar>
+            @if (LevelSettings.Searchable)
+            {
+                <Input TValue="string" @bind-Value="_keyword" Placeholder="Search…" AllowClear Size="@InputSize.Default" Class="m-nested-search"
+                       OnPressEnter="SearchAsync" OnClear="SearchAsync" Disabled="_dirty" aria-label="@($"Search {Title}")" />
+            }
+            @if (LevelSettings.Sortable)
+            {
+                <select class="m-select m-nested-sort" aria-label="Sort by" disabled="@_dirty" value="@SortValue" @onchange="SortAsync">
+                    <option value="">Sort: default</option>
+                    @foreach (var c in _columns.Where(c => !c.Hidden))
+                    {
+                        <option value="@($"{c.Key}:asc")">@c.Title ↑</option>
+                        <option value="@($"{c.Key}:desc")">@c.Title ↓</option>
+                    }
+                </select>
+            }
+        </ToolBar>
+        <Summary>
+            @if (_total > LevelPageSize)
+            {
+                <Pagination Current="_page" Total="_total" PageSize="LevelPageSize" Size="PaginationSize.Small" Disabled="_dirty"
+                            OnChange="e => PageAsync(e.Page)" Class="m-nested-pager" />
+            }
+            @if (_dirty)
+            {
+                <span class="m-small m-muted">Save or discard to search, sort or change page.</span>
+            }
+        </Summary>
+    </EditableGrid>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public NestedGridSettings Settings { get; set; } = new();
+
+    /// <summary>Loads one page of a level (the child levels ask the first time their parent row expands).</summary>
+    [Parameter, EditorRequired] public Func<NestedGridRequest, Task<NestedGridPage>> Load { get; set; } = default!;
+
+    /// <summary>Saves a level's page. The grid reloads that page afterwards.</summary>
+    [Parameter] public Func<NestedGridChanges, Task>? Save { get; set; }
+
+    /// <summary>The level this grid shows (0 for the top; set by the parent level).</summary>
+    [Parameter] public int Level { get; set; }
+
+    /// <summary>The parent row of a child level (set by the parent level).</summary>
+    [Parameter] public GridRecord? Parent { get; set; }
+
+    /// <summary>Title of the top level (child levels use the level title and the parent's first column).</summary>
+    [Parameter] public string? HeaderTitle { get; set; }
+
+    private EditableGrid? _grid;
+    private List<GridColumn> _columns = [];
+    private List<GridRecord> _rows = [];
+    private HashSet<string> _loadedIds = [];
+    private int _total, _page = 1;
+    private string? _keyword, _sortField;
+    private bool _descending, _dirty;
+
+    private NestedGridLevel LevelSettings => Settings.Level(Level) ?? new NestedGridLevel();
+    private int LevelPageSize => Math.Max(1, LevelSettings.PageSize);
+    private bool HasChildren => Settings.Level(Level + 1) is not null && LevelSettings.Expandable;
+    private string SortValue => _sortField is null ? "" : $"{_sortField}:{(_descending ? "desc" : "asc")}";
+
+    private string Title => Level == 0 && HeaderTitle is not null
+        ? HeaderTitle
+        : Parent is null || _columns.Count == 0 ? LevelSettings.Title : $"{LevelSettings.Title} · {ParentLabel}";
+
+    private string ParentLabel => Settings.ColumnsFor(Level - 1, null).FirstOrDefault() is { } first
+        ? GridSchema.Format(first, Parent?[first.Key], CultureInfo.CurrentCulture)
+        : Parent?.Id ?? "";
+
+    private RenderFragment<GridRecord> ChildFragment => row => __builder =>
+    {
+        <NestedGrid Settings="Settings" Load="Load" Save="Save" Level="Level + 1" Parent="row" @key="row.Id" />
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _columns = Settings.ColumnsFor(Level, Parent);
+        if (!LevelSettings.Editable) foreach (var c in _columns) c.Editable = false;
+        await LoadPageAsync();
+    }
+
+    private async Task LoadPageAsync()
+    {
+        var result = await Load(new NestedGridRequest(Level, Parent?.Id, _keyword, _sortField, _descending, _page, LevelPageSize));
+        _rows = [.. result.Rows];
+        _total = result.Total;
+        _page = NestedGridQuery.ClampPage(new NestedGridRequest(Level, Parent?.Id, Page: _page, PageSize: LevelPageSize), _total);
+        _loadedIds = [.. _rows.Select(r => r.Id)];
+        _dirty = false;
+        _grid?.MarkSaved();
+    }
+
+    private async Task ReloadAsync() => await LoadPageAsync();
+
+    private async Task SearchAsync()
+    {
+        _page = 1;
+        await LoadPageAsync();
+    }
+
+    private async Task SortAsync(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString() ?? "";
+        var parts = value.Split(':');
+        (_sortField, _descending) = parts.Length == 2 ? (parts[0], parts[1] == "desc") : (null, false);
+        _page = 1;
+        await LoadPageAsync();
+    }
+
+    private async Task PageAsync(int page)
+    {
+        _page = page;
+        await LoadPageAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (Save is not null)
+        {
+            var deleted = _loadedIds.Except(_rows.Select(r => r.Id)).ToList();
+            await Save(new NestedGridChanges(Level, Parent?.Id, _columns, _rows, deleted));
+        }
+        await LoadPageAsync();
+    }
+}

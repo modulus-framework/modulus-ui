@@ -1,0 +1,33 @@
+@page "/tables/nested"
+@inject GarmentStore Store
+@inject IMessageService Message
+
+<PageTitle>Nested grid · Modulus</PageTitle>
+
+@* One NestedGrid, driven by GarmentGrid.Settings: every level has its own columns, search, sort, paging and Save,
+   and loads its rows the first time its parent row expands. MVC and Razor Pages render the same page with
+   <app-nested-grid> (Samples.Web Views/Shared/Ui/Tables/Nested.cshtml). *@
+<PageHeading Pretitle="Tables" Title="Nested grid" Subtitle="Expand a row to load its child table. Each level has its own columns, search, sort, paging and Save." />
+
+<div class="m-nested-settings">
+    <span class="m-muted">Levels</span>
+    <Segmented TValue="string" Labels="_depths" @bind-Value="_depthText" />
+    <span class="m-small m-muted">Orders → Styles → Materials → Items (item columns follow the material's category)</span>
+</div>
+
+<NestedGrid @key="_depth" Settings="GarmentGrid.Settings(_depth)" HeaderTitle="Orders" Load="LoadAsync" Save="SaveAsync" />
+
+@code {
+    private string _depthText = "4";
+    private int _depth => int.Parse(_depthText, System.Globalization.CultureInfo.InvariantCulture);
+    private readonly string[] _depths = ["1", "2", "3", "4"];
+
+    private Task<NestedGridPage> LoadAsync(NestedGridRequest request) => Task.FromResult(Store.Load(GarmentGrid.Settings(_depth), request));
+
+    private Task SaveAsync(NestedGridChanges changes)
+    {
+        Store.Save(changes);
+        _ = Message.SuccessAsync("Saved");
+        return Task.CompletedTask;
+    }
+}

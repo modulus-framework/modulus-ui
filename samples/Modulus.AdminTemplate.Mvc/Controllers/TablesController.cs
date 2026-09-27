@@ -33,6 +33,18 @@ public class TablesController : SampleController
         return Page("Data table", "Tables/Advanced", EmployeeTablePage.Load(query, request, hide));
     }
 
+    /// <summary>Nested grid: the top level; expanded rows load theirs from nested/level.</summary>
+    [HttpGet("nested")]
+    public IActionResult Nested([FromServices] GarmentStore store) => Page("Nested grid", "Tables/Nested", GarmentGridActions.Page(store, Request.Query));
+
+    [HttpGet("nested/level")]
+    public IActionResult NestedLevel([FromServices] GarmentStore store) => PartialView(NestedLevelView, GarmentGridActions.Get(store, Request.Query));
+
+    [HttpPost("nested/level")]
+    public IActionResult NestedLevelPost([FromServices] GarmentStore store) => PartialView(NestedLevelView, GarmentGridActions.Post(store, Request, Response));
+
+    private const string NestedLevelView = "~/Views/Shared/Ui/Tables/_NestedLevel.cshtml";
+
     /// <summary>Editable grid: the saved schema and rows.</summary>
     [HttpGet("editable")]
     public IActionResult Editable([FromServices] ProjectGridStore store) =>

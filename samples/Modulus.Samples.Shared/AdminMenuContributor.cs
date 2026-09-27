@@ -60,7 +60,8 @@ public sealed class AdminMenuContributor : IMenuContributor
                 Link("form-wizard", "Wizard", "forms/wizard", "list-check"),
                 Link("form-validation", "Validation", "forms/validation", "square-rounded-check"),
                 Link("tables", "Data table", "tables/advanced", "table"),
-                Link("editable-grid", "Editable grid", "tables/editable", "table-options")));
+                Link("editable-grid", "Editable grid", "tables/editable", "table-options"),
+                Link("nested-grid", "Nested grid", "tables/nested", "stack-2")));
         return Task.CompletedTask;
     }
 

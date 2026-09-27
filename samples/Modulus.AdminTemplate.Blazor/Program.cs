@@ -18,6 +18,7 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddSingleton<SampleStore>();
 builder.Services.AddSingleton<ProjectGridStore>();
+builder.Services.AddSingleton<GarmentStore>();
 
 var app = builder.Build();
 
