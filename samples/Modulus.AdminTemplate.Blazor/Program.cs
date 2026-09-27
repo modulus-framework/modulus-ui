@@ -14,6 +14,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddModulusBlazor(theme => builder.Configuration.GetSection("Modulus:Theme").Bind(theme));
 builder.Services.AddTransient<IMenuContributor, AdminMenuContributor>();
 builder.Services.AddSingleton<IShellContentProvider, SampleShellContentProvider>();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddSingleton<SampleStore>();
 builder.Services.AddSingleton<ProjectGridStore>();

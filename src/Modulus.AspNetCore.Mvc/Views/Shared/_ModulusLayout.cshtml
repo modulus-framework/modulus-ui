@@ -20,7 +20,7 @@
         async policy => (await Authorization.AuthorizeAsync(User, policy)).Succeeded);
     var shell = new ShellView(theme, menu, Context.Request.Path.Value?.Trim('/') ?? "",
         await ShellContentProvider.GetContentAsync(User, Context.RequestAborted),
-        ThemeCss.ResolveMode(cookies[ThemeCss.ModeCookie], ThemeMode.System));
+        ThemeCss.ResolveMode(cookies[ThemeCss.ModeCookie], ThemeMode.System), cookies[ShellRenderer.TenantCookie]);
     var title = ViewData["Title"] as string;
 }
 <!DOCTYPE html>

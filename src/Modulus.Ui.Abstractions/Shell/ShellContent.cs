@@ -14,6 +14,15 @@ public sealed record ShellLink(string Label, string Href, string? Icon = null)
     public bool DividerBefore { get; init; }
 }
 
+/// <summary>A tile in the header app switcher. <paramref name="Tone"/> tints the icon (primary, green, orange, …).</summary>
+public sealed record ShellApp(string Name, string Href, string Icon, string Tone = "primary", string? Description = null);
+
+/// <summary>
+/// A tenant (workspace, organisation) in the header tenant switcher. Without <paramref name="Href"/>, choosing it
+/// writes the <see cref="ShellRenderer.TenantCookie"/> cookie and reloads the page.
+/// </summary>
+public sealed record ShellTenant(string Id, string Name, string? Subtitle = null, string? LogoUrl = null, string? Href = null);
+
 /// <summary>Per-request header and footer content: user, notifications, menus.</summary>
 public sealed class ShellContent
 {
@@ -35,6 +44,24 @@ public sealed class ShellContent
     public string? SignOutHref { get; set; } = "logout";
 
     public IReadOnlyList<ShellLink> FooterLinks { get; set; } = [];
+
+    /// <summary>Tiles of the app switcher (grid icon in the header). Null hides it.</summary>
+    public IReadOnlyList<ShellApp>? Apps { get; set; }
+
+    /// <summary>"View all apps" link under the app grid. Null hides it.</summary>
+    public string? AppsHref { get; set; }
+
+    /// <summary>Tenants of the tenant switcher (next to the brand). Null or empty hides it.</summary>
+    public IReadOnlyList<ShellTenant>? Tenants { get; set; }
+
+    /// <summary>
+    /// Id of the current tenant. Null uses the <see cref="ShellRenderer.TenantCookie"/> cookie
+    /// (<see cref="ShellView.TenantId"/>), then the first tenant.
+    /// </summary>
+    public string? CurrentTenantId { get; set; }
+
+    /// <summary>Links under the tenant list, such as "Manage workspaces".</summary>
+    public IReadOnlyList<ShellLink> TenantLinks { get; set; } = [];
 
     /// <summary>Placeholder of the header search box, which searches the menu. Null hides the search box.</summary>
     public string? SearchPlaceholder { get; set; } = "Search…";

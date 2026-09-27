@@ -60,6 +60,10 @@ charts
 - `AppShell` is the default shell: the Tabler layout (header, horizontal navbar or vertical sidebar, footer, settings
   panel). Its markup comes from `ShellRenderer` in `Modulus.Ui.Abstractions`, the same code MVC's `_ModulusLayout` calls,
   so the two flavors cannot drift apart; `modulus-shell.js` adds the behaviour in both.
+- The header's app switcher and tenant switcher are data on `ShellContent` (`Apps`, `Tenants`). Modulus doesn't
+  own tenancy: the app names the current tenant, or lets the switcher keep it in the `modulus-tenant` cookie. The
+  interactive Blazor circuit has no `HttpContext`, so the host reads the cookie while prerendering and passes
+  `AppShell TenantId`. Switching reloads the page, so every server-rendered part picks up the new tenant.
 - `ModulusLayout` is the alternative Ant Design Pro shell. It wraps `BasicLayout`, converts `MenuItemDefinition` →
   `MenuDataItem`, hides items the user isn't authorized for and renders the footer via `FooterView`.
 - Pro components are plain Razor over Ant Design components. They never touch AntDesign internals.

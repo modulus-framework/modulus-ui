@@ -1,8 +1,19 @@
 @inherits LayoutComponentBase
+@using Modulus.Ui.Abstractions.Shell
+@inject IHttpContextAccessor HttpContextAccessor
 
-<AppShell>@Body</AppShell>
+<AppShell TenantId="@TenantId">@Body</AppShell>
 
 <div id="blazor-error-ui" data-nosnippet>
     Something went wrong. <a href="." class="reload">Reload</a>
     <button type="button" class="dismiss" aria-label="Dismiss">×</button>
 </div>
+
+@code {
+    // The tenant switcher writes a cookie and reloads. The cookie is read while prerendering and carried into the
+    // interactive circuit, which has no HttpContext.
+    [PersistentState] public string? TenantId { get; set; }
+
+    protected override void OnInitialized() =>
+        TenantId ??= HttpContextAccessor.HttpContext?.Request.Cookies[ShellRenderer.TenantCookie];
+}

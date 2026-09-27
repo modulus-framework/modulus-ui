@@ -21,10 +21,13 @@ pixel-for-pixel where the controls allow it.
 - **Every Ant Design Blazor component**, as-is. Modulus adds thin `App*` aliases (`AppButton : AntDesign.Button`),
   so every upstream parameter works and new ones arrive automatically on upgrade. The coverage manifest lists 90 aliases;
   CI verifies them against the pinned AntDesign package.
-- **Tabler-style shell**: header with page search (Ctrl K), notifications and account menu; a horizontal navbar or a
+- **Tabler-style shell**: header with page search (Ctrl K), an app switcher, a tenant switcher, notifications and account menu; a horizontal navbar or a
   vertical sidebar, boxed or fluid width and a light or dark nav, all switchable in a settings panel and remembered in
   cookies; footer; light/dark mode with no flash on load. One renderer (`ShellRenderer`) produces the markup for
   Blazor's `AppShell` and MVC's `_ModulusLayout`. The Ant Design Pro `ModulusLayout` is still available for Blazor.
+  Header content (user, notifications, `Apps`, `Tenants`, links) comes from your `IShellContentProvider`. A tenant
+  without an `Href` is switched by writing the `modulus-tenant` cookie and reloading (cancel the `modulus:tenant-change`
+  event to handle it yourself); set `ShellContent.CurrentTenantId` when your app resolves the tenant itself.
 - **Pro components** following ProComponents conventions: `ProTable` (server paging, sorting, selection and batch actions,
   density, reload), `QueryFilter` (collapsible search form), `ModalForm` / `DrawerForm` (validated, async submit),
   `StatisticCard` + `Trend`, `FooterToolbar`.

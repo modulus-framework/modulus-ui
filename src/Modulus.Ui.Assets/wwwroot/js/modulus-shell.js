@@ -11,6 +11,8 @@
  *   [data-m-theme-toggle]  light / dark
  *   [data-m-customizer]    theme settings panel (colour mode, scheme, layout, width, radius)
  *   [data-m-mark-read]     marks header notifications as read
+ *   [data-m-tenant]        tenant switcher: writes the modulus-tenant cookie and reloads (cancel modulus:tenant-change to
+ *                          handle it yourself); [data-m-tenant-filter] filters the tenant list
  *
  * window.modulusShell.openPopup(gridId) opens the Ant Design Select / DatePicker in the grid's editing cell, or
  * focuses its input (Blazor EditableGrid calls it when a cell switches to its editor; the components ignore Open and
@@ -76,6 +78,56 @@
         if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)) { e.preventDefault(); openSearch(); }
         else if (e.key === '/' && !typing) { e.preventDefault(); openSearch(); }
     });
+
+    // Tenant switcher -------------------------------------------------------------------
+
+    function chooseTenant(id) {
+        var ev = new CustomEvent('modulus:tenant-change', { detail: { id: id }, bubbles: true, cancelable: true });
+        if (!document.dispatchEvent(ev)) return;
+        document.cookie = 'modulus-tenant=' + encodeURIComponent(id) + '; path=/; max-age=31536000; samesite=lax';
+        location.reload();
+    }
+
+    function filterTenants(input) {
+        var menu = input.closest('.m-tenant-menu');
+        var q = input.value.trim().toLowerCase();
+        var shown = 0;
+        menu.querySelectorAll('.m-tenant-item').forEach(function (item) {
+            var match = !q || (item.getAttribute('data-m-tenant-name') || '').toLowerCase().indexOf(q) >= 0;
+            item.hidden = !match;
+            if (match) shown++;
+        });
+        var empty = menu.querySelector('.m-tenant-empty');
+        if (empty) empty.hidden = shown > 0;
+    }
+
+    document.addEventListener('click', function (e) {
+        var item = e.target instanceof Element && e.target.closest('[data-m-tenant]');
+        if (!item) return;
+        var d = item.closest('details');
+        if (d) d.removeAttribute('open');
+        if (item.getAttribute('aria-selected') !== 'true') chooseTenant(item.getAttribute('data-m-tenant'));
+    });
+
+    document.addEventListener('input', function (e) {
+        if (e.target.matches && e.target.matches('[data-m-tenant-filter]')) filterTenants(e.target);
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (!(e.target.matches && e.target.matches('[data-m-tenant-filter]')) || e.key !== 'Enter') return;
+        e.preventDefault();
+        var first = e.target.closest('.m-tenant-menu').querySelector('.m-tenant-item:not([hidden])');
+        if (first) first.click();
+    });
+
+    // Opening the switcher resets the filter and focuses it (or the current tenant).
+    document.addEventListener('toggle', function (e) {
+        var d = e.target;
+        if (!d.open || !d.matches || !d.matches('[data-m-tenants]')) return;
+        var filter = d.querySelector('[data-m-tenant-filter]');
+        if (filter) { filter.value = ''; filterTenants(filter); filter.focus(); }
+        else { var current = d.querySelector('.m-tenant-item.active'); if (current) current.focus(); }
+    }, true);
 
     // Search: every navigation link, deduplicated by URL ---------------------------------------
 

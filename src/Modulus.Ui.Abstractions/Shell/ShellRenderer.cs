@@ -10,7 +10,8 @@ namespace Modulus.Ui.Abstractions.Shell;
 /// <param name="Menu">Authorized menu tree.</param>
 /// <param name="Path">Current app-relative path without a leading slash.</param>
 /// <param name="Mode">"light" or "dark" when known on the server, otherwise null.</param>
-public sealed record ShellView(ModulusThemeOptions Options, IReadOnlyList<MenuItemDefinition> Menu, string Path, ShellContent Content, string? Mode = null);
+/// <param name="TenantId">Value of the <see cref="ShellRenderer.TenantCookie"/> cookie, used when the content names no current tenant.</param>
+public sealed record ShellView(ModulusThemeOptions Options, IReadOnlyList<MenuItemDefinition> Menu, string Path, ShellContent Content, string? Mode = null, string? TenantId = null);
 
 /// <summary>
 /// Renders the Tabler-style application shell (sidebar, header, horizontal navbar, footer and the
@@ -24,6 +25,9 @@ public sealed record ShellView(ModulusThemeOptions Options, IReadOnlyList<MenuIt
 public static class ShellRenderer
 {
     public const string IconSprite = "/_content/Modulus.Ui.Assets/icons/tabler.svg";
+
+    /// <summary>Cookie the tenant switcher writes when a tenant has no link of its own.</summary>
+    public const string TenantCookie = "modulus-tenant";
 
     /// <summary>Tabler outline icon: <c>&lt;svg class="m-ti"&gt;&lt;use href="…#ti-name"/&gt;&lt;/svg&gt;</c>.</summary>
     public static string Icon(string name, string? cssClass = null) =>
@@ -88,6 +92,7 @@ public static class ShellRenderer
         sb.Append("""<header class="m-topbar"><div class="m-container m-topbar-inner">""");
         sb.Append("""<button type="button" class="m-icon-btn m-nav-toggle" data-m-nav-open aria-controls="m-sidebar" aria-label="Open navigation">""").Append(Icon("menu-2")).Append("</button>");
         sb.Append(Brand(view.Options, "m-topbar-brand"));
+        TenantSwitcher(sb, view);
 
         if (c.SearchPlaceholder is { } placeholder)
         {
@@ -100,6 +105,7 @@ public static class ShellRenderer
 
         sb.Append("""<div class="m-topbar-actions">""");
         sb.Append("""<button type="button" class="m-icon-btn m-search-open" data-m-search-open aria-label="Search">""").Append(Icon("search")).Append("</button>");
+        AppSwitcher(sb, c);
         sb.Append("""<button type="button" class="m-icon-btn" data-m-theme-toggle aria-label="Toggle dark mode">""")
           .Append(Icon("moon", "m-show-light")).Append(Icon("sun", "m-show-dark")).Append("</button>");
         if (view.Options.ShowCustomizer)
@@ -157,6 +163,89 @@ public static class ShellRenderer
 
         sb.Append("</div></div></header>");
         return sb.ToString();
+    }
+
+    /// <summary>Tenants listed before the switcher shows a filter box.</summary>
+    public const int TenantFilterThreshold = 5;
+
+    /// <summary>The tenant the header shows: the content's current id, then the cookie, then the first tenant.</summary>
+    public static ShellTenant? CurrentTenant(ShellView view)
+    {
+        var tenants = view.Content.Tenants;
+        if (tenants is not { Count: > 0 }) return null;
+        return tenants.FirstOrDefault(t => t.Id == view.Content.CurrentTenantId)
+            ?? tenants.FirstOrDefault(t => t.Id == view.TenantId)
+            ?? tenants[0];
+    }
+
+    private static void TenantSwitcher(StringBuilder sb, ShellView view)
+    {
+        if (CurrentTenant(view) is not { } current) return;
+        var tenants = view.Content.Tenants!;
+        sb.Append("""<details class="m-dropdown m-tenant" data-m-tenants><summary class="m-tenant-toggle" aria-label="Switch tenant" aria-haspopup="listbox">""")
+          .Append(TenantMark(current, tenants))
+          .Append($"""<span class="m-tenant-text"><span class="m-tenant-name">{E(current.Name)}</span>""")
+          .Append(current.Subtitle is null ? "" : $"""<span class="m-tenant-subtitle">{E(current.Subtitle)}</span>""")
+          .Append("</span>").Append(Icon("selector", "m-tenant-chevron"))
+          .Append("""</summary><div class="m-dropdown-menu m-tenant-menu"><div class="m-dropdown-header">Switch tenant</div>""");
+        if (tenants.Count > TenantFilterThreshold)
+            sb.Append("""<div class="m-tenant-filter">""").Append(Icon("search"))
+              .Append("""<input type="search" class="m-tenant-filter-input" data-m-tenant-filter placeholder="Find a tenant…" aria-label="Find a tenant" autocomplete="off" /></div>""");
+        sb.Append("""<div class="m-tenant-list" role="listbox" aria-label="Tenants">""");
+        foreach (var t in tenants)
+        {
+            var selected = t == current;
+            var body = TenantMark(t, tenants)
+                + $"""<span class="m-tenant-text"><span class="m-tenant-name">{E(t.Name)}</span>"""
+                + (t.Subtitle is null ? "" : $"""<span class="m-tenant-subtitle">{E(t.Subtitle)}</span>""")
+                + "</span>" + (selected ? Icon("check", "m-tenant-check") : "");
+            var cls = $"m-dropdown-item m-tenant-item{(selected ? " active" : "")}";
+            var aria = $""" role="option" aria-selected="{(selected ? "true" : "false")}" data-m-tenant-name="{E(t.Name)}" """;
+            sb.Append(t.Href is null
+                ? $"""<button type="button" class="{cls}"{aria}data-m-tenant="{E(t.Id)}">{body}</button>"""
+                : $"""<a class="{cls}"{aria}href="{Url(t.Href)}">{body}</a>""");
+        }
+        sb.Append("""</div><div class="m-dropdown-empty m-tenant-empty" hidden>No tenants match.</div>""");
+        if (view.Content.TenantLinks.Count > 0)
+        {
+            sb.Append("""<div class="m-dropdown-divider"></div>""");
+            foreach (var link in view.Content.TenantLinks)
+                sb.Append($"""<a class="m-dropdown-item" href="{Url(link.Href)}">{(link.Icon is null ? "" : Icon(link.Icon))}{E(link.Label)}</a>""");
+        }
+        sb.Append("</div></details>");
+    }
+
+    // Logo, or initials tinted by the tenant's position so each keeps its colour.
+    private static string TenantMark(ShellTenant tenant, IReadOnlyList<ShellTenant> all)
+    {
+        if (tenant.LogoUrl is { } src)
+            return $"""<span class="m-avatar m-avatar-sm m-tenant-mark" style="background-image:url('{E(src)}')"></span>""";
+        var tint = 1 + (IndexOf(all, tenant) % 8);
+        return $"""<span class="m-avatar m-avatar-sm m-tenant-mark m-av-{tint}">{E(Initials(tenant.Name))}</span>""";
+    }
+
+    private static int IndexOf(IReadOnlyList<ShellTenant> all, ShellTenant tenant)
+    {
+        for (var i = 0; i < all.Count; i++) if (all[i] == tenant) return i;
+        return 0;
+    }
+
+    private static void AppSwitcher(StringBuilder sb, ShellContent c)
+    {
+        if (c.Apps is not { Count: > 0 } apps) return;
+        sb.Append("""<details class="m-dropdown m-apps"><summary class="m-icon-btn" aria-label="Apps">""").Append(Icon("grid-dots"))
+          .Append("""</summary><div class="m-dropdown-menu m-dropdown-end m-dropdown-card m-apps-menu">""")
+          .Append("""<div class="m-dropdown-card-header"><span class="m-dropdown-card-title">Apps</span></div><div class="m-apps-grid">""");
+        foreach (var app in apps)
+        {
+            sb.Append($"""<a class="m-app-tile" href="{Url(app.Href)}"{(app.Description is null ? "" : $" title=\"{E(app.Description)}\"")}>""")
+              .Append($"""<span class="m-icon-tile m-tile-{E(app.Tone)}-lt">{Icon(app.Icon)}</span>""")
+              .Append($"""<span class="m-app-name">{E(app.Name)}</span></a>""");
+        }
+        sb.Append("</div>");
+        if (c.AppsHref is { } all)
+            sb.Append($"""<a class="m-dropdown-card-footer" href="{Url(all)}">View all apps</a>""");
+        sb.Append("</div></details>");
     }
 
     // Horizontal navbar ---------------------------------------------------------------------------------

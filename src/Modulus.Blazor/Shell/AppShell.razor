@@ -41,6 +41,9 @@
     /// <summary>Header and footer content. Null asks the registered IShellContentProvider.</summary>
     [Parameter] public ShellContent? Content { get; set; }
 
+    /// <summary>Current tenant when the content names none (for example the modulus-tenant cookie, read by the host).</summary>
+    [Parameter] public string? TenantId { get; set; }
+
     [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
 
     private IReadOnlyList<MenuItemDefinition> _menu = [];
@@ -77,7 +80,7 @@
     }
 
     // Theme settings live in cookies the browser applies before paint; the panel re-syncs itself on open.
-    private ShellView View() => new(ThemeOptions.Value, _menu, CurrentPath(), _content);
+    private ShellView View() => new(ThemeOptions.Value, _menu, CurrentPath(), _content, TenantId: TenantId);
 
     private string CurrentPath()
     {

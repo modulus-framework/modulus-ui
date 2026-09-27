@@ -213,6 +213,63 @@ a.m-notice-link:hover { background: var(--m-bg-subtle); color: var(--m-text); }
 .m-user-subtitle { color: var(--m-text-tertiary); font-size: 12px; white-space: nowrap; }
 .m-user .m-dropdown-menu { min-width: 220px; }
 
+
+/* Tenant switcher */
+.m-tenant { min-width: 0; margin-right: 8px; }
+.m-tenant-toggle { display: flex; align-items: center; gap: 10px; min-width: 0; max-width: 260px; height: 44px; padding: 0 8px; border: 1px solid var(--m-border-secondary); border-radius: var(--m-radius); color: var(--m-text); transition: background 0.15s, border-color 0.15s; }
+.m-tenant-toggle:hover, .m-tenant[open] > .m-tenant-toggle { background: var(--m-fill-secondary); border-color: var(--m-border); }
+.m-tenant-mark { flex: none; border-radius: 6px; }
+.m-tenant-text { display: flex; flex-direction: column; min-width: 0; line-height: 18px; text-align: left; }
+.m-tenant-name { overflow: hidden; color: var(--m-heading); font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.m-tenant-subtitle { overflow: hidden; color: var(--m-text-tertiary); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.m-tenant-chevron { flex: none; width: 16px; height: 16px; margin-left: auto; color: var(--m-text-tertiary); }
+.m-tenant-menu { width: 300px; max-width: calc(100vw - 24px); }
+.m-tenant-filter { position: relative; margin: 4px 4px 6px; }
+.m-tenant-filter .m-ti { position: absolute; left: 10px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); color: var(--m-text-tertiary); pointer-events: none; }
+.m-tenant-filter-input { width: 100%; height: 32px; padding: 4px 10px 4px 32px; border: 1px solid var(--m-border); border-radius: var(--m-radius); background: var(--m-bg-container); color: var(--m-text); font: inherit; }
+.m-tenant-filter-input:focus { outline: 0; border-color: color-mix(in srgb, var(--m-primary) 60%, var(--m-border)); box-shadow: var(--m-focus-ring); }
+.m-tenant-filter-input::-webkit-search-cancel-button { display: none; }
+.m-tenant-list { max-height: 320px; overflow: auto; }
+.m-tenant-item { padding: 6px 8px; }
+.m-tenant-item .m-tenant-text { flex: 1; }
+.m-tenant-item.active { font-weight: 400; }
+.m-dropdown-item .m-tenant-check { width: 18px; height: 18px; color: var(--m-primary); }
+.m-tenant-empty { padding: 16px; }
+
+/* App switcher */
+.m-apps-menu { width: 320px; }
+.m-apps-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 8px; }
+.m-app-tile { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 6px 12px; border-radius: var(--m-radius); color: var(--m-text); text-align: center; }
+.m-app-tile:hover, .m-app-tile:focus-visible { background: var(--m-fill-secondary); color: var(--m-heading); }
+.m-app-tile .m-icon-tile { width: 40px; height: 40px; }
+.m-app-tile .m-icon-tile .m-ti { width: 22px; height: 22px; }
+.m-app-name { max-width: 100%; overflow: hidden; font-size: 13px; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 991.98px) {
+    .m-topbar-brand:has(+ .m-tenant) { margin-right: 4px; }
+    .m-tenant { margin-right: auto; }
+}
+
+@media (max-width: 1199.98px) {
+    .m-tenant-toggle .m-tenant-subtitle { display: none; }
+}
+@media (max-width: 767.98px) {
+    .m-tenant-toggle > .m-tenant-text, .m-tenant-toggle > .m-tenant-chevron { display: none; }
+    .m-tenant { flex: none; margin-right: auto; }
+    .m-tenant-toggle { padding: 0 6px; border-color: transparent; }
+    .m-apps-menu { position: fixed; top: calc(var(--m-header-height) - 4px); left: 12px; right: 12px; width: auto; }
+}
+@media (max-width: 575.98px) {
+    /* Brand logo only, so the tenant switcher and every header action still fit a phone screen. */
+    .m-topbar-brand:has(+ .m-tenant) .m-brand-text { display: none; }
+    .m-topbar-actions > .m-icon-btn, .m-topbar-actions > details > summary.m-icon-btn { width: 34px; }
+}
+@media (max-width: 379.98px) {
+    .m-topbar-inner { gap: 4px; }
+    .m-topbar-actions > .m-icon-btn, .m-topbar-actions > details > summary.m-icon-btn { width: 30px; }
+    .m-tenant-toggle { padding: 0 4px; }
+}
+
 /* Horizontal navbar ------------------------------------------------------------------------------ */
 
 .m-navbar { position: relative; z-index: 1010; background: var(--m-nav-bg); box-shadow: inset 0 -1px 0 var(--m-nav-border); }
