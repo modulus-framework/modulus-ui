@@ -534,7 +534,9 @@ html[data-theme='dark'] .ant-tooltip-inner, html[data-theme='dark'] .ant-tooltip
     width: fit-content; max-width: 100%;
     background: var(--m-bg-container); border-radius: var(--m-radius-lg);
     box-shadow: var(--m-shadow-card);
+    transition: box-shadow 0.2s;
 }
+.m-demo-nav.m-demo-nav-stuck { box-shadow: var(--m-shadow-popup); }
 .m-demo-nav a { padding: 5px 14px; border-radius: var(--m-radius); color: var(--m-text-secondary); transition: background 0.2s, color 0.2s; }
 .m-demo-nav a:hover { background: var(--m-fill); color: var(--m-text); }
 .m-demo-section { scroll-margin-top: calc(var(--m-header-height) + 72px); margin-bottom: 32px; }

@@ -478,4 +478,14 @@
         if (!(t instanceof Element) || !t.matches('.m-cselect > .ant-select-selector')) return;
         if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === ' ' || e.key === 'Enter') e.preventDefault();
     });
+
+    // Sticky section navs (the component gallery pill) get a raised shadow once they stick under the header.
+    function syncStuck() {
+        document.querySelectorAll('.m-demo-nav').forEach(function (nav) {
+            var top = parseFloat(getComputedStyle(nav).top) || 0;
+            nav.classList.toggle('m-demo-nav-stuck', window.scrollY > 0 && nav.getBoundingClientRect().top <= top + 0.5);
+        });
+    }
+    document.addEventListener('scroll', syncStuck, { capture: true, passive: true });
+    window.addEventListener('resize', syncStuck);
 })();
