@@ -1,0 +1,14 @@
+@* Horizontal bars, largest first; the tail folds into "Other": <RankedBarChart Items="customers" Limit="8" ShowShare /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.RankedBars(Items, Options(), Limit, ShowShare))
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSlice> Items { get; set; } = [];
+
+    /// <summary>Show at most this many rows; the rest fold into "Other". 0 shows all.</summary>
+    [Parameter] public int Limit { get; set; }
+
+    /// <summary>Adds a share-of-total column.</summary>
+    [Parameter] public bool ShowShare { get; set; }
+}

@@ -6,7 +6,6 @@ namespace Modulus.AdminTemplate.Mvc.Controllers;
 /// Base for the sample controllers. Page bodies live in Modulus.Samples.Web (Views/Shared/Ui/…),
 /// shared with the Razor Pages sample; the app's _ViewStart applies the layout chosen here.
 /// </summary>
-[AutoValidateAntiforgeryToken]
 public abstract class SampleController : Controller
 {
     /// <summary>Renders <c>Views/Shared/Ui/{view}.cshtml</c> inside the app shell.</summary>

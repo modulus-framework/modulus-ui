@@ -12,7 +12,11 @@ public sealed record Employee(int Id, string Name, string Email, string Position
 }
 
 /// <summary>Filters for the data table page (/tables/advanced).</summary>
-public sealed record EmployeeQuery(string? Keyword = null, string? Department = null, string? Office = null, EmployeeStatus? Status = null, string? Label = null);
+public sealed record EmployeeQuery(string? Keyword = null, string? Department = null, string? Office = null, EmployeeStatus? Status = null, string? Label = null)
+{
+    /// <summary>Column searches from the table headers (field → query, see <see cref="ColumnSearch"/>); read from <c>s.{field}</c>.</summary>
+    public IReadOnlyDictionary<string, string?>? Searches { get; init; }
+}
 
 /// <summary>A read-only employee directory for the data table page: search, filter, sort, page, pick columns, export.</summary>
 public static class EmployeeDirectory
@@ -84,8 +88,26 @@ public static class EmployeeDirectory
         if (!string.IsNullOrEmpty(query.Office)) rows = rows.Where(e => e.Office == query.Office);
         if (query.Status is { } s) rows = rows.Where(e => e.Status == s);
         if (!string.IsNullOrEmpty(query.Label)) rows = rows.Where(e => EmployeeLabels.Of(e.Id).Contains(query.Label));
+        foreach (var (field, search) in query.Searches ?? new Dictionary<string, string?>())
+            rows = rows.Where(e => ColumnMatches(e, field, search));
         return rows;
     }
+
+    /// <summary>
+    /// Whether an employee matches a column search of the data table: the text shown in that column (the employee
+    /// column also has the email), with comparisons for the start date and the salary.
+    /// </summary>
+    public static bool ColumnMatches(Employee e, string field, string? search) => field switch
+    {
+        nameof(Employee.Name) => ColumnSearch.Matches(search, $"{e.Name} {e.Email}"),
+        nameof(Employee.Position) => ColumnSearch.Matches(search, e.Position),
+        nameof(Employee.Department) => ColumnSearch.Matches(search, e.Department),
+        nameof(Employee.Office) => ColumnSearch.Matches(search, e.Office),
+        nameof(Employee.StartDate) => ColumnSearch.Matches(search, Fmt.Date(e.StartDate), ColumnKind.Date, date: DateOnly.FromDateTime(e.StartDate)),
+        nameof(Employee.Salary) => ColumnSearch.Matches(search, Fmt.Money0(e.Salary), ColumnKind.Number, e.Salary),
+        nameof(Employee.Status) => ColumnSearch.Matches(search, StatusLabel(e.Status)),
+        _ => true,
+    };
 
     public static ProTableResponse<Employee> Query(EmployeeQuery query, ProTableRequest request)
     {
@@ -97,7 +119,8 @@ public static class EmployeeDirectory
                   .SortBy(request, nameof(Employee.Department), e => e.Department)
                   .SortBy(request, nameof(Employee.Office), e => e.Office)
                   .SortBy(request, nameof(Employee.StartDate), e => e.StartDate)
-                  .SortBy(request, nameof(Employee.Salary), e => e.Salary);
+                  .SortBy(request, nameof(Employee.Salary), e => e.Salary)
+                  .SortBy(request, nameof(Employee.Status), e => StatusLabel(e.Status));
         return rows.ToPage(request);
     }
 

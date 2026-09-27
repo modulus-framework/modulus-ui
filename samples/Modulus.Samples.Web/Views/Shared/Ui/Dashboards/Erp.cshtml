@@ -1,0 +1,145 @@
+@* Finance, sales, receivables, inventory and operations on one page, built from the business charts. The Blazor sample renders the same page. *@
+<app-page-header pretitle="Dashboards" title="ERP analytics" subtitle="Fiscal year 2026 · all entities · figures in USD">
+    <a class="ant-btn" href="/ui/charts"><app-ti name="chart-pie" /><span>All charts</span></a>
+    <a class="ant-btn ant-btn-primary" href="/apps/invoice/list"><app-ti name="file-invoice" /><span>Open invoices</span></a>
+</app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-4">
+        @foreach (var k in ErpShowcase.Kpis)
+        {
+            var good = (k.Delta >= 0) != k.LowerIsBetter;
+            <div class="m-card">
+                <div class="m-card-body">
+                    <div class="m-kpi-head">
+                        <span class="m-subheader">@k.Label</span>
+                        <span class="m-delta @(good ? "m-delta-up" : "m-delta-down")" style="margin-left:auto">
+                            @(k.Delta >= 0 ? "+" : "")@k.Delta.ToString("0.0")% <app-ti name="@(k.Delta >= 0 ? "trending-up" : "trending-down")" />
+                        </span>
+                    </div>
+                    <div class="m-kpi-value"><span class="m-h1">@k.Value</span></div>
+                    <div class="m-kpi-foot">@k.Note</div>
+                    <div class="m-kpi-chart"><app-sparkline data="k.Trend" aria-label="@($"{k.Label} per month")" /></div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="m-row-cards m-cols-8-4">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Revenue against budget</h3><p class="m-card-subtitle">Invoiced revenue per month; the line is the approved budget</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-combo-chart labels="ErpShowcase.Months" columns="ErpShowcase.RevenueActual" lines="ErpShowcase.RevenueBudget" prefix="$" title="Revenue against budget per month" height="260" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Order to cash</h3><p class="m-card-subtitle">Opportunities surviving each step</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-funnel-chart stages="ErpShowcase.OrderToCash" title="Order-to-cash funnel" />
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-3">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">On time in full</h3><p class="m-card-subtitle">Share of order lines delivered complete and on the promised date</p></div></div>
+            <div class="m-card-body"><app-gauge value="ErpShowcase.OnTimeInFull" max="100" target="ErpShowcase.OnTimeTarget" value-format="N1" suffix="%" caption="OTIF, last 90 days" title="On time in full" /></div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Capacity utilization</h3><p class="m-card-subtitle">Machine hours used against hours available</p></div></div>
+            <div class="m-card-body"><app-gauge value="ErpShowcase.Utilization" max="100" target="ErpShowcase.UtilizationTarget" value-format="N1" suffix="%" caption="All plants, this month" title="Capacity utilization" /></div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Operating budget used</h3><p class="m-card-subtitle">The target tick marks how much of the year has passed</p></div></div>
+            <div class="m-card-body"><app-gauge value="ErpShowcase.BudgetConsumed" max="100" target="ErpShowcase.BudgetElapsed" value-format="N1" suffix="%" caption="Of the annual opex budget" title="Operating budget used" /></div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header">
+            <div><h3 class="m-card-title">Profit bridge</h3><p class="m-card-subtitle">From revenue to net profit, full year</p></div>
+        </div>
+        <div class="m-card-body">
+            <app-waterfall-chart steps="ErpShowcase.ProfitBridge" prefix="$" title="Profit bridge from revenue to net profit" height="300" />
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Budget variance by department</h3><p class="m-card-subtitle">Spend minus budget, year to date; overspend is unfavorable</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-variance-chart items="ErpShowcase.BudgetVariance" positive-is-favorable="false" prefix="$" title="Budget variance by department" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Targets</h3><p class="m-card-subtitle">Year to date against plan; grey bands mark poor, fair and good</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-bullet-chart items="ErpShowcase.Targets" value-format="#,0.#" title="Key results against targets" />
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Top customers</h3><p class="m-card-subtitle">Revenue year to date</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-ranked-bar-chart items="ErpShowcase.TopCustomers" limit="8" show-share="true" prefix="$" title="Top customers by revenue" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Receivables aging</h3><p class="m-card-subtitle">Open balance per customer by days past due</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-stacked-bar-chart rows="ErpShowcase.AgingCustomers" series="ErpShowcase.Aging" normalize="true" ordinal="true" prefix="$" title="Receivables aging by customer" />
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">ABC analysis</h3><p class="m-card-subtitle">Revenue share per SKU; A items make the first 80 %</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-pareto-chart items="ErpShowcase.SkuRevenue" prefix="$" value-name="Revenue share" title="ABC analysis of revenue by SKU" height="260" max-x-labels="10" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Inventory value</h3><p class="m-card-subtitle">Stock on hand by category</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-treemap items="ErpShowcase.InventoryValue" prefix="$" title="Inventory value by category" height="260" aspect="2" />
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Product portfolio</h3><p class="m-card-subtitle">Revenue against gross margin; bubble size is units sold</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-scatter-chart points="ErpShowcase.ProductPortfolio" groups="ErpShowcase.ProductLines" x-title="Revenue" y-title="Gross margin (%)" size-title="Units sold" x-prefix="$" value-format="N1" suffix="%" quadrants="true" title="Product portfolio: revenue against gross margin" height="280" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Sales by region</h3><p class="m-card-subtitle">Revenue year to date by product line</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-stacked-bar-chart rows="ErpShowcase.Regions" series="ErpShowcase.RegionSales" prefix="$" title="Sales by region and product line" />
+            </div>
+        </div>
+    </div>
+</div>

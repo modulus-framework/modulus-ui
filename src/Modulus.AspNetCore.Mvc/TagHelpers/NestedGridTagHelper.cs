@@ -5,6 +5,7 @@ using AntDesign;
 using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using Modulus.Ui.Abstractions;
+using SortDirection = Modulus.Ui.Abstractions.SortDirection;
 using Modulus.Ui.Abstractions.Shell;
 
 namespace Modulus.AspNetCore.Mvc.TagHelpers;
@@ -55,6 +56,15 @@ public class NestedGridTagHelper : TagHelper
             ExportFileName = level.Title,
             ReloadHref = NestedGridForm.Url(Url, r),
             ReloadTarget = "#" + container,
+            // Headers sort and search the level on the server too: each is an htmx GET of this level.
+            Sortable = level.Sortable,
+            ColumnSearchable = level.Searchable,
+            SortHref = key => NestedGridForm.Url(Url, r.WithSort(key)),
+            SortField = r.SortField,
+            SortDescending = r.Descending,
+            SearchHref = key => NestedGridForm.Url(Url, r.WithSearch(key, null)),
+            Searches = r.Searches,
+            ServerTarget = "#" + container,
         };
         if (!level.Editable) foreach (var c in v.Columns) c.Editable = false;
 
@@ -111,19 +121,6 @@ public class NestedGridTagHelper : TagHelper
             sb.Append($"""<span class="ant-input-affix-wrapper m-table-toolbar-search m-nested-search"><span class="ant-input-prefix">{ShellRenderer.Icon("search")}</span>""");
             sb.Append($"""<input class="ant-input" type="search" name="q" value="{Html.E(r.Keyword)}" placeholder="Search {Html.E(level.Title.ToLowerInvariant())}…" aria-label="Search {Html.E(level.Title)}" autocomplete="off" hx-get="{Html.E(url)}" hx-trigger="keyup[key=='Enter'], search" hx-include="this" {target}onkeydown="if (event.key === 'Enter') event.preventDefault()" /></span>""");
         }
-        if (level.Sortable)
-        {
-            var url = NestedGridForm.Url(Url, r with { Page = 1 }, "sort");
-            var current = r.SortField is null ? "" : $"{r.SortField}:{(r.Descending ? "desc" : "asc")}";
-            sb.Append($"""<select class="m-select m-nested-sort" name="sort" aria-label="Sort by" hx-get="{Html.E(url)}" hx-trigger="change" hx-include="this" {target}onchange="event.stopPropagation()"><option value="">Sort: default</option>""");
-            foreach (var c in View.Columns.Where(c => !c.Hidden))
-                foreach (var (dir, arrow) in new[] { ("asc", "↑"), ("desc", "↓") })
-                {
-                    var value = $"{c.Key}:{dir}";
-                    sb.Append($"""<option value="{Html.E(value)}"{(value == current ? " selected" : "")}>{Html.E(c.Title)} {arrow}</option>""");
-                }
-            sb.Append("</select>");
-        }
         return sb.ToString();
     }
 
@@ -142,8 +139,8 @@ public class NestedGridTagHelper : TagHelper
                 sb.Append($"""<option value="{Html.E(o.Value)}"{(o.Value == current ? " selected" : "")}>{Html.E(o.Label)}</option>""");
             sb.Append("</select>");
         }
-        if (r.ActiveFilters.Any())
-            sb.Append($"""<button type="button" class="ant-btn ant-btn-link m-grid-clear-filters" hx-get="{Html.E(NestedGridForm.Url(Url, r with { Filters = null, Page = 1 }))}" hx-target="#{container}" hx-swap="outerHTML"><span>Clear filters</span></button>""");
+        if (r.ActiveFilters.Any() || r.ActiveSearches.Any())
+            sb.Append($"""<button type="button" class="ant-btn ant-btn-link m-grid-clear-filters" hx-get="{Html.E(NestedGridForm.Url(Url, r with { Filters = null, Searches = null, Page = 1 }))}" hx-target="#{container}" hx-swap="outerHTML"><span>Clear filters</span></button>""");
         return sb.ToString();
     }
 

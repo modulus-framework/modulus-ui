@@ -1,0 +1,86 @@
+@* One-time code (Ant Design 5 Input.OTP; AntD Blazor 1.6.2 has none): one box per character. modulus-shell.js
+   moves the focus, handles Backspace and arrows, and spreads a paste over the boxes. OnComplete fires once every
+   box is filled. The MVC <app-otp-input> renders the same DOM and posts the joined code. *@
+@using Modulus.Ui.Abstractions.Forms
+
+<div class="@RootClass" style="@Style" role="group" aria-label="@(AriaLabel ?? "Verification code")" data-m-otp="@(Numeric ? "numeric" : "text")">
+    @for (var i = 0; i < Length; i++)
+    {
+        var index = i;
+        if (Separator > 0 && i == Separator)
+        {
+            <span class="ant-otp-separator" aria-hidden="true">–</span>
+        }
+        <input type="@(Mask ? "password" : "text")" class="@BoxClass" id="@(index == 0 ? Id : null)"
+               inputmode="@(Numeric ? "numeric" : "text")" autocomplete="@(index == 0 ? "one-time-code" : "off")"
+               aria-label="@($"Character {index + 1} of {Length}")" disabled="@Disabled"
+               value="@_chars[index]" @oninput="e => OnBox(index, e)" />
+    }
+</div>
+
+@code {
+    /// <summary>Number of boxes (6 by default).</summary>
+    [Parameter] public int Length { get; set; } = 6;
+
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    /// <summary>Raised with the code once every box is filled.</summary>
+    [Parameter] public EventCallback<string> OnComplete { get; set; }
+
+    /// <summary>Digits only (default); false takes letters too (upper-cased).</summary>
+    [Parameter] public bool Numeric { get; set; } = true;
+
+    /// <summary>Hides the characters, like a password.</summary>
+    [Parameter] public bool Mask { get; set; }
+
+    /// <summary>Draws a dash before this box (3 splits 6 boxes 3–3); 0 for none.</summary>
+    [Parameter] public int Separator { get; set; }
+
+    /// <summary>"small", "middle" (default) or "large".</summary>
+    [Parameter] public string? Size { get; set; }
+
+    /// <summary>"error" or "warning".</summary>
+    [Parameter] public string? Status { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private string[] _chars = [];
+    private string? _last = "\0";
+
+    private string RootClass => string.Join(' ', new[]
+    {
+        "ant-otp", Size == "small" ? "ant-otp-sm" : Size == "large" ? "ant-otp-lg" : null, Class,
+    }.Where(c => !string.IsNullOrEmpty(c)));
+
+    private string BoxClass => string.Join(' ', new[]
+    {
+        "ant-input", "ant-otp-input", Size == "small" ? "ant-input-sm" : Size == "large" ? "ant-input-lg" : null,
+        Status is { Length: > 0 } ? $"ant-input-status-{Status}" : null, Disabled ? "ant-input-disabled" : null,
+    }.Where(c => !string.IsNullOrEmpty(c)));
+
+    protected override void OnParametersSet()
+    {
+        if (_chars.Length != Length) { _chars = new string[Length]; _last = "\0"; }
+        if (Value == _last) return;
+        _last = Value;
+        var v = Value ?? "";
+        for (var i = 0; i < Length; i++) _chars[i] = i < v.Length ? v[i].ToString() : "";
+    }
+
+    private async Task OnBox(int index, ChangeEventArgs e)
+    {
+        var typed = e.Value as string ?? "";
+        var c = typed.Length == 0 ? "" : typed[^1].ToString();
+        if (c.Length > 0 && !(Numeric ? char.IsAsciiDigit(c[0]) : char.IsAsciiLetterOrDigit(c[0]))) c = "";
+        _chars[index] = Numeric ? c : c.ToUpperInvariant();
+        var code = string.Concat(_chars);
+        _last = code;
+        await ValueChanged.InvokeAsync(code);
+        if (_chars.All(x => x.Length == 1)) await OnComplete.InvokeAsync(code);
+    }
+}

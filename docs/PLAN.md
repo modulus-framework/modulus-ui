@@ -118,6 +118,40 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 | Data table (search, filters, sort, paging, columns, selection, CSV) | `/tables/advanced` | ✅ | ✅ | ✅ |
 | Editable grid (schema-driven columns, in-place editors, expandable rows, pinned columns, add/remove columns) | `/tables/editable` | ✅ | ✅ | ✅ |
 
+### Plugins (planned)
+
+A new **Plugins** menu group in `AdminMenuContributor`, with one page per plugin in all three samples. Items that exist only as a gallery card get a full page. Items that don't exist yet need a new Blazor component and a matching MVC tag helper.
+
+| Page | Route | Today | B | M | R |
+|---|---|---|---|---|---|
+| Charts | `/ui/charts` | Done: 18 chart components | ✅ | ✅ | ✅ |
+| Charts advanced (heatmap, treemap, pareto, waterfall, variance, bullet, gauge, funnel, combo, plus interaction: zoom, legend toggle, drill-down) | `/plugins/charts-advanced` | The advanced types are on `/ui/charts` | ⬜ | ⬜ | ⬜ |
+| Color picker (presets, formats, alpha, sizes, inside a form) | `/plugins/color-picker` | `AppColorPicker` / `app-color-picker` gallery card | ⬜ | ⬜ | ⬜ |
+| Date picker (NEW): date, time, range, presets, disabled dates, week/month/quarter/year | `/plugins/date-picker` | Only a DatePicker and RangePicker in a gallery card | ⬜ | ⬜ | ⬜ |
+| Datatables | `/tables/advanced` | Done, plus the editable and nested grids | ✅ | ✅ | ✅ |
+| Dropzone: multiple files, previews, progress, type and size limits, remove | `/plugins/dropzone` | AntD `Upload Drag` in a gallery card | ⬜ | ⬜ | ⬜ |
+| Sortable (NEW): reorder a list, drag between two lists, handles, sortable grid of cards | `/plugins/sortable` | Dragging only in Kanban and grid column reorder | ⬜ | ⬜ | ⬜ |
+| Fullcalendar | `/apps/calendar` | Done | ✅ | ✅ | ✅ |
+| Inline player: video and audio with custom controls, poster, captions | `/plugins/player` | Missing | ⬜ | ⬜ | ⬜ |
+| Lightbox: image grid with full-screen preview, captions, keyboard paging | `/plugins/lightbox` | AntD `ImagePreviewGroup` gallery card | ⬜ | ⬜ | ⬜ |
+| Map: markers with popups, zoom | `/plugins/map` | Missing | ⬜ | ⬜ | ⬜ |
+| Map fullsize: the map fills the content area, with a floating side panel | `/plugins/map-fullsize` | Missing | ⬜ | ⬜ | ⬜ |
+| Map vector: world/region choropleth with hover values and a legend | `/plugins/map-vector` | Missing | ⬜ | ⬜ | ⬜ |
+| Tour (NEW): multi-step tour over a real page, placements, restart | `/plugins/tour` | `AppTour` / `app-tour` gallery card | ⬜ | ⬜ | ⬜ |
+| WYSIWYG editor: toolbar, headings, lists, links, images, HTML output bound to a form field | `/plugins/editor` | Only `Forms/RichText.cs` in Abstractions; no component | ⬜ | ⬜ | ⬜ |
+
+**Open decisions**
+- **Maps:** a JS library (Leaflet for tile maps, jsVectorMap for vector maps) or plain SVG with no dependency. Plain SVG works for the vector map; tile maps (Map, Map fullsize) realistically need Leaflet.
+- **WYSIWYG editor:** build a small `contenteditable` editor on top of `RichText.cs`, or wrap an existing editor (Quill, TipTap).
+- **Menu placement:** a new Plugins group, or add the pages to Interface. The existing Charts, Datatables and Calendar entries stay where they are and are linked from Plugins.
+
+**Order of work**
+1. Plugins menu group and pages for the gallery-only items: Color picker, Date picker, Dropzone, Lightbox, Tour, Charts advanced.
+2. Sortable: shared Alpine/JS sortable in `modulus-widgets.js`, a Blazor wrapper, and an `app-sortable` tag helper.
+3. Inline player and WYSIWYG editor.
+4. Map, Map fullsize and Map vector, once the library decision is made.
+5. Route sweep (desktop, 390 px, dark mode) over the new routes, and tests for any shared logic in `Modulus.Ui.Abstractions`.
+
 ## 5. Verification
 
 | Check | How | Last result |
@@ -148,6 +182,7 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 | MVC equivalents for Blazor-only widgets: `app-cascader`, `app-tree-select`, `app-transfer`, `app-tree`, `app-calendar`, `app-carousel`, `app-anchor` (Alpine, `modulus-widgets.js`), with gallery cards in all three samples | MVC library | ✅ |
 | Editable data grid: schema-driven columns (text, number, currency, percent, select, multi-select, tag, date, switch, progress, rating) with in-place editors and validation, expandable rows, left/right pinned columns, add/delete rows, add/remove/pin/hide/reorder columns, save. `EditableGrid` (Blazor), `app-editable-grid` + `EditableGridForm` (MVC), `GridSchema` shared | Both | ✅ |
 | Complete the AntD gallery: Link, Flex, Splitter, Affix, BackTop, DropdownButton, AutoComplete, InputGroup, CheckboxGroup, Mentions, Image, CountDown, Drawer, Watermark, Comment, plus Modulus ColorPicker, FloatButton and QRCode where AntD Blazor 1.6.2 has none | Both | ✅ AntD components in both flavours, plus Modulus QRCode, ColorPicker, FloatButton and Tour |
+| Plugin pages: Charts advanced, Color picker, Date picker, Dropzone, Sortable, Inline player, Lightbox, Map, Map fullsize, Map vector, Tour, WYSIWYG editor (see §4 *Plugins (planned)*) | Both | ⬜ |
 | Tabler-parity pages: icons, typography, colours, gallery, search results, activity, tasks, logs, changelog, license, job listing, uptime, trial ended, cookie banner, users grid, widgets | Samples | ⬜ |
 | Localization: bind `LocaleProvider` to the request culture | Both | ⬜ |
 | Brand colour in dark mode (AntD dark CSS hard-codes blue) | Theming | ⬜ |
@@ -161,6 +196,7 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 
 | Date | Change |
 |---|---|
+| 2026-09-27 | Image preview (lightbox) in MVC and Razor Pages now renders Ant Design's own preview DOM, the one AntD Blazor's `ImagePreview` renders, so both flavours look the same. It has a toolbar with an "n / total" counter, close, zoom in, zoom out (disabled at 100%) and rotate right/left. Previous/next are the round side arrows, disabled at the first and last image. `app-image` on its own is a group of one (shared `ImageGroupTagHelper.Preview`). Alpine `modulusImageGroup` adds zoom by the wheel, `+`/`-`/`0` and double click; drag to pan a zoomed image, kept on screen; swipe to page at 100%; a loading spinner that only shows for images that take a moment; preloading of the next and previous images; page scroll lock; Tab kept inside the preview; focus returned to the thumbnail on close. Also: open/close fade and zoom, reduced-motion support, and closing on a click on the dark area but not at the end of a drag. The old `m-image-preview-close/switch/count` rules are gone. 1 new test. |
 | 2026-09-27 | One table design for the data table, editable grid and nested grid, the same in Blazor, MVC and Razor Pages. `EditableGrid` / `app-editable-grid` now have the data-table toolbar: a search box with an icon, Columns (show/hide, plus pin/move with column editing), Export CSV, reload and density. They also have a filter row built from `Filterable` Select/Tag/MultiSelect/Switch columns ("Any …", Clear filters), row checkboxes with a batch bar (Set value…, Export selected, Delete, plus `BatchActions` / `grid-batch`), and styled cells: an avatar with initials and a tint (`GridColumn.Avatar`), a second line (`SubtitleKey`), and option icons (`GridOption.Icon`). The rules live in `GridSchema` (`Matches`, `FilterColumns`, `Csv`, `Initials`, `Tint`) and are mirrored in `modulusGrid`. The editable grid searches and filters in the browser; MVC keeps search and filters in sessionStorage, and hidden rows still post. Nested levels search and filter on the server (`NestedGridRequest.Filters`, `f.{key}` in the URL), and the pager shows "a–b of n". All three tables have resizable columns: a drag grip on `.m-resizable` headers sets the `<col>` width, and the editable grid saves the width into its schema. They also have expandable rows: `ProTable.RowDetail` / `RowExpandable`, and MVC `data-toggle-detail` rows. The data table sample shows an employee detail panel. |
 | 2026-09-27 | Component gallery category nav (`.m-demo-nav`): removed the second box-shadow that painted a layout-coloured band around the sticky pill, which showed as an extra background over the content while scrolling. The pill design is unchanged; once it sticks under the header it gets `m-demo-nav-stuck` (`modulus-shell.js`) and the raised popup shadow. |
 | 2026-09-27 | Nested, expandable editable grid: `NestedGrid` (Blazor) and `app-nested-grid` (MVC), one component for any depth. `NestedGridSettings` / `NestedGridLevel` in `Modulus.Ui.Abstractions` give each level its columns (or `ColumnSets` picked by a parent field), page size, search, sort, editing, add/delete and expand rules; the number of levels is the nesting limit. Children load lazily (Blazor `Load(NestedGridRequest)`; MVC an `intersect once` htmx GET), and each level saves on its own (`NestedGridChanges` with deleted ids). `NestedGridQuery` searches, sorts (empty cells last) and pages in-memory rows; `NestedGridForm` reads and writes the URL state and posted changes. Sample `/tables/nested` in all three apps: garment orders → styles → materials → items, where each material's category (fabric, accessory, packing) picks its items' columns, with a 1–4 levels switch. 8 new tests. |

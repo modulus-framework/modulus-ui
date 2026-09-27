@@ -52,7 +52,7 @@ public sealed record ChartOptions
 /// grid lines are solid hairlines, a legend appears for two or more series.
 /// </para>
 /// </summary>
-public static class ChartHtml
+public static partial class ChartHtml
 {
     private static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
 
@@ -69,7 +69,7 @@ public static class ChartHtml
 
         var sb = new StringBuilder();
         sb.Append($"""<div class="m-chart m-xychart" role="figure" aria-label="{E(o.Title)}">""");
-        Legend(sb, series, o, line: true);
+        Legend(sb, series, o, lineFrom: 0);
         sb.Append($"""<div class="m-xy-plot" style="height:{o.Height}px" aria-hidden="true">""");
         Grid(sb, ticks, top, o);
         sb.Append("""<svg class="m-xy-svg" viewBox="0 0 1000 1000" preserveAspectRatio="none">""");
@@ -96,7 +96,7 @@ public static class ChartHtml
             sb.Append($"""<div class="m-xy-slot{(i >= n / 2 && n > 3 ? " m-flip" : "")}"><span class="m-xy-cross"></span>""");
             for (var s = 0; s < series.Count; s++)
                 sb.Append($"""<span class="m-xy-hover-dot" style="bottom:{Pct(Value(series[s], i), top)}%;--c:{Slot(o, s)}"></span>""");
-            Tooltip(sb, labels[i], series, i, o, line: true);
+            Tooltip(sb, labels[i], series, i, o, lineFrom: 0);
             sb.Append("</div>");
         }
         sb.Append("</div></div>");
@@ -108,22 +108,36 @@ public static class ChartHtml
 
     // Columns (grouped or stacked) ------------------------------------------------------------------------
 
-    public static string Columns(IReadOnlyList<string> labels, IReadOnlyList<ChartSeries> series, ChartOptions? options = null)
+    public static string Columns(IReadOnlyList<string> labels, IReadOnlyList<ChartSeries> series, ChartOptions? options = null) =>
+        ColumnsCore(labels, series, [], options ?? new ChartOptions(), "m-colchart", null, []);
+
+    /// <summary>
+    /// Columns with one or more lines on the <em>same</em> axis, e.g. actual revenue (columns) against
+    /// budget or forecast (line). Both measures must share a unit: this is deliberately not a dual-axis chart.
+    /// </summary>
+    public static string Combo(IReadOnlyList<string> labels, IReadOnlyList<ChartSeries> columns, IReadOnlyList<ChartSeries> lines, ChartOptions? options = null) =>
+        ColumnsCore(labels, columns, lines, options ?? new ChartOptions(), "m-colchart m-combochart", null, []);
+
+    private static string ColumnsCore(IReadOnlyList<string> labels, IReadOnlyList<ChartSeries> series, IReadOnlyList<ChartSeries> lines, ChartOptions o,
+        string css, Func<int, string>? tipExtra, IReadOnlyList<(double Value, string Label)> refLines, double? fixedTop = null)
     {
-        var o = options ?? new ChartOptions();
         var n = labels.Count;
         if (n == 0 || series.Count == 0) return Empty(o);
         var max = o.Stacked
             ? Enumerable.Range(0, n).Max(i => series.Sum(s => Value(s, i)))
             : series.SelectMany(s => s.Values).DefaultIfEmpty(0).Max();
-        var ticks = ChartGeometry.NiceTicks(max);
+        max = Math.Max(max, lines.SelectMany(s => s.Values).DefaultIfEmpty(0).Max());
+        var ticks = ChartGeometry.NiceTicks(fixedTop ?? max);
         var top = ticks[^1] > 0 ? ticks[^1] : 1;
+        var all = series.Concat(lines).ToList();
 
         var sb = new StringBuilder();
-        sb.Append($"""<div class="m-chart m-xychart m-colchart" role="figure" aria-label="{E(o.Title)}">""");
-        Legend(sb, series, o, line: false);
+        sb.Append($"""<div class="m-chart m-xychart {css}" role="figure" aria-label="{E(o.Title)}">""");
+        Legend(sb, all, o, lineFrom: series.Count);
         sb.Append($"""<div class="m-xy-plot" style="height:{o.Height}px" aria-hidden="true">""");
         Grid(sb, ticks, top, o);
+        foreach (var (value, label) in refLines)
+            sb.Append($"""<div class="m-xy-ref" style="bottom:{Pct(value, top)}%"><span>{E(label)}</span></div>""");
         sb.Append("""<div class="m-xy-slots">""");
         for (var i = 0; i < n; i++)
         {
@@ -147,14 +161,36 @@ public static class ChartHtml
                     sb.Append($"""<span class="m-col-bar" style="height:{Pct(Value(series[s], i), top)}%;--c:{Slot(o, s)}"></span>""");
                 sb.Append("</div>");
             }
-            Tooltip(sb, labels[i], series, i, o, line: false);
+            for (var l = 0; l < lines.Count; l++)
+                sb.Append($"""<span class="m-xy-hover-dot" style="bottom:{Pct(Value(lines[l], i), top)}%;--c:{Slot(o, series.Count + l)}"></span>""");
+            Tooltip(sb, labels[i], all, i, o, lineFrom: series.Count, tipExtra?.Invoke(i));
             sb.Append("</div>");
         }
-        sb.Append("</div></div>");
+        sb.Append("</div>");
+        if (lines.Count > 0)
+        {
+            // Drawn over the columns; pointer events pass through to the hover slots underneath.
+            sb.Append("""<svg class="m-xy-svg m-xy-overlay" viewBox="0 0 1000 1000" preserveAspectRatio="none">""");
+            for (var l = 0; l < lines.Count; l++)
+                sb.Append($"""<path class="m-xy-line" d="{Path(lines[l], n, top)}" style="stroke:{Slot(o, series.Count + l)}"/>""");
+            sb.Append("</svg>");
+            for (var l = 0; l < lines.Count; l++)
+                for (var i = 0; i < n; i++)
+                    sb.Append($"""<span class="m-xy-dot m-xy-dot-sm" style="left:{F((i + 0.5) / n * 100)}%;bottom:{Pct(Value(lines[l], i), top)}%;--c:{Slot(o, series.Count + l)}"></span>""");
+        }
+        sb.Append("</div>");
         XAxis(sb, labels, o);
-        Table(sb, labels, series, o);
+        Table(sb, labels, all, o);
         sb.Append("</div>");
         return sb.ToString();
+    }
+
+    private static string Path(ChartSeries s, int n, double top)
+    {
+        var d = new StringBuilder();
+        for (var i = 0; i < n; i++)
+            d.Append(i == 0 ? 'M' : 'L').Append(F((i + 0.5) / n * 1000)).Append(',').Append(F(1000 - Value(s, i) / top * 1000));
+        return d.ToString();
     }
 
     // Donut ------------------------------------------------------------------------------------------------
@@ -237,12 +273,13 @@ public static class ChartHtml
 
     // Parts ----------------------------------------------------------------------------------------------------
 
-    private static void Legend(StringBuilder sb, IReadOnlyList<ChartSeries> series, ChartOptions o, bool line)
+    /// <summary>Series at index ≥ <paramref name="lineFrom"/> are lines (line key); the rest are columns (square key).</summary>
+    private static void Legend(StringBuilder sb, IReadOnlyList<ChartSeries> series, ChartOptions o, int lineFrom)
     {
         if (series.Count < 2) return;
         sb.Append("""<ul class="m-legend">""");
         for (var s = 0; s < series.Count; s++)
-            sb.Append($"""<li><span class="m-key {(line ? "m-key-line" : "m-key-rect")}" style="--c:{Slot(o, s)}"></span>{E(series[s].Name)}</li>""");
+            sb.Append($"""<li><span class="m-key {(s >= lineFrom ? "m-key-line" : "m-key-rect")}" style="--c:{Slot(o, s)}"></span>{E(series[s].Name)}</li>""");
         sb.Append("</ul>");
     }
 
@@ -261,13 +298,14 @@ public static class ChartHtml
         sb.Append("</div>");
     }
 
-    private static void Tooltip(StringBuilder sb, string label, IReadOnlyList<ChartSeries> series, int i, ChartOptions o, bool line)
+    private static void Tooltip(StringBuilder sb, string label, IReadOnlyList<ChartSeries> series, int i, ChartOptions o, int lineFrom, string? extraHtml = null)
     {
         sb.Append($"""<div class="m-xy-tip"><div class="m-xy-tip-title">{E(label)}</div>""");
         for (var s = 0; s < series.Count; s++)
-            sb.Append($"""<div class="m-xy-tip-row"><span class="m-key {(line ? "m-key-line" : "m-key-line")}" style="--c:{Slot(o, s)}"></span><strong>{E(Format(Value(series[s], i), o))}</strong><span>{E(series[s].Name)}</span></div>""");
-        if (o.Stacked && series.Count > 1)
-            sb.Append($"""<div class="m-xy-tip-row m-xy-tip-total"><strong>{E(Format(series.Sum(s => Value(s, i)), o))}</strong><span>Total</span></div>""");
+            sb.Append($"""<div class="m-xy-tip-row"><span class="m-key m-key-line" style="--c:{Slot(o, s)}"></span><strong>{E(Format(Value(series[s], i), o))}</strong><span>{E(series[s].Name)}</span></div>""");
+        if (o.Stacked && lineFrom > 1)
+            sb.Append($"""<div class="m-xy-tip-row m-xy-tip-total"><strong>{E(Format(series.Take(lineFrom).Sum(s => Value(s, i)), o))}</strong><span>Total</span></div>""");
+        sb.Append(extraHtml);
         sb.Append("</div>");
     }
 

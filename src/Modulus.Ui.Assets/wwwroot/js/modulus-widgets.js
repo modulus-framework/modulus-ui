@@ -2,8 +2,10 @@
  * Alpine components behind the MVC widgets in AdvancedEntryTagHelpers.cs:
  * app-tree, app-tree-select, app-cascader, app-transfer, app-calendar, app-carousel, app-anchor,
  * app-editable-grid (EditableGridTagHelper.cs), app-menu (MenuTagHelpers.cs), app-splitter, app-affix,
- * app-back-top (FrameTagHelpers.cs), app-auto-complete, app-mentions, app-image-group and app-countdown
- * (ExtraTagHelpers.cs), app-color-picker and app-tour (ModernTagHelpers.cs).
+ * app-back-top (FrameTagHelpers.cs), app-auto-complete, app-mentions and app-countdown
+ * (ExtraTagHelpers.cs), app-color-picker and app-tour (ModernTagHelpers.cs), and the business fields
+ * app-money-input, app-quantity-input, app-duration-input, app-number-range, app-phone-input and app-lookup
+ * (BusinessFieldTagHelpers.cs; masks, one-time codes, signatures and rich text run in modulus-shell.js).
  * The server renders the initial DOM; these components keep the Ant Design classes in step with the state.
  * Loaded by <modulus-scripts /> before Alpine.
  */
@@ -271,6 +273,45 @@
             };
         });
 
+        // The column search box of a table header (ColumnHeader.cs): position: fixed under its icon, so the table's
+        // scroll box doesn't clip it. With data-search-href it asks the server (htmx, using the host's hx-target and
+        // hx-swap, or the ones it inherits); otherwise it raises m-col-search for the grid around it.
+        Alpine.data('columnSearch', function () {
+            return {
+                open: false,
+                style: '',
+                toggle: function () { if (this.open) this.close(); else this.show(); },
+                show: function () {
+                    var self = this, r = this.$refs.trigger.getBoundingClientRect(), width = 248;
+                    var left = Math.max(8, Math.min(r.right - width, document.documentElement.clientWidth - width - 8));
+                    this.style = 'position: fixed; top: ' + Math.round(r.bottom + 6) + 'px; left: ' + Math.round(left) + 'px; width: ' + width + 'px; z-index: 1050;';
+                    this.open = true;
+                    this._scroll = function (e) { if (!self.$root.contains(e.target)) self.close(); };
+                    window.addEventListener('scroll', this._scroll, { capture: true, passive: true });
+                    this.$nextTick(function () { self.$refs.input.focus(); self.$refs.input.select(); });
+                },
+                close: function () {
+                    if (!this.open) return;
+                    this.open = false;
+                    window.removeEventListener('scroll', this._scroll, { capture: true });
+                },
+                destroy: function () { this.close(); },
+                apply: function () { this.submit(this.$refs.input.value.trim()); },
+                reset: function () { this.$refs.input.value = ''; this.submit(''); },
+                submit: function (value) {
+                    var host = this.$root, key = host.getAttribute('data-key'), href = host.getAttribute('data-search-href');
+                    this.close();
+                    if (href) {
+                        var url = value ? href + (href.indexOf('?') < 0 ? '?' : '&') + 's.' + encodeURIComponent(key) + '=' + encodeURIComponent(value) : href;
+                        if (window.htmx) window.htmx.ajax('GET', url, { source: host }); else window.location.href = url;
+                        return;
+                    }
+                    this.$refs.trigger.classList.toggle('active', !!value);
+                    host.dispatchEvent(new CustomEvent('m-col-search', { bubbles: true, detail: { key: key, value: value } }));
+                }
+            };
+        });
+
         // <app-editable-grid>: click-to-edit cells, client-side add/delete of rows, expandable rows, fixed-column
         // shadows, density, and one floating column menu. Column operations and Save post the enclosing form
         // (the server re-renders the grid). view() and the formatters mirror EditableGridTagHelper.View / GridSchema.Format.
@@ -320,6 +361,50 @@
                 }
             }
             function csvField(s) { return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+            // ColumnSearch.Matches: contains, =exact, !exclude; numbers and dates also >, >=, <, <=, = and a..b ranges.
+            function kind(col) {
+                return /^(Number|Currency|Percent|Progress|Rating)$/.test(col.type) ? 'Number' : col.type === 'Date' ? 'Date' : 'Text';
+            }
+            function parseNum(s) { var d = String(s).replace(/[^0-9.\-]/g, ''); if (!d) return null; var n = Number(d); return isFinite(n) ? n : null; }
+            function parseDate(s) { return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : null; }
+            function compare(q, v, parse) {
+                var at = q.indexOf('..');
+                if (at >= 0) {
+                    var l = q.slice(0, at).trim(), r = q.slice(at + 2).trim(), from = l ? parse(l) : null, to = r ? parse(r) : null;
+                    if ((l && from === null) || (r && to === null) || (from === null && to === null)) return null;
+                    return v !== null && (from === null || v >= from) && (to === null || v <= to);
+                }
+                var op = /^(>=|<=|>|<|=)/.exec(q);
+                if (!op) return null;
+                var x = parse(q.slice(op[1].length).trim());
+                if (x === null) return null;
+                if (v === null) return false;
+                switch (op[1]) { case '>': return v > x; case '>=': return v >= x; case '<': return v < x; case '<=': return v <= x; default: return v === x; }
+            }
+            function columnMatch(q, text, k, raw) {
+                q = String(q || '').trim();
+                if (!q) return true;
+                var result = k === 'Number' ? compare(q, num(raw), parseNum) : k === 'Date' ? compare(q, parseDate(raw || ''), parseDate) : null;
+                if (result !== null) return result;
+                var t = String(text || '').toLowerCase();
+                if (q.length > 1 && q[0] === '=') return t.trim() === q.slice(1).trim().toLowerCase();
+                if (q.length > 1 && q[0] === '!') return t.indexOf(q.slice(1).trim().toLowerCase()) < 0;
+                return t.indexOf(q.toLowerCase()) >= 0;
+            }
+            // GridSchema.Sort: numbers and dates by value, the rest by displayed text; empty cells last either way.
+            function sortValue(col, raw) {
+                if (kind(col) === 'Number') return num(raw);
+                if (col.type === 'Date') return parseDate(raw || '');
+                if (col.type === 'Switch') return flag(raw) ? 1 : 0;
+                return raw === null || raw === '' ? null : String(format(col, raw));
+            }
+            function order(x, y, desc) {
+                if (x === null && y === null) return 0;
+                if (x === null) return 1;
+                if (y === null) return -1;
+                var c = typeof x === 'string' ? x.localeCompare(y, cfg.lang, { sensitivity: 'accent' }) : x < y ? -1 : x > y ? 1 : 0;
+                return desc ? -c : c;
+            }
             function format(col, v) {
                 if (v === null || v === undefined || v === '') return col.type === 'Switch' ? 'No' : '';
                 var n = num(v);
@@ -411,6 +496,9 @@
                 newRequired: false,
                 keyword: '',
                 filters: {},
+                searches: {},
+                sortKey: '',
+                sortDesc: false,
                 selected: 0,
                 _editor: null,
                 _original: null,
@@ -419,14 +507,26 @@
                     var self = this;
                     // The server renders the default density so the first paint is right; Alpine owns it from here.
                     this.$refs.table.classList.remove('ant-table-middle');
-                    // Search and filters survive the grid being rendered again after a post (kept per grid for the tab).
+                    // The order the rows came in, for "unsorted".
+                    this.rows().forEach(function (tr, i) { tr.setAttribute('data-order', i); });
+                    // Search, filters, column searches and the sort survive the grid being rendered again after a post
+                    // (kept per grid for the tab).
                     try {
                         var saved = JSON.parse(sessionStorage.getItem(this.storeKey()) || 'null');
                         if (saved) {
                             this.keyword = saved.keyword || '';
                             this.filters = saved.filters || {};
+                            this.searches = saved.searches || {};
+                            this.sortKey = saved.sortKey || '';
+                            this.sortDesc = !!saved.sortDesc;
                             this.$root.querySelectorAll('select[data-filter]').forEach(function (s) { s.value = self.filters[s.getAttribute('data-filter')] || ''; });
-                            this.$nextTick(function () { self.applyFilter(); });
+                            this.heads().forEach(function (th) {
+                                var value = self.searches[th.getAttribute('data-key')] || '';
+                                var input = th.querySelector('.m-col-search input'), trigger = th.querySelector('.m-th-search');
+                                if (input) input.value = value;
+                                if (trigger) trigger.classList.toggle('active', !!value);
+                            });
+                            this.$nextTick(function () { self.applySort(); self.applyFilter(); });
                         }
                     } catch (e) { /* storage blocked */ }
                     this._resize = function () { self.onScroll(); };
@@ -561,22 +661,51 @@
                 // Only this grid's own rows: a nested grid's child levels sit inside its detail rows.
                 rows: function () { return Array.prototype.filter.call(this.$refs.body.children, function (tr) { return tr.hasAttribute('data-row-key'); }); },
 
-                // ---- Search and filters (GridSchema.Matches): rows that don't match are hidden, not removed, so they still post ----
+                // ---- Search, filters and column searches (GridSchema.Matches): rows that don't match are hidden, not removed, so they still post ----
                 storeKey: function () { return 'modulus-grid:' + location.pathname + ':' + this.$root.id; },
-                filtered: function () { var f = this.filters; return Object.keys(f).some(function (k) { return !!f[k]; }); },
+                store: function () {
+                    try {
+                        sessionStorage.setItem(this.storeKey(), JSON.stringify({ keyword: this.keyword, filters: this.filters, searches: this.searches, sortKey: this.sortKey, sortDesc: this.sortDesc }));
+                    } catch (e) { /* storage blocked */ }
+                },
+                // This grid's header cells (a nested grid's own headers sit further down, inside detail rows).
+                heads: function () { return Array.prototype.slice.call(this.$refs.table.querySelector('thead').querySelectorAll('th[data-key]')); },
+                filtered: function () {
+                    var f = this.filters, s = this.searches;
+                    return Object.keys(f).some(function (k) { return !!f[k]; }) || Object.keys(s).some(function (k) { return !!s[k]; });
+                },
                 setFilter: function (key, value) { this.filters[key] = value; this.applyFilter(); },
+                // From a header's column search box (m-col-search).
+                setSearch: function (detail) {
+                    if (!detail || !detail.key) return;
+                    this.searches[detail.key] = detail.value || '';
+                    this.applyFilter();
+                },
                 clearFilters: function () {
                     this.filters = {};
+                    this.searches = {};
                     this.$root.querySelectorAll('select[data-filter]').forEach(function (s) { s.value = ''; });
+                    this.heads().forEach(function (th) {
+                        var input = th.querySelector('.m-col-search input'), trigger = th.querySelector('.m-th-search');
+                        if (input) input.value = '';
+                        if (trigger) trigger.classList.remove('active');
+                    });
                     this.applyFilter();
                 },
                 matches: function (tr, k) {
-                    var f = this.filters;
+                    var f = this.filters, s = this.searches;
                     for (var key in f) {
                         if (!f[key] || !cfg.columns[key]) continue;
                         var col = cfg.columns[key], raw = rowValue(tr, key);
                         var ok = col.type === 'MultiSelect' ? many(raw).indexOf(f[key]) >= 0 : col.type === 'Switch' ? flag(raw) === flag(f[key]) : raw === f[key];
                         if (!ok) return false;
+                    }
+                    for (var sk in s) {
+                        // A hidden column's search is ignored, as on the server.
+                        if (!s[sk] || !cfg.columns[sk] || !tr.querySelector(':scope > td[data-key="' + CSS.escape(sk) + '"]')) continue;
+                        var sc = cfg.columns[sk], value = rowValue(tr, sk), text = format(sc, value);
+                        if (sc.sub) text += ' ' + (rowValue(tr, sc.sub) || '');
+                        if (!columnMatch(s[sk], text, kind(sc), value)) return false;
                     }
                     if (!k) return true;
                     return Array.prototype.some.call(tr.querySelectorAll('td[data-key]'), function (td) {
@@ -603,7 +732,50 @@
                             this.$refs.body.insertAdjacentHTML('beforeend', '<tr class="ant-table-placeholder m-grid-no-match"><td class="ant-table-cell" colspan="' + cols + '"><div class="m-table-empty">No rows match the search or filters.</div></td></tr>');
                         }
                     } else if (none) none.remove();
-                    try { sessionStorage.setItem(this.storeKey(), JSON.stringify({ keyword: this.keyword, filters: this.filters })); } catch (e) { /* storage blocked */ }
+                    this.syncSelection();
+                    this.store();
+                },
+
+                // ---- Sorting (a header click: ascending, descending, then the original order); rows added here stay on top ----
+                sortBy: function (key) {
+                    if (this.sortKey !== key) { this.sortKey = key; this.sortDesc = false; }
+                    else if (!this.sortDesc) this.sortDesc = true;
+                    else { this.sortKey = ''; this.sortDesc = false; }
+                    this.applySort();
+                    this.store();
+                },
+                applySort: function () {
+                    var self = this, body = this.$refs.body, key = this.sortKey, col = key ? cfg.columns[key] : null;
+                    if (key && !col) this.sortKey = key = '';
+                    // Each row moves with its detail row.
+                    var pairs = this.rows().map(function (tr) {
+                        var detail = tr.nextElementSibling;
+                        return { tr: tr, detail: detail && detail.getAttribute('data-detail-for') === tr.getAttribute('data-row-key') ? detail : null, value: col ? sortValue(col, rowValue(tr, key)) : null };
+                    });
+                    pairs.sort(function (a, b) {
+                        var na = a.tr.classList.contains('m-grid-row-new'), nb = b.tr.classList.contains('m-grid-row-new');
+                        if (na !== nb) return na ? -1 : 1;
+                        return (col ? order(a.value, b.value, self.sortDesc) : 0) || (+(a.tr.getAttribute('data-order') || 0) - +(b.tr.getAttribute('data-order') || 0));
+                    });
+                    var none = body.querySelector(':scope > tr.m-grid-no-match');
+                    pairs.forEach(function (p) { body.appendChild(p.tr); if (p.detail) body.appendChild(p.detail); });
+                    if (none) body.appendChild(none);
+                    // The headers' carets and aria-sort, and the sorted column's tint, as the server renders them.
+                    this.heads().forEach(function (th) {
+                        var on = th.getAttribute('data-key') === key, sorters = th.querySelector('.m-th-sort');
+                        if (!sorters) return;
+                        th.classList.toggle('ant-table-column-sort', on);
+                        th.setAttribute('aria-sort', on ? (self.sortDesc ? 'descending' : 'ascending') : 'none');
+                        th.querySelector('.ant-table-column-sorter-up').classList.toggle('active', on && !self.sortDesc);
+                        th.querySelector('.ant-table-column-sorter-down').classList.toggle('active', on && self.sortDesc);
+                        var title = th.querySelector('.ant-table-column-title').textContent.replace('*', '');
+                        sorters.setAttribute('aria-label', 'Sort by ' + title + (on ? (self.sortDesc ? ' (descending)' : ' (ascending)') : ''));
+                    });
+                    this.rows().forEach(function (tr) {
+                        Array.prototype.forEach.call(tr.children, function (td) {
+                            if (td.hasAttribute('data-key')) td.classList.toggle('ant-table-column-sort', td.getAttribute('data-key') === key);
+                        });
+                    });
                 },
 
                 // ---- Selection and the batch bar ----
@@ -951,29 +1123,6 @@
                     el.dispatchEvent(new Event('input', { bubbles: true }));
                     this.open = false;
                 }
-            };
-        });
-
-        // <app-image-group>: one preview for the group's images, with previous/next.
-        Alpine.data('modulusImageGroup', function (items) {
-            return {
-                items: items,
-                index: 0,
-                open: false,
-                _opener: null,
-                get current() { return this.items[this.index] || { src: '', alt: '' }; },
-                show: function (i) {
-                    var self = this;
-                    this._opener = document.activeElement;
-                    this.index = i;
-                    this.open = true;
-                    setTimeout(function () { if (self.$refs.close) self.$refs.close.focus(); }, 50);
-                },
-                close: function () {
-                    this.open = false;
-                    if (this._opener && this._opener.focus) this._opener.focus();
-                },
-                go: function (d) { this.index = (this.index + d + this.items.length) % this.items.length; }
             };
         });
 
@@ -1336,6 +1485,309 @@
                 close: function () {
                     this.open = false;
                     this.$dispatch('modulus-tour-close', cfg.name);
+                }
+            };
+        });
+
+        // ---- Business fields (BusinessFieldTagHelpers.cs) ----
+        // The typed text is formatted with the rules of Modulus.Ui.Abstractions.Forms (modulusShell.fields) and the
+        // hidden input posts the invariant value, so the model binds "1234.5" whatever the page shows.
+        function fx() { return window.modulusShell.fields; }
+        function changed(input) { if (input) input.dispatchEvent(new Event('change', { bubbles: true })); }
+
+        // app-money-input, app-quantity-input. cfg: { value, decimals, fixed (explicit decimals), min, max,
+        // digits: { code: decimals } for the currency or unit list, labels: { code: text }, unit }.
+        Alpine.data('modulusNumberField', function (cfg) {
+            return {
+                value: cfg.value, unit: cfg.unit || '',
+                get digits() {
+                    if (cfg.fixed != null) return cfg.fixed;
+                    return cfg.digits && Object.prototype.hasOwnProperty.call(cfg.digits, this.unit) ? cfg.digits[this.unit] : cfg.decimals;
+                },
+                get raw() { return fx().invariant(this.value); },
+                get unitText() { return (cfg.labels && cfg.labels[this.unit]) || this.unit; },
+                show: function () {
+                    this.$refs.input.value = fx().formatNumber(this.value, this.digits);
+                    var hidden = this.$refs.value;
+                    this.$nextTick(function () { changed(hidden); });
+                },
+                commit: function () {
+                    var t = this.$refs.input.value;
+                    if (!t.trim()) this.value = null;
+                    else {
+                        var v = fx().parseNumber(t);
+                        if (v != null) {
+                            if (cfg.min != null && v < cfg.min) v = cfg.min;
+                            if (cfg.max != null && v > cfg.max) v = cfg.max;
+                            this.value = fx().round(v, this.digits);
+                        }
+                    }
+                    this.show();
+                },
+                setUnit: function (code) {
+                    this.unit = code;
+                    if (this.value != null) this.value = fx().round(this.value, this.digits);
+                    this.show();
+                }
+            };
+        });
+
+        // app-duration-input. cfg: { value (minutes), max }.
+        Alpine.data('modulusDuration', function (cfg) {
+            return {
+                value: cfg.value,
+                get raw() { return this.value == null ? '' : String(this.value); },
+                commit: function () {
+                    var t = this.$refs.input.value;
+                    if (!t.trim()) this.value = null;
+                    else {
+                        var m = fx().parseDuration(t);
+                        if (m != null) this.value = Math.min(m, cfg.max);
+                    }
+                    this.$refs.input.value = fx().formatDuration(this.value);
+                    var hidden = this.$refs.value;
+                    this.$nextTick(function () { changed(hidden); });
+                }
+            };
+        });
+
+        // app-number-range. cfg: { from, to, decimals }.
+        Alpine.data('modulusNumberRange', function (cfg) {
+            return {
+                from: cfg.from, to: cfg.to,
+                get invalid() { return this.from != null && this.to != null && this.from > this.to; },
+                raw: function (v) { return fx().invariant(v); },
+                commit: function (which) {
+                    var input = this.$refs[which], t = input.value;
+                    if (!t.trim()) this[which] = null;
+                    else {
+                        var v = fx().parseNumber(t);
+                        if (v != null) this[which] = fx().round(v, cfg.decimals);
+                    }
+                    input.value = fx().formatNumber(this[which], cfg.decimals);
+                    var hidden = this.$refs[which + 'Value'];
+                    this.$nextTick(function () { changed(hidden); });
+                }
+            };
+        });
+
+        // app-phone-input: PhoneNumber.Split / Join. cfg: { country, national, dials: { ISO code: calling code } }.
+        Alpine.data('modulusPhone', function (cfg) {
+            function clean(s) {
+                var out = '';
+                String(s || '').trim().split('').forEach(function (c) {
+                    if (/[0-9().-]/.test(c)) out += c;
+                    else if (/\s/.test(c) && out && out[out.length - 1] !== ' ') out += ' ';
+                });
+                return out.trim();
+            }
+            return {
+                country: cfg.country, national: cfg.national,
+                dial: function (code) { return (cfg.dials && cfg.dials[code]) || ''; },
+                get prefix() { return this.country ? this.country + ' +' + this.dial(this.country) : '+'; },
+                get raw() {
+                    var n = clean(this.national);
+                    if (!/[0-9]/.test(n)) return '';
+                    return this.country ? '+' + this.dial(this.country) + ' ' + n : n;
+                },
+                // A number typed or pasted with "+": pick the country with the longest matching calling code,
+                // preferring the current one for shared codes (+1, +7).
+                split: function (s) {
+                    var digits = s.replace(/[^0-9]/g, ''), codes = Object.keys(cfg.dials || {}), self = this;
+                    for (var len = Math.min(4, digits.length); len >= 1; len--) {
+                        var code = digits.slice(0, len);
+                        var matches = codes.filter(function (c) { return cfg.dials[c] === code; });
+                        if (!matches.length) continue;
+                        this.country = matches.indexOf(self.country) >= 0 ? self.country : matches[0];
+                        var seen = 0;
+                        for (var i = 0; i < s.length; i++) {
+                            if (!/[0-9]/.test(s[i])) continue;
+                            if (++seen === len) return clean(s.slice(i + 1));
+                        }
+                        return '';
+                    }
+                    return s.slice(1).trim();
+                },
+                commit: function () {
+                    var t = this.$refs.input.value.trim();
+                    this.national = t[0] === '+' ? this.split(t) : clean(t);
+                    this.$refs.input.value = this.national;
+                    this.sync();
+                },
+                sync: function () { var hidden = this.$refs.value; this.$nextTick(function () { changed(hidden); }); }
+            };
+        });
+
+        // app-lookup: LookupSearch.Filter / Resolve for a list given with the page, or a JSON endpoint that takes
+        // ?q=text&max=n and returns [{ value, label, description, fields }].
+        // cfg: { value, label, items: [{ v, l, d, f }] | null, href, max, page, columns: [key, …] }.
+        var SEP = String.fromCharCode(31);
+        function lookupHay(i) {
+            var f = i.f ? Object.keys(i.f).map(function (k) { return i.f[k]; }) : [];
+            return [i.v, i.l, i.d || ''].concat(f).join(SEP).toLowerCase();
+        }
+        function lookupFilter(items, text, max) {
+            var q = String(text || '').trim().toLowerCase();
+            if (!q) return items.slice(0, max);
+            var terms = q.split(/\s+/);
+            return items
+                .map(function (item, index) { return { item: item, index: index }; })
+                .filter(function (x) { var h = lookupHay(x.item); return terms.every(function (t) { return h.indexOf(t) >= 0; }); })
+                .map(function (x) {
+                    x.rank = x.item.l.toLowerCase().indexOf(q) === 0 ? 0 : x.item.v.toLowerCase().indexOf(q) === 0 ? 1 : 2;
+                    return x;
+                })
+                .sort(function (a, b) { return a.rank - b.rank || a.index - b.index; })
+                .slice(0, max)
+                .map(function (x) { return x.item; });
+        }
+        function lookupResolve(items, text) {
+            var q = String(text || '').trim().toLowerCase();
+            if (!q) return null;
+            var exact = items.filter(function (i) { return i.l.toLowerCase() === q || i.v.toLowerCase() === q; })[0];
+            if (exact) return exact;
+            var m = lookupFilter(items, q, 2);
+            return m.length === 1 ? m[0] : null;
+        }
+        Alpine.data('modulusLookup', function (cfg) {
+            var timer = 0, seq = 0;
+            return {
+                value: cfg.value || '', label: cfg.label || '', text: cfg.label || '', cols: cfg.columns || [],
+                open: false, active: -1, list: [], loading: false,
+                dialog: false, query: '', rows: [], total: 0, row: -1,
+                get countText() {
+                    if (this.total > this.rows.length) return 'Showing ' + this.rows.length + ' of ' + this.total + '. Refine the search to see more.';
+                    return this.rows.length === 1 ? '1 record' : this.rows.length + ' records';
+                },
+                cell: function (item, key) {
+                    return key === 'value' ? item.v : key === 'label' ? item.l : key === 'description' ? (item.d || '') : (item.f && item.f[key]) || '';
+                },
+                // Resolves to { items, total }.
+                find: function (text, max) {
+                    if (!cfg.href) {
+                        var all = lookupFilter(cfg.items || [], text, Infinity);
+                        return Promise.resolve({ items: all.slice(0, max), total: all.length });
+                    }
+                    var url = cfg.href + (cfg.href.indexOf('?') >= 0 ? '&' : '?') + 'q=' + encodeURIComponent(text || '') + '&max=' + (max + 1);
+                    return fetch(url, { headers: { Accept: 'application/json' } })
+                        .then(function (r) { return r.ok ? r.json() : []; })
+                        .then(function (data) {
+                            var items = (data || []).map(function (i) { return { v: String(i.value), l: String(i.label), d: i.description || null, f: i.fields || null }; });
+                            return { items: items.slice(0, max), total: items.length };
+                        })
+                        .catch(function () { return { items: [], total: 0 }; });
+                },
+                place: function () {
+                    var root = this.$root;
+                    this.$nextTick(function () {
+                        if (window.modulusShell) { window.modulusShell.placeSelect(root); window.modulusShell.scrollLookupRow(root); }
+                    });
+                },
+                suggest: function (text, keepActive) {
+                    var self = this, mine = ++seq;
+                    clearTimeout(timer);
+                    this.loading = true;
+                    var run = function () {
+                        self.find(text, cfg.max).then(function (r) {
+                            if (mine !== seq) return;
+                            self.list = r.items;
+                            self.loading = false;
+                            var i = keepActive ? r.items.findIndex(function (x) { return x.v === self.value; }) : -1;
+                            self.active = i >= 0 ? i : r.items.length ? 0 : -1;
+                            self.place();
+                        });
+                    };
+                    if (cfg.href) timer = setTimeout(run, 200); else run();
+                },
+                typed: function () {
+                    if (!this.open) { this.open = true; this.list = []; }
+                    this.suggest(this.text, false);
+                },
+                openList: function () {
+                    if (this.open || cfg.disabled) return;
+                    this.open = true;
+                    this.list = [];
+                    // Opened on the current value: show everything, not just the current label.
+                    this.suggest(this.text === this.label ? '' : this.text, true);
+                },
+                close: function () { this.open = false; this.active = -1; seq++; clearTimeout(timer); },
+                revert: function () { this.text = this.label; this.close(); },
+                pick: function (item) {
+                    var fromDialog = this.dialog;
+                    this.close();
+                    this.dialog = false;
+                    var before = this.value;
+                    this.value = item ? item.v : '';
+                    this.label = this.text = item ? item.l : '';
+                    if (this.value !== before) {
+                        var hidden = this.$refs.value, root = this.$root;
+                        this.$nextTick(function () {
+                            changed(hidden);
+                            root.dispatchEvent(new CustomEvent('m-lookup-change', { bubbles: true, detail: item ? { value: item.v, label: item.l, description: item.d, fields: item.f } : null }));
+                        });
+                    }
+                    if (fromDialog) { var input = this.$refs.input; this.$nextTick(function () { input.focus(); }); }
+                },
+                blur: function () {
+                    if (this.dialog) return;
+                    var t = this.text.trim();
+                    if (!t) { if (this.value) this.pick(null); else this.close(); return; }
+                    if (t === this.label) { this.revert(); return; }
+                    var match = lookupResolve(cfg.href ? this.list : cfg.items || [], t);
+                    if (match) this.pick(match); else this.revert();
+                },
+                key: function (e) {
+                    // modulus-shell.js stops these keys scrolling the page or submitting the form.
+                    var n = this.list.length;
+                    if (e.key === 'F4') this.openDialog();
+                    else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !this.open) this.openList();
+                    else if (e.key === 'ArrowDown' && n) { this.active = (this.active + 1) % n; this.place(); }
+                    else if (e.key === 'ArrowUp' && n) { this.active = (this.active - 1 + n) % n; this.place(); }
+                    else if (e.key === 'Enter' && this.open && this.active >= 0 && this.active < n) this.pick(this.list[this.active]);
+                    else if (e.key === 'Escape') this.revert();
+                },
+                openDialog: function () {
+                    if (cfg.disabled) return;
+                    this.close();
+                    this.query = this.text === this.label ? '' : this.text;
+                    this.dialog = true;
+                    this.rows = [];
+                    this.search(true);
+                    var search = this.$refs.search;
+                    this.$nextTick(function () { window.modulusShell.focus(search); });
+                },
+                closeDialog: function () {
+                    seq++;
+                    this.dialog = false;
+                    this.text = this.label;
+                    var input = this.$refs.input;
+                    this.$nextTick(function () { input.focus(); });
+                },
+                search: function (first) {
+                    var self = this, mine = ++seq;
+                    clearTimeout(timer);
+                    this.loading = true;
+                    var run = function () {
+                        self.find(self.query, cfg.page).then(function (r) {
+                            if (mine !== seq) return;
+                            self.rows = r.items;
+                            self.total = r.total;
+                            self.loading = false;
+                            var i = first ? r.items.findIndex(function (x) { return x.v === self.value; }) : -1;
+                            self.row = i >= 0 ? i : r.items.length ? 0 : -1;
+                            var root = self.$root;
+                            self.$nextTick(function () { window.modulusShell.scrollLookupRow(root); });
+                        });
+                    };
+                    if (cfg.href && !first) timer = setTimeout(run, 250); else run();
+                },
+                dialogKey: function (e) {
+                    var n = this.rows.length, root = this.$root;
+                    if (e.key === 'ArrowDown' && n) this.row = (this.row + 1) % n;
+                    else if (e.key === 'ArrowUp' && n) this.row = (this.row - 1 + n) % n;
+                    else if (e.key === 'Enter' && this.row >= 0 && this.row < n) { this.pick(this.rows[this.row]); return; }
+                    else return;
+                    this.$nextTick(function () { window.modulusShell.scrollLookupRow(root); });
                 }
             };
         });

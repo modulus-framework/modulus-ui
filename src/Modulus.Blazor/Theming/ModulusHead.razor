@@ -6,7 +6,7 @@
     Emits the official Ant Design stylesheets (light + dark, toggled by `media`), the ProLayout
     stylesheet, the Modulus design layer and shell, the generated brand tokens and the theme and
     shell scripts. The theme script runs synchronously, so the saved light/dark choice and theme
-    settings (layout, width, navigation) are applied before first paint. Pass Cookie so the server
+    settings (layout, width, navigation, menu, font, base) are applied before first paint. Pass Cookie so the server
     renders the user's colour scheme and radius too; omit it to always render the configured theme.
 *@
 @inject IOptions<ModulusThemeOptions> ThemeOptions
@@ -21,7 +21,7 @@
 <link rel="stylesheet" href="_content/Modulus.Ui.Assets/css/modulus-shell.css" />
 <link rel="stylesheet" href="_content/Modulus.Ui.Assets/css/modulus-pages.css" />
 <style id="modulus-brand">@((MarkupString)ThemeCss.Build(_options))</style>
-<script src="_content/Modulus.Ui.Assets/js/modulus-theme.js" data-default="@DefaultAttr" data-layout="@Lower(_options.Layout)" data-width="@Lower(_options.ContentWidth)" data-nav="@Lower(_options.NavTheme)"></script>
+@((MarkupString)ThemeScript) 
 <script src="_content/Modulus.Ui.Assets/js/modulus-shell.js" defer></script>
 
 @code {
@@ -42,5 +42,6 @@
         _ => null,
     };
 
-    private static string Lower<T>(T value) where T : struct, Enum => value.ToString().ToLowerInvariant();
+    private string ThemeScript =>
+        $"""<script src="_content/Modulus.Ui.Assets/js/modulus-theme.js"{(DefaultAttr is null ? "" : $" data-default=\"{DefaultAttr}\"")} {ThemeCss.ScriptAttributes(_options)}></script>""";
 }

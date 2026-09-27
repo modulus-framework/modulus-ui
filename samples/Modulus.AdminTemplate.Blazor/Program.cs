@@ -1,6 +1,7 @@
 using Modulus.AdminTemplate.Blazor.Components;
 using Modulus.Blazor;
 using Modulus.Samples.Shared;
+using Modulus.Ui.Abstractions;
 using Modulus.Ui.Abstractions.Navigation;
 using Modulus.Ui.Abstractions.Shell;
 
@@ -39,7 +40,10 @@ app.MapGet("/tables/advanced/export", (HttpRequest request) =>
 {
     var q = request.Query;
     var query = new EmployeeQuery(q["keyword"], NullIfEmpty(q["department"]), NullIfEmpty(q["office"]),
-        Enum.TryParse<EmployeeStatus>(q["status"], out var status) ? status : null, NullIfEmpty(q["label"]));
+        Enum.TryParse<EmployeeStatus>(q["status"], out var status) ? status : null, NullIfEmpty(q["label"]))
+    {
+        Searches = ColumnSearch.FromQuery(q.Select(kv => new KeyValuePair<string, string?>(kv.Key, kv.Value.ToString()))),
+    };
     var ids = q["ids"].Select(v => int.TryParse(v, out var id) ? id : 0).Where(id => id > 0).ToList();
     return Results.File(System.Text.Encoding.UTF8.GetBytes(EmployeeDirectory.Csv(EmployeeDirectory.ForExport(query, ids))), "text/csv", "employees.csv");
 

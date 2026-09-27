@@ -3,7 +3,10 @@ using Modulus.Ui.Abstractions.Shell;
 
 namespace Modulus.Samples.Shared;
 
-/// <summary>Header content for the sample apps: the demo user, notifications and account links.</summary>
+/// <summary>
+/// Header content for the sample apps, set up like an Odoo-style ERP: an app launcher whose apps own parts of the
+/// menu, scheduled activities, notifications, account links and a multi-company switcher with branches.
+/// </summary>
 public sealed class SampleShellContentProvider : IShellContentProvider
 {
     public Task<ShellContent> GetContentAsync(ClaimsPrincipal user, CancellationToken cancellationToken = default) =>
@@ -28,32 +31,48 @@ public sealed class SampleShellContentProvider : IShellContentProvider
                 new("Help center", "pages/help-center", "lifebuoy"),
             ],
             SignOutHref = "auth/login",
+            // Each app owns a menu item (AdminMenuContributor keys); with the "Current app" menu the navbar shows
+            // only that app's entries, as in Odoo.
+            AppLauncher = AppLauncherStyle.Overlay,
             Apps =
             [
-                new("Email", "apps/email", "mail", "blue"),
-                new("Chat", "apps/chat", "messages", "green"),
-                new("Calendar", "apps/calendar", "calendar", "orange"),
-                new("Kanban", "apps/kanban", "layout-kanban", "purple"),
-                new("Invoices", "apps/invoice/list", "file-invoice", "azure"),
-                new("Products", "apps/ecommerce/products", "package", "pink"),
-                new("Customers", "apps/customers", "users", "teal"),
-                new("CRM", "dashboards/crm", "chart-pie", "red"),
-                new("Settings", "pages/account-settings", "settings", "gray"),
+                new("Dashboards", "", "layout-dashboard", "blue", "Analytics, CRM and eCommerce") { MenuKey = "dashboards" },
+                new("Sales", "apps/ecommerce/orders", "shopping-cart", "orange", "Orders, products and customers") { MenuKey = "ecommerce" },
+                new("Invoicing", "apps/invoice/list", "file-invoice", "teal", "Invoices and payments") { MenuKey = "invoice" },
+                new("Email", "apps/email", "mail", "azure") { MenuKey = "email" },
+                new("Discuss", "apps/chat", "messages", "green", "Chat") { MenuKey = "chat" },
+                new("Calendar", "apps/calendar", "calendar", "red") { MenuKey = "calendar" },
+                new("Project", "apps/kanban", "layout-kanban", "purple", "Kanban board") { MenuKey = "kanban" },
+                new("Users", "apps/users/list", "users", "indigo", "Users, roles and permissions") { MenuKey = "access" },
+                new("Settings", "pages/account-settings", "settings", "gray", "Account settings") { MenuKey = "account-settings" },
+                new("Website", "pages/profile", "world", "pink", "Pages, authentication and errors") { MenuKey = "pages" },
+                new("UI kit", "ui/components", "components", "cyan", "Components, cards and charts") { MenuKey = "ui" },
+                new("Forms & tables", "forms/layouts", "forms", "lime", "Forms, wizard, grids") { MenuKey = "forms" },
             ],
-            // No CurrentTenantId: the shell reads the modulus-tenant cookie the switcher writes.
+            Activities =
+            [
+                new("Sales orders", "shopping-cart", Late: 2, Today: 3, Planned: 5, "apps/ecommerce/orders", "orange"),
+                new("Invoices", "file-invoice", Late: 1, Today: 0, Planned: 4, "apps/invoice/list", "teal"),
+                new("Customers", "users", Late: 0, Today: 2, Planned: 3, "apps/customers", "indigo"),
+                new("Tasks", "layout-kanban", Late: 0, Today: 1, Planned: 6, "apps/kanban", "purple"),
+            ],
+            ActivitiesHref = "apps/calendar",
+            // No CurrentTenantId / ActiveTenantIds: the shell reads the cookies the switcher writes.
+            MultiTenant = true,
             Tenants =
             [
-                new("acme", "Acme Corporation", "Enterprise · 48 members"),
-                new("globex", "Globex", "Business · 21 members"),
-                new("initech", "Initech", "Business · 12 members"),
-                new("umbrella", "Umbrella Labs", "Starter · 6 members"),
-                new("stark", "Stark Industries", "Enterprise · 130 members"),
-                new("personal", "Personal workspace", "Free · Just you"),
+                new("acme", "Acme Corporation", "Headquarters · USD"),
+                new("acme-eu", "Acme Europe", "Branch · EUR") { ParentId = "acme" },
+                new("acme-apac", "Acme Asia Pacific", "Branch · SGD") { ParentId = "acme" },
+                new("globex", "Globex", "Company · USD"),
+                new("initech", "Initech", "Company · CAD"),
+                new("umbrella", "Umbrella Labs", "Company · GBP"),
+                new("stark", "Stark Industries", "Company · USD"),
             ],
             TenantLinks =
             [
-                new("Manage tenants", "pages/account-settings", "settings"),
-                new("Create tenant", "pages/pricing", "plus"),
+                new("Manage companies", "pages/account-settings", "settings"),
+                new("New company", "pages/pricing", "plus"),
             ],
             FooterLinks =
             [

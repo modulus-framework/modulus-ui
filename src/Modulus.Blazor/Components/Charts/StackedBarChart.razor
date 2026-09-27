@@ -1,0 +1,16 @@
+@* Horizontal stacked bars per row, optionally 100 % and on the ordinal ramp: <StackedBarChart Rows="customers" Series="agingBuckets" Normalize Ordinal /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.StackedBars(Rows, Series, Options(), Normalize, Ordinal))
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<string> Rows { get; set; } = [];
+
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSeries> Series { get; set; } = [];
+
+    /// <summary>Scale every row to 100 %.</summary>
+    [Parameter] public bool Normalize { get; set; }
+
+    /// <summary>Colour segments on the blue ordinal ramp (ordered buckets such as aging bands).</summary>
+    [Parameter] public bool Ordinal { get; set; }
+}

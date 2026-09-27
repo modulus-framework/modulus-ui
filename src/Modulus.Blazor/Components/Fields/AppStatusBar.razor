@@ -1,0 +1,41 @@
+@* Workflow status bar (Odoo statusbar, SAP document status): the record's stages as chevrons, done stages tinted,
+   the current one filled. Clickable when ValueChanged is bound; folded stages (Cancelled) show only while current.
+   Each stage is a radio, so the MVC <app-status-bar> posts the stage with no script and CSS draws the state. *@
+@using Modulus.Ui.Abstractions.Forms
+
+<div class="@RootClass" style="@Style" role="radiogroup" aria-label="@(AriaLabel ?? "Status")">
+    @foreach (var stage in WorkflowStage.Visible(Stages, Value))
+    {
+        var current = stage.Key == Value;
+        <label class="m-statusbar-item">
+            <input type="radio" class="m-statusbar-radio" name="@_name" value="@stage.Key" checked="@current"
+                   disabled="@(ReadOnly || Disabled)" @onchange="() => SelectAsync(stage.Key)" />
+            <span class="m-statusbar-label">@stage.Label</span>
+        </label>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<WorkflowStage> Stages { get; set; } = [];
+
+    /// <summary>Key of the current stage.</summary>
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    /// <summary>Whether clicking a stage moves the record there. Null: when ValueChanged is bound. Set false when stages
+    /// change only through actions (Confirm, Cancel) but you still bind the value.</summary>
+    [Parameter] public bool? Clickable { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private readonly string _name = "m-statusbar-" + Guid.NewGuid().ToString("N")[..8];
+
+    private bool ReadOnly => !(Clickable ?? ValueChanged.HasDelegate);
+
+    private string RootClass => string.Join(' ', new[] { "m-statusbar", ReadOnly ? "m-statusbar-readonly" : null, Class }.Where(c => !string.IsNullOrEmpty(c)));
+
+    private Task SelectAsync(string key) => ReadOnly ? Task.CompletedTask : ValueChanged.InvokeAsync(key);
+}

@@ -2,7 +2,7 @@
 @using Modulus.Ui.Abstractions.Shell
 @inject IHttpContextAccessor HttpContextAccessor
 
-<AppShell TenantId="@TenantId">@Body</AppShell>
+<AppShell TenantId="@TenantId" TenantIds="@TenantIds">@Body</AppShell>
 
 <div id="blazor-error-ui" data-nosnippet>
     Something went wrong. <a href="." class="reload">Reload</a>
@@ -10,10 +10,16 @@
 </div>
 
 @code {
-    // The tenant switcher writes a cookie and reloads. The cookie is read while prerendering and carried into the
+    // The tenant switcher writes cookies and reloads. The cookie is read while prerendering and carried into the
     // interactive circuit, which has no HttpContext.
     [PersistentState] public string? TenantId { get; set; }
 
-    protected override void OnInitialized() =>
-        TenantId ??= HttpContextAccessor.HttpContext?.Request.Cookies[ShellRenderer.TenantCookie];
+    [PersistentState] public string? TenantIds { get; set; }
+
+    protected override void OnInitialized()
+    {
+        var cookies = HttpContextAccessor.HttpContext?.Request.Cookies;
+        TenantId ??= cookies?[ShellRenderer.TenantCookie];
+        TenantIds ??= cookies?[ShellRenderer.TenantsCookie];
+    }
 }

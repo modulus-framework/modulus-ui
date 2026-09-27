@@ -1,0 +1,427 @@
+@* Lookup (Odoo many2one, SAP value help, Oracle list of values): type part of a code or name and pick from the
+   suggestions, or press F4 / "Search more…" for a dialog that searches every record in a table. Text the user leaves
+   behind resolves to the exact or only match, otherwise the field goes back to its value. Items can be a list, or
+   SearchAsync loads them from a server. The MVC <app-lookup> renders the same DOM with modulusLookup. *@
+@using Modulus.Ui.Abstractions.Forms
+@implements IDisposable
+@inject IJSRuntime JS
+
+<span class="@RootClass" style="@Style" @ref="_root">
+    <span class="@BoxClass">
+        <input type="text" class="ant-input m-lookup-input" id="@Id" placeholder="@Placeholder" autocomplete="off" disabled="@Disabled"
+               role="combobox" aria-autocomplete="list" aria-expanded="@(_open ? "true" : "false")" aria-controls="@ListId"
+               aria-activedescendant="@(_open && _active >= 0 ? $"{ListId}-{_active}" : null)" aria-label="@AriaLabel"
+               aria-invalid="@(Status == "error" ? "true" : null)"
+               value="@_text" @oninput="OnInput" @onkeydown="OnKey" @onblur="OnBlur" @ref="_input" />
+        <span class="ant-input-suffix">
+            @if (AllowClear && !Disabled && !string.IsNullOrEmpty(_text))
+            {
+                <span class="ant-input-clear-icon" role="button" aria-label="Clear" @onclick="ClearAsync" @onmousedown:preventDefault><Icon Type="close-circle" Theme="IconThemeType.Fill" /></span>
+            }
+            <button type="button" class="m-lookup-more" aria-label="@($"{SearchMoreText} (F4)")" title="@($"{SearchMoreText} (F4)")" disabled="@Disabled"
+                    tabindex="-1" @onmousedown:preventDefault @onclick="OpenDialogAsync"><Icon Type="search" /></button>
+        </span>
+    </span>
+
+    @if (_open)
+    {
+        <div class="ant-select-dropdown ant-select-dropdown-placement-bottomLeft m-cselect-dropdown m-lookup-dropdown" @onmousedown:preventDefault>
+            <div class="m-cselect-list" id="@ListId" role="listbox" aria-label="@(AriaLabel ?? "Suggestions")">
+                @if (_loading && _suggestions.Count == 0)
+                {
+                    <div class="m-cselect-empty">Searching…</div>
+                }
+                else if (_suggestions.Count == 0)
+                {
+                    <div class="m-cselect-empty">No matches</div>
+                }
+                @for (var i = 0; i < _suggestions.Count; i++)
+                {
+                    var item = _suggestions[i];
+                    var index = i;
+                    var on = item.Value == Value;
+                    <div class="@($"ant-select-item ant-select-item-option{(on ? " ant-select-item-option-selected" : "")}{(index == _active ? " ant-select-item-option-active" : "")}")"
+                         id="@($"{ListId}-{index}")" role="option" aria-selected="@(on ? "true" : "false")"
+                         @onclick="() => PickAsync(item)" @onmouseenter="() => _active = index">
+                        <div class="ant-select-item-option-content">
+                            <span class="m-lookup-option-label">@item.Label</span>
+                            @if (!string.IsNullOrEmpty(item.Description))
+                            {
+                                <span class="m-lookup-option-desc">@item.Description</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="m-cselect-footer">
+                <button type="button" class="ant-btn ant-btn-text ant-btn-block m-cselect-add-new m-lookup-search-more" @onclick="OpenDialogAsync"><Icon Type="search" /><span>@SearchMoreText</span></button>
+            </div>
+        </div>
+    }
+
+    @if (_dialog)
+    {
+        <div class="m-modal m-lookup-dialog" @onkeydown="DialogEscape">
+            <div class="ant-modal-mask"></div>
+            <div class="ant-modal-wrap" role="dialog" aria-modal="true" aria-labelledby="@($"{ListId}-title")" @onclick="CloseDialogAsync">
+                <div class="ant-modal" style="width:@(DialogWidth)px" @onclick:stopPropagation>
+                    <div class="ant-modal-content">
+                        <button type="button" class="ant-modal-close" aria-label="Close" @onclick="CloseDialogAsync"><span class="ant-modal-close-x"><Icon Type="close" Class="ant-modal-close-icon" /></span></button>
+                        <div class="ant-modal-header"><div class="ant-modal-title" id="@($"{ListId}-title")">@(Title ?? $"Search: {AriaLabel ?? "records"}")</div></div>
+                        <div class="ant-modal-body">
+                            <span class="ant-input-affix-wrapper m-lookup-search">
+                                <span class="ant-input-prefix"><Icon Type="search" /></span>
+                                <input type="text" class="ant-input m-lookup-search-input" placeholder="Search" aria-label="Search" autocomplete="off"
+                                       value="@_query" @oninput="OnDialogInput" @onkeydown="DialogKey" @ref="_search" />
+                            </span>
+                            <div class="ant-table-wrapper">
+                                <div class="ant-table ant-table-small m-lookup-table">
+                                    <div class="ant-table-container"><div class="ant-table-content">
+                                        <table>
+                                            <thead class="ant-table-thead">
+                                                <tr>
+                                                    @foreach (var c in ColumnList)
+                                                    {
+                                                        <th class="ant-table-cell">@c.Title</th>
+                                                    }
+                                                </tr>
+                                            </thead>
+                                            <tbody class="ant-table-tbody">
+                                                @if (_rows.Count == 0)
+                                                {
+                                                    <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="@ColumnList.Count">@(_loading ? "Searching…" : "No matches")</td></tr>
+                                                }
+                                                @for (var i = 0; i < _rows.Count; i++)
+                                                {
+                                                    var item = _rows[i];
+                                                    var index = i;
+                                                    <tr class="@($"ant-table-row m-lookup-row{(item.Value == Value ? " ant-table-row-selected" : "")}{(index == _row ? " m-lookup-row-active" : "")}")"
+                                                        aria-selected="@(item.Value == Value ? "true" : "false")"
+                                                        @onclick="() => PickAsync(item)" @onmouseenter="() => _row = index">
+                                                        @foreach (var c in ColumnList)
+                                                        {
+                                                            <td class="ant-table-cell">@LookupSearch.Cell(item, c.Key)</td>
+                                                        }
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div></div>
+                                </div>
+                            </div>
+                            <div class="m-lookup-count">@CountText</div>
+                        </div>
+                        <div class="ant-modal-footer">
+                            <button type="button" class="ant-btn ant-btn-default" @onclick="CloseDialogAsync"><span>Cancel</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</span>
+
+@code {
+    /// <summary>The picked item's value (id or code).</summary>
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    /// <summary>Raised with the whole picked item (null when cleared), to fill related fields (address, price, …).</summary>
+    [Parameter] public EventCallback<LookupItem?> ItemChanged { get; set; }
+
+    /// <summary>The records to pick from. Leave null and set <see cref="SearchAsync"/> to load them.</summary>
+    [Parameter] public IReadOnlyList<LookupItem>? Items { get; set; }
+
+    /// <summary>Loads the records matching the text (at most the given count); used instead of Items.</summary>
+    [Parameter] public Func<string, int, CancellationToken, Task<IReadOnlyList<LookupItem>>>? SearchAsync { get; set; }
+
+    /// <summary>The label of Value when it is not in Items (SearchAsync, or a record loaded with the form).</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Columns of the "Search more" dialog; null for code, name and details.</summary>
+    [Parameter] public IReadOnlyList<LookupColumn>? Columns { get; set; }
+
+    /// <summary>The dialog's title; null for "Search: {AriaLabel}".</summary>
+    [Parameter] public string? Title { get; set; }
+
+    [Parameter] public int MaxSuggestions { get; set; } = 8;
+    [Parameter] public int DialogPageSize { get; set; } = 50;
+    [Parameter] public int DialogWidth { get; set; } = 720;
+    [Parameter] public string SearchMoreText { get; set; } = "Search more…";
+
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public bool AllowClear { get; set; } = true;
+
+    /// <summary>"small", "middle" (default) or "large".</summary>
+    [Parameter] public string? Size { get; set; }
+
+    /// <summary>"error" or "warning".</summary>
+    [Parameter] public string? Status { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private readonly string _uid = Guid.NewGuid().ToString("N")[..8];
+    private ElementReference _root, _input, _search;
+    private string _text = "";
+    private string? _last = "\0", _query, _label;
+    private IReadOnlyList<LookupItem>? _items;
+    private bool _open, _dialog, _loading, _place, _focusSearch, _scroll;
+    private int _active = -1, _row = -1, _total;
+    private IReadOnlyList<LookupItem> _suggestions = [], _rows = [];
+    private LookupItem? _current;
+    private CancellationTokenSource? _cts;
+
+    private string ListId => $"m-lookup-{_uid}";
+    private IReadOnlyList<LookupColumn> ColumnList => Columns ?? LookupSearch.DefaultColumns;
+
+    private string RootClass => Cx("m-lookup", _open ? "m-lookup-open" : null, Disabled ? "m-lookup-disabled" : null, Class);
+
+    private string BoxClass => Cx("ant-input-affix-wrapper", "m-lookup-box",
+        Size == "small" ? "ant-input-affix-wrapper-sm" : Size == "large" ? "ant-input-affix-wrapper-lg" : null,
+        Status is { Length: > 0 } ? $"ant-input-affix-wrapper-status-{Status}" : null,
+        Disabled ? "ant-input-affix-wrapper-disabled" : null);
+
+    private string CountText => _total > _rows.Count ? $"Showing {_rows.Count} of {_total}. Refine the search to see more." : _rows.Count == 1 ? "1 record" : $"{_rows.Count} records";
+
+    private static string Cx(params string?[] parts) => string.Join(' ', parts.Where(p => !string.IsNullOrEmpty(p)));
+
+    protected override void OnParametersSet()
+    {
+        if (Value == _last && ReferenceEquals(Items, _items) && Label == _label) return;
+        _last = Value;
+        _items = Items;
+        _label = Label;
+        _current = string.IsNullOrEmpty(Value) ? null
+            : Items?.FirstOrDefault(i => i.Value == Value) ?? (_current?.Value == Value ? _current : new LookupItem(Value, Label ?? Value));
+        _text = _current?.Label ?? "";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        try
+        {
+            if (_place) { _place = false; await JS.InvokeVoidAsync("modulusShell.placeSelect", _root); }
+            if (_focusSearch) { _focusSearch = false; await JS.InvokeVoidAsync("modulusShell.focus", _search); }
+            if (_scroll) { _scroll = false; await JS.InvokeVoidAsync("modulusShell.scrollLookupRow", _root); }
+        }
+        catch (JSDisconnectedException) { }
+        catch (JSException) { } // modulus-shell.js not loaded
+        catch (InvalidOperationException) { } // prerendering
+    }
+
+    // ---- Searching ----
+
+    private async Task<(IReadOnlyList<LookupItem> Items, int Total)> FindAsync(string? text, int max, CancellationToken token)
+    {
+        if (SearchAsync is null)
+        {
+            var all = LookupSearch.Filter(Items ?? [], text);
+            return (all.Take(max).ToList(), all.Count);
+        }
+        // Ask for one more than shown, to know whether there are more.
+        var found = await SearchAsync(text ?? "", max + 1, token);
+        return (found.Take(max).ToList(), found.Count);
+    }
+
+    private CancellationToken Restart()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        return _cts.Token;
+    }
+
+    private async Task SuggestAsync()
+    {
+        var token = Restart();
+        _loading = true;
+        try
+        {
+            if (SearchAsync is not null) await Task.Delay(200, token);
+            (_suggestions, _) = await FindAsync(_text, MaxSuggestions, token);
+            _active = _suggestions.Count > 0 ? 0 : -1;
+            _place = true;
+        }
+        catch (OperationCanceledException) { return; }
+        _loading = false;
+    }
+
+    private async Task OnInput(ChangeEventArgs e)
+    {
+        _text = e.Value as string ?? "";
+        if (!_open) { _open = true; _suggestions = []; }
+        _place = true;
+        await SuggestAsync();
+    }
+
+    private async Task OpenListAsync()
+    {
+        if (Disabled) return;
+        _open = true;
+        _place = true;
+        // Opened on the current value: show everything, not just the current label.
+        var text = _current is not null && _text == _current.Label ? "" : _text;
+        var token = Restart();
+        try
+        {
+            _loading = true;
+            (_suggestions, _) = await FindAsync(text, MaxSuggestions, token);
+            _loading = false;
+        }
+        catch (OperationCanceledException) { return; }
+        var i = _suggestions.ToList().FindIndex(s => s.Value == Value);
+        _active = i >= 0 ? i : _suggestions.Count > 0 ? 0 : -1;
+        _scroll = true;
+    }
+
+    private void CloseList()
+    {
+        _open = false;
+        _active = -1;
+    }
+
+    // ---- Picking ----
+
+    private async Task PickAsync(LookupItem? item)
+    {
+        _cts?.Cancel();
+        var dialog = _dialog;
+        CloseList();
+        _dialog = false;
+        _current = item;
+        _text = item?.Label ?? "";
+        _last = item?.Value;
+        if (item?.Value != Value)
+        {
+            await ValueChanged.InvokeAsync(item?.Value);
+            await ItemChanged.InvokeAsync(item);
+        }
+        if (dialog) await FocusInputAsync();
+    }
+
+    private Task ClearAsync() => PickAsync(null);
+
+    private void Revert()
+    {
+        _text = _current?.Label ?? "";
+        CloseList();
+    }
+
+    private async Task OnBlur()
+    {
+        if (_dialog) return;
+        var text = _text.Trim();
+        if (text.Length == 0)
+        {
+            if (_current is not null) await PickAsync(null);
+            else CloseList();
+            return;
+        }
+        if (_current is not null && text == _current.Label) { Revert(); return; }
+        var match = LookupSearch.Resolve(SearchAsync is null ? Items ?? [] : _suggestions, text);
+        if (match is not null) await PickAsync(match);
+        else Revert();
+    }
+
+    private async Task OnKey(KeyboardEventArgs e)
+    {
+        // modulus-shell.js stops these keys scrolling the page or submitting the form.
+        switch (e.Key)
+        {
+            case "F4":
+                await OpenDialogAsync();
+                break;
+            case "ArrowDown" or "ArrowUp" when !_open:
+                await OpenListAsync();
+                break;
+            case "ArrowDown" when _suggestions.Count > 0:
+                _active = (_active + 1) % _suggestions.Count;
+                _scroll = true;
+                break;
+            case "ArrowUp" when _suggestions.Count > 0:
+                _active = (_active - 1 + _suggestions.Count) % _suggestions.Count;
+                _scroll = true;
+                break;
+            case "Enter" when _open && _active >= 0 && _active < _suggestions.Count:
+                await PickAsync(_suggestions[_active]);
+                break;
+            case "Escape":
+                Revert();
+                break;
+        }
+    }
+
+    // ---- "Search more" dialog ----
+
+    private async Task OpenDialogAsync()
+    {
+        if (Disabled) return;
+        _cts?.Cancel();
+        CloseList();
+        // Keep what the user typed as the search, unless it is just the current label.
+        _query = _current is not null && _text == _current.Label ? "" : _text;
+        _dialog = true;
+        _focusSearch = true;
+        _rows = [];
+        await DialogSearchAsync(debounce: false);
+        var i = _rows.ToList().FindIndex(r => r.Value == Value);
+        _row = i >= 0 ? i : _rows.Count > 0 ? 0 : -1;
+        _scroll = true;
+    }
+
+    private async Task CloseDialogAsync()
+    {
+        _cts?.Cancel();
+        _dialog = false;
+        _text = _current?.Label ?? "";
+        await FocusInputAsync();
+    }
+
+    private async Task FocusInputAsync()
+    {
+        try { await _input.FocusAsync(); } catch { /* removed or prerendering */ }
+    }
+
+    private async Task DialogSearchAsync(bool debounce)
+    {
+        var token = Restart();
+        _loading = true;
+        try
+        {
+            if (debounce && SearchAsync is not null) await Task.Delay(250, token);
+            (_rows, _total) = await FindAsync(_query, DialogPageSize, token);
+        }
+        catch (OperationCanceledException) { return; }
+        _loading = false;
+        _row = _rows.Count > 0 ? 0 : -1;
+        _scroll = true;
+    }
+
+    private Task OnDialogInput(ChangeEventArgs e)
+    {
+        _query = e.Value as string ?? "";
+        return DialogSearchAsync(debounce: true);
+    }
+
+    private async Task DialogKey(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowDown" when _rows.Count > 0: _row = (_row + 1) % _rows.Count; _scroll = true; break;
+            case "ArrowUp" when _rows.Count > 0: _row = (_row - 1 + _rows.Count) % _rows.Count; _scroll = true; break;
+            case "Enter" when _row >= 0 && _row < _rows.Count: await PickAsync(_rows[_row]); break;
+        }
+    }
+
+    private Task DialogEscape(KeyboardEventArgs e) => e.Key == "Escape" ? CloseDialogAsync() : Task.CompletedTask;
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
+}

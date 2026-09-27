@@ -117,6 +117,109 @@
             </div>
         </div>
     </div>
+
+    <div class="m-section-head">
+        <h2 class="m-section-title">Business charts</h2>
+        <a class="ant-btn ant-btn-link" href="/dashboards/erp"><span>See them on the ERP dashboard</span><Ti Name="arrow-right" /></a>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Combo chart</h3><p class="m-card-subtitle">Actual revenue against budget, one shared axis</p></div>
+            </div>
+            <div class="m-card-body">
+                <ComboChart Labels="ErpShowcase.Months" Columns="ErpShowcase.RevenueActual" Lines="ErpShowcase.RevenueBudget" Prefix="$" Title="Revenue against budget per month" Height="260" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Waterfall</h3><p class="m-card-subtitle">Profit bridge from revenue to net profit</p></div>
+            </div>
+            <div class="m-card-body">
+                <WaterfallChart Steps="ErpShowcase.ProfitBridge" Prefix="$" Title="Profit bridge" Height="260" />
+            </div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Variance</h3><p class="m-card-subtitle">Spend minus budget; overspend is unfavorable</p></div>
+            </div>
+            <div class="m-card-body">
+                <VarianceChart Items="ErpShowcase.BudgetVariance" PositiveIsFavorable="false" Prefix="$" Title="Budget variance by department" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Ranked bars</h3><p class="m-card-subtitle">Top customers; the tail folds into “Other”</p></div>
+            </div>
+            <div class="m-card-body">
+                <RankedBarChart Items="ErpShowcase.TopCustomers" Limit="8" ShowShare Prefix="$" Title="Top customers by revenue" />
+            </div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-8-4">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Bullet chart</h3><p class="m-card-subtitle">Key results against target over poor / fair / good bands</p></div>
+            </div>
+            <div class="m-card-body">
+                <BulletChart Items="ErpShowcase.Targets" ValueFormat="#,0.#" Title="Key results against targets" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Gauge</h3><p class="m-card-subtitle">One measure with its target</p></div>
+            </div>
+            <div class="m-card-body">
+                <GaugeChart Value="ErpShowcase.OnTimeInFull" Max="100" Target="ErpShowcase.OnTimeTarget" ValueFormat="N1" Suffix="%" Caption="On time in full" Title="On time in full" />
+            </div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Funnel</h3><p class="m-card-subtitle">Order to cash, with conversion per stage</p></div>
+            </div>
+            <div class="m-card-body">
+                <FunnelChart Stages="ErpShowcase.OrderToCash" Title="Order-to-cash funnel" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Stacked bars, 100 %</h3><p class="m-card-subtitle">Receivables aging on the ordinal ramp</p></div>
+            </div>
+            <div class="m-card-body">
+                <StackedBarChart Rows="ErpShowcase.AgingCustomers" Series="ErpShowcase.Aging" Normalize Ordinal Prefix="$" Title="Receivables aging by customer" />
+            </div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Pareto</h3><p class="m-card-subtitle">ABC analysis: share and cumulative share on one percent axis</p></div>
+            </div>
+            <div class="m-card-body">
+                <ParetoChart Items="ErpShowcase.SkuRevenue" Prefix="$" ValueName="Revenue share" Title="ABC analysis of revenue by SKU" Height="260" MaxXLabels="10" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Treemap</h3><p class="m-card-subtitle">Inventory value by category, up to eight tiles</p></div>
+            </div>
+            <div class="m-card-body">
+                <TreemapChart Items="ErpShowcase.InventoryValue" Prefix="$" Title="Inventory value by category" Height="260" Aspect="2" />
+            </div>
+        </div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-header">
+            <div><h3 class="m-card-title">Bubble chart</h3><p class="m-card-subtitle">Revenue against gross margin by product line; size is units sold, lines mark the averages</p></div>
+        </div>
+        <div class="m-card-body">
+            <ScatterChart Points="ErpShowcase.ProductPortfolio" Groups="ErpShowcase.ProductLines" XTitle="Revenue" YTitle="Gross margin (%)" SizeTitle="Units sold" XPrefix="$" ValueFormat="N1" Suffix="%" Quadrants Title="Product portfolio" Height="300" />
+        </div>
+    </div>
 </div>
 
 @code {

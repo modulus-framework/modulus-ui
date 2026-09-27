@@ -9,12 +9,26 @@
  *   [data-m-nav-open]      opens the sidebar drawer (small screens); [data-m-nav-close] closes it
  *   [data-m-search]        filters every navigation link; Ctrl+K or "/" focuses it
  *   [data-m-theme-toggle]  light / dark
- *   [data-m-customizer]    theme settings panel (colour mode, scheme, layout, width, radius)
+ *   [data-m-customizer]    theme settings panel (colour mode, scheme, base, font, radius, layout, menu, nav, width)
+ *   [data-m-launcher]      full-screen app launcher (Odoo home menu): [data-m-launcher-open] opens it, typing
+ *                          filters the apps and lists matching menu entries, arrow keys move between tiles
  *   [data-m-mark-read]     marks header notifications as read
  *   [data-m-tenant]        tenant switcher: writes the modulus-tenant cookie and reloads (cancel modulus:tenant-change to
- *                          handle it yourself); [data-m-tenant-filter] filters the tenant list
+ *                          handle it yourself); [data-m-tenant-filter] filters the tenant list. Multi-company:
+ *                          [data-m-tenant-toggle] checkboxes edit the active set, which is written to the
+ *                          modulus-tenants cookie when the switcher closes, followed by a reload (cancel
+ *                          modulus:tenants-change { ids } to handle it yourself)
  *   .m-resizable table     drag a header cell's right edge to resize the column (raises m-col-resize { key, width })
  *   .m-demo-nav            gets m-demo-nav-stuck while it sticks under the header
+ *   input[data-m-mask]     fits typed text to its mask (AppMaskedInput / app-masked-input) before Blazor or Alpine read it
+ *   .ant-otp               one-time code boxes: typing moves on, Backspace moves back, a paste fills every box
+ *   .m-richtext            rich text toolbar commands, plain-text paste, and the value kept in step
+ *   [data-m-lightbox]      image lightbox: [data-lightbox-index] opens the preview (zoom, rotate, pan, swipe, captions,
+ *                          thumbnails, download); AppLightbox, app-lightbox, app-image and app-image-group
+ *
+ * window.modulusShell.fields holds the business-field rules of Modulus.Ui.Abstractions.Forms (NumberText,
+ * DurationText, InputMask) for both flavours; signature(root, dotnet) and richText(root, dotnet) attach a
+ * signature pad or rich text editor to Blazor (MVC needs no call).
  *
  * window.modulusShell.download(name, text) saves text as a file (the grids' CSV export); watchResize(id, dotnet)
  * reports resizes to a Blazor grid.
@@ -61,6 +75,8 @@
         if (t.closest('[data-m-customizer-open]')) { openCustomizer(); return; }
         if (t.closest('[data-m-customizer-close]')) { closeCustomizer(); return; }
         if (t.closest('[data-m-customizer-reset]')) { window.modulusTheme && window.modulusTheme.reset(); return; }
+        if (t.closest('[data-m-launcher-open]')) { openLauncher(); return; }
+        if (t.closest('[data-m-launcher-close]') || t.matches('.m-launcher-panel') || (link && link.closest('[data-m-launcher]'))) { closeLauncher(); return; }
         if (t.closest('[data-m-search-open]')) { openSearch(); return; }
         if (t.closest('[data-m-mark-read]')) {
             var panel = t.closest('[data-m-notices]');
@@ -77,6 +93,7 @@
             closeDropdowns(null);
             closeNav();
             closeCustomizer();
+            closeLauncher();
             if (document.activeElement && document.activeElement.classList.contains('m-search-input')) closeSearch(true);
         }
         var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '') || (e.target && e.target.isContentEditable);
@@ -84,12 +101,38 @@
         else if (e.key === '/' && !typing) { e.preventDefault(); openSearch(); }
     });
 
+    // The search keycap reads ⌘ K on Apple devices; again after Blazor's enhanced navigation re-renders the header.
+    var apple = /Mac|iPhone|iPad|iPod/.test((navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || navigator.userAgent);
+    function modKeys() {
+        if (apple) document.querySelectorAll('[data-m-mod-key]').forEach(function (k) { k.textContent = '⌘'; });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', modKeys); else modKeys();
+    window.addEventListener('load', function () {
+        if (window.Blazor && window.Blazor.addEventListener) window.Blazor.addEventListener('enhancedload', modKeys);
+    });
+
     // Tenant switcher -------------------------------------------------------------------
 
-    function chooseTenant(id) {
+    function setCookie(name, value) {
+        document.cookie = name + '=' + encodeURIComponent(value) + '; path=/; max-age=31536000; samesite=lax';
+    }
+
+    // Checked ids of the multi-company checkboxes in a switcher.
+    function activeTenantIds(switcher) {
+        return Array.prototype.map.call(switcher.querySelectorAll('[data-m-tenant-toggle][aria-checked="true"]'),
+            function (b) { return b.getAttribute('data-m-tenant-toggle'); });
+    }
+
+    function chooseTenant(id, switcher) {
         var ev = new CustomEvent('modulus:tenant-change', { detail: { id: id }, bubbles: true, cancelable: true });
         if (!document.dispatchEvent(ev)) return;
-        document.cookie = 'modulus-tenant=' + encodeURIComponent(id) + '; path=/; max-age=31536000; samesite=lax';
+        if (switcher && switcher.querySelector('[data-m-tenant-toggle]')) {
+            // The new current tenant joins the active set.
+            var ids = activeTenantIds(switcher);
+            if (ids.indexOf(id) < 0) ids.push(id);
+            setCookie('modulus-tenants', ids.join(','));
+        }
+        setCookie('modulus-tenant', id);
         location.reload();
     }
 
@@ -99,7 +142,7 @@
         var shown = 0;
         menu.querySelectorAll('.m-tenant-item').forEach(function (item) {
             var match = !q || (item.getAttribute('data-m-tenant-name') || '').toLowerCase().indexOf(q) >= 0;
-            item.hidden = !match;
+            (item.closest('.m-tenant-row') || item).hidden = !match;
             if (match) shown++;
         });
         var empty = menu.querySelector('.m-tenant-empty');
@@ -107,12 +150,32 @@
     }
 
     document.addEventListener('click', function (e) {
+        var toggle = e.target instanceof Element && e.target.closest('[data-m-tenant-toggle]');
+        if (toggle) {
+            if (toggle.disabled) return;
+            toggle.setAttribute('aria-checked', toggle.getAttribute('aria-checked') === 'true' ? 'false' : 'true');
+            toggle.closest('[data-m-tenants]').setAttribute('data-m-tenants-changed', '');
+            return;
+        }
         var item = e.target instanceof Element && e.target.closest('[data-m-tenant]');
         if (!item) return;
         var d = item.closest('details');
-        if (d) d.removeAttribute('open');
-        if (item.getAttribute('aria-selected') !== 'true') chooseTenant(item.getAttribute('data-m-tenant'));
+        if (d) { d.removeAttribute('data-m-tenants-changed'); d.removeAttribute('open'); }
+        var current = item.getAttribute('aria-selected') === 'true' || item.getAttribute('aria-current') === 'true';
+        if (!current) chooseTenant(item.getAttribute('data-m-tenant'), d);
     });
+
+    // Multi-company: apply the edited active set when the switcher closes.
+    document.addEventListener('toggle', function (e) {
+        var d = e.target;
+        if (d.open || !d.matches || !d.matches('[data-m-tenants][data-m-tenants-changed]')) return;
+        d.removeAttribute('data-m-tenants-changed');
+        var ids = activeTenantIds(d);
+        var ev = new CustomEvent('modulus:tenants-change', { detail: { ids: ids }, bubbles: true, cancelable: true });
+        if (!document.dispatchEvent(ev)) return;
+        setCookie('modulus-tenants', ids.join(','));
+        location.reload();
+    }, true);
 
     document.addEventListener('input', function (e) {
         if (e.target.matches && e.target.matches('[data-m-tenant-filter]')) filterTenants(e.target);
@@ -167,8 +230,8 @@
             if (!href || seen[href]) return;
             seen[href] = true;
             var group = a.closest('.m-snav-sub');
-            var section = '';
-            if (group) {
+            var section = a.getAttribute('data-m-trail') || '';
+            if (!section && group) {
                 var summary = group.parentElement && group.parentElement.querySelector(':scope > summary .m-snav-title');
                 section = summary ? summary.textContent.trim() : '';
             }
@@ -199,13 +262,7 @@
             a.className = 'm-search-item' + (i === 0 ? ' active' : '');
             a.href = m.href;
             a.setAttribute('role', 'option');
-            var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-            svg.setAttribute('class', 'm-ti');
-            svg.setAttribute('aria-hidden', 'true');
-            var use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-            use.setAttribute('href', m.icon || '/_content/Modulus.Ui.Assets/icons/tabler.svg#ti-file');
-            svg.appendChild(use);
-            a.appendChild(svg);
+            a.appendChild(iconSvg(m.icon));
             var label = document.createElement('span');
             label.textContent = m.label;
             a.appendChild(label);
@@ -220,6 +277,16 @@
         activeIndex = matches.length ? 0 : -1;
         results.hidden = false;
         input.setAttribute('aria-expanded', 'true');
+    }
+
+    function iconSvg(href) {
+        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('class', 'm-ti');
+        svg.setAttribute('aria-hidden', 'true');
+        var use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+        use.setAttribute('href', href || '/_content/Modulus.Ui.Assets/icons/tabler.svg#ti-file');
+        svg.appendChild(use);
+        return svg;
     }
 
     function moveActive(delta) {
@@ -253,6 +320,122 @@
         }, 150);
     });
 
+    // App launcher (Odoo home menu) ---------------------------------------------------------------
+
+    var launcherFocus = null;
+
+    function launcher() { return document.querySelector('[data-m-launcher]'); }
+
+    function launcherOpen() { var l = launcher(); return !!l && !l.hidden; }
+
+    function openLauncher() {
+        var l = launcher();
+        if (!l) return;
+        closeDropdowns(null);
+        closeNav();
+        closeSearch(true);
+        launcherFocus = document.activeElement;
+        var input = l.querySelector('[data-m-launcher-search]');
+        input.value = '';
+        filterLauncher(l, '');
+        l.hidden = false;
+        root.classList.add('m-launcher-open');
+        // A keyboard on screen would cover the icons on phones, so touch devices start on the current app.
+        var fine = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+        var target = fine ? input : (l.querySelector('.m-launcher-app.active') || l.querySelector('.m-launcher-app'));
+        if (target) target.focus();
+    }
+
+    function closeLauncher() {
+        var l = launcher();
+        if (!l || l.hidden) return;
+        l.hidden = true;
+        root.classList.remove('m-launcher-open');
+        if (launcherFocus && launcherFocus.focus && document.contains(launcherFocus)) launcherFocus.focus();
+        launcherFocus = null;
+    }
+
+    function filterLauncher(l, query) {
+        var q = query.trim().toLowerCase();
+        var shown = 0;
+        l.querySelectorAll('.m-launcher-app').forEach(function (a) {
+            var match = !q || (a.getAttribute('data-m-launcher-name') || '').toLowerCase().indexOf(q) >= 0;
+            a.hidden = !match;
+            if (match) shown++;
+        });
+        var results = l.querySelector('.m-launcher-results');
+        results.textContent = '';
+        var found = !q ? [] : index().filter(function (i) {
+            return (i.label + ' ' + i.section).toLowerCase().indexOf(q) >= 0;
+        }).slice(0, 8);
+        found.forEach(function (m) {
+            var a = document.createElement('a');
+            a.className = 'm-launcher-result';
+            a.href = m.href;
+            a.appendChild(iconSvg(m.icon));
+            var text = document.createElement('span');
+            text.className = 'm-launcher-result-text';
+            if (m.section) {
+                var trail = document.createElement('span');
+                trail.className = 'm-launcher-result-trail';
+                trail.textContent = m.section + ' › ';
+                text.appendChild(trail);
+            }
+            text.appendChild(document.createTextNode(m.label));
+            a.appendChild(text);
+            results.appendChild(a);
+        });
+        l.querySelector('.m-launcher-menus').hidden = found.length === 0;
+        l.querySelector('.m-launcher-empty').hidden = shown > 0 || found.length > 0;
+    }
+
+    function launcherItems(l) {
+        return Array.prototype.filter.call(l.querySelectorAll('.m-launcher-app, .m-launcher-result'), function (el) { return !el.hidden; });
+    }
+
+    function launcherColumns(l) {
+        var grid = l.querySelector('.m-launcher-grid');
+        return Math.max(1, getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length);
+    }
+
+    document.addEventListener('input', function (e) {
+        if (e.target.matches && e.target.matches('[data-m-launcher-search]')) filterLauncher(launcher(), e.target.value);
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (!launcherOpen()) return;
+        var l = launcher();
+        var input = l.querySelector('[data-m-launcher-search]');
+        var t = e.target;
+        if (t === input) {
+            if (e.key === 'ArrowDown') { e.preventDefault(); var first = launcherItems(l)[0]; if (first) first.focus(); }
+            else if (e.key === 'Enter') { e.preventDefault(); var go = launcherItems(l)[0]; if (go) go.click(); }
+            return;
+        }
+        if (!(t instanceof Element) || !l.contains(t)) return;
+        var items = launcherItems(l);
+        var i = items.indexOf(t);
+        if (i >= 0 && /^Arrow/.test(e.key)) {
+            e.preventDefault();
+            var app = t.classList.contains('m-launcher-app');
+            var cols = app ? launcherColumns(l) : 1;
+            var step = { ArrowRight: app ? 1 : 0, ArrowLeft: app ? -1 : 0, ArrowDown: cols, ArrowUp: -cols }[e.key];
+            var next = i + step;
+            if (next < 0) { input.focus(); return; }
+            if (next >= items.length) next = items.length - 1;
+            items[next].focus();
+            return;
+        }
+        // Typing anywhere in the launcher searches.
+        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) input.focus();
+    });
+
+    // Keep focus inside the open launcher.
+    document.addEventListener('focusin', function (e) {
+        var l = launcher();
+        if (l && !l.hidden && !l.contains(e.target)) l.querySelector('[data-m-launcher-search]').focus();
+    });
+
     // Theme settings panel ------------------------------------------------------------------------
 
     var lastFocus = null;
@@ -283,7 +466,7 @@
         if (!panel || !theme) return;
         var mode = document.cookie.match(/(?:^|; )modulus-theme=(light|dark)/) ? theme.current() : 'system';
         check(panel, 'mode', mode);
-        ['layout', 'width', 'nav'].forEach(function (n) { check(panel, n, theme.getPref(n)); });
+        ['layout', 'width', 'nav', 'menu', 'font', 'base'].forEach(function (n) { check(panel, n, theme.getPref(n)); });
         var primary = theme.getPref('primary');
         if (primary) check(panel, 'primary', primary);
         var radius = theme.getPref('radius');
@@ -460,14 +643,15 @@
         popup.style.left = Math.round(Math.max(edge, Math.min(r.left, vw - w - edge))) + 'px';
         popup.style.top = Math.round(up ? Math.max(edge, r.top - gap - h) : r.bottom + gap) + 'px';
     }
-    function placeSelects() { document.querySelectorAll('.m-cselect.ant-select-open').forEach(placeSelect); }
+    function placeSelects() { document.querySelectorAll('.m-cselect.ant-select-open, .m-lookup.m-lookup-open').forEach(placeSelect); }
 
     window.modulusShell.placeSelect = function (root) {
         placeSelect(root);
         var popup = root && root.querySelector(':scope > .m-cselect-dropdown');
         var active = popup && popup.querySelector('.ant-select-item-option-active');
         if (active) active.scrollIntoView({ block: 'nearest' });
-        if (!root.contains(document.activeElement)) root.querySelector('.ant-select-selector').focus({ preventScroll: true });
+        var selector = root && root.querySelector('.ant-select-selector');
+        if (selector && !root.contains(document.activeElement)) selector.focus({ preventScroll: true });
     };
 
     window.addEventListener('resize', placeSelects);
@@ -602,4 +786,605 @@
         a.remove();
         setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
     };
+    // ---- Business fields (Modulus.Ui.Abstractions.Forms, mirrored for the browser) ----------------------------
+    // The same rules as NumberText, DurationText and InputMask, so a value formatted in the browser matches one
+    // rendered on the server. The MVC Alpine components (modulus-widgets.js) and the delegated handlers below use them.
+    var fields = window.modulusShell.fields = {};
+
+    // NumberText.TryParse: "1,234.50", "(12.00)", "12-" → number; null for anything else.
+    fields.parseNumber = function (text) {
+        if (text == null) return null;
+        var s = String(text).trim(), neg = false;
+        if (!s) return null;
+        if (s.length > 1 && s[0] === '(' && s[s.length - 1] === ')') { neg = true; s = s.slice(1, -1).trim(); }
+        if (s[0] === '-') { neg = !neg; s = s.slice(1).trim(); }
+        else if (s[s.length - 1] === '-') { neg = !neg; s = s.slice(0, -1).trim(); }
+        else if (s[0] === '+') s = s.slice(1).trim();
+        var out = '', dot = false;
+        for (var i = 0; i < s.length; i++) {
+            var c = s[i];
+            if (c >= '0' && c <= '9') out += c;
+            else if (c === '.' && !dot) { dot = true; out += c; }
+            else if (c === ',' || c === ' ' || c.charCodeAt(0) === 160 || c === '\'' || c === '_') continue;
+            else return null;
+        }
+        if (!out || out === '.') return null;
+        var v = parseFloat(out);
+        return isNaN(v) ? null : neg ? -v : v;
+    };
+
+    // NumberText.Round: half away from zero (toPrecision drops binary noise such as 1.005 * 100 = 100.4999…).
+    fields.round = function (v, decimals) {
+        var f = Math.pow(10, Math.max(0, Math.min(10, decimals)));
+        var r = Math.round(Number((Math.abs(v) * f).toPrecision(15))) / f;
+        return v < 0 ? -r : r;
+    };
+
+    // NumberText.Format: "1,234.50"; "" for null.
+    fields.formatNumber = function (v, decimals, group) {
+        if (v == null || isNaN(v)) return '';
+        var d = Math.max(0, Math.min(10, decimals)), r = fields.round(v, d);
+        var parts = Math.abs(r).toFixed(d).split('.');
+        if (group !== false) parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return (r < 0 ? '-' : '') + parts.join('.');
+    };
+
+    // NumberText.Invariant: the posted value, "1234.5".
+    fields.invariant = function (v) { return v == null || isNaN(v) ? '' : String(v); };
+
+    // DurationText.TryParse → whole minutes, or null.
+    fields.parseDuration = function (text) {
+        var s = String(text == null ? '' : text).trim().toLowerCase(), m, total;
+        if (!s) return null;
+        var num = function (x) { return parseFloat(x.replace(',', '.')); };
+        if ((m = /^(\d{1,4}):([0-5]?\d)$/.exec(s))) total = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+        else if ((m = /^(\d{1,4}(?:[.,]\d+)?)\s*(?:h|hr|hrs|hours?)?$/.exec(s))) total = num(m[1]) * 60;
+        else if ((m = /^(?:(\d{1,4}(?:[.,]\d+)?)\s*(?:h|hr|hrs|hours?))?\s*(?:(\d{1,6})\s*(?:m|min|mins|minutes?)?)?$/.exec(s)) && (m[1] || m[2]))
+            total = (m[1] ? num(m[1]) * 60 : 0) + (m[2] ? parseInt(m[2], 10) : 0);
+        else return null;
+        if (total > 9999 * 60) return null;
+        return Math.round(total);
+    };
+
+    // DurationText.Format: "1:30"; "" for null.
+    fields.formatDuration = function (minutes) {
+        if (minutes == null || isNaN(minutes)) return '';
+        var m = Math.round(minutes);
+        return Math.floor(m / 60) + ':' + ('0' + (m % 60)).slice(-2);
+    };
+
+    // InputMask: 9 digit, A letter, * letter or digit, \ escapes, anything else is a literal.
+    function maskSlots(mask) {
+        var slots = [];
+        for (var i = 0; i < mask.length; i++) {
+            var c = mask[i];
+            if (c === '\\' && i + 1 < mask.length) slots.push({ lit: mask[++i] });
+            else if (c === '9' || c === 'A' || c === '*') slots.push({ kind: c, lit: null });
+            else slots.push({ lit: c });
+        }
+        return slots;
+    }
+    function maskAccepts(kind, c) {
+        return kind === '9' ? /[0-9]/.test(c) : kind === 'A' ? /[A-Za-z]/.test(c) : /[A-Za-z0-9]/.test(c);
+    }
+    fields.applyMask = function (mask, text) {
+        text = String(text == null ? '' : text);
+        if (!text || !mask) return '';
+        var slots = maskSlots(mask), out = '', t = 0;
+        for (var i = 0; i < text.length && t < slots.length; i++) {
+            var c = text[i], k = t, pending = '', typed = false;
+            while (k < slots.length && slots[k].lit !== null) {
+                if (c === slots[k].lit) { out += pending + c; t = k + 1; typed = true; break; }
+                pending += slots[k].lit;
+                k++;
+            }
+            if (typed || k >= slots.length || !maskAccepts(slots[k].kind, c)) continue;
+            out += pending + (slots[k].kind === '9' ? c : c.toUpperCase());
+            t = k + 1;
+        }
+        return out;
+    };
+
+    // Masked inputs: fit the text before any other handler reads it (capture phase on document runs first),
+    // keeping the caret after the same number of letters and digits.
+    document.addEventListener('input', function (e) {
+        var el = e.target;
+        if (!(el instanceof HTMLInputElement) || !el.hasAttribute('data-m-mask')) return;
+        var before = el.value, after = fields.applyMask(el.getAttribute('data-m-mask'), before);
+        if (after === before) return;
+        var caret = el.selectionStart == null ? before.length : el.selectionStart;
+        var atEnd = caret >= before.length;
+        var wanted = before.slice(0, caret).replace(/[^A-Za-z0-9]/g, '').length;
+        el.value = after;
+        var pos = after.length;
+        if (!atEnd) for (var n = 0, i = 0; i < after.length; i++) { if (n >= wanted) { pos = i; break; } if (/[A-Za-z0-9]/.test(after[i])) n++; }
+        try { el.setSelectionRange(pos, pos); } catch (err) { /* not focusable */ }
+    }, true);
+
+    // ---- One-time code boxes (.ant-otp: AppOtpInput / app-otp-input) ----
+    // Each box holds one character. Typing moves to the next box, Backspace in an empty box clears the one before,
+    // arrows move, and a paste (or an SMS autofill into one box) spreads over the boxes. Every change raises "input"
+    // on its box, so Blazor handlers see it; MVC keeps the joined code in the group's hidden input.
+    var otpFilling = false;
+    function otpBoxes(root) { return Array.prototype.slice.call(root.querySelectorAll('.ant-otp-input')); }
+    function otpAllowed(root, c) { return root.getAttribute('data-m-otp') === 'numeric' ? /[0-9]/.test(c) : /[A-Za-z0-9]/.test(c); }
+    function otpSync(root) {
+        var hidden = root.querySelector('input[type=hidden]');
+        if (!hidden) return;
+        hidden.value = otpBoxes(root).map(function (b) { return b.value; }).join('');
+        hidden.dispatchEvent(new Event('change', { bubbles: true }));
+        if (otpBoxes(root).every(function (b) { return b.value; })) root.dispatchEvent(new CustomEvent('m-otp-complete', { bubbles: true, detail: hidden.value }));
+    }
+    function otpSet(box, value) {
+        otpFilling = true;
+        box.value = value;
+        box.dispatchEvent(new Event('input', { bubbles: true }));
+        otpFilling = false;
+    }
+    function otpFill(root, start, text) {
+        var boxes = otpBoxes(root), i = start;
+        String(text).split('').filter(function (c) { return otpAllowed(root, c); }).forEach(function (c) {
+            if (i < boxes.length) otpSet(boxes[i++], root.getAttribute('data-m-otp') === 'numeric' ? c : c.toUpperCase());
+        });
+        boxes[Math.min(i, boxes.length - 1)].focus();
+        otpSync(root);
+    }
+    document.addEventListener('input', function (e) {
+        var el = e.target;
+        if (otpFilling || !(el instanceof HTMLInputElement) || !el.classList.contains('ant-otp-input')) return;
+        var root = el.closest('.ant-otp');
+        if (!root) return;
+        var boxes = otpBoxes(root), i = boxes.indexOf(el), v = el.value;
+        if (v.length > 1) {
+            // Autofill or a fast typist: keep the first character here, spread the rest after this handler.
+            var rest = v.slice(1);
+            el.value = otpAllowed(root, v[0]) ? v[0] : '';
+            setTimeout(function () { otpFill(root, i + 1, rest); });
+            return;
+        }
+        if (v && !otpAllowed(root, v)) el.value = '';
+        else if (v && root.getAttribute('data-m-otp') !== 'numeric') el.value = v.toUpperCase();
+        if (el.value && i < boxes.length - 1) boxes[i + 1].focus();
+        setTimeout(function () { otpSync(root); });
+    }, true);
+    document.addEventListener('keydown', function (e) {
+        var el = e.target;
+        if (!(el instanceof HTMLInputElement) || !el.classList.contains('ant-otp-input')) return;
+        var root = el.closest('.ant-otp'), boxes = otpBoxes(root), i = boxes.indexOf(el);
+        if (e.key === 'Backspace' && !el.value && i > 0) { e.preventDefault(); otpSet(boxes[i - 1], ''); boxes[i - 1].focus(); otpSync(root); }
+        else if (e.key === 'ArrowLeft' && i > 0) { e.preventDefault(); boxes[i - 1].focus(); }
+        else if (e.key === 'ArrowRight' && i < boxes.length - 1) { e.preventDefault(); boxes[i + 1].focus(); }
+    }, true);
+    document.addEventListener('paste', function (e) {
+        var el = e.target;
+        if (!(el instanceof HTMLInputElement) || !el.classList.contains('ant-otp-input')) return;
+        e.preventDefault();
+        var root = el.closest('.ant-otp');
+        otpFill(root, otpBoxes(root).indexOf(el), (e.clipboardData || window.clipboardData).getData('text'));
+    }, true);
+    document.addEventListener('focusin', function (e) {
+        var el = e.target;
+        if (el instanceof HTMLInputElement && el.classList.contains('ant-otp-input')) setTimeout(function () { el.select(); });
+    });
+
+    // ---- Lookup fields (.m-lookup): keys that must not scroll the page or submit the form while the list is open ----
+    document.addEventListener('keydown', function (e) {
+        var el = e.target;
+        if (!(el instanceof HTMLInputElement) || !el.classList.contains('m-lookup-input')) return;
+        var open = !!el.closest('.m-lookup-open');
+        if (e.key === 'F4' || e.key === 'ArrowDown' || e.key === 'ArrowUp' || (e.key === 'Enter' && open)) e.preventDefault();
+    });
+    document.addEventListener('keydown', function (e) {
+        var el = e.target;
+        if (el instanceof HTMLInputElement && el.classList.contains('m-lookup-search-input') && (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter')) e.preventDefault();
+    });
+    window.modulusShell.scrollLookupRow = function (root) {
+        var row = root && root.querySelector('.m-lookup-row-active, .m-lookup-dropdown .ant-select-item-option-active');
+        if (row) row.scrollIntoView({ block: 'nearest' });
+    };
+    window.modulusShell.focus = function (el) { if (el && el.focus) el.focus({ preventScroll: true }); };
+
+    // ---- Signature pad (.m-signature: AppSignaturePad / app-signature-pad) ----
+    // Draws with the pointer on a white "paper" canvas and publishes a PNG data URL: into the hidden input (MVC) and
+    // to dotnet.OnSignature (Blazor). A typed name is drawn in a script face instead. The drawing is redrawn from the
+    // value when the pad resizes. Call again with a value to show it (Blazor, when the bound value changes).
+    window.modulusShell.signature = function (root, dotnet, value) {
+        if (!root) return;
+        if (root._mSig) { if (value !== undefined) root._mSig.load(value || ''); return; }
+        var canvas = root.querySelector('.m-signature-canvas'), hidden = root.querySelector('input[type=hidden]');
+        var typed = root.querySelector('.m-signature-type'), ctx = canvas.getContext('2d');
+        var data = value != null ? value : hidden ? hidden.value : '', drawing = false, last = null, timer = 0;
+        var ink = root.getAttribute('data-ink') || '#111827';
+        var disabled = root.classList.contains('m-signature-disabled');
+        function size() {
+            var r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+            var w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+            if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            return r;
+        }
+        function draw(url) {
+            var r = size();
+            ctx.clearRect(0, 0, r.width, r.height);
+            root.classList.toggle('m-signature-signed', !!url);
+            if (!url) return;
+            var img = new Image();
+            img.onload = function () { var rr = size(); ctx.drawImage(img, 0, 0, rr.width, rr.height); };
+            img.src = url;
+        }
+        function publish(url) {
+            data = url;
+            root.classList.toggle('m-signature-signed', !!url);
+            if (hidden) { hidden.value = url; hidden.dispatchEvent(new Event('change', { bubbles: true })); }
+            if (dotnet) dotnet.invokeMethodAsync('OnSignature', url);
+        }
+        function point(e) { var r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+        function pen() { ctx.strokeStyle = ink; ctx.lineWidth = 2.2; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; }
+        canvas.addEventListener('pointerdown', function (e) {
+            if (disabled || e.button !== 0) return;
+            e.preventDefault();
+            canvas.setPointerCapture(e.pointerId);
+            if (typed && typed.value) { typed.value = ''; draw(''); }
+            drawing = true;
+            last = point(e);
+            pen();
+            ctx.beginPath();
+            ctx.moveTo(last.x, last.y);
+            ctx.lineTo(last.x + 0.01, last.y);
+            ctx.stroke();
+            root.classList.add('m-signature-signed');
+        });
+        canvas.addEventListener('pointermove', function (e) {
+            if (!drawing) return;
+            var p = point(e);
+            ctx.beginPath();
+            ctx.moveTo(last.x, last.y);
+            ctx.lineTo(p.x, p.y);
+            ctx.stroke();
+            last = p;
+        });
+        function end() { if (!drawing) return; drawing = false; publish(canvas.toDataURL('image/png')); }
+        canvas.addEventListener('pointerup', end);
+        canvas.addEventListener('pointercancel', end);
+        root.addEventListener('click', function (e) {
+            if (disabled || !(e.target instanceof Element) || !e.target.closest('[data-m-signature-clear]')) return;
+            if (typed) typed.value = '';
+            draw('');
+            publish('');
+        });
+        if (typed) typed.addEventListener('input', function () {
+            var name = typed.value.trim(), r = size();
+            ctx.clearRect(0, 0, r.width, r.height);
+            root.classList.toggle('m-signature-signed', !!name);
+            clearTimeout(timer);
+            if (!name) { timer = setTimeout(function () { publish(''); }, 250); return; }
+            var px = Math.round(Math.min(r.height * 0.42, r.width * 1.6 / Math.max(4, name.length)));
+            ctx.fillStyle = ink;
+            ctx.font = 'italic ' + px + 'px "Segoe Script", "Brush Script MT", "Snell Roundhand", "Apple Chancery", cursive';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(name, r.width / 2, r.height * 0.5);
+            timer = setTimeout(function () { publish(canvas.toDataURL('image/png')); }, 250);
+        });
+        if ('ResizeObserver' in window) new ResizeObserver(function () { if (!drawing) draw(data); }).observe(canvas);
+        root._mSig = { load: function (url) { if (url !== data) { data = url; draw(url); } } };
+        draw(data);
+    };
+
+    // ---- Rich text (.m-richtext: AppRichText / app-rich-text) ----
+    // Toolbar buttons run editing commands on the editor (mousedown keeps the selection), pastes arrive as plain
+    // text, and every change is written to the hidden input (MVC) or sent to dotnet.OnRichTextInput (Blazor,
+    // debounced). The server cleans what it receives with RichText.Sanitize.
+    function richEditor(root) { return root.querySelector('.m-richtext-editor'); }
+    function richChanged(root) {
+        var editor = richEditor(root), html = editor.innerHTML;
+        if (!editor.textContent.trim() && !editor.querySelector('li, hr')) html = '';
+        root.classList.toggle('m-richtext-empty', !html);
+        var hidden = root.querySelector('input[type=hidden]');
+        if (hidden) { hidden.value = html; hidden.dispatchEvent(new Event('change', { bubbles: true })); }
+        var state = root._mRich;
+        if (state && state.dotnet) {
+            clearTimeout(state.timer);
+            state.timer = setTimeout(function () { state.html = html; state.dotnet.invokeMethodAsync('OnRichTextInput', html); }, 300);
+        }
+    }
+    function richToolbar(root) {
+        root.querySelectorAll('.m-richtext-btn[data-state]').forEach(function (b) {
+            var on = false;
+            try { on = document.queryCommandState(b.getAttribute('data-cmd')); } catch (err) { /* unsupported */ }
+            b.classList.toggle('m-richtext-btn-active', on);
+            b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+    }
+    function richLink() {
+        var url = window.prompt('Link address', 'https://');
+        if (!url || url === 'https://') return null;
+        url = url.trim();
+        return /^(https?:|mailto:|tel:|\/|#)/i.test(url) ? url : 'https://' + url;
+    }
+    function richCommand(root, cmd, arg) {
+        var editor = richEditor(root);
+        if (!editor || editor.getAttribute('contenteditable') === 'false' || !editor.hasAttribute('contenteditable')) return;
+        editor.focus();
+        if (cmd === 'createLink') { arg = richLink(); if (!arg) return; }
+        document.execCommand(cmd, false, arg || null);
+        richChanged(root);
+        richToolbar(root);
+    }
+    document.addEventListener('mousedown', function (e) {
+        if (e.target instanceof Element && e.target.closest('.m-richtext-btn')) e.preventDefault();
+    });
+    document.addEventListener('click', function (e) {
+        var btn = e.target instanceof Element && e.target.closest('.m-richtext-btn');
+        if (!btn || btn.disabled) return;
+        richCommand(btn.closest('.m-richtext'), btn.getAttribute('data-cmd'), btn.getAttribute('data-arg'));
+    });
+    document.addEventListener('input', function (e) {
+        var editor = e.target instanceof Element && e.target.closest('.m-richtext-editor');
+        if (editor) richChanged(editor.closest('.m-richtext'));
+    });
+    document.addEventListener('paste', function (e) {
+        var editor = e.target instanceof Element && e.target.closest('.m-richtext-editor');
+        if (!editor) return;
+        e.preventDefault();
+        document.execCommand('insertText', false, (e.clipboardData || window.clipboardData).getData('text/plain'));
+    });
+    document.addEventListener('keydown', function (e) {
+        var editor = e.target instanceof Element && e.target.closest('.m-richtext-editor');
+        if (editor && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); richCommand(editor.closest('.m-richtext'), 'createLink'); }
+    });
+    document.addEventListener('selectionchange', function () {
+        var sel = document.getSelection(), node = sel && sel.anchorNode;
+        var el = node && (node.nodeType === 1 ? node : node.parentElement);
+        var root = el && el.closest && el.closest('.m-richtext');
+        if (root) richToolbar(root);
+    });
+    window.modulusShell.richText = function (root, dotnet, html) {
+        if (!root) return;
+        if (!root._mRich) root._mRich = { dotnet: dotnet, html: null, timer: 0 };
+        else if (dotnet) root._mRich.dotnet = dotnet;
+        if (html != null && html !== root._mRich.html) {
+            root._mRich.html = html;
+            var editor = richEditor(root);
+            if (editor && editor.innerHTML !== html) editor.innerHTML = html;
+            root.classList.toggle('m-richtext-empty', !html);
+        }
+    };
+
+    // ---- Lightbox: AppLightbox, <app-lightbox>, <app-image> and <app-image-group> ----
+    // A [data-m-lightbox] root carries its images as data-items JSON (LightboxItem.Json) and a hidden
+    // .m-lightbox-source holding the overlay: Ant Design's image preview DOM plus a caption and a thumbnail strip.
+    // Clicking any [data-lightbox-index] inside the root clones that overlay into <body> (clear of the cards'
+    // stacking and of the DOM Blazor or htmx own) and drives it from here, so both flavours behave the same:
+    // zoom (toolbar, wheel, + - 0, double click), rotate, drag to pan, swipe or arrow keys to page, download.
+    // The page does not scroll and Tab stays inside while it is open; closing returns focus to the thumbnail.
+    var LB_ZOOM = 1.5, LB_WHEEL = 1.2, LB_SWIPE = 80, LB_MAX = 8;
+    var lightbox = null;
+
+    document.addEventListener('click', function (e) {
+        var trigger = e.target instanceof Element && e.target.closest('[data-lightbox-index]');
+        var root = trigger && trigger.closest('[data-m-lightbox]');
+        if (!root) return;
+        e.preventDefault();
+        openLightbox(root, parseInt(trigger.getAttribute('data-lightbox-index'), 10) || 0, trigger);
+    });
+    window.addEventListener('popstate', function () { if (lightbox) lightbox.close(); });
+
+    function lightboxLock(on) {
+        var body = document.body;
+        var gap = window.innerWidth - document.documentElement.clientWidth;
+        body.style.overflow = on ? 'hidden' : '';
+        body.style.paddingRight = on && gap > 0 ? gap + 'px' : '';
+    }
+
+    function lightboxFileName(item) {
+        var ext = /^data:image\/(svg|png|jpe?g|gif|webp)/i.exec(item.src) || /\.(\w{3,4})(?:[?#]|$)/.exec(item.src);
+        var name = (item.title || 'image').replace(/[\\/:*?"<>|]+/g, '').trim() || 'image';
+        return ext ? name + '.' + ext[1].toLowerCase().replace('jpeg', 'jpg') : name;
+    }
+
+    function openLightbox(root, index, opener) {
+        var items, source = root.querySelector('.m-lightbox-source');
+        try { items = JSON.parse(root.getAttribute('data-items') || '[]'); } catch (err) { items = []; }
+        if (!items.length || !source || !source.firstElementChild) return;
+        if (lightbox) lightbox.close(true);
+
+        var el = source.firstElementChild.cloneNode(true);
+        var part = function (name) { return el.querySelector('[data-lb="' + name + '"]'); };
+        var img = part('img'), pan = part('pan'), wrap = el.querySelector('.ant-image-preview-wrap');
+        var footer = part('footer'), thumbs = part('thumbs'), spin = part('spin');
+        var many = items.length > 1;
+        var captioned = items.some(function (item) { return item.title || item.caption; });
+        var s = { index: -1, scale: 1, rotate: 0, x: 0, y: 0, dragged: false };
+
+        ['progress', 'prev', 'next'].forEach(function (n) { var p = part(n); if (p) p.hidden = !many; });
+        // The caption keeps its place on every image when any image has one, so the image does not jump.
+        var text = part('text');
+        if (text) text.hidden = !captioned;
+        if (footer) footer.hidden = !many && !captioned;
+        if (thumbs) {
+            thumbs.hidden = !many;
+            items.forEach(function (item, i) {
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'm-lightbox-strip-thumb';
+                b.setAttribute('data-lb-go', i);
+                b.setAttribute('aria-label', 'Image ' + (i + 1) + (item.title ? ': ' + item.title : ''));
+                var t = document.createElement('img');
+                t.src = item.thumb || item.src;
+                t.alt = '';
+                t.loading = 'lazy';
+                b.appendChild(t);
+                thumbs.appendChild(b);
+            });
+        }
+
+        function apply() {
+            pan.style.transform = 'translate3d(' + s.x + 'px, ' + s.y + 'px, 0)';
+            img.style.transform = 'scale3d(' + s.scale + ', ' + s.scale + ', 1) rotate(' + s.rotate + 'deg)';
+            var zin = part('zoom-in'), zout = part('zoom-out');
+            if (zin) { zin.disabled = s.scale >= LB_MAX; zin.classList.toggle('ant-image-preview-operations-operation-disabled', zin.disabled); }
+            if (zout) { zout.disabled = s.scale <= 1; zout.classList.toggle('ant-image-preview-operations-operation-disabled', zout.disabled); }
+        }
+        // Keep a zoomed image from being dragged off screen; at 100% it sits centred.
+        function clamp() {
+            if (s.scale <= 1) { s.x = s.y = 0; return; }
+            var sideways = Math.abs(s.rotate / 90) % 2 === 1;
+            var w = (sideways ? img.offsetHeight : img.offsetWidth) * s.scale;
+            var h = (sideways ? img.offsetWidth : img.offsetHeight) * s.scale;
+            var mx = Math.max(0, (w - window.innerWidth) / 2), my = Math.max(0, (h - window.innerHeight) / 2);
+            s.x = Math.min(mx, Math.max(-mx, s.x));
+            s.y = Math.min(my, Math.max(-my, s.y));
+        }
+        function zoomTo(v) {
+            s.scale = Math.round(Math.min(LB_MAX, Math.max(1, v)) * 100) / 100;
+            clamp();
+            apply();
+        }
+        function show(i) {
+            if (i < 0 || i >= items.length || i === s.index) return;
+            var item = items[i];
+            s.index = i;
+            s.scale = 1; s.rotate = 0; s.x = s.y = 0;
+            apply();
+            if (spin) spin.hidden = false;
+            img.src = item.src;
+            img.alt = item.title || '';
+            if (img.complete && img.naturalWidth && spin) spin.hidden = true;
+            wrap.setAttribute('aria-label', item.title || 'Image preview');
+            var progress = part('progress');
+            if (progress) progress.textContent = (i + 1) + ' / ' + items.length;
+            var prev = part('prev'), next = part('next');
+            if (prev) { prev.disabled = i === 0; prev.classList.toggle('ant-image-preview-switch-left-disabled', i === 0); }
+            if (next) { next.disabled = i === items.length - 1; next.classList.toggle('ant-image-preview-switch-right-disabled', i === items.length - 1); }
+            var title = part('title'), caption = part('caption');
+            if (title) title.textContent = item.title || '';
+            if (caption) caption.textContent = item.caption || '';
+            var download = part('download');
+            if (download) { download.href = item.src; download.setAttribute('download', lightboxFileName(item)); }
+            if (thumbs) {
+                Array.prototype.forEach.call(thumbs.children, function (b, n) {
+                    if (n === i) b.setAttribute('aria-current', 'true');
+                    else b.removeAttribute('aria-current');
+                });
+                var current = thumbs.children[i];
+                if (current) thumbs.scrollTo({ left: current.offsetLeft - (thumbs.clientWidth - current.offsetWidth) / 2, behavior: 'smooth' });
+            }
+            // Room for the toolbar and the footer, so the image never sits under them at 100%.
+            var bar = el.querySelector('.ant-image-preview-operations');
+            pan.style.top = (bar ? bar.offsetHeight : 0) + 'px';
+            pan.style.bottom = (footer && !footer.hidden ? footer.offsetHeight : 0) + 'px';
+            [i - 1, i + 1].forEach(function (n) { if (items[n]) new Image().src = items[n].src; });
+        }
+        function go(d) { show(s.index + d); }
+        function close(now) {
+            if (lightbox !== api) return;
+            lightbox = null;
+            document.removeEventListener('keydown', key, true);
+            lightboxLock(false);
+            el.classList.add('m-image-preview-enter', 'm-image-preview-hidden');
+            setTimeout(function () { el.remove(); }, now ? 0 : 200);
+            if (opener && opener.isConnected && opener.focus) opener.focus();
+        }
+        function key(e) {
+            switch (e.key) {
+                case 'Escape': close(); break;
+                case 'ArrowLeft': go(-1); break;
+                case 'ArrowRight': go(1); break;
+                case 'Home': show(0); break;
+                case 'End': show(items.length - 1); break;
+                case '+': case '=': zoomTo(s.scale * LB_ZOOM); break;
+                case '-': case '_': zoomTo(s.scale / LB_ZOOM); break;
+                case '0': zoomTo(1); break;
+                case 'Tab': trap(e); return;
+                default: return;
+            }
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        // Tab and Shift+Tab cycle through the overlay's visible, enabled controls.
+        function trap(e) {
+            var controls = Array.prototype.filter.call(el.querySelectorAll('button, a[href]'), function (c) {
+                return !c.disabled && c.offsetParent !== null;
+            });
+            if (!controls.length) return;
+            var first = controls[0], last = controls[controls.length - 1], active = document.activeElement;
+            if (controls.indexOf(active) < 0 || (e.shiftKey && active === first) || (!e.shiftKey && active === last)) {
+                e.preventDefault();
+                (e.shiftKey ? last : first).focus();
+            }
+        }
+
+        el.addEventListener('click', function (e) {
+            var t = e.target instanceof Element ? e.target : null;
+            var op = t && t.closest('[data-lb]');
+            var name = op && op.getAttribute('data-lb');
+            var thumb = t && t.closest('[data-lb-go]');
+            if (thumb) show(parseInt(thumb.getAttribute('data-lb-go'), 10));
+            else if (name === 'close') close();
+            else if (name === 'zoom-in') zoomTo(s.scale * LB_ZOOM);
+            else if (name === 'zoom-out') zoomTo(s.scale / LB_ZOOM);
+            else if (name === 'rotate-right') { s.rotate += 90; clamp(); apply(); }
+            else if (name === 'rotate-left') { s.rotate -= 90; clamp(); apply(); }
+            else if (name === 'prev') go(-1);
+            else if (name === 'next') go(1);
+            // A click on the dark area closes, unless it ends a drag that started on the image.
+            else if (t === wrap || t === pan || t === el.querySelector('.ant-image-preview-body')) {
+                if (s.dragged) s.dragged = false;
+                else close();
+            }
+        });
+        img.addEventListener('load', function () { if (spin) spin.hidden = true; });
+        img.addEventListener('error', function () { if (spin) spin.hidden = true; });
+        img.addEventListener('dblclick', function () { zoomTo(s.scale > 1 ? 1 : 2); });
+        wrap.addEventListener('wheel', function (e) {
+            if (e.target instanceof Element && e.target.closest('[data-lb="footer"]')) return;
+            e.preventDefault();
+            if (e.deltaY) zoomTo(e.deltaY < 0 ? s.scale * LB_WHEEL : s.scale / LB_WHEEL);
+        }, { passive: false });
+        // Drag pans a zoomed image; at 100% a horizontal swipe pages and anything shorter springs back.
+        img.addEventListener('pointerdown', function (e) {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            var sx = e.clientX, sy = e.clientY, ox = s.x, oy = s.y;
+            s.dragged = false;
+            el.classList.add('ant-image-preview-moving');
+            function move(ev) {
+                if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) > 4) s.dragged = true;
+                s.x = ox + ev.clientX - sx;
+                s.y = oy + ev.clientY - sy;
+                apply();
+            }
+            function up(ev) {
+                window.removeEventListener('pointermove', move);
+                window.removeEventListener('pointerup', up);
+                window.removeEventListener('pointercancel', up);
+                el.classList.remove('ant-image-preview-moving');
+                var dx = ev.clientX - sx, dy = ev.clientY - sy;
+                if (s.scale > 1) clamp();
+                else {
+                    if (Math.abs(dx) > LB_SWIPE && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+                    s.x = s.y = 0;
+                }
+                apply();
+            }
+            window.addEventListener('pointermove', move);
+            window.addEventListener('pointerup', up);
+            window.addEventListener('pointercancel', up);
+        });
+
+        var api = { close: close };
+        lightbox = api;
+        el.classList.add('m-image-preview-hidden');
+        document.body.appendChild(el);
+        lightboxLock(true);
+        document.addEventListener('keydown', key, true);
+        show(Math.min(Math.max(index, 0), items.length - 1));
+        requestAnimationFrame(function () {
+            el.classList.add('m-image-preview-enter');
+            el.classList.remove('m-image-preview-hidden');
+        });
+        var closeButton = part('close');
+        if (closeButton) closeButton.focus();
+    }
 })();

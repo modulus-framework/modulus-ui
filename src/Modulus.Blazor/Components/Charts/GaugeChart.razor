@@ -1,0 +1,17 @@
+@* One measure on a half ring with an optional target: <GaugeChart Value="92.4" Max="100" Target="95" Suffix="%" Caption="On-time delivery" /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.Gauge(Value, Max, Target, Options(), Caption, Size))
+
+@code {
+    [Parameter, EditorRequired] public double Value { get; set; }
+
+    [Parameter] public double Max { get; set; } = 100;
+
+    [Parameter] public double? Target { get; set; }
+
+    [Parameter] public string? Caption { get; set; }
+
+    /// <summary>Dial width in px.</summary>
+    [Parameter] public int Size { get; set; } = 200;
+}

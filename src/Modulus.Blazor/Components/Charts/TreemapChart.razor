@@ -1,0 +1,11 @@
+@* Part-to-whole for many parts, up to eight tiles: <TreemapChart Items="inventoryByCategory" Prefix="$" /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.Treemap(Items, Options(), Aspect))
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSlice> Items { get; set; } = [];
+
+    /// <summary>Expected width ÷ height of the plot, so tiles lay out close to square.</summary>
+    [Parameter] public double Aspect { get; set; } = 2.4;
+}

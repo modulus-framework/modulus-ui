@@ -15,7 +15,8 @@ public sealed class AdminMenuContributor : IMenuContributor
             .Add(Group("dashboards", "Dashboards", "layout-dashboard", 0,
                 Link("dashboard-analytics", "Analytics", "", "chart-line", exact: true),
                 Link("dashboard-crm", "CRM", "dashboards/crm", "users-group"),
-                Link("dashboard-ecommerce", "eCommerce", "dashboards/ecommerce", "shopping-cart")))
+                Link("dashboard-ecommerce", "eCommerce", "dashboards/ecommerce", "shopping-cart"),
+                Link("dashboard-erp", "ERP analytics", "dashboards/erp", "building")))
             .Add(Group("apps", "Apps", "apps", 10,
                 Link("email", "Email", "apps/email", "mail"),
                 Link("chat", "Chat", "apps/chat", "messages"),

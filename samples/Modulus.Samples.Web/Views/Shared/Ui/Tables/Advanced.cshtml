@@ -57,9 +57,13 @@
                 <input type="hidden" name="hide" value="@string.Join(',', Model.Hidden)" />
             }
             <input type="hidden" name="pageSize" value="@Model.Request.PageSize" />
-            @if (!string.IsNullOrEmpty(q.Keyword) || q.Department is not null || q.Office is not null || q.Status is not null || q.Label is not null)
+            @foreach (var (field, search) in grid.Searches)
             {
-                <a class="ant-btn ant-btn-link" href="@grid.Href(("keyword", null), ("department", null), ("office", null), ("status", null), ("label", null))"><span>Clear filters</span></a>
+                <input type="hidden" name="@(ColumnSearch.Prefix + field)" value="@search" />
+            }
+            @if (!string.IsNullOrEmpty(q.Keyword) || q.Department is not null || q.Office is not null || q.Status is not null || q.Label is not null || grid.Searches.Count > 0)
+            {
+                <a class="ant-btn ant-btn-link" href="@grid.ClearHref("keyword", "department", "office", "status", "label")"><span>Clear filters</span></a>
             }
         </form>
 
@@ -79,7 +83,7 @@
             </div>
         </div>
 
-        <app-table density="true" scroll-x="1148" layout="fixed" hidden-columns="Model.Hidden">
+        <app-table density="true" scroll-x="1158" layout="fixed" hidden-columns="Model.Hidden">
             <colgroup>
                 <col style="@ColStyle("48px")" /><col class="ant-table-expand-icon-col" style="@ColStyle("48px")" /><col style="@ColStyle("260px")" />
                 <col data-col="position" style="@ColStyle("190px")" />
@@ -87,7 +91,7 @@
                 <col data-col="office" style="@ColStyle("150px")" />
                 <col data-col="start" style="@ColStyle("130px")" />
                 <col data-col="salary" style="@ColStyle("120px")" />
-                <col style="@ColStyle("110px")" />
+                <col style="@ColStyle("120px")" />
             </colgroup>
             <thead class="ant-table-thead">
                 <tr>
@@ -95,13 +99,13 @@
                         <app-checkbox aria-label="Select all rows" data-select-all @@change="toggleAll($event.target.checked)" />
                     </th>
                     <th class="ant-table-cell ant-table-row-expand-icon-cell"></th>
-                    @grid.SortTh(nameof(Employee.Name), "Employee")
-                    @grid.SortTh(nameof(Employee.Position), "Position", col: "position")
-                    @grid.SortTh(nameof(Employee.Department), "Department", col: "department")
-                    @grid.SortTh(nameof(Employee.Office), "Office", col: "office")
-                    @grid.SortTh(nameof(Employee.StartDate), "Start date", col: "start")
-                    @grid.SortTh(nameof(Employee.Salary), "Salary", "text-align: right", col: "salary")
-                    <th class="ant-table-cell">Status</th>
+                    @grid.SortTh(nameof(Employee.Name), "Employee", searchable: true)
+                    @grid.SortTh(nameof(Employee.Position), "Position", col: "position", searchable: true)
+                    @grid.SortTh(nameof(Employee.Department), "Department", col: "department", searchable: true)
+                    @grid.SortTh(nameof(Employee.Office), "Office", col: "office", searchable: true)
+                    @grid.SortTh(nameof(Employee.StartDate), "Start date", col: "start", searchable: true, kind: ColumnKind.Date)
+                    @grid.SortTh(nameof(Employee.Salary), "Salary", "text-align: right", col: "salary", searchable: true, kind: ColumnKind.Number)
+                    @grid.SortTh(nameof(Employee.Status), "Status", searchable: true)
                 </tr>
             </thead>
             <tbody class="ant-table-tbody">
@@ -125,7 +129,7 @@
                         <td data-col="office" class="ant-table-cell@(grid.SortClass(nameof(Employee.Office)))"><span class="m-flex m-gap-6"><app-ti name="@(e.Office == "Remote" ? "home" : "map-pin")" />@e.Office</span></td>
                         <td data-col="start" class="ant-table-cell m-muted@(grid.SortClass(nameof(Employee.StartDate)))">@Fmt.Date(e.StartDate)</td>
                         <td data-col="salary" class="ant-table-cell@(grid.SortClass(nameof(Employee.Salary)))" style="text-align:right"><span class="m-num m-heading">@Fmt.Money0(e.Salary)</span></td>
-                        <td class="ant-table-cell"><span class="m-badge @EmployeeDirectory.StatusBadge(e.Status)">@EmployeeDirectory.StatusLabel(e.Status)</span></td>
+                        <td class="ant-table-cell@(grid.SortClass(nameof(Employee.Status)))"><span class="m-badge @EmployeeDirectory.StatusBadge(e.Status)">@EmployeeDirectory.StatusLabel(e.Status)</span></td>
                     </tr>
                     @* The expanded row, as ProTable's RowDetail renders it on the Blazor page. *@
                     <tr class="ant-table-expanded-row ant-table-expanded-row-level-1" data-detail-for="@e.Id" hidden>

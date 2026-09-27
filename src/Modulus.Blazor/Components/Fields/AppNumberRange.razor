@@ -1,0 +1,85 @@
+@* From–to number range (SAP select-options, Odoo "between" filters): two numbers in one Ant Design range box.
+   A "from" above the "to" marks the box as an error. The MVC <app-number-range> renders the same DOM. *@
+@using System.Globalization
+@using Modulus.Ui.Abstractions.Forms
+
+<div class="@RootClass" style="@Style">
+    <div class="ant-picker-input">
+        <input type="text" inputmode="decimal" autocomplete="off" class="m-num" id="@Id" placeholder="@FromPlaceholder"
+               aria-label="@($"{AriaLabel ?? "Range"} from")" aria-invalid="@(Invalid ? "true" : null)" disabled="@Disabled"
+               value="@_fromText" @onchange="e => SetAsync(e, from: true)" />
+    </div>
+    <div class="ant-picker-range-separator"><span class="ant-picker-separator" aria-hidden="true"><Icon Type="swap-right" /></span></div>
+    <div class="ant-picker-input">
+        <input type="text" inputmode="decimal" autocomplete="off" class="m-num" placeholder="@ToPlaceholder"
+               aria-label="@($"{AriaLabel ?? "Range"} to")" aria-invalid="@(Invalid ? "true" : null)" disabled="@Disabled"
+               value="@_toText" @onchange="e => SetAsync(e, from: false)" />
+    </div>
+    @if (Suffix is not null)
+    {
+        <span class="ant-picker-suffix">@Suffix</span>
+    }
+</div>
+
+@code {
+    [Parameter] public decimal? From { get; set; }
+    [Parameter] public EventCallback<decimal?> FromChanged { get; set; }
+    [Parameter] public decimal? To { get; set; }
+    [Parameter] public EventCallback<decimal?> ToChanged { get; set; }
+
+    [Parameter] public int Decimals { get; set; } = 2;
+    [Parameter] public string FromPlaceholder { get; set; } = "Min";
+    [Parameter] public string ToPlaceholder { get; set; } = "Max";
+
+    /// <summary>Text after the numbers, such as a currency code or unit.</summary>
+    [Parameter] public string? Suffix { get; set; }
+
+    /// <summary>"small", "middle" (default) or "large".</summary>
+    [Parameter] public string? Size { get; set; }
+
+    /// <summary>"error" or "warning"; an inverted range is always an error.</summary>
+    [Parameter] public string? Status { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private string _fromText = "", _toText = "";
+    private decimal? _lastFrom, _lastTo;
+    private bool _initialized;
+
+    private bool Invalid => From is { } f && To is { } t && f > t;
+
+    private string RootClass => string.Join(' ', new[]
+    {
+        "ant-picker ant-picker-range", Size == "small" ? "ant-picker-small" : Size == "large" ? "ant-picker-large" : null,
+        Invalid ? "ant-picker-status-error" : Status is { Length: > 0 } ? $"ant-picker-status-{Status}" : null,
+        Disabled ? "ant-picker-disabled" : null, "m-field m-number-range", Class,
+    }.Where(c => !string.IsNullOrEmpty(c)));
+
+    protected override void OnParametersSet()
+    {
+        if (!_initialized || From != _lastFrom) _fromText = NumberText.Format(From, Decimals);
+        if (!_initialized || To != _lastTo) _toText = NumberText.Format(To, Decimals);
+        (_lastFrom, _lastTo, _initialized) = (From, To, true);
+    }
+
+    private async Task SetAsync(ChangeEventArgs e, bool from)
+    {
+        var typed = e.Value as string ?? "";
+        var current = from ? From : To;
+        decimal? next = string.IsNullOrWhiteSpace(typed) ? null : NumberText.Parse(typed) is { } v ? NumberText.Round(v, Decimals) : current;
+        var formatted = NumberText.Format(next, Decimals);
+        // Blazor writes the input only when the rendered text changes: render what was typed first when they could match.
+        if ((from ? _fromText : _toText) == formatted && typed != formatted)
+        {
+            if (from) _fromText = typed; else _toText = typed;
+            StateHasChanged();
+            await Task.Yield();
+        }
+        if (from) { _fromText = formatted; _lastFrom = next; await FromChanged.InvokeAsync(next); }
+        else { _toText = formatted; _lastTo = next; await ToChanged.InvokeAsync(next); }
+    }
+}

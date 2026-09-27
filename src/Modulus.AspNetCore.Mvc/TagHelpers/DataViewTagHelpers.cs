@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using AntDesign;
 using Microsoft.AspNetCore.Razor.TagHelpers;
+using Modulus.Ui.Abstractions;
 
 namespace Modulus.AspNetCore.Mvc.TagHelpers;
 
@@ -579,23 +580,21 @@ public class ImageTagHelper : TagHelper
             output.Content.SetHtmlContent(img);
             return;
         }
-        // Inside <app-image-group> the group owns the preview (and pages through its images).
-        if (context.Items.TryGetValue(typeof(ImageGroupContext), out var g) && g is ImageGroupContext group)
+        // Inside <app-image-group> the group owns the preview (and pages through its images);
+        // on its own the image is a group of one, with the same preview minus the paging.
+        var group = context.Items.TryGetValue(typeof(ImageGroupContext), out var g) ? g as ImageGroupContext : null;
+        var grouped = group is not null;
+        group ??= new ImageGroupContext();
+        var index = group.Images.Count;
+        group.Images.Add(new LightboxItem(Src, Alt));
+        var mask = $"""<button type="button" class="ant-image-mask m-image-mask" data-lightbox-index="{index}" aria-label="Preview {Html.E(Alt)}"><span class="ant-image-mask-info">{AntIcons.Span("eye")} Preview</span></button>""";
+        if (grouped)
         {
-            var index = group.Images.Count;
-            group.Images.Add((Src, Alt));
-            output.Content.SetHtmlContent(img +
-                $"""<button type="button" class="ant-image-mask m-image-mask" @click="show({index})" aria-label="Preview {Html.E(Alt)}"><span class="ant-image-mask-info">{AntIcons.Span("eye")} Preview</span></button>""");
+            output.Content.SetHtmlContent(img + mask);
             return;
         }
-        output.Attributes.SetAttribute("x-data", "{ open: false }");
-        output.Content.SetHtmlContent(
-            img +
-            $"""<button type="button" class="ant-image-mask m-image-mask" @click="open = true" aria-label="Preview {Html.E(Alt)}"><span class="ant-image-mask-info">{AntIcons.Span("eye")} Preview</span></button>""" +
-            $"""<template x-teleport="body"><div class="m-image-preview" x-show="open" x-transition.opacity @keydown.escape.window="open = false" role="dialog" aria-modal="true" aria-label="{Html.E(Alt)}">""" +
-            """<div class="ant-image-preview-mask"></div><div class="ant-image-preview-wrap" @click="open = false"><div class="ant-image-preview-img-wrapper">""" +
-            $"""<img class="ant-image-preview-img" src="{Html.E(Src)}" alt="{Html.E(Alt)}" @click.stop /></div></div>""" +
-            $"""<button type="button" class="m-image-preview-close" aria-label="Close preview" @click="open = false" x-init="$watch('open', v => v && $nextTick(() => $el.focus()))">{AntIcons.Span("close")}</button></div></template>""");
+        Lightbox.Root(output, group.Images);
+        output.Content.SetHtmlContent(img + mask + Lightbox.Overlay);
     }
 }
 

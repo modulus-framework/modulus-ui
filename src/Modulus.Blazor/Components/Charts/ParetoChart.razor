@@ -1,0 +1,17 @@
+@* ABC analysis: share columns and cumulative line on one percent axis: <ParetoChart Items="skuRevenue" Prefix="$" /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.Pareto(Items, Options(), ACut, BCut, ValueName))
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSlice> Items { get; set; } = [];
+
+    /// <summary>Cumulative share (%) closing class A.</summary>
+    [Parameter] public double ACut { get; set; } = 80;
+
+    /// <summary>Cumulative share (%) closing class B.</summary>
+    [Parameter] public double BCut { get; set; } = 95;
+
+    /// <summary>Legend name of the columns.</summary>
+    [Parameter] public string ValueName { get; set; } = "Share";
+}

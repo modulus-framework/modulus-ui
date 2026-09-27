@@ -34,6 +34,7 @@
     </div>
 </div>
 @((MarkupString)_customizer)
+@((MarkupString)_launcher)
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
@@ -44,11 +45,14 @@
     /// <summary>Current tenant when the content names none (for example the modulus-tenant cookie, read by the host).</summary>
     [Parameter] public string? TenantId { get; set; }
 
+    /// <summary>Active tenants in multi-company mode when the content names none (the modulus-tenants cookie, read by the host).</summary>
+    [Parameter] public string? TenantIds { get; set; }
+
     [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
 
     private IReadOnlyList<MenuItemDefinition> _menu = [];
     private ShellContent _content = new();
-    private string _sidebar = "", _topbar = "", _navbar = "", _footer = "", _customizer = "";
+    private string _sidebar = "", _topbar = "", _navbar = "", _footer = "", _customizer = "", _launcher = "";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -77,10 +81,11 @@
     {
         _sidebar = ShellRenderer.Sidebar(view);
         _navbar = ShellRenderer.Navbar(view);
+        _launcher = ShellRenderer.AppLauncher(view);
     }
 
     // Theme settings live in cookies the browser applies before paint; the panel re-syncs itself on open.
-    private ShellView View() => new(ThemeOptions.Value, _menu, CurrentPath(), _content, TenantId: TenantId);
+    private ShellView View() => new(ThemeOptions.Value, _menu, CurrentPath(), _content, TenantId: TenantId, TenantIds: TenantIds);
 
     private string CurrentPath()
     {

@@ -1,0 +1,15 @@
+@* Columns plus lines on one shared axis (actual vs budget): <ComboChart Labels="months" Columns="actual" Lines="budget" /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.Combo(Labels, Columns, Lines, Options(stacked: Stacked)))
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<string> Labels { get; set; } = [];
+
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSeries> Columns { get; set; } = [];
+
+    /// <summary>Drawn as lines over the columns, on the same scale and unit.</summary>
+    [Parameter] public IReadOnlyList<ChartSeries> Lines { get; set; } = [];
+
+    [Parameter] public bool Stacked { get; set; }
+}

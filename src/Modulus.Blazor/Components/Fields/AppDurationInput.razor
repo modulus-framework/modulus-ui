@@ -1,0 +1,33 @@
+@* Duration in whole minutes, typed as timesheets take it ("1:30", "1.5", "90m", "1h 30m") and shown as h:mm
+   (Odoo float_time, SAP CATS hours). The MVC <app-duration-input> renders the same DOM and posts minutes. *@
+@using Modulus.Ui.Abstractions.Forms
+@inherits FieldBase<int?>
+
+<span class="@RootClass" style="@Style">
+    <span class="ant-input-prefix"><Icon Type="clock-circle" /></span>
+    <input type="text" inputmode="decimal" autocomplete="off" class="ant-input m-num" id="@Id" placeholder="@(Placeholder ?? "0:00")"
+           aria-label="@AriaLabel" aria-invalid="@(Status == "error" ? "true" : null)" disabled="@Disabled"
+           title="1:30, 1.5, 90m or 1h 30m" value="@Text" @onchange="OnTextChanged" />
+    <span class="ant-input-suffix">@Suffix</span>
+</span>
+
+@code {
+    /// <summary>Text after the value; "h" by default.</summary>
+    [Parameter] public string Suffix { get; set; } = "h";
+
+    /// <summary>Longest duration in minutes (24 h by default).</summary>
+    [Parameter] public int Max { get; set; } = 24 * 60;
+
+    private string RootClass => Cx("ant-input-affix-wrapper", SizeClass("ant-input-affix-wrapper"), StatusClass("ant-input-affix-wrapper"),
+        Disabled ? "ant-input-affix-wrapper-disabled" : null, "m-field m-duration", Class);
+
+    protected override string Format(int? value) => DurationText.Format(value);
+
+    protected override bool TryParse(string text, out int? value)
+    {
+        value = DurationText.Parse(text);
+        return value is not null;
+    }
+
+    protected override int? Normalize(int? value) => value is { } v ? Math.Min(v, Max) : null;
+}

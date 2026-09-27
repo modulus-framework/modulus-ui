@@ -1,0 +1,98 @@
+@* Quantity with its unit of measure (Odoo product_uom_qty + UoM, SAP quantity + base unit): the number is rounded
+   to the unit's precision (units 0, kg 3) and the unit list after it is grouped by category. With UnitChanged unbound
+   the unit is a fixed label. The MVC <app-quantity-input> renders the same DOM. *@
+@using Modulus.Ui.Abstractions.Forms
+@inherits FieldBase<decimal?>
+
+<span class="@RootClass" style="@Style">
+    <span class="ant-input-wrapper ant-input-group">
+        <input type="text" inputmode="decimal" autocomplete="off" class="@InputClass" id="@Id" placeholder="@Placeholder"
+               aria-label="@AriaLabel" aria-invalid="@(Status == "error" ? "true" : null)" disabled="@Disabled"
+               value="@Text" @onchange="OnTextChanged" />
+        @if (Selectable)
+        {
+            <span class="ant-input-group-addon m-addon-select">
+                <span class="m-addon-select-text" aria-hidden="true">@(Current?.Label ?? Unit)</span>
+                <select aria-label="@UnitAriaLabel" disabled="@Disabled" @onchange="OnUnitChanged">
+                    @foreach (var group in UnitList.GroupBy(u => u.Category))
+                    {
+                        if (group.Key is null)
+                        {
+                            foreach (var u in group)
+                            {
+                                <option value="@u.Code" selected="@(u.Code == Current?.Code)">@u.Label</option>
+                            }
+                        }
+                        else
+                        {
+                            <optgroup label="@group.Key">
+                                @foreach (var u in group)
+                                {
+                                    <option value="@u.Code" selected="@(u.Code == Current?.Code)">@u.Label</option>
+                                }
+                            </optgroup>
+                        }
+                    }
+                </select>
+                <span class="m-addon-select-arrow" aria-hidden="true"><Icon Type="down" /></span>
+            </span>
+        }
+        else
+        {
+            <span class="ant-input-group-addon">@(Current?.Label ?? Unit)</span>
+        }
+    </span>
+</span>
+
+@code {
+    /// <summary>Code of the unit. Bind it (with UnitChanged) to let the user change it.</summary>
+    [Parameter] public string? Unit { get; set; }
+    [Parameter] public EventCallback<string?> UnitChanged { get; set; }
+
+    /// <summary>The unit list; null uses <see cref="UnitOfMeasure.Common"/>.</summary>
+    [Parameter] public IReadOnlyList<UnitOfMeasure>? Units { get; set; }
+
+    /// <summary>Lowest quantity; 0 by default (set null to allow returns as negatives).</summary>
+    [Parameter] public decimal? Min { get; set; } = 0;
+    [Parameter] public decimal? Max { get; set; }
+
+    /// <summary>Overrides the unit's precision.</summary>
+    [Parameter] public int? Decimals { get; set; }
+
+    [Parameter] public string UnitAriaLabel { get; set; } = "Unit of measure";
+
+    private IReadOnlyList<UnitOfMeasure> UnitList => Units ?? UnitOfMeasure.Common;
+    private UnitOfMeasure? Current => UnitOfMeasure.Find(Unit, UnitList) ?? (Unit is null ? UnitList.FirstOrDefault() : null);
+    private int Digits => Decimals ?? Current?.Decimals ?? 0;
+    private bool Selectable => UnitChanged.HasDelegate;
+
+    private string RootClass => Cx("ant-input-group-wrapper", SizeClass("ant-input-group-wrapper"), StatusClass("ant-input-group-wrapper"), "m-field m-quantity", Class);
+
+    private string InputClass => Cx("ant-input", SizeClass("ant-input"), StatusClass("ant-input"), Disabled ? "ant-input-disabled" : null, "m-num");
+
+    protected override string FormatKey => Digits.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    protected override string Format(decimal? value) => NumberText.Format(value, Digits);
+
+    protected override bool TryParse(string text, out decimal? value)
+    {
+        value = NumberText.Parse(text);
+        return value is not null;
+    }
+
+    protected override decimal? Normalize(decimal? value)
+    {
+        if (value is not { } v) return null;
+        if (Min is { } min && v < min) v = min;
+        if (Max is { } max && v > max) v = max;
+        return NumberText.Round(v, Digits);
+    }
+
+    private async Task OnUnitChanged(ChangeEventArgs e)
+    {
+        var code = e.Value as string;
+        await UnitChanged.InvokeAsync(code);
+        var digits = Decimals ?? UnitOfMeasure.Find(code, UnitList)?.Decimals ?? 0;
+        if (Value is { } v && NumberText.Round(v, digits) != v) await ValueChanged.InvokeAsync(NumberText.Round(v, digits));
+    }
+}

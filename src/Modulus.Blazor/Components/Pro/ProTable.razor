@@ -11,9 +11,12 @@
     </ProTable>
 
     Search forms live outside (see QueryFilter); call ReloadAsync(resetPage: true) after a search.
+    For the header of every Modulus table (sorter carets plus a column search), put a ColumnHeader in the column's
+    TitleTemplate instead of Sortable: the request then carries SortField and Searches.
 *@
 @typeparam TItem
 @attribute [CascadingTypeParameter(nameof(TItem))]
+@implements IColumnHeaderHost
 
 <Card Bordered="false" Class="@($"m-table-card{(Resizable ? " m-resizable" : "")} {Class}")">
     <div class="m-table-toolbar">
@@ -66,6 +69,7 @@
         </Alert>
     }
 
+    <CascadingValue Value="HeaderScope">
     <Table TItem="TItem"
            DataSource="_data"
            Total="_total"
@@ -92,6 +96,7 @@
             @Columns?.Invoke(context)
         </ChildContent>
     </Table>
+    </CascadingValue>
 </Card>
 
 @code {
@@ -176,14 +181,18 @@
     {
         _pageIndex = query.PageIndex;
         _pageSize = query.PageSize;
-        var sort = query.SortModel.FirstOrDefault(s => s.SortDirection != AntDesign.SortDirection.None);
-        _sortField = sort?.FieldName;
-        _sortOrder = sort?.SortDirection switch
+        // Columns with Ant Design's own Sortable sort through the table; with none, ColumnHeader keeps the sort here.
+        if (query.SortModel.Count > 0)
         {
-            AntDesign.SortDirection.Ascending => Modulus.Ui.Abstractions.SortDirection.Ascending,
-            AntDesign.SortDirection.Descending => Modulus.Ui.Abstractions.SortDirection.Descending,
-            _ => Modulus.Ui.Abstractions.SortDirection.None,
-        };
+            var sort = query.SortModel.FirstOrDefault(s => s.SortDirection != AntDesign.SortDirection.None);
+            _sortField = sort?.FieldName;
+            _sortOrder = sort?.SortDirection switch
+            {
+                AntDesign.SortDirection.Ascending => Modulus.Ui.Abstractions.SortDirection.Ascending,
+                AntDesign.SortDirection.Descending => Modulus.Ui.Abstractions.SortDirection.Descending,
+                _ => Modulus.Ui.Abstractions.SortDirection.None,
+            };
+        }
         await LoadAsync();
     }
 
@@ -201,6 +210,7 @@
                 PageSize = _pageSize,
                 SortField = _sortField,
                 SortOrder = _sortOrder,
+                Searches = _searches,
             });
             if (version != _loadVersion) return;
             _data = response.Data;
@@ -219,5 +229,57 @@
 
     private static readonly Func<PaginationTotalContext, string> ShowTotal = ctx => $"{ctx.Range.Item1}–{ctx.Range.Item2} of {ctx.Total}";
 
+
+    // ---- Column headers (ColumnHeader in a column's TitleTemplate): sort and column search on the server ----
+
+    private IReadOnlyDictionary<string, string?>? _searches;
+    private ColumnHeaderScope? _headerScope;
+    private string? _headerState;
+    private int _headerVersion;
+
+    // A new scope whenever the sort or a search changes re-renders the headers.
+    private ColumnHeaderScope HeaderScope
+    {
+        get
+        {
+            var state = $"{_sortField}|{_sortOrder}|{string.Join('|', (_searches ?? new Dictionary<string, string?>()).Select(s => $"{s.Key}={s.Value}"))}";
+            if (_headerScope is null || state != _headerState)
+            {
+                _headerState = state;
+                _headerScope = new ColumnHeaderScope(this, ++_headerVersion);
+            }
+            return _headerScope;
+        }
+    }
+
+    public Modulus.Ui.Abstractions.SortDirection SortOf(string key) =>
+        string.Equals(_sortField, key, StringComparison.OrdinalIgnoreCase) ? _sortOrder : Modulus.Ui.Abstractions.SortDirection.None;
+
+    /// <summary>A header click: ascending, descending, then unsorted; back to page 1.</summary>
+    public async Task SortAsync(string key)
+    {
+        _sortOrder = ColumnSearch.NextSort(SortOf(key));
+        _sortField = _sortOrder == Modulus.Ui.Abstractions.SortDirection.None ? null : key;
+        await ReloadAsync(resetPage: true);
+    }
+
+    public string? SearchOf(string key) => _searches?.GetValueOrDefault(key);
+
+    /// <summary>Sets (or clears) a column search and loads page 1.</summary>
+    public async Task SearchAsync(string key, string? value)
+    {
+        _searches = ColumnSearch.With(_searches, key, value);
+        await ReloadAsync(resetPage: true);
+    }
+
+    /// <summary>The column searches applied (null when none), e.g. for an export link.</summary>
+    public IReadOnlyDictionary<string, string?>? Searches => _searches;
+
+    /// <summary>Clears every column search (with the page's own filters) and loads page 1.</summary>
+    public async Task ClearSearchesAsync()
+    {
+        _searches = null;
+        await ReloadAsync(resetPage: true);
+    }
     private void OnDensity(MenuItem item) => _size = Enum.Parse<TableSize>(item.Key);
 }

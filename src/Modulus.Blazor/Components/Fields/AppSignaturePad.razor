@@ -1,0 +1,100 @@
+@* Signature pad (Odoo signature widget, delivery and approval sign-off): draw with a mouse, pen or finger, or type
+   a name that is drawn in a script face. The value is a PNG data URL (check it with SignatureImage.TryDecode).
+   Drawing runs in modulus-shell.js (modulusShell.signature); the MVC <app-signature-pad> renders the same DOM. *@
+@using Modulus.Ui.Abstractions.Forms
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div class="@RootClass" style="@RootStyle" data-ink="@Ink" @ref="_root">
+    <div class="m-signature-pad">
+        <canvas class="m-signature-canvas" role="img" aria-label="@(AriaLabel ?? "Signature")"></canvas>
+        <span class="m-signature-hint" aria-hidden="true">@Hint</span>
+        <span class="m-signature-line" aria-hidden="true"></span>
+    </div>
+    @if (!Disabled)
+    {
+        <div class="m-signature-actions">
+            @if (AllowTyping)
+            {
+                <input type="text" class="ant-input ant-input-sm m-signature-type" placeholder="@TypePlaceholder" aria-label="@TypePlaceholder" autocomplete="name" />
+            }
+            <button type="button" class="ant-btn ant-btn-sm ant-btn-text" data-m-signature-clear><Icon Type="clear" /><span>@ClearText</span></button>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The signature as a PNG data URL; null or "" when unsigned.</summary>
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    /// <summary>Pad height in pixels (160 by default); the width follows the container.</summary>
+    [Parameter] public int Height { get; set; } = 160;
+
+    /// <summary>Ink colour. The pad is always white paper, so the image prints and embeds the same in dark mode.</summary>
+    [Parameter] public string Ink { get; set; } = "#111827";
+
+    /// <summary>Offers a "type your name" box beside Clear.</summary>
+    [Parameter] public bool AllowTyping { get; set; } = true;
+
+    [Parameter] public string Hint { get; set; } = "Sign here";
+    [Parameter] public string ClearText { get; set; } = "Clear";
+    [Parameter] public string TypePlaceholder { get; set; } = "Or type your name";
+
+    /// <summary>"error" or "warning".</summary>
+    [Parameter] public string? Status { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private ElementReference _root;
+    private DotNetObjectReference<AppSignaturePad>? _self;
+    private string? _last;
+    private bool _attached;
+
+    private string RootClass => string.Join(' ', new[]
+    {
+        "m-signature", string.IsNullOrEmpty(Value) ? null : "m-signature-signed", Disabled ? "m-signature-disabled" : null,
+        Status is { Length: > 0 } ? $"m-signature-status-{Status}" : null, Class,
+    }.Where(c => !string.IsNullOrEmpty(c)));
+
+    private string RootStyle => $"--m-signature-height:{Height}px;{Style}";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _self = DotNetObjectReference.Create(this);
+            _last = Value;
+            try
+            {
+                await JS.InvokeVoidAsync("modulusShell.signature", _root, _self, Value ?? "");
+                _attached = true;
+            }
+            catch (JSException)
+            {
+                // modulus-shell.js not loaded: the pad stays blank.
+            }
+        }
+        else if (_attached && Value != _last)
+        {
+            _last = Value;
+            await JS.InvokeVoidAsync("modulusShell.signature", _root, null, Value ?? "");
+        }
+    }
+
+    [JSInvokable]
+    public Task OnSignature(string? dataUrl)
+    {
+        _last = string.IsNullOrEmpty(dataUrl) ? null : dataUrl;
+        return ValueChanged.InvokeAsync(_last);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _self?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}

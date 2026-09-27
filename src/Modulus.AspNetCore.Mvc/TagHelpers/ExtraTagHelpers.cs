@@ -3,6 +3,7 @@ using System.Text;
 using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Razor.TagHelpers;
+using Modulus.Ui.Abstractions;
 
 namespace Modulus.AspNetCore.Mvc.TagHelpers;
 
@@ -86,12 +87,13 @@ public class InputGroupTagHelper : TagHelper
 
 internal sealed class ImageGroupContext
 {
-    public List<(string Src, string Alt)> Images { get; } = [];
+    public List<LightboxItem> Images { get; } = [];
 }
 
 /// <summary>
-/// Groups <c>app-image</c>s so the preview pages through them (arrow keys or buttons):
-/// <c>&lt;app-image-group&gt;&lt;app-image …/&gt;&lt;app-image …/&gt;&lt;/app-image-group&gt;</c>.
+/// Groups <c>app-image</c>s so the preview pages through them (arrow keys, buttons, swipe or thumbnails):
+/// <c>&lt;app-image-group&gt;&lt;app-image …/&gt;&lt;app-image …/&gt;&lt;/app-image-group&gt;</c>. The preview is the
+/// shared lightbox in modulus-shell.js.
 /// </summary>
 [HtmlTargetElement("app-image-group")]
 public class ImageGroupTagHelper : TagHelper
@@ -101,19 +103,11 @@ public class ImageGroupTagHelper : TagHelper
         var group = new ImageGroupContext();
         context.Items[typeof(ImageGroupContext)] = group;
         var body = (await output.GetChildContentAsync()).GetContent();
-        var items = group.Images.Select(i => new { src = i.Src, alt = i.Alt }).ToArray();
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;
         output.AddClasses("m-image-group");
-        output.Attributes.SetAttribute("x-data", new HtmlString($"modulusImageGroup({Widgets.Config(items)})"));
-        output.Content.SetHtmlContent(body +
-            """<template x-teleport="body"><div class="m-image-preview" x-show="open" x-transition.opacity @keydown.escape.window="open && close()" @keydown.arrow-left.window="open && go(-1)" @keydown.arrow-right.window="open && go(1)" role="dialog" aria-modal="true" :aria-label="current.alt">""" +
-            """<div class="ant-image-preview-mask"></div><div class="ant-image-preview-wrap" @click="close()"><div class="ant-image-preview-img-wrapper">""" +
-            """<img class="ant-image-preview-img" :src="current.src" :alt="current.alt" @click.stop /></div></div>""" +
-            $"""<button type="button" class="m-image-preview-close" aria-label="Close preview" @click="close()" x-ref="close">{AntIcons.Span("close")}</button>""" +
-            $"""<button type="button" class="m-image-preview-switch m-image-preview-prev" aria-label="Previous image" @click="go(-1)">{AntIcons.Span("left")}</button>""" +
-            $"""<button type="button" class="m-image-preview-switch m-image-preview-next" aria-label="Next image" @click="go(1)">{AntIcons.Span("right")}</button>""" +
-            """<div class="m-image-preview-count" x-text="(index + 1) + ' / ' + items.length"></div></div></template>""");
+        Lightbox.Root(output, group.Images);
+        output.Content.SetHtmlContent(body + Lightbox.Overlay);
     }
 }
 

@@ -2,6 +2,7 @@ using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using Modulus.AspNetCore.Mvc.TagHelpers;
+using Modulus.Ui.Abstractions;
 using Xunit;
 
 namespace Modulus.AspNetCore.Mvc.Tests;
@@ -162,11 +163,35 @@ public class ExtraTagHelperTests
             new(new ImageTagHelper { Src = "b.png", Alt = "B" }, "app-image"),
         ]));
 
-        Assert.Contains("@click=\"show(0)\"", html);
-        Assert.Contains("@click=\"show(1)\"", html);
-        Assert.Single(System.Text.RegularExpressions.Regex.Matches(html, "m-image-preview\""));
-        Assert.Contains("modulusImageGroup([{&quot;src&quot;:&quot;a.png&quot;,&quot;alt&quot;:&quot;A&quot;},{&quot;src&quot;:&quot;b.png&quot;,&quot;alt&quot;:&quot;B&quot;}])", html);
-        Assert.Contains("aria-label=\"Next image\"", html);
+        Assert.Contains("data-lightbox-index=\"0\"", html);
+        Assert.Contains("data-lightbox-index=\"1\"", html);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(html, "m-lightbox-source"));
+        Assert.Contains("data-items=\"[{&quot;src&quot;:&quot;a.png&quot;,&quot;title&quot;:&quot;A&quot;,&quot;caption&quot;:null,&quot;thumb&quot;:&quot;a.png&quot;}", html);
+        Assert.Contains("data-lb=\"next\"", html);
+    }
+
+    [Fact]
+    public async Task Image_OnItsOwn_IsALightboxOfOne()
+    {
+        var html = await RenderAsync(new Node(new ImageTagHelper { Src = "a.png", Alt = "A" }, "app-image"));
+
+        Assert.Contains("data-m-lightbox", html);
+        Assert.Contains("data-lightbox-index=\"0\"", html);
+        foreach (var action in new[] { "close", "zoom-in", "zoom-out", "rotate-right", "rotate-left", "download" })
+            Assert.Contains($"data-lb=\"{action}\"", html);
+    }
+
+    [Fact]
+    public async Task Lightbox_RendersCaptionedTiles()
+    {
+        var html = await RenderAsync(new Node(new LightboxTagHelper
+        {
+            Items = [new LightboxItem("a.png", "Lake", "Morning light"), new LightboxItem("b.png", "Dunes", Thumb: "b-small.png")],
+        }, "app-lightbox"));
+
+        Assert.Contains("<div class=\"m-lightbox-item-title\">Lake</div><div class=\"m-lightbox-item-caption\">Morning light</div>", html);
+        Assert.Contains("<img src=\"b-small.png\" alt=\"Dunes\" loading=\"lazy\" />", html);
+        Assert.Contains("data-lightbox-index=\"1\"", html);
     }
 
     [Theory]

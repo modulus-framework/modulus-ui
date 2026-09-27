@@ -548,3 +548,47 @@ public class CoverageTagHelperTests
         Assert.Contains("modulusAnchor(128)", html);
     }
 }
+
+/// <summary>The business chart tag helpers emit exactly what ChartHtml renders for Blazor.</summary>
+public class BusinessChartTagHelperTests
+{
+    private static async Task<string> RunAsync(TagHelper helper, string tag)
+    {
+        var output = new TagHelperOutput(tag, [], (_, _) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
+        await helper.ProcessAsync(new TagHelperContext(tag, [], new Dictionary<object, object>(), "id"), output);
+        Assert.Null(output.TagName);
+        return output.Content.GetContent();
+    }
+
+    [Fact]
+    public async Task Funnel_MatchesSharedRenderer()
+    {
+        Modulus.Ui.Abstractions.Charts.ChartSlice[] stages = [new("Leads", 100), new("Won", 20)];
+
+        var html = await RunAsync(new FunnelChartTagHelper { Stages = stages, Title = "Pipeline" }, "app-funnel-chart");
+
+        Assert.Equal(Modulus.Ui.Abstractions.Charts.ChartHtml.Funnel(stages, new() { Title = "Pipeline" }), html);
+    }
+
+    [Fact]
+    public async Task Scatter_PassesAxisOptions()
+    {
+        var html = await RunAsync(new ScatterChartTagHelper
+        {
+            Points = [new("P", 5, 10, 3, 0)], XTitle = "Revenue", YTitle = "Margin", XPrefix = "$", Quadrants = true,
+        }, "app-scatter-chart");
+
+        Assert.Contains("<div class=\"m-axis-title m-axis-title-x\">Revenue</div>", html);
+        Assert.Contains("Revenue: $5", html);
+        Assert.Contains("m-sc-mean-y", html);
+    }
+
+    [Fact]
+    public async Task Gauge_PassesTargetAndCaption()
+    {
+        var html = await RunAsync(new GaugeTagHelper { Value = 42, Max = 50, Target = 45, Caption = "Utilization", Title = "Plant" }, "app-gauge");
+
+        Assert.Contains("aria-label=\"Plant: 42 of 50, target 45\"", html);
+        Assert.Contains("<span class=\"m-gauge-caption\">Utilization</span>", html);
+    }
+}

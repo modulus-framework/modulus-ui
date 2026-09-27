@@ -6,6 +6,7 @@ using AntDesign;
 using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using Modulus.Ui.Abstractions;
+using SortDirection = Modulus.Ui.Abstractions.SortDirection;
 using Modulus.Ui.Abstractions.Shell;
 
 namespace Modulus.AspNetCore.Mvc.TagHelpers;
@@ -81,6 +82,29 @@ public class EditableGridTagHelper : TagHelper
 
     public string? ReloadTarget { get; set; }
 
+    /// <summary>Column headers sort the rows: ascending, descending, then unsorted (in the browser, or with <see cref="SortHref"/>).</summary>
+    public bool Sortable { get; set; } = true;
+
+    /// <summary>A search icon in each column header for a search of that column (see <see cref="ColumnSearch"/>).</summary>
+    public bool ColumnSearchable { get; set; } = true;
+
+    /// <summary>Server sorting (the nested grid): column key → URL of the next sort. Null sorts in the browser.</summary>
+    public Func<string, string>? SortHref { get; set; }
+
+    /// <summary>With <see cref="SortHref"/>: the column the server sorted by.</summary>
+    public string? SortField { get; set; }
+
+    public bool SortDescending { get; set; }
+
+    /// <summary>Server column search: column key → URL without that column's search. Null searches in the browser.</summary>
+    public Func<string, string>? SearchHref { get; set; }
+
+    /// <summary>With <see cref="SearchHref"/>: the column searches the server applied.</summary>
+    public IReadOnlyDictionary<string, string?>? Searches { get; set; }
+
+    /// <summary>With <see cref="SortHref"/> or <see cref="SearchHref"/>: the element the htmx response replaces (outerHTML).</summary>
+    public string? ServerTarget { get; set; }
+
     private const int ExpandWidth = 48;
     private const int SelectionWidth = 48;
     private const int ActionsWidth = 64;
@@ -112,6 +136,7 @@ public class EditableGridTagHelper : TagHelper
         output.Attributes.SetAttribute("@grid-change", "dirty = true");
         output.Attributes.SetAttribute("@keydown.escape", "closeMenu()");
         if (Resizable) output.Attributes.SetAttribute("@m-col-resize", "resized($event.detail)");
+        if (ColumnSearchable && SearchHref is null) output.Attributes.SetAttribute("@m-col-search.stop", "setSearch($event.detail)");
 
         var sb = new StringBuilder("""<div class="ant-card-body">""");
         sb.Append($"""<input type="hidden" name="{Html.E(n)}.schema" value="{Html.E(GridSchema.Serialize(Columns))}" x-ref="schema" />""");
@@ -192,7 +217,7 @@ public class EditableGridTagHelper : TagHelper
             var menu = AllowColumnEdit
                 ? $"""<button type="button" class="m-grid-th-menu" aria-label="{Html.E(c.Title)} column options" aria-haspopup="menu" @click.stop="openMenu($el, '{Html.E(c.Key)}', '{c.Fixed.ToString().ToLowerInvariant()}', {Js(Columns.IndexOf(c) == 0)}, {Js(Columns.IndexOf(c) == Columns.Count - 1)})">{AntIcons.Span("more")}</button>"""
                 : "";
-            sb.Append($"""<th class="{cls}"{style} data-key="{Html.E(c.Key)}"><span class="m-grid-th"><span class="m-grid-th-title">{Html.E(c.Title)}{(c.Required ? "<span class=\"m-grid-required\" aria-hidden=\"true\">*</span>" : "")}</span>{menu}</span></th>""");
+            sb.Append($"""<th class="{cls}{ColumnHeader.ThClass(Sortable, SortOf(c.Key))}"{style} data-key="{Html.E(c.Key)}"{ColumnHeader.AriaSort(Sortable, SortOf(c.Key))}>{Header(c, menu)}</th>""");
         }
         if (AllowDeleteRow) sb.Append("""<th class="m-grid-actions ant-table-cell ant-table-cell-fix-right ant-table-cell-fix-right-first" style="text-align: center; position: sticky; right: 0px;"><span class="m-sr-only">Actions</span></th>""");
         sb.Append("""</tr></thead><tbody class="ant-table-tbody" x-ref="body">""");
@@ -219,6 +244,26 @@ public class EditableGridTagHelper : TagHelper
             sb.Append(ColumnDialog(id));
         }
         output.Content.SetHtmlContent(sb.ToString());
+    }
+
+    // ---- Headers: sorting and column search, in the browser or (the nested grid) on the server ----
+
+    private SortDirection SortOf(string key) =>
+        SortHref is null || SortField != key ? SortDirection.None : SortDescending ? SortDirection.Descending : SortDirection.Ascending;
+
+    private string Header(GridColumn c, string menu)
+    {
+        var key = Html.E(c.Key);
+        var hx = ServerTarget is null ? "" : $""" hx-target="{Html.E(ServerTarget)}" hx-swap="outerHTML" """.TrimEnd();
+        var sortHref = SortHref?.Invoke(c.Key);
+        var sortAttributes = sortHref is not null
+            ? $""" hx-get="{Html.E(sortHref)}"{hx}"""
+            : $""" @click="sortBy('{key}')" @keydown.enter.prevent="sortBy('{key}')" @keydown.space.prevent="sortBy('{key}')" """.TrimEnd();
+        return ColumnHeader.Content(c.Key, c.Title, GridSchema.Kind(c), c.Required,
+            // The link is "#": a level's endpoint answers with a fragment, so only htmx follows it.
+            sortable: Sortable, sort: SortOf(c.Key), sortHref: sortHref is null ? null : "#", sortAttributes: sortAttributes,
+            searchable: ColumnSearchable, search: Searches?.GetValueOrDefault(c.Key), searchHref: SearchHref?.Invoke(c.Key), searchAttributes: SearchHref is null ? null : hx,
+            extra: menu);
     }
 
     // ---- Rows and cells ----

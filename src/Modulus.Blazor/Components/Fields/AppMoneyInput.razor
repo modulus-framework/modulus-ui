@@ -1,0 +1,86 @@
+@* Money field (Odoo monetary, SAP amount + currency key): the amount right-aligned with thousands separators and
+   rounded to the currency's minor unit, and the currency before it — a list when CurrencyChanged is bound,
+   otherwise a fixed code. Negative amounts show in the error colour, as ledgers do. The MVC <app-money-input>
+   renders the same DOM. *@
+@using Modulus.Ui.Abstractions.Forms
+@inherits FieldBase<decimal?>
+
+<span class="@RootClass" style="@Style">
+    <span class="ant-input-wrapper ant-input-group">
+        @if (Selectable)
+        {
+            <span class="ant-input-group-addon m-addon-select">
+                <span class="m-addon-select-text" aria-hidden="true">@Code</span>
+                <select aria-label="@CurrencyAriaLabel" disabled="@Disabled" @onchange="OnCurrencyChanged">
+                    @foreach (var c in CurrencyList)
+                    {
+                        <option value="@c.Code" selected="@(c.Code == Code)">@c.Code · @c.Name</option>
+                    }
+                </select>
+                <span class="m-addon-select-arrow" aria-hidden="true"><Icon Type="down" /></span>
+            </span>
+        }
+        else
+        {
+            <span class="ant-input-group-addon">@Code</span>
+        }
+        <input type="text" inputmode="decimal" autocomplete="off" class="@InputClass" id="@Id" placeholder="@Placeholder"
+               aria-label="@AriaLabel" aria-invalid="@(Status == "error" ? "true" : null)" disabled="@Disabled"
+               value="@Text" @onchange="OnTextChanged" />
+    </span>
+</span>
+
+@code {
+    /// <summary>ISO code of the amount's currency. Bind it (with CurrencyChanged) to let the user change it.</summary>
+    [Parameter] public string? Currency { get; set; }
+    [Parameter] public EventCallback<string?> CurrencyChanged { get; set; }
+
+    /// <summary>The currency list; null uses <see cref="Modulus.Ui.Abstractions.Forms.Currency.Common"/>.</summary>
+    [Parameter] public IReadOnlyList<Currency>? Currencies { get; set; }
+
+    [Parameter] public decimal? Min { get; set; }
+    [Parameter] public decimal? Max { get; set; }
+
+    /// <summary>Overrides the currency's decimals (unit prices often carry 4).</summary>
+    [Parameter] public int? Decimals { get; set; }
+
+    [Parameter] public string CurrencyAriaLabel { get; set; } = "Currency";
+
+    private IReadOnlyList<Currency> CurrencyList => Currencies ?? Modulus.Ui.Abstractions.Forms.Currency.Common;
+    private Currency? Current => Modulus.Ui.Abstractions.Forms.Currency.Find(Currency, CurrencyList);
+    private string Code => Current?.Code ?? Currency ?? CurrencyList.FirstOrDefault()?.Code ?? "";
+    private int Digits => Decimals ?? Current?.Decimals ?? 2;
+    private bool Selectable => CurrencyChanged.HasDelegate;
+
+    private string RootClass => Cx("ant-input-group-wrapper", SizeClass("ant-input-group-wrapper"), StatusClass("ant-input-group-wrapper"),
+        "m-field m-money", Value < 0 ? "m-money-negative" : null, Class);
+
+    private string InputClass => Cx("ant-input", SizeClass("ant-input"), StatusClass("ant-input"), Disabled ? "ant-input-disabled" : null, "m-num");
+
+    protected override string FormatKey => Digits.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    protected override string Format(decimal? value) => NumberText.Format(value, Digits);
+
+    protected override bool TryParse(string text, out decimal? value)
+    {
+        value = NumberText.Parse(text);
+        return value is not null;
+    }
+
+    protected override decimal? Normalize(decimal? value)
+    {
+        if (value is not { } v) return null;
+        if (Min is { } min && v < min) v = min;
+        if (Max is { } max && v > max) v = max;
+        return NumberText.Round(v, Digits);
+    }
+
+    private async Task OnCurrencyChanged(ChangeEventArgs e)
+    {
+        var code = e.Value as string;
+        await CurrencyChanged.InvokeAsync(code);
+        // The new currency may have other decimals: round the amount to them.
+        var digits = Decimals ?? Modulus.Ui.Abstractions.Forms.Currency.Find(code, CurrencyList)?.Decimals ?? 2;
+        if (Value is { } v && NumberText.Round(v, digits) != v) await ValueChanged.InvokeAsync(NumberText.Round(v, digits));
+    }
+}

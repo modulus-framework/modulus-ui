@@ -2,6 +2,8 @@ using System.Text;
 using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
+using Modulus.AspNetCore.Mvc;
+using Modulus.AspNetCore.Mvc.TagHelpers;
 using Modulus.Ui.Abstractions;
 
 namespace Modulus.Samples.Web;
@@ -33,24 +35,30 @@ public sealed class Grid(HttpRequest request, ProTableRequest paging)
     /// <summary>The current URL (for refreshing the grid after a change).</summary>
     public string Current => request.Path + request.QueryString;
 
+    /// <summary>The column searches in the URL (<c>s.{field}</c>).</summary>
+    public IReadOnlyDictionary<string, string?> Searches { get; } = request.Query.ColumnSearches() ?? new Dictionary<string, string?>();
+
     /// <summary>
-    /// Sortable header cell with Ant Design's sorter; a click cycles ascending → descending → none.
+    /// A column header with Ant Design's sorter (a click cycles ascending → descending → none) and, when searchable, a column search box
+    /// (<c>s.{field}</c>), as every Modulus table renders it (<see cref="ColumnHeader"/>).
     /// </summary>
     /// <param name="col">Column-picker key (<c>data-col</c>) when the column is optional.</param>
-    public IHtmlContent SortTh(string field, string title, string? style = null, string? col = null)
+    public IHtmlContent SortTh(string field, string title, string? style = null, string? col = null, bool searchable = false, ColumnKind kind = ColumnKind.Text)
     {
         var current = string.Equals(Paging.SortField, field, StringComparison.OrdinalIgnoreCase) ? Paging.SortOrder : SortDirection.None;
-        var next = current switch { SortDirection.None => SortDirection.Ascending, SortDirection.Ascending => SortDirection.Descending, _ => SortDirection.None };
+        var next = ColumnSearch.NextSort(current);
         var href = next == SortDirection.None
             ? Href(("sortField", null), ("sortOrder", null))
             : Href(("sortField", field), ("sortOrder", next.ToString()));
-        var aria = current switch { SortDirection.Ascending => "ascending", SortDirection.Descending => "descending", _ => "none" };
+        var content = ColumnHeader.Content(field, title, kind, sort: current, sortHref: href, searchable: searchable,
+            search: Searches.GetValueOrDefault(field), searchHref: Href((ColumnSearch.Prefix + field, null)));
         return new HtmlString(
-            $"""<th{(col is null ? "" : $" data-col=\"{E(col)}\"")} class="ant-table-cell ant-table-column-has-sorters{(current == SortDirection.None ? "" : " ant-table-column-sort")}" aria-sort="{aria}"{(style is null ? "" : $" style=\"{style}\"")}><a class="ant-table-column-sorters" href="{E(href)}"><span class="ant-table-column-title">{E(title)}</span><span class="ant-table-column-sorter ant-table-column-sorter-full"><span class="ant-table-column-sorter-inner">""" +
-            $"""<span class="ant-table-column-sorter-up anticon anticon-caret-up{(current == SortDirection.Ascending ? " active" : "")}">{Caret("M858.9 689L530.5 308.2c-9.4-10.9-27.5-10.9-37 0L165.1 689c-12.2 14.2-1.2 35 18.5 35h656.8c19.7 0 30.7-20.8 18.5-35z")}</span>""" +
-            $"""<span class="ant-table-column-sorter-down anticon anticon-caret-down{(current == SortDirection.Descending ? " active" : "")}">{Caret("M840.4 300H183.6c-19.7 0-30.7 20.8-18.5 35l328.4 380.8c9.4 10.9 27.5 10.9 37 0L858.9 335c12.2-14.2 1.2-35-18.5-35z")}</span>""" +
-            "</span></span></a></th>");
+            $"""<th{(col is null ? "" : $" data-col=\"{E(col)}\"")} class="ant-table-cell{ColumnHeader.ThClass(true, current)}"{ColumnHeader.AriaSort(true, current)}{(style is null ? "" : $" style=\"{style}\"")}>{content}</th>""");
     }
+
+    /// <summary>The current URL without the given filters and every column search (Clear filters).</summary>
+    public string ClearHref(params string[] filters) =>
+        Href([.. filters.Select(f => (f, (string?)null)), .. Searches.Keys.Select(k => (ColumnSearch.Prefix + k, (string?)null))]);
 
     /// <summary>" ant-table-column-sort" for the body cells of the sorted column.</summary>
     public string SortClass(string field) =>
@@ -113,9 +121,6 @@ public sealed class Grid(HttpRequest request, ProTableRequest paging)
 
     private static string Icon(string path, string? cssClass = null) =>
         $"""<span class="anticon{(cssClass is null ? "" : " " + cssClass)}" role="img" aria-hidden="true"><svg viewBox="0 0 1024 1024" width="1em" height="1em" fill="currentColor" focusable="false"><path d="{path}"/></svg></span>""";
-
-    private static string Caret(string path) =>
-        $"""<svg viewBox="0 0 1024 1024" width="1em" height="1em" fill="currentColor" focusable="false" aria-hidden="true"><path d="{path}"/></svg>""";
 
     private static string E(string value) => System.Net.WebUtility.HtmlEncode(value);
 }

@@ -1,0 +1,108 @@
+@* Rich text (Odoo html field, notes, terms and conditions): a formatting toolbar over an editable area. The value is
+   HTML cleaned by RichText.Sanitize. Editing runs in the browser (modulusShell.richText), and the editor's content is
+   rendered once and then left to the browser; a new Value from the parent replaces it. The MVC <app-rich-text>
+   renders the same DOM and posts the HTML (sanitize it on the server). *@
+@using Modulus.Ui.Abstractions.Forms
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div class="@RootClass" style="@Style" @ref="_root">
+    @if (!Disabled)
+    {
+        <div class="m-richtext-toolbar" role="toolbar" aria-label="Formatting">
+            @foreach (var group in RichTextToolbar.Groups)
+            {
+                <span class="m-richtext-group">
+                    @foreach (var b in group)
+                    {
+                        <button type="button" class="m-richtext-btn" data-cmd="@b.Command" data-arg="@b.Argument" data-state="@(b.Toggle ? "" : null)"
+                                aria-label="@b.Label" title="@b.Title" aria-pressed="@(b.Toggle ? "false" : null)" tabindex="-1">
+                            @if (b.Icon is not null)
+                            {
+                                <Icon Type="@b.Icon" />
+                            }
+                            else
+                            {
+                                <span class="m-richtext-btn-text">@b.Text</span>
+                            }
+                        </button>
+                    }
+                </span>
+            }
+        </div>
+    }
+    <div @key="_version" class="ant-input m-richtext-editor" contenteditable="@(!Disabled)" role="textbox" aria-multiline="true"
+         aria-label="@(AriaLabel ?? "Rich text")" aria-invalid="@(Status == "error" ? "true" : null)" data-placeholder="@Placeholder"
+         style="min-height:@(Height)px">@((MarkupString)_html)</div>
+</div>
+
+@code {
+    /// <summary>The HTML; null or "" when empty.</summary>
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Minimum editor height in pixels (the editor grows with its text).</summary>
+    [Parameter] public int Height { get; set; } = 140;
+
+    /// <summary>"error" or "warning".</summary>
+    [Parameter] public string? Status { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private ElementReference _root;
+    private DotNetObjectReference<AppRichText>? _self;
+    private string _html = "";
+    private string? _last = "\0";
+    private int _version;
+    private bool _empty = true;
+
+    private string RootClass => string.Join(' ', new[]
+    {
+        "m-richtext", _empty ? "m-richtext-empty" : null, Disabled ? "m-richtext-disabled" : null,
+        Status is { Length: > 0 } ? $"m-richtext-status-{Status}" : null, Class,
+    }.Where(c => !string.IsNullOrEmpty(c)));
+
+    protected override void OnParametersSet()
+    {
+        if (Value == _last) return;
+        // A value that did not come from this editor: render it into a fresh editor element.
+        _last = Value;
+        _html = RichText.Sanitize(Value);
+        _empty = _html.Length == 0;
+        _version++;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _self = DotNetObjectReference.Create(this);
+        try
+        {
+            await JS.InvokeVoidAsync("modulusShell.richText", _root, _self, _html);
+        }
+        catch (JSException)
+        {
+            // modulus-shell.js not loaded: the editor still edits, but changes are not reported.
+        }
+    }
+
+    [JSInvokable]
+    public Task OnRichTextInput(string? html)
+    {
+        var clean = RichText.Sanitize(html);
+        _last = clean.Length == 0 ? null : clean;
+        _empty = clean.Length == 0;
+        return ValueChanged.InvokeAsync(_last);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _self?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}

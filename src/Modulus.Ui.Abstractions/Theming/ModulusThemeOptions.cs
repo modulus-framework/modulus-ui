@@ -33,6 +33,44 @@ public enum ContentWidth
     Fluid,
 }
 
+/// <summary>What the navbar and sidebar list.</summary>
+public enum MenuScope
+{
+    /// <summary>The whole menu (Tabler).</summary>
+    All,
+    /// <summary>
+    /// Only the current app's menu, behind its name, while a page of an app is open (Odoo). Apps are the header's
+    /// <c>ShellApp</c> tiles with a <c>MenuKey</c>; other apps are a click away in the app launcher.
+    /// </summary>
+    App,
+}
+
+/// <summary>Font family of the whole interface (Tabler's theme settings).</summary>
+public enum ThemeFont
+{
+    /// <summary>Inter, bundled with Modulus.</summary>
+    Sans,
+    /// <summary>The operating system's UI font (Segoe UI, San Francisco, Roboto).</summary>
+    System,
+    Serif,
+    Mono,
+}
+
+/// <summary>Neutral palette of surfaces, borders and text (Tabler's "theme base").</summary>
+public enum ThemeBase
+{
+    /// <summary>Cool gray with a hint of blue; Tabler's default.</summary>
+    Gray,
+    /// <summary>Blue-gray.</summary>
+    Slate,
+    /// <summary>Cool, nearly neutral gray.</summary>
+    Zinc,
+    /// <summary>Pure gray.</summary>
+    Neutral,
+    /// <summary>Warm gray.</summary>
+    Stone,
+}
+
 /// <summary>
 /// Brand and layout settings shared by every Modulus flavor (Blazor, MVC, Razor Pages).
 /// Bind from configuration: <c>builder.Services.Configure&lt;ModulusThemeOptions&gt;(config.GetSection("Modulus:Theme"))</c>.
@@ -68,6 +106,13 @@ public class ModulusThemeOptions
 
     public ContentWidth ContentWidth { get; set; } = ContentWidth.Boxed;
 
+    /// <summary>The whole menu (Tabler) or only the current app's menu (Odoo).</summary>
+    public MenuScope MenuScope { get; set; } = MenuScope.All;
+
+    public ThemeFont Font { get; set; } = ThemeFont.Sans;
+
+    public ThemeBase Base { get; set; } = ThemeBase.Gray;
+
     /// <summary>Brand colours offered in the theme settings panel (name → #rrggbb).</summary>
     public IDictionary<string, string> ColorPresets { get; set; } = new Dictionary<string, string>
     {
@@ -81,7 +126,7 @@ public class ModulusThemeOptions
         ["teal"] = "#0ca678",
     };
 
-    /// <summary>Show the theme settings panel (colour mode, scheme, layout, width, radius).</summary>
+    /// <summary>Show the theme settings panel (colour mode, scheme, font, base, layout, menu, width, radius).</summary>
     public bool ShowCustomizer { get; set; } = true;
 
     /// <summary>Sidebar / legacy ProLayout sider width in px.</summary>

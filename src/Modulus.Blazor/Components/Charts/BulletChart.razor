@@ -1,0 +1,8 @@
+@* KPIs against targets over qualitative bands: <BulletChart Items="kpis" Prefix="$" /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.Bullet(Items, Options()))
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<BulletItem> Items { get; set; } = [];
+}

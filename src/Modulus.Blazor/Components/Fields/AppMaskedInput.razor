@@ -1,0 +1,59 @@
+@* Fixed-format input: tax ids, postal codes, IBANs, part numbers (InputMask: 9 digit, A letter, * either).
+   modulus-shell.js fits the text to the mask as it is typed, so the caret stays put; the component applies the same
+   InputMask rules to what it receives. The MVC <app-masked-input> renders the same input. *@
+@using Modulus.Ui.Abstractions.Forms
+
+<input type="text" class="@Css" style="@Style" id="@Id" data-m-mask="@Mask" placeholder="@(Placeholder ?? InputMask.Placeholder(Mask))"
+       maxlength="@InputMask.Placeholder(Mask).Length" spellcheck="false" autocomplete="off" inputmode="@InputMode"
+       aria-label="@AriaLabel" aria-invalid="@(Status == "error" ? "true" : null)" disabled="@Disabled"
+       value="@_text" @oninput="OnInput" />
+
+@code {
+    /// <summary>The mask: <c>9</c> digit, <c>A</c> letter, <c>*</c> letter or digit, <c>\</c> escapes; the rest are literals.</summary>
+    [Parameter, EditorRequired] public string Mask { get; set; } = "";
+
+    /// <summary>The text as shown, literals included ("12-3456789").</summary>
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    /// <summary>Defaults to the mask with "_" in each slot.</summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>"small", "middle" (default) or "large".</summary>
+    [Parameter] public string? Size { get; set; }
+
+    /// <summary>"error" or "warning".</summary>
+    [Parameter] public string? Status { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private string _text = "";
+    private string? _last = "\0";
+
+    // A mask of digits only brings up the numeric keyboard on phones.
+    private string InputMode => Mask.Replace("\\9", "").Any(c => c is 'A' or '*') ? "text" : "numeric";
+
+    private string Css => string.Join(' ', new[]
+    {
+        "ant-input", Size == "small" ? "ant-input-sm" : Size == "large" ? "ant-input-lg" : null,
+        Status is { Length: > 0 } ? $"ant-input-status-{Status}" : null, Disabled ? "ant-input-disabled" : null, "m-masked", Class,
+    }.Where(c => !string.IsNullOrEmpty(c)));
+
+    protected override void OnParametersSet()
+    {
+        if (Value == _last) return;
+        _last = Value;
+        _text = InputMask.Apply(Mask, Value);
+    }
+
+    private Task OnInput(ChangeEventArgs e)
+    {
+        _text = InputMask.Apply(Mask, e.Value as string);
+        _last = _text;
+        return ValueChanged.InvokeAsync(_text);
+    }
+}

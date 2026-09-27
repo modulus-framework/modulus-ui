@@ -299,6 +299,11 @@
         message('error', status === 403 ? "You don't have permission to do that." : 'Something went wrong (' + status + '). Please try again.');
     });
 
+    // No response at all (offline, server down): htmx raises sendError, not responseError.
+    document.body.addEventListener('htmx:sendError', function () {
+        message('error', "Couldn't reach the server. Check your connection and try again.");
+    });
+
     // Ant Design message toast -------------------------------------------------
 
     var ICONS = { success: 'check-circle', info: 'info-circle', warning: 'exclamation-circle', error: 'close-circle' };

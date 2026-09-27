@@ -12,12 +12,14 @@
  * can render the right theme on the very first byte.
  *
  * <script src=".../modulus-theme.js" data-default="light|dark"
- *         data-layout="horizontal" data-width="boxed" data-nav="light"></script>
+ *         data-layout="horizontal" data-width="boxed" data-nav="light"
+ *         data-menu="all" data-font="sans" data-base="gray"></script>
  * Omit data-default to follow the OS until the user picks a theme.
  *
- * Theme settings (layout, content width, navigation theme, corner radius, colour
- * scheme) are cookies too; layout/width/nav become attributes on <html> before
- * first paint, radius and colour are also rendered by the server (ThemeCss).
+ * Theme settings (layout, content width, navigation theme, menu scope, font,
+ * theme base, corner radius, colour scheme) are cookies too; the first six become
+ * attributes on <html> before first paint, radius and colour are also rendered by
+ * the server (ThemeCss).
  */
 (function () {
     'use strict';
@@ -30,7 +32,10 @@
     var PREFS = {
         layout: { cookie: 'modulus-layout', values: ['horizontal', 'vertical'] },
         width: { cookie: 'modulus-width', values: ['boxed', 'fluid'] },
-        nav: { cookie: 'modulus-nav', values: ['light', 'dark'] }
+        nav: { cookie: 'modulus-nav', values: ['light', 'dark'] },
+        menu: { cookie: 'modulus-menu', values: ['all', 'app'] },
+        font: { cookie: 'modulus-font', values: ['sans', 'system', 'serif', 'mono'] },
+        base: { cookie: 'modulus-base', values: ['gray', 'slate', 'zinc', 'neutral', 'stone'] }
     };
     var RADIUS_COOKIE = 'modulus-radius';
     var PRIMARY_COOKIE = 'modulus-primary';
@@ -93,7 +98,7 @@
         toggle: function () { return api.set(api.current() === 'dark' ? 'light' : 'dark'); },
         /** Forget the explicit choice and follow the operating system (or the configured default). */
         useSystem: function () { deleteCookie(THEME_COOKIE); return apply(preferred()); },
-        /** Theme settings: layout | width | nav | radius | primary. */
+        /** Theme settings: layout | width | nav | menu | font | base | radius | primary. */
         setPref: function (name, value, css) {
             if (PREFS[name]) {
                 if (PREFS[name].values.indexOf(value) < 0) return;
@@ -112,7 +117,8 @@
         getPref: function (name) { return PREFS[name] ? pref(name) : readCookie(name === 'radius' ? RADIUS_COOKIE : PRIMARY_COOKIE); },
         /** Clears every theme setting and reloads so the server renders the configured defaults. */
         reset: function () {
-            [THEME_COOKIE, RADIUS_COOKIE, PRIMARY_COOKIE, COLLAPSED_COOKIE, PREFS.layout.cookie, PREFS.width.cookie, PREFS.nav.cookie].forEach(deleteCookie);
+            [THEME_COOKIE, RADIUS_COOKIE, PRIMARY_COOKIE, COLLAPSED_COOKIE].forEach(deleteCookie);
+            for (var p in PREFS) deleteCookie(PREFS[p].cookie);
             window.location.reload();
         },
         isCollapsed: function () { return readCookie(COLLAPSED_COOKIE) === 'true'; },

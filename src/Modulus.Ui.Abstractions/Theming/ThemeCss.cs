@@ -23,6 +23,9 @@ public static class ThemeCss
     public const string LayoutCookie = "modulus-layout";
     public const string WidthCookie = "modulus-width";
     public const string NavCookie = "modulus-nav";
+    public const string MenuCookie = "modulus-menu";
+    public const string FontCookie = "modulus-font";
+    public const string BaseCookie = "modulus-base";
 
     /// <summary>
     /// Applies the user's theme-settings cookies to a copy of <paramref name="options"/>.
@@ -36,8 +39,21 @@ public static class ThemeCss
         if (Enum.TryParse<ShellLayout>(cookie(LayoutCookie), true, out var layout)) o.Layout = layout;
         if (Enum.TryParse<ContentWidth>(cookie(WidthCookie), true, out var width)) o.ContentWidth = width;
         if (Enum.TryParse<NavTheme>(cookie(NavCookie), true, out var nav)) o.NavTheme = nav;
+        if (Enum.TryParse<MenuScope>(cookie(MenuCookie), true, out var menu)) o.MenuScope = menu;
+        if (Enum.TryParse<ThemeFont>(cookie(FontCookie), true, out var font)) o.Font = font;
+        if (Enum.TryParse<ThemeBase>(cookie(BaseCookie), true, out var @base)) o.Base = @base;
         return o;
     }
+
+    /// <summary>
+    /// The configured defaults of the attribute settings, as <c>data-*</c> attributes for the theme script tag
+    /// (<c>data-layout="horizontal" data-width="boxed" …</c>). The script puts the saved choice, or this default,
+    /// on <c>&lt;html&gt;</c> before first paint.
+    /// </summary>
+    public static string ScriptAttributes(ModulusThemeOptions o) =>
+        $"""data-layout="{Lower(o.Layout)}" data-width="{Lower(o.ContentWidth)}" data-nav="{Lower(o.NavTheme)}" data-menu="{Lower(o.MenuScope)}" data-font="{Lower(o.Font)}" data-base="{Lower(o.Base)}" """.TrimEnd();
+
+    private static string Lower<T>(T value) where T : struct, Enum => value.ToString().ToLowerInvariant();
 
     /// <summary>The name of the preset matching the current primary colour, or null for a custom colour.</summary>
     public static string? PresetName(ModulusThemeOptions options) =>

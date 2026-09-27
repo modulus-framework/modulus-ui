@@ -1,8 +1,9 @@
 @*
     Nested, expandable editable grid driven by NestedGridSettings. Each level is an EditableGrid; a row that can
     expand renders another NestedGrid for the next level, which loads its rows the first time it is shown.
-    Every level has its own columns (or column set picked by a parent field), search, sort, paging, editing and
-    Save. The number of levels in the settings is the nesting limit.
+    Every level has its own columns (or column set picked by a parent field), search, filters, header sorting and
+    column searches (all on the server), paging, editing and Save. The number of levels in the settings is the
+    nesting limit.
 
     <NestedGrid Settings="_settings" Load="LoadAsync" Save="SaveAsync" />
 
@@ -20,6 +21,8 @@
                   RowDetail="@(HasChildren ? ChildFragment : null)" RowExpandable="row => Settings.CanExpand(Level, row)"
                   Searchable="false" ClientFilters="false" Filters="@(FilterColumns.Count > 0 ? FilterRow : null)"
                   ExportFileName="@LevelSettings.Title" OnReload="ReloadAsync"
+                  Sortable="LevelSettings.Sortable" OnSort="SortAsync" SortField="@_sortField" SortDescending="_descending"
+                  ColumnSearchable="LevelSettings.Searchable" OnColumnSearch="ColumnSearchAsync" Searches="_searches"
                   OnSave="SaveAsync" OnDiscard="ReloadAsync" OnChange="() => _dirty = true" Class="m-nested-grid">
         <TitleExtra><span class="m-badge m-badge-gray-lt">@_total</span></TitleExtra>
         <ToolBar>
@@ -28,17 +31,6 @@
                 <Input TValue="string" @bind-Value="_keyword" Placeholder="@($"Search {LevelSettings.Title.ToLowerInvariant()}…")" AllowClear Size="@InputSize.Default"
                        Class="m-table-toolbar-search m-nested-search" Prefix="SearchIcon"
                        OnPressEnter="SearchAsync" OnClear="SearchAsync" Disabled="_dirty" aria-label="@($"Search {Title}")" />
-            }
-            @if (LevelSettings.Sortable)
-            {
-                <select class="m-select m-nested-sort" aria-label="Sort by" disabled="@_dirty" value="@SortValue" @onchange="SortAsync">
-                    <option value="">Sort: default</option>
-                    @foreach (var c in _columns.Where(c => !c.Hidden))
-                    {
-                        <option value="@($"{c.Key}:asc")">@c.Title ↑</option>
-                        <option value="@($"{c.Key}:desc")">@c.Title ↓</option>
-                    }
-                </select>
             }
         </ToolBar>
         <Summary>
@@ -96,7 +88,7 @@
                 </SelectOptions>
             </Select>
         }
-        if (_filters.Values.Any(v => !string.IsNullOrEmpty(v)))
+        if (_filters.Values.Any(v => !string.IsNullOrEmpty(v)) || _searches is not null)
         {
             <button type="button" class="ant-btn ant-btn-link m-grid-clear-filters" disabled="@_dirty" @onclick="ClearFiltersAsync"><span>Clear filters</span></button>
         }
@@ -112,6 +104,7 @@
     private async Task ClearFiltersAsync()
     {
         _filters.Clear();
+        _searches = null;
         _page = 1;
         await LoadPageAsync();
     }
@@ -126,7 +119,7 @@
     private NestedGridLevel LevelSettings => Settings.Level(Level) ?? new NestedGridLevel();
     private int LevelPageSize => Math.Max(1, LevelSettings.PageSize);
     private bool HasChildren => Settings.Level(Level + 1) is not null && LevelSettings.Expandable;
-    private string SortValue => _sortField is null ? "" : $"{_sortField}:{(_descending ? "desc" : "asc")}";
+    private IReadOnlyDictionary<string, string?>? _searches;
 
     private string Title => Level == 0 && HeaderTitle is not null
         ? HeaderTitle
@@ -151,7 +144,7 @@
     private async Task LoadPageAsync()
     {
         var filters = _filters.Where(f => !string.IsNullOrEmpty(f.Value)).ToDictionary(f => f.Key, f => f.Value, StringComparer.Ordinal);
-        var result = await Load(new NestedGridRequest(Level, Parent?.Id, _keyword, _sortField, _descending, _page, LevelPageSize, filters.Count == 0 ? null : filters));
+        var result = await Load(new NestedGridRequest(Level, Parent?.Id, _keyword, _sortField, _descending, _page, LevelPageSize, filters.Count == 0 ? null : filters, _searches));
         _rows = [.. result.Rows];
         _total = result.Total;
         _page = NestedGridQuery.ClampPage(new NestedGridRequest(Level, Parent?.Id, Page: _page, PageSize: LevelPageSize), _total);
@@ -168,11 +161,20 @@
         await LoadPageAsync();
     }
 
-    private async Task SortAsync(ChangeEventArgs e)
+    // Header clicks and column searches reload the level from the server (not while it has unsaved edits).
+    private async Task SortAsync(string key)
     {
-        var value = e.Value?.ToString() ?? "";
-        var parts = value.Split(':');
-        (_sortField, _descending) = parts.Length == 2 ? (parts[0], parts[1] == "desc") : (null, false);
+        if (_dirty) return;
+        var next = new NestedGridRequest(Level, Parent?.Id, SortField: _sortField, Descending: _descending).WithSort(key);
+        (_sortField, _descending) = (next.SortField, next.Descending);
+        _page = 1;
+        await LoadPageAsync();
+    }
+
+    private async Task ColumnSearchAsync((string Key, string? Value) search)
+    {
+        if (_dirty) return;
+        _searches = ColumnSearch.With(_searches, search.Key, search.Value);
         _page = 1;
         await LoadPageAsync();
     }

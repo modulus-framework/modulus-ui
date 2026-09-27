@@ -1,0 +1,91 @@
+@* International phone number: a country calling-code list and the national number, stored as one string
+   ("+44 20 7946 0958", see PhoneNumber). Pasting a number that starts with "+" picks its country. The MVC
+   <app-phone-input> renders the same DOM and posts the joined value. *@
+@using Modulus.Ui.Abstractions.Forms
+
+<span class="@RootClass" style="@Style">
+    <span class="ant-input-wrapper ant-input-group">
+        <span class="ant-input-group-addon m-addon-select">
+            <span class="m-addon-select-text" aria-hidden="true">@(_country is null ? "+" : $"{_country.Code} +{_country.DialCode}")</span>
+            <select aria-label="@CountryAriaLabel" disabled="@Disabled" @onchange="OnCountryChanged">
+                @foreach (var c in CountryList)
+                {
+                    <option value="@c.Code" selected="@(c.Code == _country?.Code)">@c.Name (+@c.DialCode)</option>
+                }
+            </select>
+            <span class="m-addon-select-arrow" aria-hidden="true"><Icon Type="down" /></span>
+        </span>
+        <input type="tel" autocomplete="tel-national" class="@InputClass" id="@Id" placeholder="@Placeholder"
+               aria-label="@AriaLabel" aria-invalid="@(Status == "error" ? "true" : null)" disabled="@Disabled"
+               value="@_national" @onchange="OnNationalChanged" />
+    </span>
+</span>
+
+@code {
+    /// <summary>The number as "+{code} {national}"; null or "" when empty.</summary>
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    /// <summary>ISO code of the country shown for an empty value, and preferred for shared codes (+1, +7).</summary>
+    [Parameter] public string DefaultCountry { get; set; } = "US";
+
+    /// <summary>The country list; null uses <see cref="All"/>.</summary>
+    [Parameter] public IReadOnlyList<Country>? Countries { get; set; }
+
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>"small", "middle" (default) or "large".</summary>
+    [Parameter] public string? Size { get; set; }
+
+    /// <summary>"error" or "warning".</summary>
+    [Parameter] public string? Status { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string CountryAriaLabel { get; set; } = "Country calling code";
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private Country? _country;
+    private string _national = "";
+    private string? _last = "\0";
+
+    private IReadOnlyList<Country> CountryList => Countries ?? Country.All;
+
+    private string RootClass => Cx("ant-input-group-wrapper", Size == "small" ? "ant-input-group-wrapper-sm" : Size == "large" ? "ant-input-group-wrapper-lg" : null,
+        Status is { Length: > 0 } ? $"ant-input-group-wrapper-status-{Status}" : null, "m-field m-phone", Class);
+
+    private string InputClass => Cx("ant-input", Size == "small" ? "ant-input-sm" : Size == "large" ? "ant-input-lg" : null,
+        Status is { Length: > 0 } ? $"ant-input-status-{Status}" : null, Disabled ? "ant-input-disabled" : null);
+
+    protected override void OnParametersSet()
+    {
+        if (Value == _last) return;
+        _last = Value;
+        (_country, _national) = PhoneNumber.Split(Value, CountryList, _country?.Code ?? DefaultCountry);
+    }
+
+    private Task OnCountryChanged(ChangeEventArgs e)
+    {
+        _country = Country.Find(e.Value as string, CountryList) ?? _country;
+        return Emit();
+    }
+
+    private Task OnNationalChanged(ChangeEventArgs e)
+    {
+        var typed = (e.Value as string ?? "").Trim();
+        if (typed.StartsWith('+')) (_country, _national) = PhoneNumber.Split(typed, CountryList, _country?.Code ?? DefaultCountry);
+        else _national = PhoneNumber.Clean(typed);
+        return Emit();
+    }
+
+    private Task Emit()
+    {
+        var value = PhoneNumber.Join(_country, _national);
+        _last = value;
+        return ValueChanged.InvokeAsync(value);
+    }
+
+    private static string Cx(params string?[] classes) => string.Join(' ', classes.Where(c => !string.IsNullOrWhiteSpace(c)));
+}

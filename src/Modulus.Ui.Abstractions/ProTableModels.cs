@@ -27,6 +27,9 @@ public class ProTableRequest
 
     public SortDirection SortOrder { get; set; }
 
+    /// <summary>Column searches from the headers (field → query, see <see cref="ColumnSearch"/>); null when none.</summary>
+    public IReadOnlyDictionary<string, string?>? Searches { get; set; }
+
     public int Skip => (Current - 1) * PageSize;
 }
 

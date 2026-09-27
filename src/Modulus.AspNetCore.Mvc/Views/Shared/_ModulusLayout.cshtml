@@ -20,7 +20,7 @@
         async policy => (await Authorization.AuthorizeAsync(User, policy)).Succeeded);
     var shell = new ShellView(theme, menu, Context.Request.Path.Value?.Trim('/') ?? "",
         await ShellContentProvider.GetContentAsync(User, Context.RequestAborted),
-        ThemeCss.ResolveMode(cookies[ThemeCss.ModeCookie], ThemeMode.System), cookies[ShellRenderer.TenantCookie]);
+        ThemeCss.ResolveMode(cookies[ThemeCss.ModeCookie], ThemeMode.System), cookies[ShellRenderer.TenantCookie], cookies[ShellRenderer.TenantsCookie]);
     var title = ViewData["Title"] as string;
 }
 <!DOCTYPE html>
@@ -48,6 +48,7 @@
         </div>
     </div>
     @Html.Raw(ShellRenderer.Customizer(shell))
+    @Html.Raw(ShellRenderer.AppLauncher(shell))
 
     @* Shared drawer. Open with Alpine.store('drawer').show(title) and load its body via hx-target="#modulus-drawer-body". *@
     <div x-data class="ant-drawer ant-drawer-right ant-drawer-open m-drawer" x-show="$store.drawer.open" :data-open="$store.drawer.open" x-cloak

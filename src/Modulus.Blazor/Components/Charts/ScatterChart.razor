@@ -1,0 +1,27 @@
+@* Scatter or bubble chart with up to three groups: <ScatterChart Points="products" XTitle="Revenue" YTitle="Margin" SizeTitle="Units" Quadrants /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.Scatter(Points, Options(), new ScatterOptions { XTitle = XTitle, YTitle = YTitle, SizeTitle = SizeTitle, XFormat = XFormat, XPrefix = XPrefix, XSuffix = XSuffix, Groups = Groups, Quadrants = Quadrants }))
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ScatterPoint> Points { get; set; } = [];
+
+    /// <summary>Group names for the legend (keep to three).</summary>
+    [Parameter] public IReadOnlyList<string> Groups { get; set; } = [];
+
+    [Parameter] public string? XTitle { get; set; }
+
+    [Parameter] public string? YTitle { get; set; }
+
+    /// <summary>What bubble area encodes; leave points without a size for a plain scatter.</summary>
+    [Parameter] public string? SizeTitle { get; set; }
+
+    [Parameter] public string XFormat { get; set; } = "N0";
+
+    [Parameter] public string XPrefix { get; set; } = "";
+
+    [Parameter] public string XSuffix { get; set; } = "";
+
+    /// <summary>Mean lines on both axes.</summary>
+    [Parameter] public bool Quadrants { get; set; }
+}

@@ -35,7 +35,7 @@ public sealed class NestedGridLevel
     /// <summary>A keyword box that searches the text of every visible column.</summary>
     public bool Searchable { get; set; } = true;
 
-    /// <summary>A "Sort by" choice over the level's columns.</summary>
+    /// <summary>Column headers sort the level (ascending, descending, unsorted) and each has a column search.</summary>
     public bool Sortable { get; set; } = true;
 
     /// <summary>Rows of this level expand into the next level, when there is one.</summary>
@@ -71,11 +71,29 @@ public sealed class NestedGridSettings
 
 /// <summary>
 /// What a nested grid asks for: one page of level <see cref="Level"/> under <see cref="ParentId"/>, searched,
-/// filtered (column key → option value, from the level's <see cref="GridColumn.Filterable"/> columns) and sorted.
+/// filtered (column key → option value, from the level's <see cref="GridColumn.Filterable"/> columns), searched by
+/// column (column key → query, see <see cref="ColumnSearch"/>) and sorted.
 /// </summary>
 public sealed record NestedGridRequest(int Level, string? ParentId, string? Keyword = null, string? SortField = null, bool Descending = false, int Page = 1, int PageSize = 5,
-    IReadOnlyDictionary<string, string?>? Filters = null)
+    IReadOnlyDictionary<string, string?>? Filters = null, IReadOnlyDictionary<string, string?>? Searches = null)
 {
+    /// <summary>The column searches that have a value.</summary>
+    public IEnumerable<KeyValuePair<string, string?>> ActiveSearches => (Searches ?? new Dictionary<string, string?>()).Where(s => !string.IsNullOrWhiteSpace(s.Value));
+
+    /// <summary>The same request with one column search set (or cleared), back on page 1.</summary>
+    public NestedGridRequest WithSearch(string key, string? value) => this with { Searches = ColumnSearch.With(Searches, key, value), Page = 1 };
+
+    /// <summary>The sort of <paramref name="field"/> as a header shows it.</summary>
+    public SortDirection SortOf(string field) => SortField != field ? SortDirection.None : Descending ? SortDirection.Descending : SortDirection.Ascending;
+
+    /// <summary>The request after a click on <paramref name="field"/>'s header: ascending, descending, then unsorted; back on page 1.</summary>
+    public NestedGridRequest WithSort(string field) => ColumnSearch.NextSort(SortOf(field)) switch
+    {
+        SortDirection.Ascending => this with { SortField = field, Descending = false, Page = 1 },
+        SortDirection.Descending => this with { SortField = field, Descending = true, Page = 1 },
+        _ => this with { SortField = null, Descending = false, Page = 1 },
+    };
+
     /// <summary>The filters that have a value.</summary>
     public IEnumerable<KeyValuePair<string, string?>> ActiveFilters => (Filters ?? new Dictionary<string, string?>()).Where(f => !string.IsNullOrEmpty(f.Value));
 
@@ -100,12 +118,11 @@ public static class NestedGridQuery
     public static NestedGridPage Apply(IEnumerable<GridRecord> rows, IReadOnlyList<GridColumn> columns, NestedGridRequest request)
     {
         IEnumerable<GridRecord> result = rows;
-        if (!string.IsNullOrWhiteSpace(request.Keyword) || request.Filters is not null)
-            result = result.Where(r => GridSchema.Matches(columns, r, request.Keyword, request.Filters, CultureInfo.InvariantCulture));
+        // Matched in the current culture, the one the cells are displayed in ("$1,200" finds "$1,2").
+        if (!string.IsNullOrWhiteSpace(request.Keyword) || request.Filters is not null || request.Searches is not null)
+            result = result.Where(r => GridSchema.Matches(columns, r, request.Keyword, request.Filters, searches: request.Searches));
         if (request.SortField is { } field && GridSchema.Find(columns, field) is { } column)
-        {
-            result = result.OrderBy(r => SortKey(column, r[field]), request.Descending ? SortComparer.Desc : SortComparer.Asc);
-        }
+            result = GridSchema.Sort(result, column, request.Descending);
         var list = result.ToList();
         var size = Math.Clamp(request.PageSize, 1, 200);
         var pages = Math.Max(1, (int)Math.Ceiling(list.Count / (double)size));
@@ -116,31 +133,4 @@ public static class NestedGridQuery
     /// <summary>The page a request lands on once clamped to the rows there are.</summary>
     public static int ClampPage(NestedGridRequest request, int total) =>
         Math.Clamp(request.Page, 1, Math.Max(1, (int)Math.Ceiling(total / (double)Math.Max(1, request.PageSize))));
-
-    // Numbers and dates sort by value, everything else by its displayed text; empty cells go last.
-    private static IComparable? SortKey(GridColumn c, string? value) => c.Type switch
-    {
-        GridCellType.Number or GridCellType.Currency or GridCellType.Percent or GridCellType.Progress or GridCellType.Rating => GridSchema.Number(value),
-        GridCellType.Date => GridSchema.Date(value),
-        GridCellType.Switch => GridSchema.Flag(value) ? 1 : 0,
-        _ => string.IsNullOrEmpty(value) ? null : GridSchema.Format(c, value, CultureInfo.InvariantCulture),
-    };
-
-    private sealed class SortComparer : IComparer<IComparable?>
-    {
-        public static readonly SortComparer Asc = new(false), Desc = new(true);
-
-        private readonly bool _desc;
-
-        private SortComparer(bool desc) => _desc = desc;
-
-        public int Compare(IComparable? x, IComparable? y) => (x, y) switch
-        {
-            (null, null) => 0,
-            (null, _) => 1,
-            (_, null) => -1,
-            (string a, string b) => (_desc ? -1 : 1) * string.Compare(a, b, StringComparison.CurrentCultureIgnoreCase),
-            _ => (_desc ? -1 : 1) * x.CompareTo(y),
-        };
-    }
 }

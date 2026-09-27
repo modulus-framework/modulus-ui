@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
+using Modulus.AspNetCore.Mvc;
 using Modulus.AspNetCore.Mvc.Htmx;
 using Modulus.Samples.Shared;
 using Modulus.Samples.Web;
@@ -12,14 +13,17 @@ namespace Modulus.AdminTemplate.Mvc.Controllers;
 [Route("tables")]
 public class TablesController : SampleController
 {
+    // The header column searches (s.{field}) are read here: model binding leaves the dictionary alone.
+    private EmployeeQuery WithSearches(EmployeeQuery query) => query with { Searches = Request.Query.ColumnSearches() };
+
     [HttpGet("advanced")]
     public IActionResult Advanced([FromQuery] EmployeeQuery query, [FromQuery] ProTableRequest request, string? hide) =>
-        Page("Data table", "Tables/Advanced", EmployeeTablePage.Load(query, request, hide));
+        Page("Data table", "Tables/Advanced", EmployeeTablePage.Load(WithSearches(query), request, hide));
 
     /// <summary>CSV of the selected rows (ids) or of every row matching the filters.</summary>
     [HttpGet("advanced/export")]
     public IActionResult Export([FromQuery] EmployeeQuery query, [FromQuery] int[] ids) =>
-        File(Encoding.UTF8.GetBytes(EmployeeDirectory.Csv(EmployeeDirectory.ForExport(query, ids))), "text/csv", "employees.csv");
+        File(Encoding.UTF8.GetBytes(EmployeeDirectory.Csv(EmployeeDirectory.ForExport(WithSearches(query), ids))), "text/csv", "employees.csv");
 
     /// <summary>"Add item" in a label dropdown: the new label as JSON, or { error }.</summary>
     [HttpPost("advanced/labels")]
@@ -30,7 +34,7 @@ public class TablesController : SampleController
     public IActionResult Tag([FromQuery] EmployeeQuery query, [FromQuery] ProTableRequest request, string? hide, [FromForm] int[] ids, [FromForm] string? label)
     {
         if (EmployeeLabelActions.Apply(ids, label) is { } message) Response.HxMessage(MessageType.Success, message);
-        return Page("Data table", "Tables/Advanced", EmployeeTablePage.Load(query, request, hide));
+        return Page("Data table", "Tables/Advanced", EmployeeTablePage.Load(WithSearches(query), request, hide));
     }
 
     /// <summary>Nested grid: the top level; expanded rows load theirs from nested/level.</summary>

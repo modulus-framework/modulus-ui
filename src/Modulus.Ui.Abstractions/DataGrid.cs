@@ -335,11 +335,22 @@ public static class GridSchema
 
     /// <summary>
     /// Whether a row matches a keyword (in the displayed text of any visible column or its subtitle) and every
-    /// filter (column key → option value; empty values are ignored).
+    /// filter (column key → option value; empty values are ignored) and every column search (column key → query,
+    /// see <see cref="ColumnSearch"/>).
     /// </summary>
-    public static bool Matches(IEnumerable<GridColumn> columns, GridRecord row, string? keyword, IReadOnlyDictionary<string, string?>? filters = null, CultureInfo? culture = null)
+    public static bool Matches(IEnumerable<GridColumn> columns, GridRecord row, string? keyword, IReadOnlyDictionary<string, string?>? filters = null, CultureInfo? culture = null,
+        IReadOnlyDictionary<string, string?>? searches = null)
     {
         var cols = columns as IReadOnlyList<GridColumn> ?? columns.ToList();
+        if (searches is not null)
+        {
+            foreach (var (key, query) in searches)
+            {
+                // A hidden column's search is ignored: its header, and so the search, is out of sight.
+                if (string.IsNullOrWhiteSpace(query) || Find(cols, key) is not { Hidden: false } c) continue;
+                if (!ColumnMatches(c, row, query, culture)) return false;
+            }
+        }
         if (filters is not null)
         {
             foreach (var (key, wanted) in filters)
@@ -359,6 +370,53 @@ public static class GridSchema
         return cols.Where(c => !c.Hidden).Any(c =>
             Format(c, row[c.Key], culture).Contains(k, StringComparison.CurrentCultureIgnoreCase) ||
             (c.SubtitleKey is { } sub && (row[sub] ?? "").Contains(k, StringComparison.CurrentCultureIgnoreCase)));
+    }
+
+    /// <summary>How a column search compares the column: numbers and dates by value, everything else as text.</summary>
+    public static ColumnKind Kind(GridColumn column) => column.Type switch
+    {
+        GridCellType.Number or GridCellType.Currency or GridCellType.Percent or GridCellType.Progress or GridCellType.Rating => ColumnKind.Number,
+        GridCellType.Date => ColumnKind.Date,
+        _ => ColumnKind.Text,
+    };
+
+    /// <summary>Whether a row's cell matches a column search (<see cref="ColumnSearch"/>); the subtitle counts as text.</summary>
+    public static bool ColumnMatches(GridColumn column, GridRecord row, string? query, CultureInfo? culture = null)
+    {
+        var value = row[column.Key];
+        var text = Format(column, value, culture);
+        if (column.SubtitleKey is { } sub && !string.IsNullOrEmpty(row[sub])) text += " " + row[sub];
+        return ColumnSearch.Matches(query, text, Kind(column), Number(value), Date(value));
+    }
+
+    /// <summary>Rows sorted by a column: numbers and dates by value, the rest by displayed text; empty cells last.</summary>
+    public static IEnumerable<GridRecord> Sort(IEnumerable<GridRecord> rows, GridColumn column, bool descending) =>
+        rows.OrderBy(r => SortKey(column, r[column.Key]), descending ? SortComparer.Desc : SortComparer.Asc);
+
+    private static IComparable? SortKey(GridColumn c, string? value) => c.Type switch
+    {
+        GridCellType.Number or GridCellType.Currency or GridCellType.Percent or GridCellType.Progress or GridCellType.Rating => Number(value),
+        GridCellType.Date => Date(value),
+        GridCellType.Switch => Flag(value) ? 1 : 0,
+        _ => string.IsNullOrEmpty(value) ? null : Format(c, value, CultureInfo.InvariantCulture),
+    };
+
+    private sealed class SortComparer : IComparer<IComparable?>
+    {
+        public static readonly SortComparer Asc = new(false), Desc = new(true);
+
+        private readonly bool _desc;
+
+        private SortComparer(bool desc) => _desc = desc;
+
+        public int Compare(IComparable? x, IComparable? y) => (x, y) switch
+        {
+            (null, null) => 0,
+            (null, _) => 1,
+            (_, null) => -1,
+            (string a, string b) => (_desc ? -1 : 1) * string.Compare(a, b, StringComparison.CurrentCultureIgnoreCase),
+            _ => (_desc ? -1 : 1) * x.CompareTo(y),
+        };
     }
 
     /// <summary>Up to two initials for an avatar ("Olivia Bennett" → "OB").</summary>

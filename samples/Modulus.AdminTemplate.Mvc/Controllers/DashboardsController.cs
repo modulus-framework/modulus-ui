@@ -13,4 +13,7 @@ public class DashboardsController(SampleStore store) : SampleController
 
     [HttpGet("dashboards/ecommerce")]
     public IActionResult Ecommerce() => Page("eCommerce", "Dashboards/Ecommerce", store.Ecommerce());
+
+    [HttpGet("dashboards/erp")]
+    public IActionResult Erp() => Page("ERP analytics", "Dashboards/Erp");
 }

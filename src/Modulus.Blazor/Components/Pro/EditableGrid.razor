@@ -4,7 +4,8 @@
     multiple Select, DatePicker); switches and ratings change in place. Rows expand to a detail template.
     Columns can be pinned left or right (Ant Design fixed columns), hidden, reordered, resized, removed and added.
     Like the data table it has a search box, a filter row (Filterable columns), row selection with a batch bar
-    (set a value, export, delete) and CSV export.
+    (set a value, export, delete) and CSV export. Every column header sorts (ascending, descending, unsorted) and
+    has a column search (ColumnHeader).
 
     <EditableGrid Columns="_columns" Rows="_rows" HeaderTitle="Projects" OnSave="SaveAsync">
         <RowDetail>…@context["notes"]…</RowDetail>
@@ -15,6 +16,7 @@
 @using System.Globalization
 @using AntDesign.TableModels
 @implements IDisposable
+@implements IColumnHeaderHost
 @inject IJSRuntime JS
 
 <Card Bordered="false" Id="@_gridId" Class="@($"m-table-card m-grid{(Resizable ? " m-resizable" : "")} {Class}")">
@@ -180,6 +182,7 @@
         <Alert Type="@AlertType.Error" Class="m-table-alert" ShowIcon Message="@($"{_errors.Count} {(_errors.Count == 1 ? "cell needs" : "cells need")} attention before saving.")" />
     }
 
+    <CascadingValue Value="HeaderScope">
     <Table @key="_schemaVersion"
            TItem="GridRecord"
            DataSource="_view"
@@ -202,10 +205,9 @@
             {
                 var c = column;
                 <ActionColumn Title="@c.Title" Width="@((c.Width ?? 150).ToString(CultureInfo.InvariantCulture))"
-                              Fixed="@Fix(c.Fixed)" Align="@(c.AlignRight ? ColumnAlign.Right : ColumnAlign.Left)" Class="m-grid-td">
+                              Fixed="@Fix(c.Fixed)" Align="@(c.AlignRight ? ColumnAlign.Right : ColumnAlign.Left)" Class="@(SortOf(c.Key) == Modulus.Ui.Abstractions.SortDirection.None ? "m-grid-td" : "m-grid-td ant-table-column-sort")">
                     <TitleTemplate>
-                        <span class="m-grid-th" data-key="@c.Key">
-                            <span class="m-grid-th-title">@c.Title@if (c.Required) {<span class="m-grid-required" aria-hidden="true">*</span>}</span>
+                        <ColumnHeader Key="@c.Key" Title="@c.Title" Kind="GridSchema.Kind(c)" Required="c.Required" Sortable="Sortable" Searchable="ColumnSearchable">
                             @if (AllowColumnEdit)
                             {
                                 <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight">
@@ -227,7 +229,7 @@
                                     </ChildContent>
                                 </Dropdown>
                             }
-                        </span>
+                        </ColumnHeader>
                     </TitleTemplate>
                     <ChildContent>
                         @Cell(context, c)
@@ -244,6 +246,7 @@
             }
         </ChildContent>
     </Table>
+    </CascadingValue>
 
     @if (Summary is not null)
     {
@@ -367,6 +370,83 @@
     /// <summary>Shows a Reload button next to the density menu.</summary>
     [Parameter] public EventCallback OnReload { get; set; }
 
+    /// <summary>Column headers sort the rows: ascending, descending, then unsorted (in the browser, or with <see cref="OnSort"/>).</summary>
+    [Parameter] public bool Sortable { get; set; } = true;
+
+    /// <summary>A search icon in each column header for a search of that column (see <see cref="ColumnSearch"/>).</summary>
+    [Parameter] public bool ColumnSearchable { get; set; } = true;
+
+    /// <summary>Server sorting (the nested grid): receives the clicked column; <see cref="SortField"/> shows the result.</summary>
+    [Parameter] public EventCallback<string> OnSort { get; set; }
+
+    /// <summary>With <see cref="OnSort"/>: the column the rows are sorted by.</summary>
+    [Parameter] public string? SortField { get; set; }
+
+    [Parameter] public bool SortDescending { get; set; }
+
+    /// <summary>Server column search: receives the column and its new search; <see cref="Searches"/> shows the result.</summary>
+    [Parameter] public EventCallback<(string Key, string? Value)> OnColumnSearch { get; set; }
+
+    /// <summary>With <see cref="OnColumnSearch"/>: the column searches applied.</summary>
+    [Parameter] public IReadOnlyDictionary<string, string?>? Searches { get; set; }
+
+    private string? _sortKey;
+    private bool _sortDesc;
+    private readonly Dictionary<string, string?> _searches = new(StringComparer.Ordinal);
+    private ColumnHeaderScope? _headerScope;
+    private string? _headerState;
+    private int _headerVersion;
+
+    // A new scope whenever the sort or a search changes re-renders the column headers (carets, search icons).
+    private ColumnHeaderScope HeaderScope
+    {
+        get
+        {
+            var searches = OnColumnSearch.HasDelegate ? Searches ?? new Dictionary<string, string?>() : _searches;
+            var state = $"{(OnSort.HasDelegate ? SortField : _sortKey)}|{(OnSort.HasDelegate ? SortDescending : _sortDesc)}|{string.Join('|', searches.Select(s => $"{s.Key}={s.Value}"))}";
+            if (_headerScope is null || state != _headerState)
+            {
+                _headerState = state;
+                _headerScope = new ColumnHeaderScope(this, ++_headerVersion);
+            }
+            return _headerScope;
+        }
+    }
+
+    public Modulus.Ui.Abstractions.SortDirection SortOf(string key) =>
+        (OnSort.HasDelegate ? SortField : _sortKey) != key ? Modulus.Ui.Abstractions.SortDirection.None
+        : (OnSort.HasDelegate ? SortDescending : _sortDesc) ? Modulus.Ui.Abstractions.SortDirection.Descending
+        : Modulus.Ui.Abstractions.SortDirection.Ascending;
+
+    public string? SearchOf(string key) => OnColumnSearch.HasDelegate ? Searches?.GetValueOrDefault(key) : _searches.GetValueOrDefault(key);
+
+    async Task IColumnHeaderHost.SortAsync(string key)
+    {
+        if (OnSort.HasDelegate)
+        {
+            await OnSort.InvokeAsync(key);
+            return;
+        }
+        (_sortKey, _sortDesc) = ColumnSearch.NextSort(SortOf(key)) switch
+        {
+            Modulus.Ui.Abstractions.SortDirection.Ascending => (key, false),
+            Modulus.Ui.Abstractions.SortDirection.Descending => (key, true),
+            _ => ((string?)null, false),
+        };
+        await RowsChangedAsync();
+    }
+
+    async Task IColumnHeaderHost.SearchAsync(string key, string? value)
+    {
+        if (OnColumnSearch.HasDelegate)
+        {
+            await OnColumnSearch.InvokeAsync((key, value));
+            return;
+        }
+        _searches[key] = value;
+        await RowsChangedAsync();
+    }
+
     private string? _keyword;
     private readonly Dictionary<string, string?> _filters = new(StringComparer.Ordinal);
     private readonly HashSet<string> _addedIds = new(StringComparer.Ordinal);
@@ -375,12 +455,18 @@
     private DotNetObjectReference<EditableGrid>? _self;
     private static readonly RenderFragment SearchIcon = @<Ti Name="search" />;
 
-    private bool Filtered => _filters.Values.Any(v => !string.IsNullOrEmpty(v));
+    private bool Filtered => _filters.Values.Any(v => !string.IsNullOrEmpty(v)) || _searches.Values.Any(v => !string.IsNullOrWhiteSpace(v));
 
-    // Rows added here stay visible whatever the search, so a new row never vanishes while it is filled in.
-    private GridRecord[] Shown() => string.IsNullOrWhiteSpace(_keyword) && !Filtered
-        ? [.. Rows]
-        : [.. Rows.Where(r => _addedIds.Contains(r.Id) || GridSchema.Matches(Columns, r, _keyword, _filters))];
+    // Rows added here stay visible (and on top) whatever the search and sort, so a new row never vanishes while it is filled in.
+    private GridRecord[] Shown()
+    {
+        IEnumerable<GridRecord> rows = string.IsNullOrWhiteSpace(_keyword) && !Filtered
+            ? Rows
+            : Rows.Where(r => _addedIds.Contains(r.Id) || GridSchema.Matches(Columns, r, _keyword, _filters, searches: _searches));
+        if (OnSort.HasDelegate || _sortKey is null || GridSchema.Find(Columns, _sortKey) is not { Hidden: false } column) return [.. rows];
+        var list = rows.ToList();
+        return [.. list.Where(r => _addedIds.Contains(r.Id)), .. GridSchema.Sort(list.Where(r => !_addedIds.Contains(r.Id)), column, _sortDesc)];
+    }
 
     private async Task SearchChanged(string? keyword)
     {
@@ -397,6 +483,7 @@
     private async Task ClearFilters()
     {
         _filters.Clear();
+        _searches.Clear();
         await RowsChangedAsync();
     }
 

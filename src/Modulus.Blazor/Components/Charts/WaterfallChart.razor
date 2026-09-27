@@ -1,0 +1,8 @@
+@* Bridge through signed changes (P&L, cash flow): <WaterfallChart Steps="bridge" Prefix="$" /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.Waterfall(Steps, Options()))
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<WaterfallStep> Steps { get; set; } = [];
+}

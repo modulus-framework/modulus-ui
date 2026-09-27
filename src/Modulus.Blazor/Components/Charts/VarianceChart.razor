@@ -1,0 +1,11 @@
+@* Signed variances around a centre line: <VarianceChart Items="budgetVariance" PositiveIsFavorable="false" /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.Variance(Items, Options(), PositiveIsFavorable))
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSlice> Items { get; set; } = [];
+
+    /// <summary>True when a positive variance is good (revenue); false when it is bad (cost overrun).</summary>
+    [Parameter] public bool PositiveIsFavorable { get; set; } = true;
+}

@@ -35,12 +35,10 @@ public class ModulusHeadTagHelper(IOptions<ModulusThemeOptions> options) : TagHe
             <link rel="stylesheet" href="/_content/Modulus.Ui.Assets/css/modulus-shell.css" />
             <link rel="stylesheet" href="/_content/Modulus.Ui.Assets/css/modulus-pages.css" />
             <style id="modulus-brand">{ThemeCss.Build(theme)}</style>
-            <script src="/_content/Modulus.Ui.Assets/js/modulus-theme.js" data-default="{@default}" data-layout="{Lower(theme.Layout)}" data-width="{Lower(theme.ContentWidth)}" data-nav="{Lower(theme.NavTheme)}"></script>
+            <script src="/_content/Modulus.Ui.Assets/js/modulus-theme.js" data-default="{@default}" {ThemeCss.ScriptAttributes(theme)}></script>
             <script src="/_content/Modulus.Ui.Assets/js/modulus-shell.js" defer></script>
             """);
     }
-
-    private static string Lower<T>(T value) where T : struct, Enum => value.ToString().ToLowerInvariant();
 }
 
 /// <summary>
