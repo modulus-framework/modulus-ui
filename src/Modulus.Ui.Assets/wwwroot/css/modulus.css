@@ -528,14 +528,16 @@ html[data-theme='dark'] .ant-tooltip-inner, html[data-theme='dark'] .ant-tooltip
 .m-stack-sm { gap: 8px; }
 
 /* Component gallery / showcase pages */
-/* A plain tab bar in the page flow: no card background, no sticking, so it never sits over the sections. */
 .m-demo-nav {
-    display: flex; flex-wrap: wrap; gap: 0 24px; margin-bottom: 24px;
-    border-bottom: 1px solid var(--m-border-secondary);
+    position: sticky; top: calc(var(--m-header-height) + 8px); z-index: 8;
+    display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; margin-bottom: 24px;
+    width: fit-content; max-width: 100%;
+    background: var(--m-bg-container); border-radius: var(--m-radius-lg);
+    box-shadow: var(--m-shadow-card);
 }
-.m-demo-nav a { margin-bottom: -1px; padding: 8px 0; border-bottom: 2px solid transparent; color: var(--m-text-secondary); transition: border-color 0.2s, color 0.2s; }
-.m-demo-nav a:hover, .m-demo-nav a:focus-visible { border-bottom-color: var(--m-primary); color: var(--m-primary); }
-.m-demo-section { scroll-margin-top: calc(var(--m-header-height) + 16px); margin-bottom: 32px; }
+.m-demo-nav a { padding: 5px 14px; border-radius: var(--m-radius); color: var(--m-text-secondary); transition: background 0.2s, color 0.2s; }
+.m-demo-nav a:hover { background: var(--m-fill); color: var(--m-text); }
+.m-demo-section { scroll-margin-top: calc(var(--m-header-height) + 72px); margin-bottom: 32px; }
 .m-section-title { margin: 0 0 12px; font-size: 16px; font-weight: 600; line-height: 24px; color: var(--m-text); }
 .m-demo-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr)); align-items: start; }
 .m-demo-desc { margin: -4px 0 16px; color: var(--m-text-tertiary); }
