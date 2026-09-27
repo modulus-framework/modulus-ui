@@ -69,8 +69,24 @@ public sealed class NestedGridSettings
         Level(depth) is { Expandable: true } level && depth + 1 < Levels.Count && (level.RowExpandable?.Invoke(row) ?? true);
 }
 
-/// <summary>What a nested grid asks for: one page of level <see cref="Level"/> under <see cref="ParentId"/>.</summary>
-public sealed record NestedGridRequest(int Level, string? ParentId, string? Keyword = null, string? SortField = null, bool Descending = false, int Page = 1, int PageSize = 5);
+/// <summary>
+/// What a nested grid asks for: one page of level <see cref="Level"/> under <see cref="ParentId"/>, searched,
+/// filtered (column key → option value, from the level's <see cref="GridColumn.Filterable"/> columns) and sorted.
+/// </summary>
+public sealed record NestedGridRequest(int Level, string? ParentId, string? Keyword = null, string? SortField = null, bool Descending = false, int Page = 1, int PageSize = 5,
+    IReadOnlyDictionary<string, string?>? Filters = null)
+{
+    /// <summary>The filters that have a value.</summary>
+    public IEnumerable<KeyValuePair<string, string?>> ActiveFilters => (Filters ?? new Dictionary<string, string?>()).Where(f => !string.IsNullOrEmpty(f.Value));
+
+    /// <summary>The same request with one filter set (or cleared, when <paramref name="value"/> is empty).</summary>
+    public NestedGridRequest WithFilter(string key, string? value)
+    {
+        var filters = ActiveFilters.Where(f => f.Key != key).ToDictionary(f => f.Key, f => f.Value, StringComparer.Ordinal);
+        if (!string.IsNullOrEmpty(value)) filters[key] = value;
+        return this with { Filters = filters.Count == 0 ? null : filters, Page = 1 };
+    }
+}
 
 /// <summary>A page of rows and the total that match the request.</summary>
 public sealed record NestedGridPage(IReadOnlyList<GridRecord> Rows, int Total);
@@ -84,12 +100,8 @@ public static class NestedGridQuery
     public static NestedGridPage Apply(IEnumerable<GridRecord> rows, IReadOnlyList<GridColumn> columns, NestedGridRequest request)
     {
         IEnumerable<GridRecord> result = rows;
-        if (!string.IsNullOrWhiteSpace(request.Keyword))
-        {
-            var k = request.Keyword.Trim();
-            var visible = columns.Where(c => !c.Hidden).ToList();
-            result = result.Where(r => visible.Any(c => GridSchema.Format(c, r[c.Key], CultureInfo.InvariantCulture).Contains(k, StringComparison.OrdinalIgnoreCase)));
-        }
+        if (!string.IsNullOrWhiteSpace(request.Keyword) || request.Filters is not null)
+            result = result.Where(r => GridSchema.Matches(columns, r, request.Keyword, request.Filters, CultureInfo.InvariantCulture));
         if (request.SortField is { } field && GridSchema.Find(columns, field) is { } column)
         {
             result = result.OrderBy(r => SortKey(column, r[field]), request.Descending ? SortComparer.Desc : SortComparer.Asc);

@@ -23,7 +23,7 @@ public static class GarmentGrid
         [new("navy", "Navy", "blue"), new("black", "Black"), new("white", "White"), new("olive", "Olive", "green"), new("rust", "Rust", "volcano")];
 
     public static readonly GridOption[] Categories =
-        [new("fabric", "Fabric", "blue"), new("accessory", "Accessory", "purple"), new("packing", "Packing", "gold")];
+        [new("fabric", "Fabric", "blue", "skin"), new("accessory", "Accessory", "purple", "tag"), new("packing", "Packing", "gold", "inbox")];
 
     public static readonly GridOption[] Suppliers =
         [new("tessile", "Tessile Moda"), new("ykk", "YKK"), new("avery", "Avery Dennison"), new("coats", "Coats"), new("smurfit", "Smurfit Kappa")];
@@ -46,11 +46,11 @@ public static class GarmentGrid
                 Columns =
                 [
                     new() { Key = "order", Title = "Order", Width = 140, Fixed = GridFixed.Left, Required = true },
-                    new() { Key = "buyer", Title = "Buyer", Type = GridCellType.Select, Width = 150, Options = Buyers, Required = true },
-                    new() { Key = "season", Title = "Season", Type = GridCellType.Select, Width = 130, Options = Seasons },
+                    new() { Key = "buyer", Title = "Buyer", Type = GridCellType.Select, Width = 170, Options = Buyers, Required = true, Avatar = true, Filterable = true },
+                    new() { Key = "season", Title = "Season", Type = GridCellType.Select, Width = 130, Options = Seasons, Filterable = true },
                     new() { Key = "qty", Title = "Quantity", Type = GridCellType.Number, Width = 120, Min = 0 },
                     new() { Key = "delivery", Title = "Delivery", Type = GridCellType.Date, Width = 140 },
-                    new() { Key = "status", Title = "Status", Type = GridCellType.Tag, Width = 140, Options = OrderStatuses, Required = true },
+                    new() { Key = "status", Title = "Status", Type = GridCellType.Tag, Width = 140, Options = OrderStatuses, Required = true, Filterable = true },
                 ],
             },
             new NestedGridLevel
@@ -59,9 +59,9 @@ public static class GarmentGrid
                 PageSize = 4,
                 Columns =
                 [
-                    new() { Key = "style", Title = "Style", Width = 130, Required = true },
-                    new() { Key = "description", Title = "Description", Width = 220 },
-                    new() { Key = "color", Title = "Colour", Type = GridCellType.Select, Width = 130, Options = Colors },
+                    new() { Key = "style", Title = "Style", Width = 230, Required = true, SubtitleKey = "description" },
+                    new() { Key = "description", Title = "Description", Width = 220, Hidden = true },
+                    new() { Key = "color", Title = "Colour", Type = GridCellType.Select, Width = 130, Options = Colors, Filterable = true },
                     new() { Key = "qty", Title = "Quantity", Type = GridCellType.Number, Width = 110, Min = 0 },
                     new() { Key = "fob", Title = "FOB price", Type = GridCellType.Currency, Width = 120, Min = 0 },
                 ],
@@ -73,10 +73,10 @@ public static class GarmentGrid
                 Sortable = false,
                 Columns =
                 [
-                    new() { Key = "category", Title = "Category", Type = GridCellType.Tag, Width = 140, Options = Categories, Required = true },
-                    new() { Key = "supplier", Title = "Supplier", Type = GridCellType.Select, Width = 170, Options = Suppliers },
+                    new() { Key = "category", Title = "Category", Type = GridCellType.Tag, Width = 140, Options = Categories, Required = true, Filterable = true },
+                    new() { Key = "supplier", Title = "Supplier", Type = GridCellType.Select, Width = 190, Options = Suppliers, Avatar = true, Filterable = true },
                     new() { Key = "lead", Title = "Lead time (days)", Type = GridCellType.Number, Width = 150, Min = 0 },
-                    new() { Key = "approved", Title = "Approved", Type = GridCellType.Switch, Width = 110 },
+                    new() { Key = "approved", Title = "Approved", Type = GridCellType.Switch, Width = 110, Filterable = true },
                 ],
             },
             new NestedGridLevel

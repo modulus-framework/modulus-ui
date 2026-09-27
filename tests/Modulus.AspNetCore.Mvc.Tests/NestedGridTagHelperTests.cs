@@ -52,6 +52,38 @@ public class NestedGridTagHelperTests
     }
 
     [Fact]
+    public void Filters_RoundTripThroughTheUrl_AndBadKeysAreDropped()
+    {
+        var query = new QueryCollection(new Dictionary<string, StringValues>
+        {
+            ["level"] = "1", ["parent"] = "PO-1", ["f.style"] = "ST-1", ["f.bad key"] = "x", ["f.empty"] = "", ["page"] = "2",
+        });
+        var request = NestedGridForm.ReadRequest(query, Settings());
+
+        Assert.Equal(["style"], request.ActiveFilters.Select(f => f.Key));
+        Assert.Equal("/x?level=1&parent=PO-1&f.style=ST-1&page=2", NestedGridForm.Url("/x", request));
+        Assert.Equal("/x?level=1&parent=PO-1", NestedGridForm.Url("/x", request.WithFilter("style", null)));
+    }
+
+    [Fact]
+    public async Task Renders_AServerFilterRow_ReloadAndThePagerRange()
+    {
+        var s = Settings();
+        var columns = s.ColumnsFor(0, null);
+        columns[1] = new() { Key = "qty", Title = "Qty", Type = GridCellType.Select, Filterable = true, Options = [new("10", "Ten")] };
+        var request = new NestedGridRequest(0, null, PageSize: 2).WithFilter("qty", "10");
+        var html = await RenderAsync(new NestedGridView(s, request, columns, [Row("PO-1", "PO-1")], 3, ["PO-1"], Title: "Orders"));
+
+        Assert.Contains("""<select class="m-select" name="f.qty" aria-label="Qty" hx-get="/nested/level?depth=2&amp;level=0" hx-trigger="change" hx-include="this" hx-target="#nested-0-root" hx-swap="outerHTML" onchange="event.stopPropagation()"><option value="">Any qty</option><option value="10" selected>Ten</option></select>""", html);
+        Assert.Contains("<span>Clear filters</span>", html);
+        Assert.Contains("""aria-label="Reload" title="Reload" hx-get="/nested/level?depth=2&amp;level=0&amp;f.qty=10" hx-target="#nested-0-root" hx-swap="outerHTML">""", html);
+        Assert.Contains("<li class=\"ant-pagination-total-text\">1–2 of 3</li>", html);
+        // The level searches and filters on the server, so the grid's in-browser search is off.
+        Assert.DoesNotContain("m-grid-search", html);
+        Assert.Contains("placeholder=\"Search orders…\"", html);
+    }
+
+    [Fact]
     public void Changes_ListTheLoadedRowsNoLongerPosted()
     {
         var form = new FormCollection(new Dictionary<string, StringValues> { ["l1.loaded"] = new(["a", "b", "c", ""]) });
@@ -94,7 +126,7 @@ public class NestedGridTagHelperTests
         Assert.DoesNotContain("ant-table-row-expand-icon", html);
         Assert.DoesNotContain("Add row", html);
         Assert.DoesNotContain("value=\"save\"", html);
-        Assert.DoesNotContain("ant-pagination", html);
+        Assert.Contains("<li class=\"ant-pagination-total-text\">1–1 of 1</li>", html); // one page: the range, as the data table shows it
         Assert.Contains("id=\"nested-1-PO-1\"", html);
     }
 }

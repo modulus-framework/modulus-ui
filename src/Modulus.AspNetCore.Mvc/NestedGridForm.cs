@@ -22,7 +22,7 @@ public sealed record NestedGridView(
 
 /// <summary>
 /// The URL state and form fields of an <c>app-nested-grid</c> level. Every level loads and posts to one endpoint:
-/// <c>?level=1&amp;parent=PO-1001&amp;q=&amp;sort=qty:desc&amp;page=2</c>; the grid's fields are named <c>l{level}</c>.
+/// <c>?level=1&amp;parent=PO-1001&amp;q=&amp;sort=qty:desc&amp;f.color=navy&amp;page=2</c>; the grid's fields are named <c>l{level}</c>.
 /// </summary>
 public static partial class NestedGridForm
 {
@@ -43,8 +43,18 @@ public static partial class NestedGridForm
         var sort = NullIfEmpty(query["sort"])?.Split(':');
         var field = sort?[0] is { Length: > 0 } f ? f : null;
         var page = int.TryParse(query["page"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var p) ? Math.Max(1, p) : 1;
-        return new NestedGridRequest(level, parent, NullIfEmpty(query["q"]), field, sort?.ElementAtOrDefault(1) == "desc", page, settings.Level(level)?.PageSize ?? 5);
+        // Filters are f.{column key}=value; only well-formed keys are kept (the level ignores ones it doesn't have).
+        var filters = query.Where(kv => kv.Key.StartsWith(FilterPrefix, StringComparison.Ordinal) && FilterKey().IsMatch(kv.Key[FilterPrefix.Length..]) && !string.IsNullOrEmpty(kv.Value))
+            .Take(20).ToDictionary(kv => kv.Key[FilterPrefix.Length..], kv => (string?)kv.Value.ToString(), StringComparer.Ordinal);
+        return new NestedGridRequest(level, parent, NullIfEmpty(query["q"]), field, sort?.ElementAtOrDefault(1) == "desc", page, settings.Level(level)?.PageSize ?? 5,
+            filters.Count == 0 ? null : filters);
     }
+
+    /// <summary>Query prefix of a level's filters (<c>f.status=draft</c>).</summary>
+    public const string FilterPrefix = "f.";
+
+    [GeneratedRegex("^[A-Za-z0-9]{1,40}$")]
+    private static partial Regex FilterKey();
 
     /// <summary>The endpoint URL for a request; <paramref name="omit"/> leaves out parameters an input supplies itself.</summary>
     public static string Url(string baseUrl, NestedGridRequest request, params string[] omit)
@@ -53,6 +63,7 @@ public static partial class NestedGridForm
         if (request.ParentId is not null) values.Add(new("parent", request.ParentId));
         if (!string.IsNullOrEmpty(request.Keyword)) values.Add(new("q", request.Keyword));
         if (request.SortField is not null) values.Add(new("sort", $"{request.SortField}:{(request.Descending ? "desc" : "asc")}"));
+        values.AddRange(request.ActiveFilters.OrderBy(f => f.Key, StringComparer.Ordinal).Select(f => new KeyValuePair<string, string?>(FilterPrefix + f.Key, f.Value)));
         if (request.Page > 1) values.Add(new("page", request.Page.ToString(CultureInfo.InvariantCulture)));
         return QueryHelpers.AddQueryString(baseUrl, values.Where(v => !omit.Contains(v.Key)));
     }

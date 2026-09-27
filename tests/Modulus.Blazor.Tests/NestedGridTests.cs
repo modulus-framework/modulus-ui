@@ -33,6 +33,9 @@ public class NestedGridTests : BunitContext
     public NestedGridTests()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
+        // Select measures its trigger to size the dropdown.
+        JSInterop.Setup<AntDesign.JsInterop.HtmlElement>(_ => true).SetResult(new AntDesign.JsInterop.HtmlElement());
+        JSInterop.Setup<AntDesign.JsInterop.DomRect>(_ => true).SetResult(new AntDesign.JsInterop.DomRect());
         Services.AddAntDesign();
     }
 
@@ -80,6 +83,33 @@ public class NestedGridTests : BunitContext
         var page = NestedGridQuery.Apply(rows, columns, new NestedGridRequest(0, null, Page: 9, PageSize: 3));
         Assert.Equal(4, page.Total);
         Assert.Equal(["d"], page.Rows.Select(r => r.Id));
+    }
+
+    [Fact]
+    public void Query_AppliesFilters_AndWithFilterSetsOrClearsOne()
+    {
+        var kind = new GridColumn { Key = "kind", Title = "Kind", Type = GridCellType.Select, Filterable = true, Options = [new("a", "A"), new("b", "B")] };
+        var rows = new[] { ("1", "a"), ("2", "b"), ("3", "a") }.Select(t => new GridRecord(t.Item1, new Dictionary<string, string?> { ["name"] = "x" + t.Item1, ["kind"] = t.Item2 })).ToList();
+        var request = new NestedGridRequest(0, null, PageSize: 10, Page: 3).WithFilter("kind", "a");
+
+        Assert.Equal(1, request.Page);
+        Assert.Equal(["1", "3"], NestedGridQuery.Apply(rows, [Name, kind], request).Rows.Select(r => r.Id));
+        Assert.Null(request.WithFilter("kind", "").Filters);
+        Assert.Equal(3, NestedGridQuery.Apply(rows, [Name, kind], request.WithFilter("kind", null)).Total);
+    }
+
+    [Fact]
+    public void NestedGrid_FilterRowSearchesOnTheServer()
+    {
+        var settings = Settings();
+        settings.Levels[0].Columns = [Name, new GridColumn { Key = "kind", Title = "Kind", Type = GridCellType.Select, Filterable = true, Options = [new("a", "A")] }];
+        var cut = Render<NestedGrid>(p => p.Add(g => g.Settings, settings)
+            .Add(g => g.Load, _ => Task.FromResult(new NestedGridPage([], 0))));
+
+        // The level's own filter row replaces the grid's in-browser one, and there is no second search box.
+        Assert.Single(cut.FindAll(".m-table-filters .ant-select"));
+        Assert.Empty(cut.FindAll(".m-grid-search"));
+        Assert.Single(cut.FindAll(".m-nested-search"));
     }
 
     [Fact]

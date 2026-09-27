@@ -401,4 +401,20 @@
         else if (t.matches('.ant-checkbox-input')) syncCheckbox(t);
         else if (t.matches('.ant-radio-input, .ant-radio-button-input')) syncRadioGroup(t);
     });
+
+    // Expandable rows of server-rendered tables: a [data-toggle-detail] button shows or hides the next
+    // <tr data-detail-for="{row key}"> (the Ant Design expand icon; the editable grid has its own toggleRow).
+    document.addEventListener('click', function (e) {
+        var button = e.target instanceof Element ? e.target.closest('[data-toggle-detail]') : null;
+        if (!button) return;
+        var row = button.closest('tr');
+        var detail = row && row.nextElementSibling;
+        if (!detail || detail.getAttribute('data-detail-for') !== row.getAttribute('data-row-key')) return;
+        var open = detail.hidden;
+        detail.hidden = !open;
+        button.classList.toggle('ant-table-row-expand-icon-expanded', open);
+        button.classList.toggle('ant-table-row-expand-icon-collapsed', !open);
+        button.setAttribute('aria-expanded', open ? 'true' : 'false');
+        button.setAttribute('aria-label', open ? 'Collapse row' : 'Expand row');
+    });
 })();

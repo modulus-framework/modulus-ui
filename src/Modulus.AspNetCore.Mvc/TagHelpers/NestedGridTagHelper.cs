@@ -5,6 +5,7 @@ using AntDesign;
 using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using Modulus.Ui.Abstractions;
+using Modulus.Ui.Abstractions.Shell;
 
 namespace Modulus.AspNetCore.Mvc.TagHelpers;
 
@@ -48,10 +49,17 @@ public class NestedGridTagHelper : TagHelper
             ShowSave = level.Editable,
             ShowDiscard = level.Editable,
             RowDetail = child is not null && level.Expandable ? row => new HtmlString(Detail(row, loaded, child)) : null,
+            // Search and filters run on the server for a level (they page); the toolbar and filter row below send them.
+            Searchable = false,
+            ClientFilters = false,
+            ExportFileName = level.Title,
+            ReloadHref = NestedGridForm.Url(Url, r),
+            ReloadTarget = "#" + container,
         };
         if (!level.Editable) foreach (var c in v.Columns) c.Editable = false;
 
         var toolbar = Toolbar(level, r, container);
+        var filters = Filters(r, container);
         var summary = Pager(r, v.Total, container);
         var gridContext = new TagHelperContext("app-editable-grid", [], new Dictionary<object, object>(), context.UniqueId + "-g");
         var gridOutput = new TagHelperOutput("app-editable-grid", [new TagHelperAttribute("id", container + "-grid")], (_, _) =>
@@ -59,6 +67,7 @@ public class NestedGridTagHelper : TagHelper
             // Fill the grid's slots the way <grid-toolbar> and friends would.
             var slots = (Dictionary<string, string>)gridContext.Items[typeof(EditableGridTagHelper)];
             slots["grid-toolbar"] = toolbar;
+            if (filters.Length > 0) slots["grid-filters"] = filters;
             slots["grid-title-extra"] = $"""<span class="m-badge m-badge-gray-lt">{v.Total.ToString(CultureInfo.CurrentCulture)}</span>""";
             if (summary.Length > 0) slots["grid-summary"] = summary;
             return Task.FromResult<TagHelperContent>(new DefaultTagHelperContent());
@@ -99,8 +108,8 @@ public class NestedGridTagHelper : TagHelper
         if (level.Searchable)
         {
             var url = NestedGridForm.Url(Url, r with { Page = 1 }, "q");
-            sb.Append($"""<span class="ant-input-affix-wrapper m-nested-search"><span class="ant-input-prefix">{AntIcons.Span("search")}</span>""");
-            sb.Append($"""<input class="ant-input" type="search" name="q" value="{Html.E(r.Keyword)}" placeholder="Search…" aria-label="Search {Html.E(level.Title)}" autocomplete="off" hx-get="{Html.E(url)}" hx-trigger="keyup[key=='Enter'], search" hx-include="this" {target}onkeydown="if (event.key === 'Enter') event.preventDefault()" /></span>""");
+            sb.Append($"""<span class="ant-input-affix-wrapper m-table-toolbar-search m-nested-search"><span class="ant-input-prefix">{ShellRenderer.Icon("search")}</span>""");
+            sb.Append($"""<input class="ant-input" type="search" name="q" value="{Html.E(r.Keyword)}" placeholder="Search {Html.E(level.Title.ToLowerInvariant())}…" aria-label="Search {Html.E(level.Title)}" autocomplete="off" hx-get="{Html.E(url)}" hx-trigger="keyup[key=='Enter'], search" hx-include="this" {target}onkeydown="if (event.key === 'Enter') event.preventDefault()" /></span>""");
         }
         if (level.Sortable)
         {
@@ -118,15 +127,38 @@ public class NestedGridTagHelper : TagHelper
         return sb.ToString();
     }
 
-    // Ant Design's small pagination; each page is an htmx GET of this level.
+    // The filter row: a dropdown per Filterable column; each change is an htmx GET of this level with f.{key}.
+    private string Filters(NestedGridRequest r, string container)
+    {
+        var columns = GridSchema.FilterColumns(View.Columns);
+        if (columns.Count == 0) return "";
+        var sb = new StringBuilder();
+        foreach (var c in columns)
+        {
+            var current = r.Filters?.GetValueOrDefault(c.Key);
+            var url = NestedGridForm.Url(Url, r.WithFilter(c.Key, null));
+            sb.Append($"""<select class="m-select" name="{NestedGridForm.FilterPrefix}{Html.E(c.Key)}" aria-label="{Html.E(c.Title)}" hx-get="{Html.E(url)}" hx-trigger="change" hx-include="this" hx-target="#{container}" hx-swap="outerHTML" onchange="event.stopPropagation()"><option value="">Any {Html.E(c.Title.ToLowerInvariant())}</option>""");
+            foreach (var o in GridSchema.FilterOptions(c))
+                sb.Append($"""<option value="{Html.E(o.Value)}"{(o.Value == current ? " selected" : "")}>{Html.E(o.Label)}</option>""");
+            sb.Append("</select>");
+        }
+        if (r.ActiveFilters.Any())
+            sb.Append($"""<button type="button" class="ant-btn ant-btn-link m-grid-clear-filters" hx-get="{Html.E(NestedGridForm.Url(Url, r with { Filters = null, Page = 1 }))}" hx-target="#{container}" hx-swap="outerHTML"><span>Clear filters</span></button>""");
+        return sb.ToString();
+    }
+
+    // Ant Design's small pagination with the "1–5 of 14" range, as the data table shows it; each page is an htmx GET of this level.
     private string Pager(NestedGridRequest r, int total, string container)
     {
+        if (total <= 0) return "";
         var pages = (int)Math.Ceiling(total / (double)Math.Max(1, r.PageSize));
-        if (pages <= 1) return "";
         var page = Math.Clamp(r.Page, 1, pages);
         string Link(int p, string text, string label) =>
             $"""<a href="#" hx-get="{Html.E(NestedGridForm.Url(Url, r with { Page = p }))}" hx-target="#{container}" hx-swap="outerHTML" aria-label="{label}">{text}</a>""";
+        var from = (page - 1) * r.PageSize + 1;
+        var to = Math.Min(total, page * r.PageSize);
         var sb = new StringBuilder("""<ul class="ant-pagination ant-pagination-mini m-nested-pager">""");
+        sb.Append($"""<li class="ant-pagination-total-text">{from.ToString(CultureInfo.CurrentCulture)}–{to.ToString(CultureInfo.CurrentCulture)} of {total.ToString(CultureInfo.CurrentCulture)}</li>""");
         sb.Append(page > 1
             ? $"""<li class="ant-pagination-prev">{Link(page - 1, AntIcons.Span("left"), "Previous page")}</li>"""
             : $"""<li class="ant-pagination-prev ant-pagination-disabled" aria-disabled="true"><span class="ant-pagination-item-link">{AntIcons.Span("left")}</span></li>""");

@@ -2,7 +2,9 @@
     Schema-driven editable grid: the columns are data (GridColumn), so they can be built at runtime, stored,
     or added by the user. Click a cell to edit it with the control for its type (Input, InputNumber, Select,
     multiple Select, DatePicker); switches and ratings change in place. Rows expand to a detail template.
-    Columns can be pinned left or right (Ant Design fixed columns), hidden, reordered, removed and added.
+    Columns can be pinned left or right (Ant Design fixed columns), hidden, reordered, resized, removed and added.
+    Like the data table it has a search box, a filter row (Filterable columns), row selection with a batch bar
+    (set a value, export, delete) and CSV export.
 
     <EditableGrid Columns="_columns" Rows="_rows" HeaderTitle="Projects" OnSave="SaveAsync">
         <RowDetail>…@context["notes"]…</RowDetail>
@@ -12,9 +14,10 @@
 *@
 @using System.Globalization
 @using AntDesign.TableModels
+@implements IDisposable
 @inject IJSRuntime JS
 
-<Card Bordered="false" Id="@_gridId" Class="@($"m-table-card m-grid {Class}")">
+<Card Bordered="false" Id="@_gridId" Class="@($"m-table-card m-grid{(Resizable ? " m-resizable" : "")} {Class}")">
     <div class="m-table-toolbar">
         <div class="m-table-toolbar-title">
             @HeaderTitle
@@ -25,7 +28,50 @@
             }
         </div>
         <div class="m-table-toolbar-actions">
+            @if (Searchable)
+            {
+                <Input TValue="string" Value="_keyword" ValueChanged="SearchChanged" BindOnInput AllowClear
+                       Placeholder="@($"Search {(HeaderTitle ?? "rows").ToLowerInvariant()}…")" Class="m-table-toolbar-search m-grid-search"
+                       Prefix="SearchIcon" aria-label="@($"Search {HeaderTitle ?? "rows"}")" />
+            }
             @ToolBar
+            @if (AllowColumnHide || AllowColumnEdit)
+            {
+                <Popover Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight" OverlayClassName="m-grid-columns-popover">
+                    <TitleTemplate>
+                        <div class="m-grid-columns-head"><span>Columns</span><span class="m-muted">@Columns.Count(c => !c.Hidden) of @Columns.Count shown</span></div>
+                    </TitleTemplate>
+                    <ContentTemplate>
+                        <ul class="m-grid-columns" role="list">
+                            @for (var i = 0; i < Columns.Count; i++)
+                            {
+                                var column = Columns[i];
+                                var first = i == 0;
+                                var last = i == Columns.Count - 1;
+                                <li class="m-grid-columns-item" @key="column.Key">
+                                    <Checkbox Checked="!column.Hidden" CheckedChanged="v => SetHidden(column, !v)">@column.Title</Checkbox>
+                                    @if (AllowColumnEdit)
+                                    {
+                                        <span class="m-grid-columns-tools">
+                                            @ToolButton("vertical-align-top", -90, $"Pin {column.Title} to the left", column.Fixed == GridFixed.Left, false, () => Pin(column, column.Fixed == GridFixed.Left ? GridFixed.None : GridFixed.Left))
+                                            @ToolButton("vertical-align-top", 90, $"Pin {column.Title} to the right", column.Fixed == GridFixed.Right, false, () => Pin(column, column.Fixed == GridFixed.Right ? GridFixed.None : GridFixed.Right))
+                                            @ToolButton("arrow-up", 0, $"Move {column.Title} up", false, first, () => Move(column, -1))
+                                            @ToolButton("arrow-down", 0, $"Move {column.Title} down", false, last, () => Move(column, 1))
+                                        </span>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    </ContentTemplate>
+                    <ChildContent>
+                        <button type="button" class="ant-btn ant-btn-default" aria-label="Column settings"><Ti Name="columns" /><span>Columns</span></button>
+                    </ChildContent>
+                </Popover>
+            }
+            @if (Exportable)
+            {
+                <button type="button" class="ant-btn ant-btn-default" @onclick="() => ExportAsync(_view)"><Ti Name="download" /><span>Export CSV</span></button>
+            }
             @if (AllowAddRow)
             {
                 <Button Icon="plus" OnClick="AddRow">Add row</Button>
@@ -43,6 +89,12 @@
                 <Button Type="@ButtonType.Primary" Icon="save" Loading="_saving" OnClick="SaveAsync">Save</Button>
             }
             <div class="m-table-toolbar-settings">
+                @if (OnReload.HasDelegate)
+                {
+                    <AntDesign.Tooltip Title="@("Reload")">
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Reload" @onclick="() => OnReload.InvokeAsync()"><Icon Type="reload" /></button>
+                    </AntDesign.Tooltip>
+                }
                 <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight">
                     <Overlay>
                         <Menu SelectedKeys="@(new[] { _size.ToString() })" OnMenuItemClicked="OnDensity">
@@ -57,41 +109,71 @@
                         </AntDesign.Tooltip>
                     </ChildContent>
                 </Dropdown>
-                @if (AllowColumnEdit)
-                {
-                    <Popover Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight" OverlayClassName="m-grid-columns-popover">
-                        <TitleTemplate>
-                            <div class="m-grid-columns-head"><span>Columns</span><span class="m-muted">@Columns.Count(c => !c.Hidden) of @Columns.Count shown</span></div>
-                        </TitleTemplate>
-                        <ContentTemplate>
-                            <ul class="m-grid-columns" role="list">
-                                @for (var i = 0; i < Columns.Count; i++)
-                                {
-                                    var column = Columns[i];
-                                    var first = i == 0;
-                                    var last = i == Columns.Count - 1;
-                                    <li class="m-grid-columns-item" @key="column.Key">
-                                        <Checkbox Checked="!column.Hidden" CheckedChanged="v => SetHidden(column, !v)">@column.Title</Checkbox>
-                                        <span class="m-grid-columns-tools">
-                                            @ToolButton("vertical-align-top", -90, $"Pin {column.Title} to the left", column.Fixed == GridFixed.Left, false, () => Pin(column, column.Fixed == GridFixed.Left ? GridFixed.None : GridFixed.Left))
-                                            @ToolButton("vertical-align-top", 90, $"Pin {column.Title} to the right", column.Fixed == GridFixed.Right, false, () => Pin(column, column.Fixed == GridFixed.Right ? GridFixed.None : GridFixed.Right))
-                                            @ToolButton("arrow-up", 0, $"Move {column.Title} up", false, first, () => Move(column, -1))
-                                            @ToolButton("arrow-down", 0, $"Move {column.Title} down", false, last, () => Move(column, 1))
-                                        </span>
-                                    </li>
-                                }
-                            </ul>
-                        </ContentTemplate>
-                        <ChildContent>
-                            <AntDesign.Tooltip Title="@("Columns")">
-                                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Column settings"><Icon Type="setting" /></button>
-                            </AntDesign.Tooltip>
-                        </ChildContent>
-                    </Popover>
-                }
             </div>
         </div>
     </div>
+
+    @if (Filters is not null)
+    {
+        <div class="m-table-filters">@Filters</div>
+    }
+    else if (ClientFilters && GridSchema.FilterColumns(Columns) is { Count: > 0 } filterColumns)
+    {
+        <div class="m-table-filters">
+            @foreach (var column in filterColumns)
+            {
+                var c = column;
+                <Select TItemValue="string" TItem="string" Value="@_filters.GetValueOrDefault(c.Key)" ValueChanged="v => FilterChanged(c.Key, v)"
+                        Placeholder="@($"Any {c.Title.ToLowerInvariant()}")" AllowClear aria-label="@c.Title">
+                    <SelectOptions>
+                        @foreach (var o in GridSchema.FilterOptions(c))
+                        {
+                            <SelectOption TItemValue="string" TItem="string" Value="@o.Value" Label="@o.Label" />
+                        }
+                    </SelectOptions>
+                </Select>
+            }
+            @if (Filtered)
+            {
+                <button type="button" class="ant-btn ant-btn-link m-grid-clear-filters" @onclick="ClearFilters"><span>Clear filters</span></button>
+            }
+        </div>
+    }
+
+    @if (Selectable && _selected.Count > 0)
+    {
+        var batchColumns = BatchColumns;
+        <Alert Type="@AlertType.Info" Class="m-table-alert m-grid-batch" ShowIcon="false">
+            <MessageTemplate>
+                <span>Selected <strong>@_selected.Count</strong> @(_selected.Count == 1 ? "row" : "rows")</span>
+                <Button Type="@ButtonType.Link" Size="@ButtonSize.Small" OnClick="ClearSelection">Clear</Button>
+                <span class="m-spacer"></span>
+                @if (batchColumns.Count > 0)
+                {
+                    <select class="m-select m-grid-batch-set" aria-label="Set a value on the selected rows" @key="_batchVersion" @onchange="SetSelectedAsync">
+                        <option value="">Set value…</option>
+                        @foreach (var c in batchColumns)
+                        {
+                            <optgroup label="@c.Title">
+                                @foreach (var o in GridSchema.FilterOptions(c))
+                                {
+                                    <option value="@($"{c.Key}={o.Value}")">@o.Label</option>
+                                }
+                            </optgroup>
+                        }
+                    </select>
+                }
+                @BatchActions?.Invoke(_selected.ToList())
+                <button type="button" class="ant-btn ant-btn-default ant-btn-sm" @onclick="() => ExportAsync(_selected)"><Ti Name="download" /><span>Export selected</span></button>
+                @if (AllowDeleteRow)
+                {
+                    <Popconfirm Title="@($"Delete {_selected.Count} {(_selected.Count == 1 ? "row" : "rows")}?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="DeleteSelectedAsync">
+                        <button type="button" class="ant-btn ant-btn-default ant-btn-dangerous ant-btn-sm"><Icon Type="delete" /><span>Delete</span></button>
+                    </Popconfirm>
+                }
+            </MessageTemplate>
+        </Alert>
+    }
 
     @if (_errors.Count > 0)
     {
@@ -103,20 +185,26 @@
            DataSource="_view"
            RowKey="r => r.Id"
            Size="_size"
-           ScrollX="@GridSchema.ScrollWidth(Columns, (RowDetail is null ? 0 : 48) + (AllowDeleteRow ? 64 : 0)).ToString(CultureInfo.InvariantCulture)"
-           HidePagination="Rows.Count <= PageSize"
+           ScrollX="@GridSchema.ScrollWidth(Columns, (RowDetail is null ? 0 : 48) + (Selectable ? 48 : 0) + (AllowDeleteRow ? 64 : 0)).ToString(CultureInfo.InvariantCulture)"
+           HidePagination="_view.Length <= PageSize"
            PageSize="PageSize"
            ExpandTemplate="ExpandFragment"
            RowExpandable="RowExpandableFor"
+           SelectedRows="_selected"
+           SelectedRowsChanged="rows => _selected = rows.ToList()"
            RowClassName="@(r => r.Data.Id == _newRowId ? "m-grid-row-new" : "")">
         <ChildContent>
+            @if (Selectable)
+            {
+                <Selection Width="48" Fixed="@(Columns.Any(c => !c.Hidden && c.Fixed == GridFixed.Left) ? ColumnFixPlacement.Left : null)" />
+            }
             @foreach (var column in GridSchema.Visible(Columns))
             {
                 var c = column;
                 <ActionColumn Title="@c.Title" Width="@((c.Width ?? 150).ToString(CultureInfo.InvariantCulture))"
                               Fixed="@Fix(c.Fixed)" Align="@(c.AlignRight ? ColumnAlign.Right : ColumnAlign.Left)" Class="m-grid-td">
                     <TitleTemplate>
-                        <span class="m-grid-th">
+                        <span class="m-grid-th" data-key="@c.Key">
                             <span class="m-grid-th-title">@c.Title@if (c.Required) {<span class="m-grid-required" aria-hidden="true">*</span>}</span>
                             @if (AllowColumnEdit)
                             {
@@ -249,6 +337,118 @@
 
     [Parameter] public string? Class { get; set; }
 
+    /// <summary>A search box that narrows the rows to those whose visible text contains the keyword.</summary>
+    [Parameter] public bool Searchable { get; set; } = true;
+
+    /// <summary>A filter row with a dropdown for each <see cref="GridColumn.Filterable"/> column (filters in the browser).</summary>
+    [Parameter] public bool ClientFilters { get; set; } = true;
+
+    /// <summary>Your own filter row (replaces the built-in one; the nested grid filters on the server this way).</summary>
+    [Parameter] public RenderFragment? Filters { get; set; }
+
+    /// <summary>A checkbox column and a batch bar for the selected rows: set a value, export, delete.</summary>
+    [Parameter] public bool Selectable { get; set; } = true;
+
+    /// <summary>More actions in the batch bar; receives the selected rows.</summary>
+    [Parameter] public RenderFragment<IReadOnlyList<GridRecord>>? BatchActions { get; set; }
+
+    /// <summary>"Export CSV" (the rows shown) in the toolbar and "Export selected" in the batch bar.</summary>
+    [Parameter] public bool Exportable { get; set; } = true;
+
+    /// <summary>File name of the CSV export (default: the title).</summary>
+    [Parameter] public string? ExportFileName { get; set; }
+
+    /// <summary>The Columns button (show and hide columns) even when <see cref="AllowColumnEdit"/> is off.</summary>
+    [Parameter] public bool AllowColumnHide { get; set; } = true;
+
+    /// <summary>Drag a header's right edge to resize the column; the width is kept in <see cref="GridColumn.Width"/>.</summary>
+    [Parameter] public bool Resizable { get; set; } = true;
+
+    /// <summary>Shows a Reload button next to the density menu.</summary>
+    [Parameter] public EventCallback OnReload { get; set; }
+
+    private string? _keyword;
+    private readonly Dictionary<string, string?> _filters = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _addedIds = new(StringComparer.Ordinal);
+    private List<GridRecord> _selected = [];
+    private int _batchVersion;
+    private DotNetObjectReference<EditableGrid>? _self;
+    private static readonly RenderFragment SearchIcon = @<Ti Name="search" />;
+
+    private bool Filtered => _filters.Values.Any(v => !string.IsNullOrEmpty(v));
+
+    // Rows added here stay visible whatever the search, so a new row never vanishes while it is filled in.
+    private GridRecord[] Shown() => string.IsNullOrWhiteSpace(_keyword) && !Filtered
+        ? [.. Rows]
+        : [.. Rows.Where(r => _addedIds.Contains(r.Id) || GridSchema.Matches(Columns, r, _keyword, _filters))];
+
+    private async Task SearchChanged(string? keyword)
+    {
+        _keyword = keyword;
+        await RowsChangedAsync();
+    }
+
+    private async Task FilterChanged(string key, string? value)
+    {
+        _filters[key] = value;
+        await RowsChangedAsync();
+    }
+
+    private async Task ClearFilters()
+    {
+        _filters.Clear();
+        await RowsChangedAsync();
+    }
+
+    // The batch bar's "Set value" choices: editable Select, Tag and Switch columns.
+    private IReadOnlyList<GridColumn> BatchColumns =>
+        [.. Columns.Where(c => c.Editable && c.Type is GridCellType.Select or GridCellType.Tag or GridCellType.Switch)];
+
+    private void ClearSelection() => _selected = [];
+
+    private async Task SetSelectedAsync(ChangeEventArgs e)
+    {
+        var choice = e.Value?.ToString() ?? "";
+        var at = choice.IndexOf('=');
+        _batchVersion++;
+        if (at <= 0 || GridSchema.Find(Columns, choice[..at]) is not { } column) return;
+        foreach (var row in _selected.ToList()) await SetValue(row, column, choice[(at + 1)..]);
+    }
+
+    private async Task DeleteSelectedAsync()
+    {
+        var ids = _selected.Select(r => r.Id).ToHashSet(StringComparer.Ordinal);
+        Rows.RemoveAll(r => ids.Contains(r.Id));
+        foreach (var key in _errors.Keys.Where(k => ids.Contains(k.Row)).ToList()) _errors.Remove(key);
+        _selected = [];
+        await ChangedAsync();
+        await RowsChangedAsync();
+    }
+
+    private async Task ExportAsync(IEnumerable<GridRecord> rows)
+    {
+        var name = $"{ExportFileName ?? HeaderTitle ?? "grid"}.csv";
+        try
+        {
+            await JS.InvokeVoidAsync("modulusShell.download", name, GridSchema.Csv(GridSchema.Visible(Columns), rows));
+        }
+        catch (JSException)
+        {
+            // Script not loaded (tests): nothing to save to.
+        }
+    }
+
+    /// <summary>Called by modulus-shell.js when a column has been dragged to a new width.</summary>
+    [JSInvokable]
+    public void OnColumnResized(string key, int width)
+    {
+        if (GridSchema.Find(Columns, key) is not { } column) return;
+        column.Width = Math.Clamp(width, 60, 600);
+        StateHasChanged();
+    }
+
+    public void Dispose() => _self?.Dispose();
+
     private TableSize _size;
     private int _schemaVersion;
     private (string Row, string Key)? _editing;
@@ -264,7 +464,7 @@
     // While a row is expanded, Table shows the new DataSource only on the render after the one that hands it over.
     private async Task RowsChangedAsync()
     {
-        _view = [.. Rows];
+        _view = Shown();
         _viewCount = Rows.Count;
         await Task.Yield();
         StateHasChanged();
@@ -274,7 +474,8 @@
     {
         if (!ReferenceEquals(_viewOf, Rows) || _viewCount != Rows.Count)
         {
-            _view = [.. Rows];
+            if (!ReferenceEquals(_viewOf, Rows)) _selected = [];
+            _view = Shown();
             _viewOf = Rows;
         }
         _viewCount = Rows.Count;
@@ -307,7 +508,10 @@
         _errors = [];
         _editing = null;
         _newRowId = null;
+        _addedIds.Clear();
+        _selected = [];
         _schemaVersion++;
+        _view = Shown();
         StateHasChanged();
     }
 
@@ -377,14 +581,14 @@
                       ValueChanged="(decimal v) => SetValue(row, c, GridSchema.FromNumber(v))" />
                 break;
             case GridCellType.Tag when GridSchema.Option(c, value) is { } tag:
-                <Tag Color="@(tag.Color ?? "default")">@tag.Label</Tag>
+                <Tag Color="@(tag.Color ?? "default")">@if (tag.Icon is not null) {<Icon Type="@tag.Icon" />}@tag.Label</Tag>
                 break;
             case GridCellType.MultiSelect when GridSchema.Many(value).Count > 0:
                 <span class="m-grid-tags">
                     @foreach (var v in GridSchema.Many(value))
                     {
                         var o = GridSchema.Option(c, v);
-                        <Tag Color="@(o?.Color ?? "default")">@(o?.Label ?? v)</Tag>
+                        <Tag Color="@(o?.Color ?? "default")">@if (o?.Icon is not null) {<Icon Type="@o.Icon" />}@(o?.Label ?? v)</Tag>
                     }
                 </span>
                 break;
@@ -393,9 +597,31 @@
                 break;
             default:
                 var text = GridSchema.Format(c, value);
+                var icon = c.Type == GridCellType.Select ? GridSchema.Option(c, value)?.Icon : null;
                 if (string.IsNullOrEmpty(text))
                 {
                     <span class="m-grid-empty">@(c.Editable ? "Add" : "—")</span>
+                }
+                else if (c.Avatar || c.SubtitleKey is not null)
+                {
+                    var subtitle = c.SubtitleKey is { } sub ? row[sub] : null;
+                    <span class="m-grid-entity">
+                        @if (c.Avatar)
+                        {
+                            <span class="@($"m-avatar m-grid-avatar m-av-{GridSchema.Tint(text)}")" aria-hidden="true">@GridSchema.Initials(text)</span>
+                        }
+                        <span class="m-grid-entity-text">
+                            <span class="m-grid-entity-title">@if (icon is not null) {<Icon Type="@icon" />}@text</span>
+                            @if (!string.IsNullOrEmpty(subtitle))
+                            {
+                                <span class="m-grid-entity-desc">@subtitle</span>
+                            }
+                        </span>
+                    </span>
+                }
+                else if (icon is not null)
+                {
+                    <span class="m-grid-icon-text"><Icon Type="@icon" />@text</span>
                 }
                 else
                 {
@@ -500,6 +726,18 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender && Resizable)
+        {
+            _self = DotNetObjectReference.Create(this);
+            try
+            {
+                await JS.InvokeVoidAsync("modulusShell.watchResize", _gridId, _self);
+            }
+            catch (JSException)
+            {
+                // Script not loaded (tests, prerender): columns keep their widths.
+            }
+        }
         if (_openPopup && _editing is not null)
         {
             _openPopup = false;
@@ -549,6 +787,7 @@
         var row = GridSchema.NewRow(Columns, Rows);
         Rows.Insert(0, row);
         _newRowId = row.Id;
+        _addedIds.Add(row.Id);
         if (GridSchema.Visible(Columns).FirstOrDefault(c => c.Editable && c.Type is not (GridCellType.Switch or GridCellType.Rating)) is { } first)
             BeginEdit(row, first);
         await ChangedAsync();
@@ -558,6 +797,7 @@
     private async Task DeleteRow(GridRecord row)
     {
         Rows.Remove(row);
+        _selected.Remove(row);
         foreach (var key in _errors.Keys.Where(k => k.Row == row.Id).ToList()) _errors.Remove(key);
         await ChangedAsync();
         await RowsChangedAsync();

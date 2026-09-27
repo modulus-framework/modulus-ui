@@ -55,6 +55,20 @@
                             Placeholder="Add label…" AddPlaceholder="New label" AriaLabel="Add a label to the selected employees" Style="width: 160px" />
         <a class="ant-btn ant-btn-primary ant-btn-sm" href="@ExportUrl(rows.Select(r => r.Id))" download><span>Export selected</span></a>
     </BatchActions>
+    <RowDetail Context="e">
+        <div class="m-row-detail">
+            <div class="m-entity">
+                <span class="m-avatar m-av-@e.Tint" style="width: 48px; height: 48px; font-size: 16px">@Fmt.Initials(e.Name)</span>
+                <div class="m-entity-text"><span class="m-entity-title">@e.Name</span><span class="m-entity-desc">@e.Position · @e.Department</span></div>
+            </div>
+            <Descriptions Size="DescriptionsSize.Small" Column="@DetailColumns">
+                @foreach (var (label, value) in EmployeeDirectory.Details(e))
+                {
+                    <DescriptionsItem Title="@label">@value</DescriptionsItem>
+                }
+            </Descriptions>
+        </div>
+    </RowDetail>
     @* Optional columns are hidden rather than removed, so toggling one keeps the table's sort state. *@
     <Columns Context="row">
         <PropertyColumn Property="e => e.Name" Title="Employee" Sortable Width="260">
@@ -83,6 +97,7 @@
     private HashSet<string> _hidden = [];
     private (int Count, decimal AverageSalary) _summary = EmployeeDirectory.Summary(new());
     private readonly RenderFragment _searchIcon = @<Ti Name="search" />;
+    private static readonly Dictionary<string, int> DetailColumns = new() { ["xxl"] = 4, ["xl"] = 4, ["lg"] = 2, ["md"] = 2, ["sm"] = 1, ["xs"] = 1 };
 
     private EmployeeQuery Query => new(_keyword, _department, _office, _status, _label);
 

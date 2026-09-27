@@ -289,8 +289,37 @@
             function many(v) { return v ? String(v).split(',').map(function (x) { return x.trim(); }).filter(Boolean) : []; }
             function tag(o, v) {
                 var color = o && o[1] && o[1] !== 'default' ? ' ant-tag-' + o[1] : '';
-                return '<span class="ant-tag' + color + '">' + esc(o ? o[0] : v) + '</span>';
+                return '<span class="ant-tag' + color + '">' + (o && o[2] ? o[2] : '') + esc(o ? o[0] : v) + '</span>';
             }
+            // GridSchema.Initials and GridSchema.Tint: the same avatar as the server renders.
+            function initials(text) {
+                return String(text || '').split(' ').filter(function (w) { return w && /[\p{L}\p{N}]/u.test(w[0]); })
+                    .slice(0, 2).map(function (w) { return w[0].toUpperCase(); }).join('');
+            }
+            function tint(text) {
+                var h = 17;
+                for (var i = 0; i < String(text).length; i++) h = (Math.imul(h, 31) + String(text).charCodeAt(i)) >>> 0;
+                return h % 8 + 1;
+            }
+            function flag(v) { return String(v).toLowerCase() === 'true' || v === 'on'; }
+            // A row's current value of a column, read from its posted fields (the editor, or a hidden input).
+            function rowValue(tr, key) {
+                var fields = tr.querySelectorAll('[name="' + cfg.name + '[' + tr.getAttribute('data-row-key') + '].' + key + '"]');
+                if (!fields.length) return null;
+                if (fields[0].type === 'checkbox') {
+                    return Array.prototype.filter.call(fields, function (f) { return f.checked; }).map(function (f) { return f.value; }).join(',');
+                }
+                return fields[fields.length - 1].value;
+            }
+            function csvValue(col, v) {
+                switch (col.type) {
+                    case 'Select': case 'Tag': return col.o[v] ? col.o[v][0] : (v || '');
+                    case 'MultiSelect': return many(v).map(function (x) { return col.o[x] ? col.o[x][0] : x; }).join('; ');
+                    case 'Switch': return flag(v) ? 'Yes' : 'No';
+                    default: return v == null ? '' : String(v);
+                }
+            }
+            function csvField(s) { return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
             function format(col, v) {
                 if (v === null || v === undefined || v === '') return col.type === 'Switch' ? 'No' : '';
                 var n = num(v);
@@ -308,7 +337,7 @@
                     default: return v;
                 }
             }
-            function view(col, v) {
+            function view(col, v, tr) {
                 if (col.type === 'Tag' && col.o[v]) return tag(col.o[v], v);
                 if (col.type === 'MultiSelect' && many(v).length) {
                     return '<span class="m-grid-tags">' + many(v).map(function (x) { return tag(col.o[x], x); }).join('') + '</span>';
@@ -320,7 +349,17 @@
                         '<span title="' + Math.round(p) + '%" class="ant-progress-text">' + (done ? cfg.check : Math.round(p) + '%') + '</span></div>';
                 }
                 var text = format(col, v);
-                return text === '' ? '<span class="m-grid-empty">Add</span>' : '<span' + (col.right ? ' class="m-num"' : '') + '>' + esc(text) + '</span>';
+                if (text === '') return '<span class="m-grid-empty">Add</span>';
+                var icon = col.type === 'Select' && col.o[v] && col.o[v][2] ? col.o[v][2] : '';
+                if (col.avatar || col.sub) {
+                    var sub = col.sub && tr ? rowValue(tr, col.sub) : null;
+                    return '<span class="m-grid-entity">' +
+                        (col.avatar ? '<span class="m-avatar m-grid-avatar m-av-' + tint(text) + '" aria-hidden="true">' + esc(initials(text)) + '</span>' : '') +
+                        '<span class="m-grid-entity-text"><span class="m-grid-entity-title">' + icon + esc(text) + '</span>' +
+                        (sub ? '<span class="m-grid-entity-desc">' + esc(sub) + '</span>' : '') + '</span></span>';
+                }
+                if (icon) return '<span class="m-grid-icon-text">' + icon + esc(text) + '</span>';
+                return '<span' + (col.right ? ' class="m-num"' : '') + '>' + esc(text) + '</span>';
             }
             function validate(col, v) {
                 if (v === null || v === undefined || v === '') return col.req && col.type !== 'Switch' ? col.t + ' is required.' : null;
@@ -370,6 +409,9 @@
                 newType: 'Text',
                 newFixed: 'None',
                 newRequired: false,
+                keyword: '',
+                filters: {},
+                selected: 0,
                 _editor: null,
                 _original: null,
 
@@ -377,6 +419,16 @@
                     var self = this;
                     // The server renders the default density so the first paint is right; Alpine owns it from here.
                     this.$refs.table.classList.remove('ant-table-middle');
+                    // Search and filters survive the grid being rendered again after a post (kept per grid for the tab).
+                    try {
+                        var saved = JSON.parse(sessionStorage.getItem(this.storeKey()) || 'null');
+                        if (saved) {
+                            this.keyword = saved.keyword || '';
+                            this.filters = saved.filters || {};
+                            this.$root.querySelectorAll('select[data-filter]').forEach(function (s) { s.value = self.filters[s.getAttribute('data-filter')] || ''; });
+                            this.$nextTick(function () { self.applyFilter(); });
+                        }
+                    } catch (e) { /* storage blocked */ }
                     this._resize = function () { self.onScroll(); };
                     this._close = function () { self.closeMenu(); self.placeAdd(self._editor); };
                     window.addEventListener('resize', this._resize);
@@ -441,7 +493,7 @@
                     var value = read(editor, col);
                     var changed = JSON.stringify(snapshot(editor)) !== JSON.stringify(this._original);
                     if (col) {
-                        cell.innerHTML = view(col, value);
+                        cell.innerHTML = view(col, value, editor.closest('tr'));
                         cell.setAttribute('aria-label', 'Edit ' + col.t + ': ' + format(col, value));
                         this.setError(editor.closest('td'), cell, validate(col, value));
                     }
@@ -492,15 +544,160 @@
                 deleteRow: function (button) {
                     var self = this, row = button.closest('tr');
                     var remove = function () {
-                        var id = row.getAttribute('data-row-key');
-                        var detail = self.$refs.body.querySelector('tr[data-detail-for="' + CSS.escape(id) + '"]');
-                        if (detail) detail.remove();
-                        row.remove();
-                        self.dirty = true;
+                        self.removeRow(row);
+                        self.syncSelection();
                     };
                     var ask = window.Alpine.store('confirm');
                     if (ask && ask.ask) ask.ask('Delete this row?', 'Delete', true).then(function (ok) { if (ok) remove(); });
                     else if (window.confirm('Delete this row?')) remove();
+                },
+                removeRow: function (row) {
+                    var id = row.getAttribute('data-row-key');
+                    var detail = this.$refs.body.querySelector('tr[data-detail-for="' + CSS.escape(id) + '"]');
+                    if (detail) detail.remove();
+                    row.remove();
+                    this.dirty = true;
+                },
+                // Only this grid's own rows: a nested grid's child levels sit inside its detail rows.
+                rows: function () { return Array.prototype.filter.call(this.$refs.body.children, function (tr) { return tr.hasAttribute('data-row-key'); }); },
+
+                // ---- Search and filters (GridSchema.Matches): rows that don't match are hidden, not removed, so they still post ----
+                storeKey: function () { return 'modulus-grid:' + location.pathname + ':' + this.$root.id; },
+                filtered: function () { var f = this.filters; return Object.keys(f).some(function (k) { return !!f[k]; }); },
+                setFilter: function (key, value) { this.filters[key] = value; this.applyFilter(); },
+                clearFilters: function () {
+                    this.filters = {};
+                    this.$root.querySelectorAll('select[data-filter]').forEach(function (s) { s.value = ''; });
+                    this.applyFilter();
+                },
+                matches: function (tr, k) {
+                    var f = this.filters;
+                    for (var key in f) {
+                        if (!f[key] || !cfg.columns[key]) continue;
+                        var col = cfg.columns[key], raw = rowValue(tr, key);
+                        var ok = col.type === 'MultiSelect' ? many(raw).indexOf(f[key]) >= 0 : col.type === 'Switch' ? flag(raw) === flag(f[key]) : raw === f[key];
+                        if (!ok) return false;
+                    }
+                    if (!k) return true;
+                    return Array.prototype.some.call(tr.querySelectorAll('td[data-key]'), function (td) {
+                        var key = td.getAttribute('data-key'), col = cfg.columns[key];
+                        if (!col) return false;
+                        if (format(col, rowValue(tr, key)).toLowerCase().indexOf(k) >= 0) return true;
+                        return !!col.sub && String(rowValue(tr, col.sub) || '').toLowerCase().indexOf(k) >= 0;
+                    });
+                },
+                applyFilter: function () {
+                    var self = this, k = (this.keyword || '').trim().toLowerCase(), shown = 0;
+                    this.rows().forEach(function (tr) {
+                        // Rows added in the browser stay visible, so a new row never vanishes while it is filled in.
+                        var show = tr.classList.contains('m-grid-row-new') || self.matches(tr, k);
+                        tr.hidden = !show;
+                        if (show) shown++;
+                        var detail = tr.nextElementSibling;
+                        if (detail && detail.getAttribute('data-detail-for') === tr.getAttribute('data-row-key')) detail.hidden = !show;
+                    });
+                    var none = this.$refs.body.querySelector(':scope > tr.m-grid-no-match');
+                    if (!shown && this.rows().length) {
+                        if (!none) {
+                            var cols = this.$refs.table.querySelector('colgroup').children.length;
+                            this.$refs.body.insertAdjacentHTML('beforeend', '<tr class="ant-table-placeholder m-grid-no-match"><td class="ant-table-cell" colspan="' + cols + '"><div class="m-table-empty">No rows match the search or filters.</div></td></tr>');
+                        }
+                    } else if (none) none.remove();
+                    try { sessionStorage.setItem(this.storeKey(), JSON.stringify({ keyword: this.keyword, filters: this.filters })); } catch (e) { /* storage blocked */ }
+                },
+
+                // ---- Selection and the batch bar ----
+                boxes: function () { return this.rows().map(function (tr) { return tr.querySelector('input[data-select-row]'); }).filter(Boolean); },
+                selectedRows: function () { return this.boxes().filter(function (b) { return b.checked; }).map(function (b) { return b.closest('tr'); }); },
+                syncSelection: function () {
+                    var boxes = this.boxes(), visible = boxes.filter(function (b) { return !b.closest('tr').hidden; });
+                    this.selected = boxes.filter(function (b) { return b.checked; }).length;
+                    var all = this.$root.querySelector('input[data-select-all]');
+                    if (all) {
+                        var on = visible.length > 0 && visible.every(function (b) { return b.checked; });
+                        var some = !on && visible.some(function (b) { return b.checked; });
+                        all.checked = on;
+                        syncCheckbox(all);
+                        all.closest('.ant-checkbox').classList.toggle('ant-checkbox-indeterminate', some);
+                    }
+                },
+                selectRow: function (box) {
+                    syncCheckbox(box);
+                    box.closest('tr').classList.toggle('ant-table-row-selected', box.checked);
+                    this.syncSelection();
+                },
+                // Select all checks the rows the search and filters show; clearing unchecks every row.
+                selectAll: function (on) {
+                    this.boxes().forEach(function (b) {
+                        var tr = b.closest('tr');
+                        b.checked = on && !tr.hidden ? true : on ? b.checked : false;
+                        syncCheckbox(b);
+                        tr.classList.toggle('ant-table-row-selected', b.checked);
+                    });
+                    this.syncSelection();
+                },
+                deleteSelected: function () {
+                    var self = this, rows = this.selectedRows();
+                    if (!rows.length) return;
+                    var remove = function () { rows.forEach(function (r) { self.removeRow(r); }); self.syncSelection(); };
+                    var text = 'Delete ' + rows.length + ' ' + (rows.length === 1 ? 'row' : 'rows') + '?';
+                    var ask = window.Alpine.store('confirm');
+                    if (ask && ask.ask) ask.ask(text, 'Delete', true).then(function (ok) { if (ok) remove(); });
+                    else if (window.confirm(text)) remove();
+                },
+                // "Set value": puts one option (or Yes / No) into a column of every selected row.
+                setSelected: function (select) {
+                    var choice = select.value, at = choice.indexOf('='), self = this;
+                    select.value = '';
+                    if (at <= 0) return;
+                    var key = choice.slice(0, at), value = choice.slice(at + 1), col = cfg.columns[key];
+                    if (!col) return;
+                    this.selectedRows().forEach(function (tr) {
+                        var td = tr.querySelector('td[data-key="' + CSS.escape(key) + '"]');
+                        if (col.type === 'Switch') {
+                            var sw = tr.querySelector('td[data-key="' + CSS.escape(key) + '"] [role=switch]') || null;
+                            if (sw && window.Alpine.$data(sw)) window.Alpine.$data(sw).on = flag(value);
+                            else {
+                                var hidden = tr.querySelector('[name="' + cfg.name + '[' + tr.getAttribute('data-row-key') + '].' + key + '"]');
+                                if (hidden) hidden.value = flag(value) ? 'true' : 'false';
+                            }
+                            return;
+                        }
+                        var editor = td && td.querySelector('.m-grid-cell-editing');
+                        var control = editor ? editor.querySelector('select') : tr.querySelector('[name="' + cfg.name + '[' + tr.getAttribute('data-row-key') + '].' + key + '"]');
+                        if (!control) return;
+                        control.value = value;
+                        if (editor) {
+                            var cell = editor.previousElementSibling;
+                            cell.innerHTML = view(col, value, tr);
+                            cell.setAttribute('aria-label', 'Edit ' + col.t + ': ' + format(col, value));
+                            self.setError(td, cell, validate(col, value));
+                        }
+                    });
+                    this.dirty = true;
+                },
+
+                // ---- Export: the visible columns of the rows shown (or selected), as GridSchema.Csv writes them ----
+                exportCsv: function (onlySelected) {
+                    var keys = Array.prototype.map.call(this.$refs.table.querySelector('thead').querySelectorAll('th[data-key]'), function (th) { return th.getAttribute('data-key'); })
+                        .filter(function (k) { return cfg.columns[k]; });
+                    var rows = onlySelected ? this.selectedRows() : this.rows().filter(function (tr) { return !tr.hidden; });
+                    var lines = [keys.map(function (k) { return csvField(cfg.columns[k].t); }).join(',')];
+                    rows.forEach(function (tr) {
+                        lines.push(keys.map(function (k) { return csvField(csvValue(cfg.columns[k], rowValue(tr, k))); }).join(','));
+                    });
+                    window.modulusShell.download(cfg.file, lines.join('\r\n') + '\r\n');
+                },
+
+                // ---- Resizing: the new width goes into the posted schema, so Save keeps it ----
+                resized: function (detail) {
+                    var input = this.$refs.schema;
+                    if (!input || !detail || !detail.key) return;
+                    try {
+                        var columns = JSON.parse(input.value);
+                        columns.forEach(function (c) { if (c.key === detail.key) c.width = Math.max(60, Math.min(600, detail.width)); });
+                        input.value = JSON.stringify(columns);
+                    } catch (e) { /* malformed schema: the server falls back to its own */ }
                 },
                 toggleRow: function (button) {
                     var row = button.closest('tr');

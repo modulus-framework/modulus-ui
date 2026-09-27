@@ -1,6 +1,7 @@
 @*
     Server-driven data table in the Ant Design Pro ProTable pattern:
-    toolbar (title, actions, density, reload) + table + paging + sorting + batch selection.
+    toolbar (title, actions, density, reload) + table + paging + sorting + batch selection, with optional
+    expandable rows (RowDetail) and columns resized by dragging a header edge.
 
     <ProTable TItem="Customer" HeaderTitle="Customers" Request="LoadAsync" RowKey="c => c.Id">
         <Columns>
@@ -14,7 +15,7 @@
 @typeparam TItem
 @attribute [CascadingTypeParameter(nameof(TItem))]
 
-<Card Bordered="false" Class="@($"m-table-card {Class}")">
+<Card Bordered="false" Class="@($"m-table-card{(Resizable ? " m-resizable" : "")} {Class}")">
     <div class="m-table-toolbar">
         <div class="m-table-toolbar-title">
             @HeaderTitle
@@ -80,6 +81,8 @@
            ScrollX="@ScrollX"
            SelectedRows="_selected"
            SelectedRowsChanged="rows => _selected = rows"
+           ExpandTemplate="ExpandFragment"
+           RowExpandable="RowExpandableFor"
            PaginationTemplate="PaginationWithTotal">
         <ChildContent>
             @if (Selectable)
@@ -128,7 +131,20 @@
     /// <summary>Actions for the selection bar; receives the selected rows.</summary>
     [Parameter] public RenderFragment<IReadOnlyList<TItem>>? BatchActions { get; set; }
 
+    /// <summary>Content of an expanded row (an expand column is added). Without it rows do not expand.</summary>
+    [Parameter] public RenderFragment<TItem>? RowDetail { get; set; }
+
+    /// <summary>With <see cref="RowDetail"/>: which rows can expand (default: all).</summary>
+    [Parameter] public Func<TItem, bool>? RowExpandable { get; set; }
+
+    /// <summary>Drag a header's right edge to resize the column (modulus-shell.js).</summary>
+    [Parameter] public bool Resizable { get; set; } = true;
+
     [Parameter] public string? Class { get; set; }
+
+    private RenderFragment<AntDesign.TableModels.RowData<TItem>>? ExpandFragment => RowDetail is null ? null : row => RowDetail(row.Data);
+
+    private bool RowExpandableFor(AntDesign.TableModels.RowData<TItem> row) => RowDetail is not null && (RowExpandable?.Invoke(row.Data) ?? true);
 
     private IEnumerable<TItem> _data = [];
     private IEnumerable<TItem> _selected = [];

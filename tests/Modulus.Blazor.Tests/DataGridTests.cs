@@ -25,6 +25,77 @@ public class GridSchemaTests
     ];
 
     [Fact]
+    public void Matches_SearchesDisplayedTextAndSubtitles_AndAppliesEveryFilter()
+    {
+        var columns = Columns();
+        columns[0].SubtitleKey = "email";
+        var row = new GridRecord("r", new Dictionary<string, string?>
+        {
+            ["name"] = "Portal", ["email"] = "ann@example.com", ["status"] = "a", ["teams"] = "web,data", ["billable"] = "true", ["budget"] = "1250",
+        });
+
+        Assert.True(GridSchema.Matches(columns, row, "active", culture: Us));   // the option label, not the value
+        Assert.True(GridSchema.Matches(columns, row, "$1,250", culture: Us));  // formatted money
+        Assert.True(GridSchema.Matches(columns, row, "EXAMPLE", culture: Us)); // the subtitle
+        Assert.False(GridSchema.Matches(columns, row, "done", culture: Us));
+
+        Assert.True(GridSchema.Matches(columns, row, null, new Dictionary<string, string?> { ["teams"] = "data", ["billable"] = "true", ["status"] = "" }));
+        Assert.False(GridSchema.Matches(columns, row, null, new Dictionary<string, string?> { ["billable"] = "false" }));
+        Assert.False(GridSchema.Matches(columns, row, null, new Dictionary<string, string?> { ["status"] = "d" }));
+        Assert.True(GridSchema.Matches(columns, row, null, new Dictionary<string, string?> { ["unknown"] = "x" }));
+
+        columns[2].Hidden = true; // hidden columns are not searched
+        Assert.False(GridSchema.Matches(columns, row, "active", culture: Us));
+    }
+
+    [Fact]
+    public void FilterColumns_KeepFilterableOptionAndSwitchColumns()
+    {
+        var columns = Columns();
+        foreach (var c in columns) c.Filterable = true;
+
+        Assert.Equal(["status", "teams", "billable"], GridSchema.FilterColumns(columns).Select(c => c.Key));
+        Assert.Equal(["Yes", "No"], GridSchema.FilterOptions(columns[5]).Select(o => o.Label));
+        Assert.Equal(["a", "d"], GridSchema.FilterOptions(columns[2]).Select(o => o.Value));
+    }
+
+    [Fact]
+    public void InitialsAndTint_AreStable()
+    {
+        Assert.Equal("OB", GridSchema.Initials("Olivia  Bennett Jr"));
+        Assert.Equal("A", GridSchema.Initials("Adatum"));
+        Assert.Equal("", GridSchema.Initials(null));
+        Assert.Equal(GridSchema.Tint("Olivia Bennett"), GridSchema.Tint("Olivia Bennett"));
+        Assert.All(new[] { "", "a", "Olivia Bennett", new string('z', 500) }, t => Assert.InRange(GridSchema.Tint(t), 1, 8));
+    }
+
+    [Fact]
+    public void Csv_KeepsNumbersAndDatesInvariant_LabelsOptions_AndQuotes()
+    {
+        var columns = Columns();
+        var rows = new[]
+        {
+            new GridRecord("r1", new Dictionary<string, string?> { ["name"] = "Portal, \"v2\"", ["budget"] = "1250.5", ["status"] = "a", ["teams"] = "web,data", ["due"] = "2026-03-01", ["billable"] = "true" }),
+            new GridRecord("r2", new Dictionary<string, string?> { ["name"] = "Line\nbreak", ["status"] = "gone" }),
+        };
+
+        var lines = GridSchema.Csv(columns, rows).Split("\r\n");
+        Assert.Equal("Name,Budget,Status,Teams,Due,Billable,Owner", lines[0]);
+        Assert.Equal("\"Portal, \"\"v2\"\"\",1250.5,Active,Web; Data,2026-03-01,Yes,", lines[1]);
+        Assert.Equal("\"Line\nbreak\",,gone,,,No,", lines[2]);
+    }
+
+    [Fact]
+    public void Deserialize_DropsAMalformedSubtitleKey()
+    {
+        var columns = Columns();
+        columns[0].SubtitleKey = "email";
+        columns[1].SubtitleKey = "../x";
+        var back = GridSchema.Deserialize(GridSchema.Serialize(columns))!;
+        Assert.Equal(("email", null), (back[0].SubtitleKey, back[1].SubtitleKey));
+    }
+
+    [Fact]
     public void Visible_PutsLeftPinnedFirst_RightPinnedLast_AndSkipsHidden()
     {
         var columns = Columns();
@@ -193,6 +264,8 @@ public class EditableGridTests : BunitContext
         JSInterop.Mode = JSRuntimeMode.Loose;
         // Alert measures itself after render; loose interop would hand it a null element.
         JSInterop.Setup<AntDesign.JsInterop.HtmlElement>(_ => true).SetResult(new AntDesign.JsInterop.HtmlElement());
+        // Select measures its trigger to size the dropdown.
+        JSInterop.Setup<AntDesign.JsInterop.DomRect>(_ => true).SetResult(new AntDesign.JsInterop.DomRect());
         Services.AddAntDesign();
     }
 
@@ -264,5 +337,82 @@ public class EditableGridTests : BunitContext
 
         Assert.Equal(1, saved);
         Assert.Empty(cut.FindAll(".ant-alert"));
+    }
+
+    private static List<GridColumn> RichColumns() =>
+    [
+        new() { Key = "name", Title = "Name", SubtitleKey = "email" },
+        new() { Key = "owner", Title = "Owner", Type = GridCellType.Select, Avatar = true, Filterable = true, Options = [new("ann", "Ann Lee"), new("bo", "Bo Park")] },
+        new() { Key = "priority", Title = "Priority", Type = GridCellType.Select, Filterable = true, Options = [new("low", "Low", null, "arrow-down"), new("high", "High", null, "fire")] },
+        new() { Key = "email", Title = "Email", Hidden = true },
+    ];
+
+    private static List<GridRecord> RichRows() =>
+    [
+        new("r1", new Dictionary<string, string?> { ["name"] = "Portal", ["owner"] = "ann", ["priority"] = "high", ["email"] = "portal@example.com" }),
+        new("r2", new Dictionary<string, string?> { ["name"] = "Mobile", ["owner"] = "bo", ["priority"] = "low" }),
+    ];
+
+    [Fact]
+    public void Toolbar_LooksLikeTheDataTable_SearchColumnsExportFiltersAndSelection()
+    {
+        var cut = Render<EditableGrid>(p => p.Add(g => g.Columns, RichColumns()).Add(g => g.Rows, RichRows()).Add(g => g.HeaderTitle, "Projects"));
+
+        Assert.Contains("m-resizable", cut.Find(".m-grid").ClassList);
+        Assert.Equal("Search projects…", cut.Find(".m-grid-search input").GetAttribute("placeholder"));
+        Assert.Contains(cut.FindAll(".m-table-toolbar-actions button"), b => b.TextContent.Trim() == "Columns");
+        Assert.Contains(cut.FindAll(".m-table-toolbar-actions button"), b => b.TextContent.Trim() == "Export CSV");
+        Assert.Equal(2, cut.FindAll(".m-table-filters .ant-select").Count); // owner, priority
+        Assert.NotNull(cut.Find("thead th.ant-table-selection-column"));
+        Assert.Equal(2, cut.FindAll("tbody td.ant-table-selection-column").Count);
+        Assert.Equal("owner", cut.FindAll("thead .m-grid-th")[1].GetAttribute("data-key"));
+    }
+
+    [Fact]
+    public void Cells_ShowAvatarsSubtitlesAndOptionIcons()
+    {
+        var cut = Render<EditableGrid>(p => p.Add(g => g.Columns, RichColumns()).Add(g => g.Rows, RichRows()));
+
+        var owner = cut.Find("[aria-label='Edit Owner: Ann Lee'] .m-grid-entity");
+        Assert.Equal("AL", owner.QuerySelector(".m-avatar")!.TextContent);
+        Assert.Contains($"m-av-{GridSchema.Tint("Ann Lee")}", owner.QuerySelector(".m-avatar")!.ClassName);
+        Assert.Equal("portal@example.com", cut.Find("[aria-label='Edit Name: Portal'] .m-grid-entity-desc").TextContent);
+        Assert.NotNull(cut.Find("[aria-label='Edit Priority: High'] .m-grid-icon-text .anticon-fire"));
+    }
+
+    [Fact]
+    public void ProTable_RowDetailAddsAnExpandColumn_AndIsResizable()
+    {
+        var cut = Render<ProTable<GridRecord>>(p => p
+            .Add(t => t.Request, _ => Task.FromResult(new ProTableResponse<GridRecord> { Data = RichRows(), Total = 2 }))
+            .Add(t => t.RowKey, r => r.Id)
+            .Add(t => t.RowDetail, r => b => b.AddMarkupContent(0, $"<p class=\"detail\">{r.Id}</p>"))
+            .Add(t => t.Columns, r => b =>
+            {
+                b.OpenComponent<PropertyColumn<GridRecord, string>>(0);
+                b.AddAttribute(1, "Property", (System.Linq.Expressions.Expression<Func<GridRecord, string>>)(x => x.Id));
+                b.CloseComponent();
+            }));
+
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("tbody .ant-table-row-expand-icon").Count));
+        Assert.Contains("m-resizable", cut.Find(".m-table-card").ClassList);
+    }
+
+    [Fact]
+    public void SelectingRows_ShowsTheBatchBar_AndSetValueUpdatesEverySelectedRow()
+    {
+        var rows = RichRows();
+        var cut = Render<EditableGrid>(p => p.Add(g => g.Columns, RichColumns()).Add(g => g.Rows, rows));
+        Assert.Empty(cut.FindAll(".m-grid-batch"));
+
+        // Re-find the boxes each time: every change renders the rows again.
+        for (var i = 0; i < 2; i++) cut.FindAll("tbody td.ant-table-selection-column input")[i].Change(true);
+
+        cut.WaitForAssertion(() => Assert.Contains("Selected 2 rows", cut.Find(".m-grid-batch").TextContent));
+        Assert.Equal(["Owner", "Priority"], cut.FindAll(".m-grid-batch-set optgroup").Select(g => g.GetAttribute("label")));
+        cut.Find(".m-grid-batch-set").Change("priority=high");
+
+        cut.WaitForAssertion(() => Assert.Equal(["high", "high"], rows.Select(r => $"{r["priority"]}")));
+        Assert.NotEmpty(cut.FindAll(".m-grid-dirty"));
     }
 }

@@ -208,7 +208,7 @@ public class EditableGridTagHelperTests
     {
         var html = await RenderAsync(Grid());
 
-        Assert.Contains("class=\"m-table-card m-grid ant-card\"", html);
+        Assert.Contains("class=\"m-resizable m-table-card m-grid ant-card\"", html);
         Assert.Contains("<span class=\"m-grid-dirty\" x-show=\"dirty\" style=\"display: none;\">", html);
         Assert.Contains("name=\"projects.schema\"", html);
         Assert.Contains("name=\"projects.index\" value=\"p1\"", html);
@@ -218,6 +218,62 @@ public class EditableGridTagHelperTests
         Assert.Contains("<option value=\"a\" selected", html);
         Assert.Contains("Edit Status: Active", html);
         Assert.DoesNotContain("<Portal>", html);
+    }
+
+    [Fact]
+    public async Task Renders_TheDataTableToolbar_SearchColumnsExportAndAFilterRow()
+    {
+        var grid = Grid();
+        grid.Columns[1].Filterable = true;
+        var html = await RenderAsync(grid);
+
+        // Search, filters and selection stay in the browser: none of their inputs has a name.
+        Assert.Contains("""<input class="ant-input" type="text" placeholder="Search projects…" aria-label="Search Projects" autocomplete="off" x-model="keyword" @input.debounce.150ms="applyFilter()" @keydown.enter.prevent />""", html);
+        Assert.Contains("""<select class="m-select" aria-label="Status" data-filter="status" @change="setFilter('status', $el.value)"><option value="">Any status</option><option value="a">Active</option><option value="d">Done</option></select>""", html);
+        Assert.Contains("<span>Columns</span>", html);
+        Assert.Contains("""@click="exportCsv(false)">""", html);
+        Assert.Contains("\"file\":\"Projects.csv\"", html.Replace("&quot;", "\""));
+        Assert.Contains("""@m-col-resize="resized($event.detail)" """.TrimEnd(), html);
+        Assert.Contains("x-ref=\"schema\"", html);
+    }
+
+    [Fact]
+    public async Task Renders_SelectionAndTheBatchBar()
+    {
+        var html = await RenderAsync(Grid());
+
+        Assert.Contains("""<th class="ant-table-cell ant-table-selection-column ant-table-cell-fix-left" style="position: sticky; left: 0px;"><label class="ant-checkbox-wrapper"><span class="ant-checkbox"><input type="checkbox" class="ant-checkbox-input" aria-label="Select all rows" data-select-all @change="selectAll($el.checked)" />""", html);
+        Assert.Contains("""aria-label="Select row" data-select-row @change="selectRow($el)" />""", html);
+        // The first pinned column starts after the selection column.
+        Assert.Contains("position: sticky; left: 48px;", html);
+        Assert.Contains("""<div class="ant-alert ant-alert-info ant-alert-no-icon m-table-alert m-grid-batch" role="status" x-show="selected > 0" style="display: none;">""", html);
+        Assert.Contains("""<option value="status=a">Active</option>""", html);
+        Assert.Contains("""@click="deleteSelected()">""", html);
+        Assert.Contains("""@click="exportCsv(true)">""", html);
+    }
+
+    [Fact]
+    public async Task Renders_AvatarsSubtitlesAndOptionIcons_AndCanTurnTheExtrasOff()
+    {
+        var grid = Grid();
+        grid.Columns[0].SubtitleKey = "notes";
+        grid.Columns[1] = new() { Key = "status", Title = "Status", Type = GridCellType.Select, Avatar = true, Options = [new("a", "Active Team", null, "fire"), new("d", "Done")] };
+        grid.Rows[0]["notes"] = "First & best";
+        var html = await RenderAsync(grid);
+
+        Assert.Contains($"""<span class="m-avatar m-grid-avatar m-av-{GridSchema.Tint("Active Team")}" aria-hidden="true">AT</span>""", html);
+        Assert.Contains("anticon-fire", html);
+        Assert.Contains("""<span class="m-grid-entity-desc">First &amp; best</span>""", html);
+
+        grid.Searchable = grid.Selectable = grid.Exportable = grid.Resizable = grid.AllowColumnHide = false;
+        grid.AllowColumnEdit = false;
+        var plain = await RenderAsync(grid);
+        Assert.DoesNotContain("m-grid-search", plain);
+        Assert.DoesNotContain("ant-table-selection-column", plain);
+        Assert.DoesNotContain("m-grid-batch", plain);
+        Assert.DoesNotContain("exportCsv", plain);
+        Assert.DoesNotContain("m-resizable", plain);
+        Assert.DoesNotContain("<span>Columns</span>", plain);
     }
 
     [Fact]

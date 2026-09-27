@@ -28,8 +28,11 @@ public enum GridFixed
     Right,
 }
 
-/// <summary>An option of a Select, MultiSelect or Tag column. <paramref name="Color"/> is an Ant Design tag colour.</summary>
-public sealed record GridOption(string Value, string Label, string? Color = null);
+/// <summary>
+/// An option of a Select, MultiSelect or Tag column. <paramref name="Color"/> is an Ant Design tag colour;
+/// <paramref name="Icon"/> an Ant Design icon shown before the label in the cell ("arrow-up", "fire").
+/// </summary>
+public sealed record GridOption(string Value, string Label, string? Color = null, string? Icon = null);
 
 /// <summary>
 /// A column of an editable, schema-driven grid (Blazor <c>EditableGrid</c>, MVC <c>app-editable-grid</c>).
@@ -61,6 +64,17 @@ public sealed class GridColumn
     public decimal? Max { get; set; }
 
     public IReadOnlyList<GridOption> Options { get; set; } = [];
+
+    /// <summary>Show an initials avatar before the cell text (a person or company column).</summary>
+    public bool Avatar { get; set; }
+
+    /// <summary>Key of a row value shown as a muted second line under the cell text (an email under a name).</summary>
+    public string? SubtitleKey { get; set; }
+
+    /// <summary>
+    /// Give the column a dropdown in the grid's filter row. Select, Tag, MultiSelect and Switch columns can be filtered.
+    /// </summary>
+    public bool Filterable { get; set; }
 
     /// <summary>Numbers and money align right.</summary>
     [JsonIgnore]
@@ -305,6 +319,85 @@ public static class GridSchema
         };
     }
 
+    // ---- Search, filters, avatars and export (mirrored by modulusGrid in modulus-widgets.js) ----
+
+    /// <summary>Whether <paramref name="column"/> can have a filter dropdown (Select, Tag, MultiSelect, Switch).</summary>
+    public static bool CanFilter(GridColumn column) =>
+        column.Type is GridCellType.Select or GridCellType.Tag or GridCellType.MultiSelect or GridCellType.Switch;
+
+    /// <summary>The columns shown in the filter row: <see cref="GridColumn.Filterable"/> ones that can be filtered.</summary>
+    public static IReadOnlyList<GridColumn> FilterColumns(IEnumerable<GridColumn> columns) =>
+        [.. columns.Where(c => c.Filterable && CanFilter(c))];
+
+    /// <summary>The choices of a column's filter: its options, or Yes / No for a switch.</summary>
+    public static IReadOnlyList<GridOption> FilterOptions(GridColumn column) =>
+        column.Type == GridCellType.Switch ? [new("true", "Yes"), new("false", "No")] : column.Options;
+
+    /// <summary>
+    /// Whether a row matches a keyword (in the displayed text of any visible column or its subtitle) and every
+    /// filter (column key → option value; empty values are ignored).
+    /// </summary>
+    public static bool Matches(IEnumerable<GridColumn> columns, GridRecord row, string? keyword, IReadOnlyDictionary<string, string?>? filters = null, CultureInfo? culture = null)
+    {
+        var cols = columns as IReadOnlyList<GridColumn> ?? columns.ToList();
+        if (filters is not null)
+        {
+            foreach (var (key, wanted) in filters)
+            {
+                if (string.IsNullOrEmpty(wanted) || Find(cols, key) is not { } c) continue;
+                var ok = c.Type switch
+                {
+                    GridCellType.MultiSelect => Many(row[key]).Contains(wanted),
+                    GridCellType.Switch => Flag(row[key]) == Flag(wanted),
+                    _ => row[key] == wanted,
+                };
+                if (!ok) return false;
+            }
+        }
+        if (string.IsNullOrWhiteSpace(keyword)) return true;
+        var k = keyword.Trim();
+        return cols.Where(c => !c.Hidden).Any(c =>
+            Format(c, row[c.Key], culture).Contains(k, StringComparison.CurrentCultureIgnoreCase) ||
+            (c.SubtitleKey is { } sub && (row[sub] ?? "").Contains(k, StringComparison.CurrentCultureIgnoreCase)));
+    }
+
+    /// <summary>Up to two initials for an avatar ("Olivia Bennett" → "OB").</summary>
+    public static string Initials(string? text) =>
+        string.Concat((text ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(w => char.IsLetterOrDigit(w[0])).Take(2).Select(w => char.ToUpperInvariant(w[0])));
+
+    /// <summary>A stable avatar tint, 1 to 8 (the <c>m-av-{n}</c> classes), for a text.</summary>
+    public static int Tint(string? text)
+    {
+        var h = 17u;
+        foreach (var ch in text ?? "") h = unchecked(h * 31 + ch);
+        return (int)(h % 8) + 1;
+    }
+
+    /// <summary>
+    /// A cell for CSV: numbers and dates stay invariant (<c>1234.5</c>, <c>2026-03-01</c>), options become their
+    /// labels (several joined with "; "), switches Yes / No.
+    /// </summary>
+    public static string CsvValue(GridColumn column, string? value) => column.Type switch
+    {
+        GridCellType.Select or GridCellType.Tag => Option(column, value)?.Label ?? value ?? "",
+        GridCellType.MultiSelect => string.Join("; ", Many(value).Select(v => Option(column, v)?.Label ?? v)),
+        GridCellType.Switch => Flag(value) ? "Yes" : "No",
+        _ => value ?? "",
+    };
+
+    /// <summary>The rows as CSV with a header of column titles, in the order of <paramref name="columns"/>.</summary>
+    public static string Csv(IEnumerable<GridColumn> columns, IEnumerable<GridRecord> rows)
+    {
+        var cols = columns.ToList();
+        var sb = new System.Text.StringBuilder();
+        sb.AppendJoin(',', cols.Select(c => CsvField(c.Title))).Append("\r\n");
+        foreach (var row in rows) sb.AppendJoin(',', cols.Select(c => CsvField(CsvValue(c, row[c.Key])))).Append("\r\n");
+        return sb.ToString();
+    }
+
+    private static string CsvField(string value) =>
+        value.IndexOfAny([',', '"', '\n', '\r']) >= 0 ? $"\"{value.Replace("\"", "\"\"", StringComparison.Ordinal)}\"" : value;
+
     /// <summary>
     /// Normalises a raw posted value: trims text, rewrites numbers and dates invariantly, drops unknown options.
     /// Values that do not parse are kept so validation can report them.
@@ -381,6 +474,7 @@ public static class GridSchema
                 c.Title = string.IsNullOrWhiteSpace(c.Title) ? c.Key : c.Title.Length > 60 ? c.Title[..60] : c.Title;
                 c.Width = c.Width is { } w ? Math.Clamp(w, 60, 600) : null;
                 c.Options ??= [];
+                if (c.SubtitleKey is { } sub && (sub.Length > 40 || !sub.All(char.IsAsciiLetterOrDigit))) c.SubtitleKey = null;
             }
             return columns;
         }

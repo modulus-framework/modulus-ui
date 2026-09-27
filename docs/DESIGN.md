@@ -102,6 +102,27 @@ charts
 - Save is per level and per page: `NestedGridChanges` carries the page as edited and the ids that were loaded but are
   gone. Search, sort and paging wait for Save or Discard (Blazor), because they reload the page.
 
+### One table design
+
+- The data table, the editable grid and every nested level share one layout: the title with a count, then search,
+  Columns and Export CSV, the table's own actions, and Reload / density; a filter row under the toolbar; a batch bar
+  once rows are checked; checkbox and expand columns before the data; the "1–10 of 57" range left of the pager.
+- The editable grid searches and filters in the browser, because it holds every row: Blazor filters its view, MVC
+  hides the rows that don't match (they still post, so a Save never loses them). Both use `GridSchema.Matches`
+  (mirrored in `modulusGrid`), and rows added since the last save stay visible. MVC keeps the search and filters in
+  `sessionStorage`, so they survive the grid being rendered again after a post. A nested level pages, so it searches
+  and filters on the server instead (`NestedGridRequest.Filters`, `f.{key}` in the MVC URL).
+- Selection is client state in both flavours: the MVC checkboxes have no name. "Set value" writes one option (or
+  Yes / No) into every selected row and marks the grid dirty; Delete removes the rows until Save. Export writes the
+  visible columns of the rows shown or selected with `GridSchema.Csv` (Blazor) or the same rules in JS (MVC), and
+  saves them through `modulusShell.download`.
+- Column resizing is one grip on `<body>` placed over the header edge under the pointer (`modulus-shell.js`), so it
+  never adds markup to tables Blazor or htmx own. Dragging sets the `<col>` width, re-pins sticky cells and raises
+  `m-col-resize`; the editable grids keep the width in their schema (Blazor through `OnColumnResized`, MVC in the
+  posted `{name}.schema`), and `ProTable` keeps it in the page only.
+- Avatars use `GridSchema.Initials` and `GridSchema.Tint` (an unsigned hash, the same in JS), so a cell edited in
+  the browser looks exactly like one rendered on the server.
+
 ### Editable grid in MVC
 
 - `app-editable-grid` posts the whole grid on every action: the schema as JSON in `{name}.schema`, row ids in

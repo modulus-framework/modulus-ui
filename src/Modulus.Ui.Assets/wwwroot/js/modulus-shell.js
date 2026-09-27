@@ -13,6 +13,11 @@
  *   [data-m-mark-read]     marks header notifications as read
  *   [data-m-tenant]        tenant switcher: writes the modulus-tenant cookie and reloads (cancel modulus:tenant-change to
  *                          handle it yourself); [data-m-tenant-filter] filters the tenant list
+ *   .m-resizable table     drag a header cell's right edge to resize the column (raises m-col-resize { key, width })
+ *   .m-demo-nav            gets m-demo-nav-stuck while it sticks under the header
+ *
+ * window.modulusShell.download(name, text) saves text as a file (the grids' CSV export); watchResize(id, dotnet)
+ * reports resizes to a Blazor grid.
  *
  * window.modulusShell.openPopup(gridId) opens the Ant Design Select / DatePicker in the grid's editing cell, or
  * focuses its input (Blazor EditableGrid calls it when a cell switches to its editor; the components ignore Open and
@@ -488,4 +493,113 @@
     }
     document.addEventListener('scroll', syncStuck, { capture: true, passive: true });
     window.addEventListener('resize', syncStuck);
+
+    // ---- Resizable columns: drag the right edge of a header cell in any .m-resizable table ----
+    // The grip is one bar on <body>, placed over the edge under the pointer, so nothing is injected into markup
+    // that Blazor or htmx own. Dragging sets the <col> width (and grows the table), re-pins sticky columns, and
+    // raises "m-col-resize" { key, width } on the header cell (the editable grids keep the width in their schema).
+    var grip = null, gripTh = null, drag = null;
+    function resizableTh(th) {
+        return !!th && th.colSpan === 1 && !!th.closest('.m-resizable .ant-table-thead') &&
+            !th.matches('.ant-table-selection-column, .ant-table-row-expand-icon-cell, .m-grid-actions, .m-no-resize');
+    }
+    function columnIndex(cell) {
+        var i = 0;
+        for (var c = cell.previousElementSibling; c; c = c.previousElementSibling) i += c.colSpan || 1;
+        return i;
+    }
+    function thKey(th) {
+        var el = th.hasAttribute('data-key') ? th : th.querySelector('[data-key]');
+        return el ? el.getAttribute('data-key') : null;
+    }
+    // Sticky offsets follow the header widths: a left-pinned cell sits after every column before it, a right-pinned one before every column after it.
+    function syncSticky(table) {
+        var head = table.querySelector('.ant-table-thead > tr');
+        if (!head) return;
+        var widths = [];
+        Array.prototype.forEach.call(head.children, function (th) { widths.push(th.getBoundingClientRect().width); });
+        var total = widths.reduce(function (a, b) { return a + b; }, 0);
+        table.querySelectorAll('tr').forEach(function (tr) {
+            if (tr.closest('table') !== table || tr.classList.contains('ant-table-expanded-row') || tr.classList.contains('ant-table-placeholder')) return;
+            Array.prototype.forEach.call(tr.children, function (cell) {
+                var left = cell.classList.contains('ant-table-cell-fix-left'), right = cell.classList.contains('ant-table-cell-fix-right');
+                if (!left && !right) return;
+                var i = columnIndex(cell), before = 0;
+                for (var k = 0; k < i; k++) before += widths[k] || 0;
+                if (left) cell.style.left = Math.round(before) + 'px';
+                else cell.style.right = Math.round(total - before - (widths[i] || 0)) + 'px';
+            });
+        });
+    }
+    function hideGrip() { if (grip && !drag) { grip.style.display = 'none'; gripTh = null; } }
+    function ensureGrip() {
+        if (grip && grip.isConnected) return grip;
+        grip = document.createElement('div');
+        grip.className = 'm-col-resize-grip';
+        grip.setAttribute('aria-hidden', 'true');
+        grip.style.display = 'none';
+        grip.addEventListener('pointerdown', function (e) {
+            if (!gripTh || e.button !== 0) return;
+            var th = gripTh, table = th.closest('table'), col = table && table.querySelector('colgroup') && table.querySelector('colgroup').children[columnIndex(th)];
+            if (!col) return;
+            e.preventDefault();
+            grip.setPointerCapture(e.pointerId);
+            drag = { th: th, table: table, col: col, x: e.clientX, w: th.getBoundingClientRect().width, tw: table.getBoundingClientRect().width, width: 0 };
+            document.documentElement.classList.add('m-col-resizing');
+        });
+        grip.addEventListener('pointermove', function (e) {
+            if (!drag) return;
+            var w = Math.max(60, Math.round(drag.w + e.clientX - drag.x));
+            drag.width = w;
+            drag.col.style.width = drag.col.style.minWidth = w + 'px';
+            drag.table.style.width = Math.round(drag.tw + w - drag.w) + 'px';
+            var r = drag.th.getBoundingClientRect();
+            grip.style.left = Math.round(r.right - 4) + 'px';
+            syncSticky(drag.table);
+        });
+        var end = function () {
+            if (!drag) return;
+            var d = drag;
+            drag = null;
+            document.documentElement.classList.remove('m-col-resizing');
+            hideGrip();
+            if (d.width) d.th.dispatchEvent(new CustomEvent('m-col-resize', { bubbles: true, detail: { key: thKey(d.th), width: d.width } }));
+        };
+        grip.addEventListener('pointerup', end);
+        grip.addEventListener('pointercancel', end);
+        document.body.appendChild(grip);
+        return grip;
+    }
+    document.addEventListener('pointermove', function (e) {
+        if (drag || e.pointerType === 'touch' || e.target === grip) return;
+        var th = e.target instanceof Element ? e.target.closest('th') : null;
+        if (!resizableTh(th)) { hideGrip(); return; }
+        var r = th.getBoundingClientRect();
+        if (r.right - e.clientX > 6) { hideGrip(); return; }
+        var g = ensureGrip();
+        gripTh = th;
+        g.style.cssText = 'display: block; left: ' + Math.round(r.right - 4) + 'px; top: ' + Math.round(r.top) + 'px; height: ' + Math.round(r.height) + 'px;';
+    }, { passive: true });
+    document.addEventListener('scroll', hideGrip, { capture: true, passive: true });
+    window.modulusShell.syncSticky = syncSticky;
+
+    // Blazor grids hear about a resize through a .NET reference (custom DOM events don't reach Blazor handlers).
+    window.modulusShell.watchResize = function (root, dotnet) {
+        if (typeof root === 'string') root = document.getElementById(root);
+        if (!root || root._mResize) return;
+        root._mResize = function (e) { if (e.detail.key) dotnet.invokeMethodAsync('OnColumnResized', e.detail.key, e.detail.width); };
+        root.addEventListener('m-col-resize', root._mResize);
+    };
+
+    // Saves text as a file (the grids' CSV export). A BOM keeps Excel reading UTF-8.
+    window.modulusShell.download = function (name, text, type) {
+        var blob = new Blob(['﻿', text], { type: type || 'text/csv;charset=utf-8' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    };
 })();

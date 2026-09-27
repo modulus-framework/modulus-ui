@@ -29,15 +29,19 @@ pixel-for-pixel where the controls allow it.
   without an `Href` is switched by writing the `modulus-tenant` cookie and reloading (cancel the `modulus:tenant-change`
   event to handle it yourself); set `ShellContent.CurrentTenantId` when your app resolves the tenant itself.
 - **Pro components** following ProComponents conventions: `ProTable` (server paging, sorting, selection and batch actions,
-  density, reload), `QueryFilter` (collapsible search form), `ModalForm` / `DrawerForm` (validated, async submit),
-  `StatisticCard` + `Trend`, `FooterToolbar`.
+  expandable row details via `RowDetail`, resizable columns, density, reload), `QueryFilter` (collapsible search form),
+  `ModalForm` / `DrawerForm` (validated, async submit), `StatisticCard` + `Trend`, `FooterToolbar`.
 - **Editable grid** (`EditableGrid` / `app-editable-grid`): columns are data (`GridColumn`: text, number, currency,
   percent, select, multi-select, tag, date, switch, progress, rating). Cells edit in place with the matching control
-  and are validated; rows expand into a detail template; columns pin left or right, hide, reorder and are added or
-  removed at run time. Blazor and MVC share one schema, formatter and validator (`GridSchema`).
+  and are validated; rows expand into a detail template; columns pin left or right, hide, reorder, resize (drag the
+  header edge) and are added or removed at run time. It looks and works like the data table: a search box, a filter
+  row (`GridColumn.Filterable`), Columns and Export CSV buttons, row checkboxes with a batch bar (set a value, export
+  or delete the selected rows), and cells with an initials avatar (`Avatar`), a second line (`SubtitleKey`) or option
+  icons (`GridOption.Icon`). Blazor and MVC share one schema, formatter, search and validator (`GridSchema`).
 - **Nested grid** (`NestedGrid` / `app-nested-grid`): one component for any depth. `NestedGridSettings` lists the
-  levels, each with its own columns (or a column set picked by a field of the parent row), search, sort, page size,
-  editing and expand rules; the number of levels is the nesting limit. A child table loads the first time its parent
+  levels, each with its own columns (or a column set picked by a field of the parent row), search, filters, sort,
+  page size, editing and expand rules; the number of levels is the nesting limit. Every level has the editable
+  grid's toolbar, selection and export, and searches and filters on the server (`NestedGridRequest.Filters`). A child table loads the first time its parent
   row expands (Blazor `Load(NestedGridRequest)`, MVC an htmx GET), and each level saves on its own
   (`NestedGridChanges`: the page as edited and the deleted ids).
 - **Charts with no JS dependency**: `LineChart` (line/area, crosshair tooltip), `ColumnChart` (grouped/stacked),
@@ -179,7 +183,7 @@ Tag helpers. `/ui/components` in the MVC and Razor Pages samples shows each one;
 | Data entry | `app-form-item` (`asp-for` + validation), `app-input` (affixes, addons, clear, password, datalist AutoComplete), `app-input-search`, `app-textarea` (count), `app-input-number`, `app-select`, `app-date-picker` (date/week/month/time), `app-range-picker`, `app-checkbox`, `app-checkbox-group`, `app-radio-group`, `app-switch`, `app-slider`, `app-rate`, `app-segmented`, `app-upload`, `app-cascader`, `app-tree-select`, `app-transfer`, `app-auto-complete`, `app-mentions`, `app-input-group` (compact), `app-color-picker` (hex/rgb, alpha, presets, clear), `app-creatable-select` ("Add item" row with tag colours; `add-href` saves new options) |
 | Data display | `app-card` (`app-card-cover`, `app-card-meta`, `app-card-action`), `app-comment` / `comment-action`, `app-countdown`, `app-image-group` (shared preview), `app-avatar` / `app-avatar-group`, `app-badge` / `app-badge-ribbon`, `app-tag`, `app-statistic`, `app-descriptions`, `app-table` (`hidden-columns`, `density`, `scroll-x`, `table-footer`), `app-table-columns` (column picker), `app-table-settings` (reload, density), `app-list`, `app-timeline`, `app-collapse` / `app-panel`, `app-image`, `app-tooltip`, `app-popover`, `app-empty`, `app-tree` (checkable), `app-calendar`, `app-carousel` / `carousel-slide`, `app-qr-code` (icon, status), `app-tour` / `tour-step` |
 | Feedback | `app-alert`, `app-progress` (line/circle/dashboard), `app-result`, `app-skeleton`, `app-spin`, `app-modal`, `app-drawer` (right/left/top/bottom), `app-watermark`; plus `Response.HxMessage`, `HxNotify`, `HxCloseModal` and `hx-confirm` |
-| Pro | `app-page-container`, `app-page-header`, `app-statistic-card`, `app-trend`, `app-editable-grid` (`grid-toolbar`, `grid-title-extra`, `grid-summary`; read posts with `EditableGridForm.Read` / `Apply`), `app-nested-grid` (one level per request; state and saves through `NestedGridForm`) |
+| Pro | `app-page-container`, `app-page-header`, `app-statistic-card`, `app-trend`, `app-editable-grid` (`grid-toolbar`, `grid-title-extra`, `grid-filters`, `grid-batch`, `grid-summary`; read posts with `EditableGridForm.Read` / `Apply`), `app-nested-grid` (one level per request; state and saves through `NestedGridForm`) |
 | Charts | `app-line-chart`, `app-column-chart`, `app-bar-chart`, `app-donut-chart`, `app-heatmap`, `app-sparkline`, `app-mini-bar` |
 | Icons | `app-icon` (Ant Design), `app-ti` (Tabler sprite, 270+ icons) |
 

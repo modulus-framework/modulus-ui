@@ -18,7 +18,7 @@
 }
 <app-page-header pretitle="Tables" title="Data table" subtitle="Search, filter, sort, page, pick columns and export to CSV."></app-page-header>
 
-<div id="employees" class="ant-card m-table-card" x-data="tableSelection" @@change="sync()"
+<div id="employees" class="ant-card m-table-card m-resizable" x-data="tableSelection" @@change="sync()"
      hx-boost="true" hx-target="#employees" hx-select="#employees" hx-swap="outerHTML" hx-push-url="true">
     <div class="ant-card-body">
         <div class="m-table-toolbar">
@@ -79,9 +79,9 @@
             </div>
         </div>
 
-        <app-table density="true" scroll-x="1100" layout="fixed" hidden-columns="Model.Hidden">
+        <app-table density="true" scroll-x="1148" layout="fixed" hidden-columns="Model.Hidden">
             <colgroup>
-                <col style="@ColStyle("48px")" /><col style="@ColStyle("260px")" />
+                <col style="@ColStyle("48px")" /><col class="ant-table-expand-icon-col" style="@ColStyle("48px")" /><col style="@ColStyle("260px")" />
                 <col data-col="position" style="@ColStyle("190px")" />
                 <col data-col="department" style="@ColStyle("150px")" />
                 <col data-col="office" style="@ColStyle("150px")" />
@@ -94,6 +94,7 @@
                     <th class="ant-table-cell ant-table-selection-column">
                         <app-checkbox aria-label="Select all rows" data-select-all @@change="toggleAll($event.target.checked)" />
                     </th>
+                    <th class="ant-table-cell ant-table-row-expand-icon-cell"></th>
                     @grid.SortTh(nameof(Employee.Name), "Employee")
                     @grid.SortTh(nameof(Employee.Position), "Position", col: "position")
                     @grid.SortTh(nameof(Employee.Department), "Department", col: "department")
@@ -106,12 +107,13 @@
             <tbody class="ant-table-tbody">
                 @if (Model.Page.Data.Count == 0)
                 {
-                    <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="@visible"><div class="m-table-empty">No employees match these filters</div></td></tr>
+                    <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="@(visible + 2)"><div class="m-table-empty">No employees match these filters</div></td></tr>
                 }
                 @foreach (var e in Model.Page.Data)
                 {
-                    <tr class="ant-table-row ant-table-row-level-0">
+                    <tr class="ant-table-row ant-table-row-level-0" data-row-key="@e.Id">
                         <td class="ant-table-cell ant-table-selection-column"><app-checkbox name="ids" value="@e.Id.ToString()" aria-label="@($"Select {e.Name}")" /></td>
+                        <td class="ant-table-cell ant-table-row-expand-icon-cell"><button type="button" class="ant-table-row-expand-icon ant-table-row-expand-icon-collapsed" aria-label="Expand row" aria-expanded="false" data-toggle-detail></button></td>
                         <td class="ant-table-cell@(grid.SortClass(nameof(Employee.Name)))">
                             <div class="m-entity">
                                 <span class="m-avatar m-avatar-sm m-av-@e.Tint">@Fmt.Initials(e.Name)</span>
@@ -124,6 +126,23 @@
                         <td data-col="start" class="ant-table-cell m-muted@(grid.SortClass(nameof(Employee.StartDate)))">@Fmt.Date(e.StartDate)</td>
                         <td data-col="salary" class="ant-table-cell@(grid.SortClass(nameof(Employee.Salary)))" style="text-align:right"><span class="m-num m-heading">@Fmt.Money0(e.Salary)</span></td>
                         <td class="ant-table-cell"><span class="m-badge @EmployeeDirectory.StatusBadge(e.Status)">@EmployeeDirectory.StatusLabel(e.Status)</span></td>
+                    </tr>
+                    @* The expanded row, as ProTable's RowDetail renders it on the Blazor page. *@
+                    <tr class="ant-table-expanded-row ant-table-expanded-row-level-1" data-detail-for="@e.Id" hidden>
+                        <td class="ant-table-cell" colspan="@(visible + 2)">
+                            <div class="m-row-detail">
+                                <div class="m-entity">
+                                    <span class="m-avatar m-av-@e.Tint" style="width: 48px; height: 48px; font-size: 16px">@Fmt.Initials(e.Name)</span>
+                                    <div class="m-entity-text"><span class="m-entity-title">@e.Name</span><span class="m-entity-desc">@e.Position · @e.Department</span></div>
+                                </div>
+                                <app-descriptions size="small" column="4">
+                                    @foreach (var (label, value) in EmployeeDirectory.Details(e))
+                                    {
+                                        <app-descriptions-item label="@label">@value</app-descriptions-item>
+                                    }
+                                </app-descriptions>
+                            </div>
+                        </td>
                     </tr>
                 }
             </tbody>

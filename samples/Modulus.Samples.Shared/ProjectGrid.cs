@@ -53,7 +53,8 @@ public sealed class ProjectGridStore
         new("risk", "At risk", "error"), new("done", "Done", "success"),
     ];
 
-    public static readonly GridOption[] Priorities = [new("low", "Low"), new("medium", "Medium"), new("high", "High"), new("urgent", "Urgent")];
+    public static readonly GridOption[] Priorities =
+        [new("low", "Low", null, "arrow-down"), new("medium", "Medium", null, "minus"), new("high", "High", null, "arrow-up"), new("urgent", "Urgent", null, "fire")];
 
     public static readonly GridOption[] Teams =
     [
@@ -64,17 +65,17 @@ public sealed class ProjectGridStore
     public static List<GridColumn> SeedColumns() =>
     [
         new() { Key = "project", Title = "Project", Type = GridCellType.Text, Width = 220, Fixed = GridFixed.Left, Required = true },
-        new() { Key = "owner", Title = "Owner", Type = GridCellType.Select, Width = 180, Options = Owners, Required = true },
-        new() { Key = "status", Title = "Status", Type = GridCellType.Tag, Width = 140, Options = Statuses, Required = true },
-        new() { Key = "priority", Title = "Priority", Type = GridCellType.Select, Width = 130, Options = Priorities },
-        new() { Key = "teams", Title = "Teams", Type = GridCellType.MultiSelect, Width = 240, Options = Teams },
+        new() { Key = "owner", Title = "Owner", Type = GridCellType.Select, Width = 190, Options = Owners, Required = true, Avatar = true, Filterable = true },
+        new() { Key = "status", Title = "Status", Type = GridCellType.Tag, Width = 140, Options = Statuses, Required = true, Filterable = true },
+        new() { Key = "priority", Title = "Priority", Type = GridCellType.Select, Width = 130, Options = Priorities, Filterable = true },
+        new() { Key = "teams", Title = "Teams", Type = GridCellType.MultiSelect, Width = 240, Options = Teams, Filterable = true },
         new() { Key = "budget", Title = "Budget", Type = GridCellType.Currency, Width = 140, Min = 0, Required = true },
         new() { Key = "spent", Title = "Spent", Type = GridCellType.Currency, Width = 140, Min = 0 },
         new() { Key = "progress", Title = "Progress", Type = GridCellType.Progress, Width = 180, Min = 0, Max = 100 },
         new() { Key = "start", Title = "Start", Type = GridCellType.Date, Width = 140 },
         new() { Key = "due", Title = "Due", Type = GridCellType.Date, Width = 140 },
         new() { Key = "health", Title = "Health", Type = GridCellType.Rating, Width = 160, Min = 0, Max = 5 },
-        new() { Key = "billable", Title = "Billable", Type = GridCellType.Switch, Width = 110 },
+        new() { Key = "billable", Title = "Billable", Type = GridCellType.Switch, Width = 110, Filterable = true },
         new() { Key = "notes", Title = "Notes", Type = GridCellType.Text, Width = 260 },
     ];
 

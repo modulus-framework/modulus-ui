@@ -39,6 +39,25 @@ public static class EmployeeDirectory
 
     public static string StatusLabel(EmployeeStatus s) => s == EmployeeStatus.OnLeave ? "On leave" : s.ToString();
 
+    /// <summary>The fields of an expanded row on the data table (both flavours render these).</summary>
+    public static IReadOnlyList<(string Label, string Value)> Details(Employee e, DateTime? today = null)
+    {
+        var now = today ?? DateTime.Today;
+        var months = Math.Max(0, (now.Year - e.StartDate.Year) * 12 + now.Month - e.StartDate.Month - (now.Day < e.StartDate.Day ? 1 : 0));
+        var tenure = months < 12 ? $"{months} mo" : months % 12 == 0 ? $"{months / 12} yr" : $"{months / 12} yr {months % 12} mo";
+        return
+        [
+            ("Email", e.Email),
+            ("Position", e.Position),
+            ("Department", e.Department),
+            ("Office", e.Office),
+            ("Start date", $"{Fmt.Date(e.StartDate)} · {tenure}"),
+            ("Salary", $"{Fmt.Money0(e.Salary)} a year · {Fmt.Money0(Math.Round(e.Salary / 12))} a month"),
+            ("Employee ID", $"EMP-{e.Id:0000}"),
+            ("Status", StatusLabel(e.Status)),
+        ];
+    }
+
     public static string StatusBadge(EmployeeStatus s) => s switch
     {
         EmployeeStatus.Active => "m-badge-green-lt",
