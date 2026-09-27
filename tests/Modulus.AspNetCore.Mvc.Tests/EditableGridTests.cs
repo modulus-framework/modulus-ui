@@ -122,6 +122,36 @@ public class EditableGridFormTests
         Assert.All(post.Rows, r => Assert.True(r.Values.ContainsKey("region")));
     }
 
+    [Fact]
+    public void Apply_AddOption_AddsToTheColumnAndPicksItForTheCell()
+    {
+        var form = GridForm("add-option:teams:p1", ("grid.option[p1].teams", [" Mobile "]), ("grid.color[p1].teams", ["lime"]));
+        var post = EditableGridForm.Read(form, Columns());
+
+        Assert.True(EditableGridForm.Apply(post, form));
+
+        var teams = post.Columns.Single(c => c.Key == "teams");
+        Assert.Equal(new GridOption("mobile", "Mobile", "lime"), teams.Options[^1]);
+        Assert.Equal("web,data,mobile", post.Rows[0]["teams"]);
+        Assert.Null(post.Error);
+    }
+
+    [Fact]
+    public void Apply_AddOption_ReportsADuplicate_AndIgnoresOtherColumnTypes()
+    {
+        var form = GridForm("add-option:teams:p2", ("grid.option[p2].teams", ["web"]));
+        var post = EditableGridForm.Read(form, Columns());
+        EditableGridForm.Apply(post, form);
+        Assert.Equal("“web” is already in the list.", post.Error);
+        Assert.Equal(2, post.Columns.Single(c => c.Key == "teams").Options.Count);
+
+        var budget = GridForm("add-option:budget:p1", ("grid.option[p1].budget", ["x"]));
+        post = EditableGridForm.Read(budget, Columns());
+        EditableGridForm.Apply(post, budget);
+        Assert.Null(post.Error);
+        Assert.Equal("1250.5", post.Rows[0]["budget"]);
+    }
+
     [Theory]
     [InlineData("save")]
     [InlineData("discard")]
@@ -188,6 +218,18 @@ public class EditableGridTagHelperTests
         Assert.Contains("<option value=\"a\" selected", html);
         Assert.Contains("Edit Status: Active", html);
         Assert.DoesNotContain("<Portal>", html);
+    }
+
+    [Fact]
+    public async Task Renders_AnAddOptionRowUnderSelectEditors()
+    {
+        var html = await RenderAsync(Grid());
+
+        Assert.Contains("""<input type="text" class="ant-input ant-input-sm" name="projects.option[p1].status" maxlength="60" placeholder="New option" aria-label="New status option" @keydown.enter.stop.prevent="submitOp('add-option:status:p1')" />""", html);
+        Assert.Contains("""@mousedown.prevent @click="submitOp('add-option:status:p2')">""", html);
+        // The next colour in turn is picked: two options, so the third colour.
+        Assert.Contains("""<input type="radio" class="m-sr-only" name="projects.color[p1].status" value="orange" checked />""", html);
+        Assert.DoesNotContain("projects.option[p1].budget", html);
     }
 
     [Fact]

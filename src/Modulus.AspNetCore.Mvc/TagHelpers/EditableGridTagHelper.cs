@@ -233,7 +233,7 @@ public class EditableGridTagHelper : TagHelper
 
         var label = $"Edit {c.Title}: {GridSchema.Format(c, value, culture)}";
         return $"""<div class="{Html.Cx("m-grid-cell", "m-grid-cell-editable", errorClass)}" tabindex="0" role="button" aria-label="{Html.E(label)}"{(error is null ? "" : $" title=\"{Html.E(error)}\"")} @click="edit($el)" @keydown.enter.prevent="edit($el)" @keydown.f2.prevent="edit($el)">{view}</div>""" +
-               $"""<div class="m-grid-cell m-grid-cell-editing" hidden @focusout="leave($event)" @keydown.enter.prevent="commit($el)" @keydown.escape.stop.prevent="cancel($el)">{Editor(c, field, value)}</div>{message}""";
+               $"""<div class="m-grid-cell m-grid-cell-editing" hidden @focusout="leave($event)" @keydown.enter.prevent="commit($el)" @keydown.escape.stop.prevent="cancel($el)">{Editor(c, field, value)}{AddOptionRow(c, row.Id)}</div>{message}""";
     }
 
     /// <summary>The read-only cell content; mirrors EditableGrid.View and modulusGrid.view() in modulus-widgets.js.</summary>
@@ -260,6 +260,22 @@ public class EditableGridTagHelper : TagHelper
 
     private static string Tag(GridOption o) =>
         $"""<span class="{Html.Cx("ant-tag", o.Color is null or "default" ? null : $"ant-tag-{o.Color}")}">{Html.E(o.Label)}</span>""";
+
+    // "Add option" row under a Select, Multi-select or Tag editor, as in AppCreatableSelect: a name and a tag colour,
+    // posted as add-option:{key}:{row} (EditableGridForm.Apply adds the option and picks it for the cell).
+    private string AddOptionRow(GridColumn c, string rowId)
+    {
+        if (c.Type is not (GridCellType.Select or GridCellType.MultiSelect or GridCellType.Tag) || c.Options.Count >= GridSchema.MaxOptions) return "";
+        var colorField = Html.E(EditableGridForm.ColorField(Name, rowId, c.Key));
+        var op = Html.E($"add-option:{c.Key}:{rowId}");
+        var next = GridSchema.OptionColors[c.Options.Count % GridSchema.OptionColors.Count];
+        var swatches = string.Concat(GridSchema.OptionColors.Select(color =>
+            $"""<label class="m-cselect-swatch-label" title="{color}" @mousedown.prevent><input type="radio" class="m-sr-only" name="{colorField}" value="{color}"{(color == next ? " checked" : "")} /><span class="m-cselect-swatch ant-tag-{color}"></span><span class="m-sr-only">{color}</span></label>"""));
+        return $"""<div class="m-cselect-footer m-grid-add-option"><div class="m-cselect-add">""" +
+               $"""<input type="text" class="ant-input ant-input-sm" name="{Html.E(EditableGridForm.OptionField(Name, rowId, c.Key))}" maxlength="{GridSchema.MaxOptionLabel}" placeholder="New option" aria-label="New {Html.E(c.Title.ToLowerInvariant())} option" @keydown.enter.stop.prevent="submitOp('{op}')" />""" +
+               $"""<button type="button" class="ant-btn ant-btn-text ant-btn-sm m-cselect-add-btn" @mousedown.prevent @click="submitOp('{op}')">{AntIcons.Span("plus")}<span>Add</span></button></div>""" +
+               $"""<div class="m-cselect-colors" role="radiogroup" aria-label="Colour">{swatches}</div></div>""";
+    }
 
     private static string Editor(GridColumn c, string field, string? value)
     {

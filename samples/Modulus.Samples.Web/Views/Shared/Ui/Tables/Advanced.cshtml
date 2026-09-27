@@ -12,6 +12,9 @@
     var visible = 2 + EmployeeDirectory.OptionalColumns.Count(c => Model.Shows(c.Key));
     // Same colgroup as the Blazor ProTable renders.
     string ColStyle(string width) => $"width: {width}; min-width: {width};";
+    // Label tags after the name, in the colours picked when the labels were added.
+    Microsoft.AspNetCore.Html.IHtmlContent LabelTags(int id) => new Microsoft.AspNetCore.Html.HtmlString(string.Concat(EmployeeLabels.Of(id).Select(EmployeeLabels.Find).OfType<GridOption>()
+        .Select(l => $"<span class=\"ant-tag ant-tag-{l.Color} m-label-tag\">{System.Net.WebUtility.HtmlEncode(l.Label)}</span>")));
 }
 <app-page-header pretitle="Tables" title="Data table" subtitle="Search, filter, sort, page, pick columns and export to CSV."></app-page-header>
 
@@ -43,6 +46,7 @@
             <app-select name="department" items="Items(EmployeeDirectory.Departments, q.Department)" placeholder="All departments" aria-label="Department" />
             <app-select name="office" items="Items(EmployeeDirectory.Offices, q.Office)" placeholder="All offices" aria-label="Office" />
             <app-select name="status" items="statuses" placeholder="Any status" aria-label="Status" />
+            <app-creatable-select name="label" options="EmployeeLabels.Options" value="@q.Label" placeholder="Any label" add-placeholder="New label" add-href="@Base/labels" allow-clear aria-label="Label" />
             @if (Model.Request.SortField is { } sortField)
             {
                 <input type="hidden" name="sortField" value="@sortField" />
@@ -53,9 +57,9 @@
                 <input type="hidden" name="hide" value="@string.Join(',', Model.Hidden)" />
             }
             <input type="hidden" name="pageSize" value="@Model.Request.PageSize" />
-            @if (!string.IsNullOrEmpty(q.Keyword) || q.Department is not null || q.Office is not null || q.Status is not null)
+            @if (!string.IsNullOrEmpty(q.Keyword) || q.Department is not null || q.Office is not null || q.Status is not null || q.Label is not null)
             {
-                <a class="ant-btn ant-btn-link" href="@grid.Href(("keyword", null), ("department", null), ("office", null), ("status", null))"><span>Clear filters</span></a>
+                <a class="ant-btn ant-btn-link" href="@grid.Href(("keyword", null), ("department", null), ("office", null), ("status", null), ("label", null))"><span>Clear filters</span></a>
             }
         </form>
 
@@ -65,6 +69,10 @@
                     <span>Selected <strong x-text="count"></strong> <span x-text="count === 1 ? 'item' : 'items'"></span></span>
                     <button type="button" class="ant-btn ant-btn-link ant-btn-sm" @@click="clear()"><span>Clear</span></button>
                     <span class="m-spacer"></span>
+                    @* Picking (or adding) a label gives it to the selected rows; the grid comes back with the toast. *@
+                    <app-creatable-select name="applyLabel" options="EmployeeLabels.Options" size="small" placeholder="Add label…" add-placeholder="New label" add-href="@Base/labels"
+                                          aria-label="Add a label to the selected employees" style="width: 160px"
+                                          @@change.stop="htmx.ajax('POST', '@Base/tag' + location.search, { source: $el, target: '#employees', select: '#employees', swap: 'outerHTML', values: { label: $el.querySelector('input[name=applyLabel]').value, ids: [...document.querySelectorAll('#employees input[name=ids]:checked')].map(b => b.value) } })" />
                     <button type="button" class="ant-btn ant-btn-primary ant-btn-sm"
                             @@click="location.href = '@Base/export?' + [...$root.querySelectorAll('input[name=ids]:checked')].map(b => 'ids=' + b.value).join('&')"><span>Export selected</span></button>
                 </div>
@@ -107,7 +115,7 @@
                         <td class="ant-table-cell@(grid.SortClass(nameof(Employee.Name)))">
                             <div class="m-entity">
                                 <span class="m-avatar m-avatar-sm m-av-@e.Tint">@Fmt.Initials(e.Name)</span>
-                                <div class="m-entity-text"><span class="m-entity-title">@e.Name</span><span class="m-entity-desc">@e.Email</span></div>
+                                <div class="m-entity-text"><span class="m-entity-title">@e.Name@(LabelTags(e.Id))</span><span class="m-entity-desc">@e.Email</span></div>
                             </div>
                         </td>
                         <td data-col="position" class="ant-table-cell@(grid.SortClass(nameof(Employee.Position)))">@e.Position</td>

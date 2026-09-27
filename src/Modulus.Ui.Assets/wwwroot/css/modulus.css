@@ -710,7 +710,7 @@ table.m-sr-only { table-layout: fixed; } /* a table grows to fit its content unl
 .m-table-card .ant-table-thead > tr > th:last-child, .m-table-card .ant-table-tbody > tr > td:last-child { padding-right: 20px; }
 .m-table-card .ant-table-pagination.ant-pagination { margin: 0; padding: 12px 20px; border-top: 1px solid var(--m-border-secondary); }
 .m-table-card .ant-table-tbody > tr:last-child > td { border-bottom: 0; }
-.m-table-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 16px; padding: 16px 20px; border-bottom: 1px solid var(--m-border-secondary); }
+.m-table-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px 16px; padding: 16px 20px; border-bottom: 1px solid var(--m-border-secondary); }
 .m-table-filters .ant-select, .m-table-filters .m-select { width: 100%; }
 @media (max-width: 767px) { .m-table-filters { grid-template-columns: minmax(0, 1fr); } }
 .m-table-card .ant-table-pagination.ant-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; row-gap: 8px; }
@@ -1565,3 +1565,36 @@ html[data-theme='dark'] .ant-qrcode[style*='background-color:transparent'] .ant-
 html[data-theme='dark'] .ant-float-btn:not(.ant-float-btn-primary) { box-shadow: 0 6px 16px rgba(0, 0, 0, .4), 0 0 0 1px var(--m-border-secondary); }
 html[data-theme='dark'] :is(.ant-color-picker-color-block, .ant-color-picker-presets-color, .ant-color-picker-slider-alpha) {
     background-image: conic-gradient(#555 25%, #333 0 50%, #555 0 75%, #333 0); }
+
+/* Creatable select (AppCreatableSelect / app-creatable-select) ------------------------------------------ */
+
+.m-cselect { min-width: 160px; }
+.m-cselect .ant-select-selector { cursor: pointer; }
+.m-cselect.ant-select-single .ant-select-selection-item { display: flex; align-items: center; gap: 8px; }
+.m-cselect.ant-select-multiple .ant-select-selection-overflow { display: flex; flex-wrap: wrap; align-items: center; gap: 0; min-height: 30px; }
+.m-cselect.ant-select-multiple .ant-select-selection-placeholder { position: static; transform: none; padding-left: 7px; }
+.m-cselect-tag.ant-select-selection-item { border-color: transparent; }
+.m-cselect-tag[class*='ant-tag-'] .ant-select-selection-item-remove { color: inherit; opacity: 0.7; }
+.m-cselect .ant-select-clear { opacity: 0; }
+.m-cselect:hover .ant-select-clear { opacity: 1; }
+.m-cselect-backdrop { position: fixed; inset: 0; z-index: 1049; }
+.m-cselect-dropdown { position: fixed; z-index: 1050; box-sizing: border-box; width: max-content; max-width: min(360px, calc(100vw - 16px)); padding: 4px 0 0; }
+.m-cselect-list { max-height: 256px; overflow-y: auto; padding: 0 4px; }
+.m-cselect-list .ant-select-item-option-content { display: flex; align-items: center; gap: 8px; }
+.m-cselect-empty { padding: 12px; color: var(--m-text-tertiary); text-align: center; }
+.m-cselect-dot { display: inline-block; flex: none; width: 8px; height: 8px; margin: 0; padding: 0; border: 0; border-radius: 50%; background: currentColor !important; }
+.m-cselect-footer { margin-top: 4px; padding: 8px; border-top: 1px solid var(--m-split); }
+.m-cselect-add { display: flex; gap: 6px; }
+.m-cselect-add .ant-input { flex: 1; min-width: 0; }
+.m-cselect-add-btn { display: inline-flex; align-items: center; gap: 4px; color: var(--m-primary); }
+.m-cselect-colors { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.m-cselect-swatch { width: 18px; height: 18px; margin: 0; padding: 0; border: 2px solid transparent !important; border-radius: 50%; background: currentColor !important; cursor: pointer; }
+.m-cselect-swatch[aria-checked='true'], .m-cselect-swatch-label input:checked + .m-cselect-swatch { border-color: currentColor !important; box-shadow: inset 0 0 0 2px var(--m-bg-elevated); }
+.m-cselect-swatch:focus-visible { outline: 2px solid var(--m-primary); outline-offset: 1px; }
+.m-cselect-error { margin-top: 6px; color: var(--m-error); font-size: 12px; }
+.m-grid-cell-editing .m-cselect { width: 100%; }
+.m-cselect-swatch-label { display: inline-flex; cursor: pointer; }
+.m-cselect-swatch-label input:focus-visible + .m-cselect-swatch { outline: 2px solid var(--m-primary); outline-offset: 1px; }
+/* MVC grid: the "Add option" panel floats under the cell editor; modulusGrid places it (position: fixed escapes the table scroller). */
+.m-grid-add-option { position: fixed; z-index: 1050; width: 280px; margin: 0; padding: 8px; border-top: 0; border-radius: var(--m-radius-lg); background: var(--m-bg-elevated); box-shadow: var(--m-shadow-popup); }
+.m-cselect.ant-select-open .ant-select-selection-item { color: inherit; }

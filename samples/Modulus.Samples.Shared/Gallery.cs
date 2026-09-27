@@ -108,6 +108,14 @@ public static class GalleryData
     public static readonly string QrIcon = "data:image/svg+xml;base64," + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(
         """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="#1677ff"/><path d="M10 29V12h4l6 9 6-9h4v17h-4V19l-6 8.5L14 19v10z" fill="#fff"/></svg>"""));
 
+    /// <summary>Options of the "Select with Add item" demo: product colours, each with a tag colour.</summary>
+    public static readonly GridOption[] ProductColors =
+        [new("red", "Red", "red"), new("green", "Green", "green"), new("blue", "Blue", "blue"), new("gold", "Gold", "gold")];
+
+    /// <summary>Tags of the multiple "Select with Add item" demo.</summary>
+    public static readonly GridOption[] ProductTags =
+        [new("new", "New", "cyan"), new("sale", "Sale", "volcano"), new("bestseller", "Bestseller", "purple")];
+
     /// <summary>The Color picker demo's own swatch row, shown above the recommended one.</summary>
     public static readonly ColorPreset[] ColorPresets =
     [

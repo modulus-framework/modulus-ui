@@ -378,7 +378,7 @@
                     // The server renders the default density so the first paint is right; Alpine owns it from here.
                     this.$refs.table.classList.remove('ant-table-middle');
                     this._resize = function () { self.onScroll(); };
-                    this._close = function () { self.closeMenu(); };
+                    this._close = function () { self.closeMenu(); self.placeAdd(self._editor); };
                     window.addEventListener('resize', this._resize);
                     window.addEventListener('scroll', this._close, { passive: true });
                     this.$nextTick(function () { self.onScroll(); });
@@ -396,6 +396,17 @@
                     this.pingLeft = el.scrollLeft > 0;
                     this.pingRight = el.scrollLeft + el.clientWidth < el.scrollWidth - 1;
                     this.closeMenu();
+                    this.placeAdd(this._editor);
+                },
+                // The "Add option" panel of a Select, Multi-select or Tag editor is position: fixed under (or above) the editor.
+                placeAdd: function (editor) {
+                    var panel = editor && !editor.hidden && editor.querySelector('.m-grid-add-option');
+                    if (!panel) return;
+                    var r = editor.getBoundingClientRect(), h = panel.offsetHeight, vw = document.documentElement.clientWidth;
+                    var top = r.bottom + 4;
+                    if (top + h > window.innerHeight - 8 && r.top - h - 4 > 8) top = r.top - h - 4;
+                    panel.style.top = Math.round(top) + 'px';
+                    panel.style.left = Math.round(Math.max(8, Math.min(r.left, vw - panel.offsetWidth - 8))) + 'px';
                 },
                 column: function (el) {
                     var td = el.closest('td[data-key]');
@@ -411,6 +422,7 @@
                     this._original = snapshot(editor);
                     cell.hidden = true;
                     editor.hidden = false;
+                    this.placeAdd(editor);
                     var control = editor.querySelector('input, select');
                     if (control) {
                         control.focus();
@@ -838,6 +850,170 @@
             }
             return '#' + rgb.map(byteHex).join('') + (c.a >= 1 ? '' : byteHex(Math.round(c.a * 255)));
         }
+
+        // <app-creatable-select>: the Blazor AppCreatableSelect in Alpine. New options follow GridSchema.AddOption
+        // (trimmed, unique label, capped count) and GridSchema.UniqueKey for the value, unless add-href saves them.
+        Alpine.data('modulusCreatableSelect', function (cfg) {
+            function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+            function uniqueKey(title, taken) {
+                var words = title.replace(/[^A-Za-z0-9]/g, ' ').split(' ').filter(Boolean);
+                var key = words.map(function (w, i) { return i === 0 ? w.toLowerCase() : w[0].toUpperCase() + w.slice(1).toLowerCase(); }).join('');
+                if (!key || /^\d/.test(key)) key = 'col' + key;
+                var lower = taken.map(function (t) { return t.toLowerCase(); }), candidate = key;
+                for (var n = 2; lower.indexOf(candidate.toLowerCase()) >= 0; n++) candidate = key + n;
+                return candidate;
+            }
+            function token() {
+                try { return JSON.parse(document.body.getAttribute('hx-headers') || '{}'); } catch (e) { return {}; }
+            }
+
+            return {
+                open: false,
+                active: -1,
+                options: cfg.options || [],
+                value: cfg.value || '',
+                values: (cfg.values || []).slice(),
+                colors: cfg.colors || [],
+                showColors: cfg.showColors !== false,
+                newLabel: '',
+                picked: null,
+                error: '',
+                busy: false,
+
+                init: function () {
+                    var self = this;
+                    this.$watch('open', function (open) {
+                        if (!open) return;
+                        self.$nextTick(function () { if (window.modulusShell && window.modulusShell.placeSelect) window.modulusShell.placeSelect(self.$root); });
+                    });
+                },
+                find: function (v) { return this.options.find(function (o) { return o.value === v; }); },
+                sel: function (v) { return cfg.multiple ? this.values.indexOf(v) >= 0 : this.value === v; },
+                has: function () { return cfg.multiple ? this.values.length > 0 : !!this.value; },
+                color: function () { return this.picked || this.colors[this.options.length % this.colors.length]; },
+                dot: function (o) {
+                    return this.showColors && o && o.color && o.color !== 'default' ? '<span class="m-cselect-dot ant-tag-' + esc(o.color) + '" aria-hidden="true"></span>' : '';
+                },
+                inputs: function () {
+                    var name = esc(cfg.name);
+                    var list = cfg.multiple ? this.values : [this.value];
+                    return list.map(function (v) { return '<input type="hidden" name="' + name + '" value="' + esc(v) + '" />'; }).join('');
+                },
+                selection: function () {
+                    var self = this;
+                    var placeholder = cfg.placeholder ? '<span class="ant-select-selection-placeholder">' + esc(cfg.placeholder) + '</span>' : '';
+                    if (!cfg.multiple) {
+                        if (!this.value) return placeholder;
+                        var o = this.find(this.value), label = o ? o.label : this.value;
+                        return '<span class="ant-select-selection-item" title="' + esc(label) + '">' + this.dot(o) + esc(label) + '</span>';
+                    }
+                    var tags = this.values.map(function (v) {
+                        var o = self.find(v), label = o ? o.label : v;
+                        var tint = o && o.color && o.color !== 'default' ? ' ant-tag-' + esc(o.color) : '';
+                        return '<span class="ant-select-selection-overflow-item"><span class="ant-select-selection-item m-cselect-tag' + tint + '" title="' + esc(label) + '">' +
+                            '<span class="ant-select-selection-item-content">' + esc(label) + '</span>' +
+                            '<span class="ant-select-selection-item-remove" role="button" aria-label="Remove ' + esc(label) + '" data-remove="' + esc(v) + '">' +
+                            '<span role="img" aria-label="close" class="anticon anticon-close"><svg viewBox="64 64 896 896" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M563.8 512l262.5-312.9c4.4-5.2.7-13.1-6.1-13.1h-79.8c-4.7 0-9.2 2.1-12.3 5.7L511.6 449.8 295.1 191.7c-3-3.6-7.5-5.7-12.3-5.7H203c-6.8 0-10.5 7.9-6.1 13.1L459.4 512 196.9 824.9A7.95 7.95 0 00203 838h79.8c4.7 0 9.2-2.1 12.3-5.7l216.5-258.1 216.5 258.1c3 3.6 7.5 5.7 12.3 5.7h79.8c6.8 0 10.5-7.9 6.1-13.1L563.8 512z"></path></svg></span>' +
+                            '</span></span></span>';
+                    }).join('');
+                    return '<div class="ant-select-selection-overflow">' + tags + (this.values.length ? '' : placeholder) + '</div>';
+                },
+                changed: function () {
+                    var root = this.$root;
+                    this.$nextTick(function () { root.dispatchEvent(new Event('change', { bubbles: true })); });
+                },
+                show: function () {
+                    if (this.open) return;
+                    var current = cfg.multiple ? this.values[0] : this.value, self = this;
+                    this.active = this.options.findIndex(function (o) { return o.value === current; });
+                    if (this.active < 0) this.active = this.options.length ? 0 : -1;
+                    this.error = '';
+                    this.open = true;
+                    this.$nextTick(function () {
+                        var el = self.$root.querySelector('.ant-select-item-option-active');
+                        if (el) el.scrollIntoView({ block: 'nearest' });
+                    });
+                },
+                close: function () {
+                    if (!this.open) return;
+                    this.open = false;
+                    this.newLabel = '';
+                    this.picked = null;
+                    this.error = '';
+                    this.$root.querySelector('.ant-select-selector').focus({ preventScroll: true });
+                },
+                onSelector: function (e) {
+                    var remove = e.target.closest('[data-remove]');
+                    if (remove) { this.remove(remove.getAttribute('data-remove')); return; }
+                    if (this.open) this.close(); else this.show();
+                },
+                pick: function (v) {
+                    if (cfg.multiple) {
+                        var i = this.values.indexOf(v);
+                        if (i >= 0) this.values.splice(i, 1); else this.values.push(v);
+                        this.changed();
+                        return;
+                    }
+                    this.value = v;
+                    this.changed();
+                    this.close();
+                },
+                remove: function (v) {
+                    this.values = this.values.filter(function (x) { return x !== v; });
+                    this.changed();
+                },
+                clear: function () {
+                    if (cfg.multiple) this.values = []; else this.value = '';
+                    this.changed();
+                },
+                key: function (e) {
+                    var n = this.options.length;
+                    if (!this.open) {
+                        if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.show(); }
+                        return;
+                    }
+                    if (e.key === 'ArrowDown' && n) { e.preventDefault(); this.active = (this.active + 1) % n; }
+                    else if (e.key === 'ArrowUp' && n) { e.preventDefault(); this.active = (this.active - 1 + n) % n; }
+                    else if ((e.key === 'Enter' || e.key === ' ') && this.active >= 0 && this.active < n) { e.preventDefault(); this.pick(this.options[this.active].value); }
+                    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this.close(); return; }
+                    else if (e.key === 'Tab') { this.close(); return; }
+                    var el = this.$root.querySelectorAll('.ant-select-item-option')[this.active];
+                    if (el) el.scrollIntoView({ block: 'nearest' });
+                },
+                accept: function (o) {
+                    this.options.push(o);
+                    this.newLabel = '';
+                    this.picked = null;
+                    if (cfg.multiple) { this.values.push(o.value); this.active = this.options.length - 1; this.changed(); }
+                    else this.pick(o.value);
+                },
+                add: function () {
+                    var label = (this.newLabel || '').trim(), self = this;
+                    if (!label) { this.error = 'Enter a name.'; return; }
+                    if (label.length > cfg.maxLabel) { this.error = 'Use ' + cfg.maxLabel + ' characters or fewer.'; return; }
+                    if (this.options.some(function (o) { return o.label.toLowerCase() === label.toLowerCase(); })) { this.error = '“' + label + '” is already in the list.'; return; }
+                    if (this.options.length >= cfg.maxOptions) { this.error = 'A list holds up to ' + cfg.maxOptions + ' options.'; return; }
+                    var color = this.color();
+                    if (!cfg.addHref) {
+                        this.accept({ value: uniqueKey(label, this.options.map(function (o) { return o.value; })), label: label, color: color });
+                        return;
+                    }
+                    var body = new FormData();
+                    body.append('label', label);
+                    body.append('color', color);
+                    this.busy = true;
+                    fetch(cfg.addHref, { method: 'POST', body: body, headers: token(), credentials: 'same-origin' })
+                        .then(function (r) { return r.json(); })
+                        .then(function (res) {
+                            if (res && res.error) self.error = res.error;
+                            else if (res && res.value) self.accept({ value: res.value, label: res.label, color: res.color });
+                            else self.error = 'Could not add it. Try again.';
+                        })
+                        .catch(function () { self.error = 'Could not add it. Try again.'; })
+                        .finally(function () { self.busy = false; });
+                },
+            };
+        });
 
         Alpine.data('modulusColorPicker', function (cfg) {
             var start = parseColor(cfg.value) || parseColor('#1677ff');

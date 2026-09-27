@@ -791,3 +791,4 @@ button.ant-segmented-item { padding: 0; border: 0; background: none; font: inher
 .m-column-toggle { display: inline-flex; align-items: center; gap: 8px; }
 .m-column-toggle .m-ti { width: 18px; height: 18px; color: var(--m-text-tertiary); }
 .m-table-toolbar-title .m-badge { margin-left: 4px; }
+.m-label-tag { margin: 0 0 0 6px; padding: 0 5px; font-size: 11px; font-weight: 400; line-height: 16px; vertical-align: 1px; }

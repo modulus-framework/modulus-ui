@@ -21,6 +21,18 @@ public class TablesController : SampleController
     public IActionResult Export([FromQuery] EmployeeQuery query, [FromQuery] int[] ids) =>
         File(Encoding.UTF8.GetBytes(EmployeeDirectory.Csv(EmployeeDirectory.ForExport(query, ids))), "text/csv", "employees.csv");
 
+    /// <summary>"Add item" in a label dropdown: the new label as JSON, or { error }.</summary>
+    [HttpPost("advanced/labels")]
+    public IActionResult AddLabel([FromForm] string? label, [FromForm] string? color) => Json(EmployeeLabelActions.Add(label, color));
+
+    /// <summary>The batch bar's label dropdown: gives the label to the selected rows and re-renders the grid.</summary>
+    [HttpPost("advanced/tag")]
+    public IActionResult Tag([FromQuery] EmployeeQuery query, [FromQuery] ProTableRequest request, string? hide, [FromForm] int[] ids, [FromForm] string? label)
+    {
+        if (EmployeeLabelActions.Apply(ids, label) is { } message) Response.HxMessage(MessageType.Success, message);
+        return Page("Data table", "Tables/Advanced", EmployeeTablePage.Load(query, request, hide));
+    }
+
     /// <summary>Editable grid: the saved schema and rows.</summary>
     [HttpGet("editable")]
     public IActionResult Editable([FromServices] ProjectGridStore store) =>

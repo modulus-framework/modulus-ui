@@ -1,0 +1,329 @@
+@* Select whose dropdown ends with an "Add item" row: a name, a tag colour and an Add button (Ant Design's custom
+   dropdown demo, as a ready-made component). Single or multiple values. Options are GridOption (value, label, Ant
+   Design tag colour), so the editable grid's Select / Multi-select / Tag columns use it as they are; the MVC
+   <app-creatable-select> renders the same DOM with modulusCreatableSelect in modulus-widgets.js.
+
+   Adding runs GridSchema.AddOption (trimmed, unique, 50 at most) and raises OptionsChanged, unless OnAdd handles it
+   (for example to save the option first). The new option is then selected. *@
+@using Modulus.Ui.Abstractions
+@inject IJSRuntime JS
+
+<div class="@RootClass" style="@Style" @ref="_root">
+    <div class="ant-select-selector" id="@Id" role="combobox" tabindex="@(Disabled ? -1 : 0)" aria-haspopup="listbox"
+         aria-expanded="@(_open ? "true" : "false")" aria-controls="@ListId" aria-label="@AriaLabel" aria-disabled="@(Disabled ? "true" : null)"
+         aria-activedescendant="@(_open && _active >= 0 ? $"{ListId}-{_active}" : null)"
+         @onclick="Toggle" @onkeydown="SelectorKey">
+        @if (Multiple)
+        {
+            <div class="ant-select-selection-overflow">
+                @foreach (var v in _values)
+                {
+                    var o = Find(v);
+                    <span class="ant-select-selection-overflow-item">
+                        <span class="@($"ant-select-selection-item m-cselect-tag{TagClass(o?.Color)}")" title="@(o?.Label ?? v)">
+                            <span class="ant-select-selection-item-content">@(o?.Label ?? v)</span>
+                            @if (!Disabled)
+                            {
+                                <span class="ant-select-selection-item-remove" role="button" aria-label="@($"Remove {o?.Label ?? v}")" @onclick="() => Remove(v)" @onclick:stopPropagation><Icon Type="close" /></span>
+                            }
+                        </span>
+                    </span>
+                }
+                @if (_values.Count == 0 && Placeholder is not null)
+                {
+                    <span class="ant-select-selection-placeholder">@Placeholder</span>
+                }
+            </div>
+        }
+        else if (Find(_value) is { } selected)
+        {
+            <span class="ant-select-selection-item" title="@selected.Label">@Dot(selected)@selected.Label</span>
+        }
+        else if (!string.IsNullOrEmpty(_value))
+        {
+            <span class="ant-select-selection-item" title="@_value">@_value</span>
+        }
+        else if (Placeholder is not null)
+        {
+            <span class="ant-select-selection-placeholder">@Placeholder</span>
+        }
+    </div>
+    <span class="ant-select-arrow" aria-hidden="true"><Icon Type="down" /></span>
+    @if (AllowClear && !Disabled && HasValue)
+    {
+        <span class="ant-select-clear" role="button" aria-label="Clear" @onclick="Clear" @onclick:stopPropagation><Icon Type="close-circle" Theme="IconThemeType.Fill" /></span>
+    }
+
+    @if (_open)
+    {
+        <div class="m-cselect-backdrop" @onclick="Close"></div>
+        <div class="ant-select-dropdown ant-select-dropdown-placement-bottomLeft m-cselect-dropdown">
+            <div class="m-cselect-list" id="@ListId" role="listbox" aria-multiselectable="@(Multiple ? "true" : null)" aria-label="@(AriaLabel ?? "Options")">
+                @if (Options.Count == 0)
+                {
+                    <div class="m-cselect-empty">No options yet</div>
+                }
+                @for (var i = 0; i < Options.Count; i++)
+                {
+                    var o = Options[i];
+                    var index = i;
+                    var on = IsSelected(o.Value);
+                    <div class="@($"ant-select-item ant-select-item-option{(on ? " ant-select-item-option-selected" : "")}{(index == _active ? " ant-select-item-option-active" : "")}")"
+                         id="@($"{ListId}-{index}")" role="option" aria-selected="@(on ? "true" : "false")"
+                         @onclick="() => Pick(o.Value)" @onmouseenter="() => _active = index">
+                        <div class="ant-select-item-option-content">@Dot(o)@o.Label</div>
+                        @if (on)
+                        {
+                            <span class="ant-select-item-option-state" aria-hidden="true"><Icon Type="check" /></span>
+                        }
+                    </div>
+                }
+            </div>
+            @if (AllowAdd)
+            {
+                <div class="m-cselect-footer">
+                    <div class="m-cselect-add">
+                        <input class="ant-input ant-input-sm" type="text" placeholder="@AddPlaceholder" aria-label="@AddPlaceholder" maxlength="@GridSchema.MaxOptionLabel"
+                               value="@_newLabel" @oninput="e => { _newLabel = e.Value?.ToString(); _error = null; }" @onkeydown="AddKey" @onkeydown:stopPropagation />
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm m-cselect-add-btn" @onclick="AddAsync"><Icon Type="plus" /><span>@AddText</span></button>
+                    </div>
+                    @if (ShowColors)
+                    {
+                        <div class="m-cselect-colors" role="radiogroup" aria-label="Colour">
+                            @foreach (var color in GridSchema.OptionColors)
+                            {
+                                var c = color;
+                                <button type="button" class="@($"m-cselect-swatch ant-tag-{c}")" role="radio" aria-checked="@(c == NewColor ? "true" : "false")"
+                                        aria-label="@c" title="@c" @onclick="() => _color = c" @onkeydown="SwatchKey"></button>
+                            }
+                        </div>
+                    }
+                    @if (_error is not null)
+                    {
+                        <div class="m-cselect-error" role="alert">@_error</div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<GridOption> Options { get; set; } = [];
+    [Parameter] public EventCallback<IReadOnlyList<GridOption>> OptionsChanged { get; set; }
+
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    [Parameter] public bool Multiple { get; set; }
+    [Parameter] public IReadOnlyList<string>? Values { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<string>> ValuesChanged { get; set; }
+
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public bool AllowClear { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>small | default | large</summary>
+    [Parameter] public string Size { get; set; } = "default";
+
+    /// <summary>Shows the "Add item" row.</summary>
+    [Parameter] public bool AllowAdd { get; set; } = true;
+
+    /// <summary>Tag colour swatches in the "Add item" row, and colour dots on the options.</summary>
+    [Parameter] public bool ShowColors { get; set; } = true;
+
+    [Parameter] public string AddPlaceholder { get; set; } = "New item";
+    [Parameter] public string AddText { get; set; } = "Add";
+
+    /// <summary>
+    /// Adds the option instead of the component (label, colour): return the new option, or an error to show.
+    /// OptionsChanged isn't raised then; pass the updated Options back.
+    /// </summary>
+    [Parameter] public Func<string, string, Task<(GridOption? Added, string? Error)>>? OnAdd { get; set; }
+
+    /// <summary>Opens the dropdown on first render (the editable grid opens a cell's editor this way).</summary>
+    [Parameter] public bool DefaultOpen { get; set; }
+
+    /// <summary>Raised when the dropdown opens or closes.</summary>
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private readonly string _uid = Guid.NewGuid().ToString("N")[..8];
+    private ElementReference _root;
+    private bool _open, _place;
+    private int _active = -1;
+    private string? _value, _newLabel, _error, _color;
+    private List<string> _values = [];
+
+    private string ListId => $"m-cselect-{_uid}";
+    private string NewColor => _color ?? GridSchema.OptionColors[Options.Count % GridSchema.OptionColors.Count];
+    private bool HasValue => Multiple ? _values.Count > 0 : !string.IsNullOrEmpty(_value);
+
+    private string RootClass => string.Join(' ', new[]
+    {
+        "ant-select", Multiple ? "ant-select-multiple" : "ant-select-single", "ant-select-show-arrow", "m-cselect",
+        Size == "small" ? "ant-select-sm" : Size == "large" ? "ant-select-lg" : null,
+        AllowClear ? "ant-select-allow-clear" : null,
+        _open ? "ant-select-open ant-select-focused" : null,
+        Disabled ? "ant-select-disabled" : null, Class,
+    }.Where(c => !string.IsNullOrEmpty(c)));
+
+    protected override void OnParametersSet()
+    {
+        _value = Value;
+        _values = [.. Values ?? []];
+    }
+
+    protected override void OnInitialized()
+    {
+        if (DefaultOpen && !Disabled) { _open = true; _place = true; _active = ActiveIndex(); }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_place) return;
+        _place = false;
+        try { await JS.InvokeVoidAsync("modulusShell.placeSelect", _root); }
+        catch (JSDisconnectedException) { }
+        catch (InvalidOperationException) { } // prerendering
+    }
+
+    private GridOption? Find(string? value) => Options.FirstOrDefault(o => o.Value == value);
+
+    private bool IsSelected(string value) => Multiple ? _values.Contains(value) : _value == value;
+
+    private int ActiveIndex()
+    {
+        var current = Multiple ? _values.FirstOrDefault() : _value;
+        var i = Options.ToList().FindIndex(o => o.Value == current);
+        return i >= 0 ? i : Options.Count > 0 ? 0 : -1;
+    }
+
+    private RenderFragment Dot(GridOption o) => __builder =>
+    {
+        if (ShowColors && o.Color is { } c && c != "default")
+        {
+            <span class="@($"m-cselect-dot ant-tag-{c}")" aria-hidden="true"></span>
+        }
+    };
+
+    private static string TagClass(string? color) => color is null or "default" ? "" : $" ant-tag-{color}";
+
+    private Task Toggle() => _open ? Close() : Open();
+
+    private async Task Open()
+    {
+        if (Disabled || _open) return;
+        _open = true;
+        _place = true;
+        _active = ActiveIndex();
+        _error = null;
+        await OpenChanged.InvokeAsync(true);
+    }
+
+    private async Task Close()
+    {
+        if (!_open) return;
+        _open = false;
+        _newLabel = _error = null;
+        _color = null;
+        await OpenChanged.InvokeAsync(false);
+        try { await _root.FocusAsync(); } catch { /* the grid may have removed the editor */ }
+    }
+
+    private async Task Pick(string value)
+    {
+        if (Multiple)
+        {
+            if (!_values.Remove(value)) _values.Add(value);
+            await ValuesChanged.InvokeAsync([.. _values]);
+            return;
+        }
+        _value = value;
+        await ValueChanged.InvokeAsync(value);
+        await Close();
+    }
+
+    private async Task Remove(string value)
+    {
+        _values.Remove(value);
+        await ValuesChanged.InvokeAsync([.. _values]);
+    }
+
+    private async Task Clear()
+    {
+        if (Multiple) { _values.Clear(); await ValuesChanged.InvokeAsync([]); }
+        else { _value = null; await ValueChanged.InvokeAsync(null); }
+    }
+
+    private async Task AddAsync()
+    {
+        var label = _newLabel?.Trim() ?? "";
+        GridOption? added;
+        if (OnAdd is not null)
+        {
+            (added, _error) = await OnAdd(label, NewColor);
+        }
+        else
+        {
+            (var options, added, _error) = GridSchema.AddOption(Options, label, NewColor);
+            if (added is not null)
+            {
+                Options = options;
+                await OptionsChanged.InvokeAsync(options);
+            }
+        }
+        if (added is null) return;
+        _newLabel = null;
+        _color = null;
+        if (Multiple)
+        {
+            _values.Add(added.Value);
+            await ValuesChanged.InvokeAsync([.. _values]);
+            _active = Options.Count - 1;
+        }
+        else
+        {
+            _value = added.Value;
+            await ValueChanged.InvokeAsync(added.Value);
+            await Close();
+        }
+    }
+
+    private async Task AddKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await AddAsync();
+        else if (e.Key == "Escape") await Close();
+    }
+
+    private async Task SwatchKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") await Close();
+    }
+
+    private async Task SelectorKey(KeyboardEventArgs e)
+    {
+        // modulus-shell.js stops these keys scrolling the page.
+        if (!_open)
+        {
+            if (e.Key is "ArrowDown" or "ArrowUp" or "Enter" or " ") await Open();
+            return;
+        }
+        await PopupKey(e);
+    }
+
+    private async Task PopupKey(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "ArrowDown" when Options.Count > 0: _active = (_active + 1) % Options.Count; break;
+            case "ArrowUp" when Options.Count > 0: _active = (_active - 1 + Options.Count) % Options.Count; break;
+            case "Enter" or " " when _active >= 0 && _active < Options.Count: await Pick(Options[_active].Value); break;
+            case "Escape" or "Tab": await Close(); break;
+        }
+    }
+}

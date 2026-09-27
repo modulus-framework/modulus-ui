@@ -384,3 +384,132 @@ public class TourStepTagHelper : TagHelper
         output.SuppressOutput();
     }
 }
+
+/// <summary>
+/// Select whose dropdown ends with an "Add item" row (a name, a tag colour and an Add button), like the Blazor
+/// <c>AppCreatableSelect</c>. Posts hidden inputs named <c>name</c> (one per value with <c>multiple</c>) and raises
+/// <c>change</c>, so a filter form's <c>@change</c> submits it.
+/// <code>&lt;app-creatable-select name="label" options="Labels" value="@q.Label" placeholder="Any label" add-href="/labels" /&gt;</code>
+/// Without <c>add-href</c> a new option lives in the page; with it, the label and colour are POSTed there (form
+/// fields <c>label</c> and <c>color</c>, antiforgery header included) and the JSON reply,
+/// <c>{ value, label, color }</c> or <c>{ error }</c>, is used.
+/// </summary>
+[HtmlTargetElement("app-creatable-select", TagStructure = TagStructure.WithoutEndTag)]
+public class CreatableSelectTagHelper : BoundControlTagHelper
+{
+    public IEnumerable<GridOption> Options { get; set; } = [];
+
+    public bool Multiple { get; set; }
+
+    /// <summary>Selected values with <c>multiple</c> (otherwise <c>value</c> or <c>asp-for</c>).</summary>
+    public IEnumerable<string>? Values { get; set; }
+
+    public string? Placeholder { get; set; }
+    public bool AllowClear { get; set; }
+
+    [HtmlAttributeName("allow-add")] public bool AllowAdd { get; set; } = true;
+    [HtmlAttributeName("show-colors")] public bool ShowColors { get; set; } = true;
+    [HtmlAttributeName("add-placeholder")] public string AddPlaceholder { get; set; } = "New item";
+    [HtmlAttributeName("add-text")] public string AddText { get; set; } = "Add";
+    [HtmlAttributeName("add-href")] public string? AddHref { get; set; }
+
+    [HtmlAttributeName("aria-label")]
+    public string? AriaLabel { get; set; }
+
+    public override void Process(TagHelperContext context, TagHelperOutput output)
+    {
+        var (name, id, value) = Bound();
+        var options = Options.ToList();
+        var values = Multiple ? (Values?.ToList() ?? Widgets.Values(For?.Model, value)) : [];
+        var single = Multiple ? null : value;
+        var listId = $"m-cselect-{context.UniqueId}";
+
+        output.TagName = "div";
+        output.TagMode = TagMode.StartTagAndEndTag;
+        output.AddClasses(Html.Cx("ant-select", Multiple ? "ant-select-multiple" : "ant-select-single", "ant-select-show-arrow", "m-cselect",
+            SizeClass("ant-select"), AllowClear ? "ant-select-allow-clear" : null, Disabled ? "ant-select-disabled" : null));
+        output.Attributes.SetAttribute("x-data", new HtmlString($"modulusCreatableSelect({Widgets.Config(new
+        {
+            name,
+            multiple = Multiple,
+            value = single ?? "",
+            values,
+            options = options.Select(o => new { value = o.Value, label = o.Label, color = o.Color }),
+            placeholder = Placeholder,
+            showColors = ShowColors,
+            addHref = AddHref,
+            colors = GridSchema.OptionColors,
+            maxOptions = GridSchema.MaxOptions,
+            maxLabel = GridSchema.MaxOptionLabel,
+        })})"));
+        output.Attributes.SetAttribute(":class", "open && 'ant-select-open ant-select-focused'");
+
+        var sb = new StringBuilder();
+        sb.Append("""<span class="m-cselect-inputs" x-html="inputs()">""");
+        if (Multiple)
+            foreach (var v in values) sb.Append($"""<input type="hidden" name="{Html.E(name)}" value="{Html.E(v)}" />""");
+        else
+            sb.Append($"""<input type="hidden" name="{Html.E(name)}" value="{Html.E(single)}" />""");
+        sb.Append("</span>");
+
+        sb.Append($"""<div class="ant-select-selector"{Html.Attr("id", id.Length > 0 ? id : null)} role="combobox" tabindex="{(Disabled ? -1 : 0)}" aria-haspopup="listbox" aria-expanded="false" aria-controls="{listId}"{Html.Attr("aria-label", AriaLabel)}""");
+        sb.Append(Disabled
+            ? """ aria-disabled="true">"""
+            : $""" :aria-expanded="open" :aria-activedescendant="open && active >= 0 ? '{listId}-' + active : null" @click="onSelector($event)" @keydown="key($event)" x-html="selection()">""");
+        sb.Append(Selection(options, single, values)).Append("</div>");
+        sb.Append(Widgets.Arrow());
+        if (AllowClear && !Disabled)
+        {
+            var empty = Multiple ? values.Count == 0 : string.IsNullOrEmpty(single);
+            sb.Append($"""<span class="ant-select-clear" role="button" aria-label="Clear" x-show="has()"{(empty ? " style=\"display: none;\"" : "")} @click.stop="clear()">{AntIcons.Span("close-circle", IconThemeType.Fill)}</span>""");
+        }
+
+        if (!Disabled)
+        {
+            sb.Append("""<div class="m-cselect-backdrop" x-show="open" x-cloak @click="close()"></div>""");
+            sb.Append("""<div class="ant-select-dropdown ant-select-dropdown-placement-bottomLeft m-cselect-dropdown" x-show="open" x-cloak>""");
+            sb.Append($"""<div class="m-cselect-list" id="{listId}" role="listbox" aria-label="{Html.E(AriaLabel ?? "Options")}"{(Multiple ? " aria-multiselectable=\"true\"" : "")}>""");
+            sb.Append("""<div class="m-cselect-empty" x-show="!options.length">No options yet</div>""");
+            sb.Append("""<template x-for="(o, i) in options" :key="o.value">""");
+            sb.Append($$"""<div class="ant-select-item ant-select-item-option" :class="{ 'ant-select-item-option-selected': sel(o.value), 'ant-select-item-option-active': i === active }" :id="'{{listId}}-' + i" role="option" :aria-selected="sel(o.value)" @click="pick(o.value)" @mouseenter="active = i">""");
+            sb.Append("""<div class="ant-select-item-option-content"><span class="m-cselect-dot" :class="'ant-tag-' + o.color" x-show="showColors && o.color && o.color !== 'default'" aria-hidden="true"></span><span x-text="o.label"></span></div>""");
+            sb.Append($"""<span class="ant-select-item-option-state" x-show="sel(o.value)" aria-hidden="true">{AntIcons.Span("check")}</span></div></template></div>""");
+            if (AllowAdd)
+            {
+                sb.Append("""<div class="m-cselect-footer"><div class="m-cselect-add">""");
+                sb.Append($"""<input class="ant-input ant-input-sm" type="text" x-ref="add" x-model="newLabel" placeholder="{Html.E(AddPlaceholder)}" aria-label="{Html.E(AddPlaceholder)}" maxlength="{GridSchema.MaxOptionLabel}" @input="error = ''" @change.stop @keydown.enter.stop.prevent="add()" @keydown.escape.stop="close()" />""");
+                sb.Append($"""<button type="button" class="ant-btn ant-btn-text ant-btn-sm m-cselect-add-btn" :disabled="busy" @click="add()">{AntIcons.Span("plus")}<span>{Html.E(AddText)}</span></button></div>""");
+                if (ShowColors)
+                    sb.Append("""<div class="m-cselect-colors" role="radiogroup" aria-label="Colour"><template x-for="c in colors" :key="c"><button type="button" class="m-cselect-swatch" :class="'ant-tag-' + c" role="radio" :aria-checked="c === color()" :aria-label="c" :title="c" @click="picked = c" @keydown.escape.stop="close()"></button></template></div>""");
+                sb.Append("""<div class="m-cselect-error" role="alert" x-show="error" x-text="error"></div></div>""");
+            }
+            sb.Append("</div>");
+        }
+        output.Content.SetHtmlContent(sb.ToString());
+    }
+
+    // The selector's first paint; modulusCreatableSelect.selection() renders the same markup afterwards.
+    private string Selection(List<GridOption> options, string? single, List<string> values)
+    {
+        GridOption? Find(string? v) => options.FirstOrDefault(o => o.Value == v);
+        string Dot(GridOption? o) => ShowColors && o?.Color is { } c && c != "default" ? $"""<span class="m-cselect-dot ant-tag-{Html.E(c)}" aria-hidden="true"></span>""" : "";
+        var placeholder = Placeholder is null ? "" : $"""<span class="ant-select-selection-placeholder">{Html.E(Placeholder)}</span>""";
+        if (!Multiple)
+        {
+            if (string.IsNullOrEmpty(single)) return placeholder;
+            var o = Find(single);
+            return $"""<span class="ant-select-selection-item" title="{Html.E(o?.Label ?? single)}">{Dot(o)}{Html.E(o?.Label ?? single)}</span>""";
+        }
+        var sb = new StringBuilder("""<div class="ant-select-selection-overflow">""");
+        foreach (var v in values)
+        {
+            var o = Find(v);
+            var tint = o?.Color is { } c && c != "default" ? $" ant-tag-{Html.E(c)}" : "";
+            sb.Append($"""<span class="ant-select-selection-overflow-item"><span class="ant-select-selection-item m-cselect-tag{tint}" title="{Html.E(o?.Label ?? v)}"><span class="ant-select-selection-item-content">{Html.E(o?.Label ?? v)}</span>""");
+            if (!Disabled) sb.Append($"""<span class="ant-select-selection-item-remove" role="button" aria-label="Remove {Html.E(o?.Label ?? v)}" data-remove="{Html.E(v)}">{AntIcons.Span("close")}</span>""");
+            sb.Append("</span></span>");
+        }
+        if (values.Count == 0) sb.Append(placeholder);
+        return sb.Append("</div>").ToString();
+    }
+}

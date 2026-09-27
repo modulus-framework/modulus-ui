@@ -1,5 +1,7 @@
 @page "/tables/advanced"
 
+@inject IMessageService Message
+
 <PageTitle>Data table · Modulus</PageTitle>
 
 @* Data table: search, filters, sorting, paging, column picker, density, selection and CSV export (/tables/advanced/export,
@@ -41,12 +43,16 @@
                 }
             </SelectOptions>
         </Select>
+        <AppCreatableSelect Options="EmployeeLabels.Options" Value="@_label" ValueChanged="v => FilterAsync(() => _label = v)" OnAdd="AddLabelAsync"
+                            Placeholder="Any label" AddPlaceholder="New label" AllowClear AriaLabel="Label" />
         @if (Filtered)
         {
             <button type="button" class="ant-btn ant-btn-link" @onclick="ClearFiltersAsync"><span>Clear filters</span></button>
         }
     </Filters>
     <BatchActions Context="rows">
+        <AppCreatableSelect Options="EmployeeLabels.Options" ValueChanged="v => ApplyLabelAsync(rows, v)" OnAdd="AddLabelAsync" Size="small"
+                            Placeholder="Add label…" AddPlaceholder="New label" AriaLabel="Add a label to the selected employees" Style="width: 160px" />
         <a class="ant-btn ant-btn-primary ant-btn-sm" href="@ExportUrl(rows.Select(r => r.Id))" download><span>Export selected</span></a>
     </BatchActions>
     @* Optional columns are hidden rather than removed, so toggling one keeps the table's sort state. *@
@@ -54,7 +60,7 @@
         <PropertyColumn Property="e => e.Name" Title="Employee" Sortable Width="260">
             <div class="m-entity">
                 <span class="m-avatar m-avatar-sm m-av-@row.Tint">@Fmt.Initials(row.Name)</span>
-                <div class="m-entity-text"><span class="m-entity-title">@row.Name</span><span class="m-entity-desc">@row.Email</span></div>
+                <div class="m-entity-text"><span class="m-entity-title">@row.Name@LabelTags(row.Id)</span><span class="m-entity-desc">@row.Email</span></div>
             </div>
         </PropertyColumn>
         <PropertyColumn Hidden="@(!Shows("position"))" Property="e => e.Position" Title="Position" Sortable Width="190" />
@@ -72,15 +78,15 @@
 
 @code {
     private ProTable<Employee>? _table;
-    private string? _keyword, _department, _office;
+    private string? _keyword, _department, _office, _label;
     private EmployeeStatus? _status;
     private HashSet<string> _hidden = [];
     private (int Count, decimal AverageSalary) _summary = EmployeeDirectory.Summary(new());
     private readonly RenderFragment _searchIcon = @<Ti Name="search" />;
 
-    private EmployeeQuery Query => new(_keyword, _department, _office, _status);
+    private EmployeeQuery Query => new(_keyword, _department, _office, _status, _label);
 
-    private bool Filtered => !string.IsNullOrEmpty(_keyword) || _department is not null || _office is not null || _status is not null;
+    private bool Filtered => !string.IsNullOrEmpty(_keyword) || _department is not null || _office is not null || _status is not null || _label is not null;
 
     private bool Shows(string column) => !_hidden.Contains(column);
 
@@ -102,11 +108,35 @@
             if (_department is not null) query.Add(new("department", _department));
             if (_office is not null) query.Add(new("office", _office));
             if (_status is { } s) query.Add(new("status", s.ToString()));
+            if (_label is not null) query.Add(new("label", _label));
         }
         return Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString("/tables/advanced/export", query);
     }
 
     private Task SearchAsync() => _table!.ReloadAsync(resetPage: true);
+
+    // Labels are shared by the filter and the batch bar, so a label added in either shows up in both.
+    private static Task<(GridOption? Added, string? Error)> AddLabelAsync(string label, string color) =>
+        Task.FromResult(EmployeeLabels.Add(label, color));
+
+    private async Task ApplyLabelAsync(IReadOnlyList<Employee> rows, string? value)
+    {
+        if (value is null || EmployeeLabels.Find(value) is not { } label) return;
+        var count = EmployeeLabels.Apply(rows.Select(r => r.Id), value);
+        await _table!.ReloadAsync();
+        _ = Message.SuccessAsync(count == 0 ? $"Everyone selected already has “{label.Label}”" : $"Added “{label.Label}” to {count} {(count == 1 ? "employee" : "employees")}");
+    }
+
+    private static RenderFragment LabelTags(int id) => __builder =>
+    {
+        foreach (var value in EmployeeLabels.Of(id))
+        {
+            if (EmployeeLabels.Find(value) is { } label)
+            {
+                <span class="@($"ant-tag ant-tag-{label.Color} m-label-tag")">@label.Label</span>
+            }
+        }
+    };
 
     private async Task FilterAsync(Action set)
     {
@@ -114,5 +144,5 @@
         await _table!.ReloadAsync(resetPage: true);
     }
 
-    private Task ClearFiltersAsync() => FilterAsync(() => (_keyword, _department, _office, _status) = (null, null, null, null));
+    private Task ClearFiltersAsync() => FilterAsync(() => (_keyword, _department, _office, _status, _label) = (null, null, null, null, null));
 }

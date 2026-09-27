@@ -34,7 +34,7 @@ public static class ProjectGridActions
                 return (ProjectGridPage.Saved(store), MessageType.Info, "Sample data restored.");
             default:
                 EditableGridForm.Apply(post, form, FieldName);
-                return (new ProjectGridPage(post.Columns, post.Rows, [], true), null, null);
+                return (new ProjectGridPage(post.Columns, post.Rows, [], true), post.Error is null ? null : MessageType.Warning, post.Error);
         }
     }
 }

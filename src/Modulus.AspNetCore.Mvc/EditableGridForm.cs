@@ -16,6 +16,9 @@ public sealed class EditableGridPost
 
     /// <summary>The verb of <see cref="Operation"/> (<c>save</c>, <c>pin</c>, <c>add-column</c> …).</summary>
     public string Verb => Operation?.Split(':')[0] ?? "";
+
+    /// <summary>Why <see cref="EditableGridForm.Apply"/> couldn't do the operation (for example a duplicate option), or null.</summary>
+    public string? Error { get; set; }
 }
 
 /// <summary>
@@ -100,8 +103,30 @@ public static partial class EditableGridForm
                 if (added is not null)
                     foreach (var row in post.Rows) row[added.Key] = added.Type == GridCellType.Switch ? "false" : null;
                 return true;
+            case "add-option":
+                AddOption(post, form, name, key, parts.ElementAtOrDefault(2) ?? "");
+                return true;
             default:
                 return false;
         }
+    }
+
+    /// <summary>Form field of the option name typed in a cell's editor (<c>{name}.option[{row}].{key}</c>).</summary>
+    public static string OptionField(string name, string rowId, string key) => $"{name}.option[{rowId}].{key}";
+
+    /// <summary>Form field of the colour picked for a new option (<c>{name}.color[{row}].{key}</c>).</summary>
+    public static string ColorField(string name, string rowId, string key) => $"{name}.color[{rowId}].{key}";
+
+    // add-option:{key}:{row} adds the option typed in that cell's editor to the column and picks it for the cell.
+    private static void AddOption(EditableGridPost post, IFormCollection form, string name, string key, string rowId)
+    {
+        if (GridSchema.Find(post.Columns, key) is not { Type: GridCellType.Select or GridCellType.MultiSelect or GridCellType.Tag } column) return;
+        var (options, added, error) = GridSchema.AddOption(column.Options, form[OptionField(name, rowId, key)], form[ColorField(name, rowId, key)]);
+        if (added is null) { post.Error = error; return; }
+        column.Options = options;
+        if (post.Rows.Find(r => r.Id == rowId) is not { } row) return;
+        row[key] = column.Type == GridCellType.MultiSelect
+            ? GridSchema.FromMany([.. GridSchema.Many(row[key]), added.Value])
+            : added.Value;
     }
 }

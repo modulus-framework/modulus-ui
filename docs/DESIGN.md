@@ -72,6 +72,11 @@ charts
   `QrCode` (a byte-mode QR encoder, checked by decoding with ZXing in tests), `QrSvg` / `QRCodeMarkup`, `HsvColor` and
   `TourStep`. `modulusColorPicker` mirrors `HsvColor` in JS. `modulusShell.tour` positions the tour for both flavours,
   and `modulusShell` drives `[data-m-back-top]` back-to-top buttons for both flavours.
+- `AppCreatableSelect` / `app-creatable-select` is a select built in Modulus rather than AntD's `Select` with
+  `DropdownRender`, so both flavours share one DOM and the "Add item" row can take focus without closing the list.
+  Its dropdown is `position: fixed` (placed by `modulusShell.placeSelect`), so table cells and scrolling cards don't
+  clip it. Options are `GridOption`, and `GridSchema.AddOption` checks new ones on both sides. The MVC grid adds an
+  option with a round trip (`add-option:{key}:{row}`), because the option changes the posted schema.
 - `EditableGrid` renders its columns from `GridColumn` data over AntD's `Table` (fixed columns, `ExpandTemplate`).
   Values are invariant strings (`1234.5`, `2026-12-31`, `true`, `a,b`), so Blazor, MVC and the store share
   `GridSchema` for formatting, normalising and validation. Select and DatePicker ignore `Open` on first render and

@@ -425,14 +425,15 @@
                             OnOpenChange="OnPopupChange" />
                 break;
             case GridCellType.Select or GridCellType.Tag:
-                <Select TItem="GridOption" TItemValue="string" DataSource="c.Options" Value="value" ValueName="@nameof(GridOption.Value)" LabelName="@nameof(GridOption.Label)"
-                        AutoFocus AllowClear="!c.Required" Style="width: 100%"
-                        ValueChanged="async v => { await SetValue(row, c, v); EndEdit(); }" OpenChanged="OnPopupChange" />
+                @* AppCreatableSelect ends its dropdown with an "Add option" row; a new option joins the column's schema. *@
+                <AppCreatableSelect Options="c.Options" OptionsChanged="o => OptionsChangedAsync(c, o)" Value="@value" AllowClear="!c.Required"
+                                    DefaultOpen Style="width: 100%" AriaLabel="@c.Title" AddPlaceholder="New option"
+                                    ValueChanged="v => SetValue(row, c, v)" OpenChanged="OnCreatableOpenChange" />
                 break;
             case GridCellType.MultiSelect:
-                <Select TItem="GridOption" TItemValue="string" DataSource="c.Options" Mode="SelectMode.Multiple" Values="GridSchema.Many(value)"
-                        ValueName="@nameof(GridOption.Value)" LabelName="@nameof(GridOption.Label)" AutoFocus Style="width: 100%" MaxTagCount="2"
-                        ValuesChanged="v => SetValue(row, c, GridSchema.FromMany(v))" OpenChanged="OnPopupChange" />
+                <AppCreatableSelect Options="c.Options" OptionsChanged="o => OptionsChangedAsync(c, o)" Multiple Values="GridSchema.Many(value)"
+                                    DefaultOpen Style="width: 100%" AriaLabel="@c.Title" AddPlaceholder="New option"
+                                    ValuesChanged="v => SetValue(row, c, GridSchema.FromMany(v))" OpenChanged="OnCreatableOpenChange" />
                 break;
             default:
                 <div @onfocusout="EndEdit">
@@ -484,6 +485,17 @@
     private void OnPopupChange(bool open)
     {
         if (!open && _popupOpen) EndEdit();
+    }
+
+    private void OnCreatableOpenChange(bool open)
+    {
+        if (!open) EndEdit();
+    }
+
+    private async Task OptionsChangedAsync(GridColumn c, IReadOnlyList<GridOption> options)
+    {
+        c.Options = options;
+        await ChangedAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

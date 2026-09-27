@@ -434,6 +434,14 @@
             </div>
             <p class="m-muted">Value: <code>@(_color ?? "none")</code></p>
         </Card>
+        <Card Bordered="false" Title="Select with Add item">
+            <p class="m-demo-desc">The dropdown ends with a name, a tag colour and Add. The new option joins the list and is selected.</p>
+            <div class="m-demo-row">
+                <AppCreatableSelect @bind-Options="_productColors" @bind-Value="_productColor" Placeholder="Colour" AddPlaceholder="New colour" AllowClear AriaLabel="Colour" Style="width: 200px" />
+                <AppCreatableSelect @bind-Options="_productTags" Multiple @bind-Values="_productTagValues" Placeholder="Tags" AddPlaceholder="New tag" AriaLabel="Tags" Style="width: 280px" />
+            </div>
+            <p class="m-muted">Value: <code>@(_productColor ?? "none")</code> · <code>@string.Join(", ", _productTagValues)</code></p>
+        </Card>
     </div>
 </section>
 
@@ -741,6 +749,10 @@
     private DrawerPlacement? _drawer;
     private readonly DateTime _deadline = GalleryData.Deadline();
     private string? _color = "#1677ff";
+    private IReadOnlyList<Modulus.Ui.Abstractions.GridOption> _productColors = GalleryData.ProductColors;
+    private IReadOnlyList<Modulus.Ui.Abstractions.GridOption> _productTags = GalleryData.ProductTags;
+    private string? _productColor = "blue";
+    private IReadOnlyList<string> _productTagValues = ["new"];
     private bool _qrExpired = true;
     private bool _tour;
     private static readonly IReadOnlyList<Modulus.Ui.Abstractions.Theming.ColorPreset> ColorPresets = GalleryData.ColorPresets;

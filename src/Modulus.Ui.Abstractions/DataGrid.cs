@@ -204,6 +204,28 @@ public static class GridSchema
 
     private static readonly string[] TagColors = ["blue", "green", "orange", "purple", "cyan", "magenta", "gold", "red"];
 
+    /// <summary>Ant Design preset tag colours offered when adding an option.</summary>
+    public static readonly IReadOnlyList<string> OptionColors = [.. TagColors, "volcano", "geekblue", "lime"];
+
+    public const int MaxOptions = 50;
+    public const int MaxOptionLabel = 60;
+
+    /// <summary>
+    /// Adds an option with <paramref name="label"/> and <paramref name="color"/> (one of <see cref="OptionColors"/>;
+    /// anything else takes the next colour in turn). Returns the new list and option, or an error and the list unchanged.
+    /// </summary>
+    public static (IReadOnlyList<GridOption> Options, GridOption? Added, string? Error) AddOption(IReadOnlyList<GridOption> options, string? label, string? color)
+    {
+        label = label?.Trim();
+        if (string.IsNullOrEmpty(label)) return (options, null, "Enter a name.");
+        if (label.Length > MaxOptionLabel) return (options, null, $"Use {MaxOptionLabel} characters or fewer.");
+        if (options.Any(o => string.Equals(o.Label, label, StringComparison.OrdinalIgnoreCase))) return (options, null, $"“{label}” is already in the list.");
+        if (options.Count >= MaxOptions) return (options, null, $"A list holds up to {MaxOptions} options.");
+        var tint = color is not null && OptionColors.Contains(color) ? color : OptionColors[options.Count % OptionColors.Count];
+        var added = new GridOption(UniqueKey(label, options.Select(o => o.Value)), label, tint);
+        return ([.. options, added], added, null);
+    }
+
     public static IReadOnlyList<GridOption> ParseOptions(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return [];

@@ -314,6 +314,7 @@
         var tries = 0;
         (function attempt() {
             var cell = document.querySelector('#' + gridId + ' .m-grid-cell-editing');
+            if (cell && cell.querySelector('.m-cselect')) return; // AppCreatableSelect opens itself (DefaultOpen)
             var popup = cell && cell.querySelector('.ant-select-selector, .ant-picker-input input');
             var input = cell && cell.querySelector('input, textarea');
             if (!popup && !input) {
@@ -437,4 +438,44 @@
 
     window.addEventListener('resize', placeTour);
     document.addEventListener('scroll', placeTour, { capture: true, passive: true });
+
+    // Creatable select (AppCreatableSelect / app-creatable-select): the dropdown is position: fixed under (or above)
+    // its trigger, so table cells and scrolling cards don't clip it. Re-placed on scroll and resize.
+    function placeSelect(root) {
+        var popup = root && root.querySelector(':scope > .m-cselect-dropdown');
+        if (!popup) return;
+        var r = root.getBoundingClientRect(), gap = 4, edge = 8;
+        var vw = document.documentElement.clientWidth, vh = window.innerHeight;
+        popup.style.minWidth = Math.max(r.width, 200) + 'px';
+        var h = popup.offsetHeight, w = popup.offsetWidth;
+        var below = vh - r.bottom - gap - edge, above = r.top - gap - edge;
+        var up = h > below && above > below;
+        popup.classList.toggle('ant-select-dropdown-placement-topLeft', up);
+        popup.classList.toggle('ant-select-dropdown-placement-bottomLeft', !up);
+        popup.style.left = Math.round(Math.max(edge, Math.min(r.left, vw - w - edge))) + 'px';
+        popup.style.top = Math.round(up ? Math.max(edge, r.top - gap - h) : r.bottom + gap) + 'px';
+    }
+    function placeSelects() { document.querySelectorAll('.m-cselect.ant-select-open').forEach(placeSelect); }
+
+    window.modulusShell.placeSelect = function (root) {
+        placeSelect(root);
+        var popup = root && root.querySelector(':scope > .m-cselect-dropdown');
+        var active = popup && popup.querySelector('.ant-select-item-option-active');
+        if (active) active.scrollIntoView({ block: 'nearest' });
+        if (!root.contains(document.activeElement)) root.querySelector('.ant-select-selector').focus({ preventScroll: true });
+    };
+
+    window.addEventListener('resize', placeSelects);
+    document.addEventListener('scroll', function (e) {
+        // Scrolling the option list itself must not move the dropdown.
+        if (e.target instanceof Element && e.target.closest('.m-cselect-dropdown')) return;
+        placeSelects();
+    }, { capture: true, passive: true });
+
+    // Arrow keys, Enter and Space on the trigger open and move through the list instead of scrolling the page.
+    document.addEventListener('keydown', function (e) {
+        var t = e.target;
+        if (!(t instanceof Element) || !t.matches('.m-cselect > .ant-select-selector')) return;
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === ' ' || e.key === 'Enter') e.preventDefault();
+    });
 })();

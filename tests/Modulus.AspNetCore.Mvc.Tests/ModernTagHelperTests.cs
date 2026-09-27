@@ -1,6 +1,7 @@
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using Modulus.AspNetCore.Mvc.TagHelpers;
+using Modulus.Ui.Abstractions;
 using Modulus.Ui.Abstractions.Qr;
 using Modulus.Ui.Abstractions.Theming;
 using Xunit;
@@ -149,6 +150,48 @@ public class ModernTagHelperTests
     {
         var html = await RenderAsync(new FloatBackTopTagHelper { VisibilityHeight = 200, Target = "#scroller" }, "app-float-back-top");
         Assert.StartsWith("<button type=\"button\" class=\"ant-float-btn ant-float-btn-default ant-float-btn-circle m-float-back-top\" data-m-back-top=\"200\" data-m-target=\"#scroller\" aria-label=\"Back to top\">", html);
+    }
+
+    private static readonly GridOption[] Colors = [new("red", "Red", "red"), new("blue", "Blue", "blue")];
+
+    [Fact]
+    public async Task CreatableSelect_PostsAHiddenInput_AndPaintsTheSelection()
+    {
+        var html = await RenderAsync(new CreatableSelectTagHelper { Name = "label", Value = "blue", Options = Colors, AllowClear = true, AddHref = "/labels", AriaLabel = "Label" },
+            "app-creatable-select", [new TagHelperAttribute("style", "width: 180px")]);
+
+        Assert.StartsWith("<div ", html);
+        Assert.Contains("class=\"ant-select ant-select-single ant-select-show-arrow m-cselect ant-select-allow-clear\"", html);
+        Assert.Contains("style=\"width: 180px\"", html);
+        Assert.Contains("x-data=\"modulusCreatableSelect(", html);
+        Assert.Contains("&quot;name&quot;:&quot;label&quot;,&quot;multiple&quot;:false,&quot;value&quot;:&quot;blue&quot;", html);
+        Assert.Contains("{&quot;value&quot;:&quot;red&quot;,&quot;label&quot;:&quot;Red&quot;,&quot;color&quot;:&quot;red&quot;}", html);
+        Assert.Contains("&quot;addHref&quot;:&quot;/labels&quot;", html);
+        Assert.Contains("<span class=\"m-cselect-inputs\" x-html=\"inputs()\"><input type=\"hidden\" name=\"label\" value=\"blue\" /></span>", html);
+        Assert.Contains("role=\"combobox\" tabindex=\"0\" aria-haspopup=\"listbox\" aria-expanded=\"false\" aria-controls=\"m-cselect-u1\" aria-label=\"Label\"", html);
+        Assert.Contains("<span class=\"ant-select-selection-item\" title=\"Blue\"><span class=\"m-cselect-dot ant-tag-blue\" aria-hidden=\"true\"></span>Blue</span>", html);
+        Assert.Contains("class=\"ant-select-clear\" role=\"button\" aria-label=\"Clear\" x-show=\"has()\" @click.stop=\"clear()\"", html);
+        Assert.Contains("placeholder=\"New item\"", html);
+        Assert.Contains("@change.stop @keydown.enter.stop.prevent=\"add()\"", html);
+        Assert.Contains("class=\"m-cselect-colors\" role=\"radiogroup\"", html);
+    }
+
+    [Fact]
+    public async Task CreatableSelect_MultipleRendersTagsAndOneInputPerValue_DisabledHasNoDropdown()
+    {
+        var html = await RenderAsync(new CreatableSelectTagHelper { Name = "tags", Multiple = true, Values = ["red", "gone"], Options = Colors, AllowAdd = false, ShowColors = false }, "app-creatable-select");
+        Assert.Contains("ant-select ant-select-multiple", html);
+        Assert.Contains("<input type=\"hidden\" name=\"tags\" value=\"red\" /><input type=\"hidden\" name=\"tags\" value=\"gone\" />", html);
+        Assert.Contains("<span class=\"ant-select-selection-item m-cselect-tag ant-tag-red\" title=\"Red\">", html);
+        Assert.Contains("data-remove=\"gone\"", html); // unknown values keep their raw text
+        Assert.Contains("aria-multiselectable=\"true\"", html);
+        Assert.DoesNotContain("m-cselect-footer", html);
+
+        var disabled = await RenderAsync(new CreatableSelectTagHelper { Name = "c", Options = Colors, Placeholder = "Colour", Disabled = true }, "app-creatable-select");
+        Assert.Contains("ant-select-disabled", disabled);
+        Assert.Contains("aria-disabled=\"true\"><span class=\"ant-select-selection-placeholder\">Colour</span>", disabled);
+        Assert.Contains("<input type=\"hidden\" name=\"c\" value=\"\" />", disabled);
+        Assert.DoesNotContain("m-cselect-dropdown", disabled);
     }
 
     [Fact]

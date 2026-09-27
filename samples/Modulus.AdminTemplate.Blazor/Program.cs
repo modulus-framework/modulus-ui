@@ -38,7 +38,7 @@ app.MapGet("/tables/advanced/export", (HttpRequest request) =>
 {
     var q = request.Query;
     var query = new EmployeeQuery(q["keyword"], NullIfEmpty(q["department"]), NullIfEmpty(q["office"]),
-        Enum.TryParse<EmployeeStatus>(q["status"], out var status) ? status : null);
+        Enum.TryParse<EmployeeStatus>(q["status"], out var status) ? status : null, NullIfEmpty(q["label"]));
     var ids = q["ids"].Select(v => int.TryParse(v, out var id) ? id : 0).Where(id => id > 0).ToList();
     return Results.File(System.Text.Encoding.UTF8.GetBytes(EmployeeDirectory.Csv(EmployeeDirectory.ForExport(query, ids))), "text/csv", "employees.csv");
 

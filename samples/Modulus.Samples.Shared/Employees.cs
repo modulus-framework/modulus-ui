@@ -12,7 +12,7 @@ public sealed record Employee(int Id, string Name, string Email, string Position
 }
 
 /// <summary>Filters for the data table page (/tables/advanced).</summary>
-public sealed record EmployeeQuery(string? Keyword = null, string? Department = null, string? Office = null, EmployeeStatus? Status = null);
+public sealed record EmployeeQuery(string? Keyword = null, string? Department = null, string? Office = null, EmployeeStatus? Status = null, string? Label = null);
 
 /// <summary>A read-only employee directory for the data table page: search, filter, sort, page, pick columns, export.</summary>
 public static class EmployeeDirectory
@@ -64,6 +64,7 @@ public static class EmployeeDirectory
         if (!string.IsNullOrEmpty(query.Department)) rows = rows.Where(e => e.Department == query.Department);
         if (!string.IsNullOrEmpty(query.Office)) rows = rows.Where(e => e.Office == query.Office);
         if (query.Status is { } s) rows = rows.Where(e => e.Status == s);
+        if (!string.IsNullOrEmpty(query.Label)) rows = rows.Where(e => EmployeeLabels.Of(e.Id).Contains(query.Label));
         return rows;
     }
 
@@ -128,4 +129,71 @@ public static class EmployeeDirectory
 
     private static string Ascii(string s) =>
         new(s.Normalize(NormalizationForm.FormD).Where(c => CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark).ToArray());
+}
+
+/// <summary>
+/// Colour-tagged labels on employees (/tables/advanced). People add labels from the filter or the batch bar, so
+/// the list lives in memory for the whole app, like the other sample stores.
+/// </summary>
+public static class EmployeeLabels
+{
+    private static readonly Lock Gate = new();
+    private static IReadOnlyList<GridOption> _options =
+        [new("mentor", "Mentor", "green"), new("onCall", "On call", "red"), new("newHire", "New hire", "blue"), new("leadership", "Leadership", "purple")];
+    private static readonly Dictionary<int, List<string>> Assigned = Seed();
+
+    public static IReadOnlyList<GridOption> Options { get { lock (Gate) return _options; } }
+
+    public static GridOption? Find(string? value) => Options.FirstOrDefault(o => o.Value == value);
+
+    /// <summary>Label values of an employee, in the order they were added.</summary>
+    public static IReadOnlyList<string> Of(int employeeId)
+    {
+        lock (Gate) return Assigned.TryGetValue(employeeId, out var list) ? [.. list] : [];
+    }
+
+    /// <summary>Adds a label (see <see cref="GridSchema.AddOption"/>): the new option, or an error.</summary>
+    public static (GridOption? Added, string? Error) Add(string? label, string? color)
+    {
+        lock (Gate)
+        {
+            var (options, added, error) = GridSchema.AddOption(_options, label, color);
+            _options = options;
+            return (added, error);
+        }
+    }
+
+    /// <summary>Gives the label to each employee; returns how many didn't have it yet.</summary>
+    public static int Apply(IEnumerable<int> employeeIds, string value)
+    {
+        lock (Gate)
+        {
+            if (!_options.Any(o => o.Value == value)) return 0;
+            var count = 0;
+            foreach (var id in employeeIds.Distinct().Where(id => EmployeeDirectory.All.Any(e => e.Id == id)))
+            {
+                if (!Assigned.TryGetValue(id, out var list)) Assigned[id] = list = [];
+                if (list.Contains(value)) continue;
+                list.Add(value);
+                count++;
+            }
+            return count;
+        }
+    }
+
+    private static Dictionary<int, List<string>> Seed()
+    {
+        var rng = new Random(20260927);
+        var map = new Dictionary<int, List<string>>();
+        foreach (var e in EmployeeDirectory.All)
+        {
+            var labels = new List<string>();
+            if (rng.Next(5) == 0) labels.Add("mentor");
+            if (rng.Next(8) == 0) labels.Add("onCall");
+            if (e.StartDate >= new DateTime(2025, 7, 1)) labels.Add("newHire");
+            if (e.Position.Contains("Manager") || e.Position.Contains("Lead")) labels.Add("leadership");
+            if (labels.Count > 0) map[e.Id] = labels;
+        }
+        return map;
+    }
 }
