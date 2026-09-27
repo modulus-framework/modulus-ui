@@ -1,6 +1,7 @@
 @page "/ui/components"
 @inject IMessageService Message
 @inject INotificationService Notification
+@inject SampleStore Store
 
 <PageTitle>Components · Modulus</PageTitle>
 
@@ -442,8 +443,23 @@
             </div>
             <p class="m-muted">Value: <code>@(_productColor ?? "none")</code> · <code>@string.Join(", ", _productTagValues)</code></p>
         </Card>
+        <Card Bordered="false" Title="Select with Add new (modal form)">
+            <p class="m-demo-desc">"Add new customer" opens a create form. After saving, the list reloads from the store and the new customer is selected.</p>
+            <div class="m-demo-row">
+                <AppCreatableSelect Options="_customerOptions" @bind-Value="_customer" OnAddNew="() => _customerOpen = true" AddNewText="Add new customer"
+                                    ShowColors="false" Placeholder="Customer" AllowClear AriaLabel="Customer" Style="width: 320px" />
+            </div>
+            <p class="m-muted">Value: <code>@(_customer ?? "none")</code></p>
+        </Card>
     </div>
 </section>
+
+<ModalForm TModel="CustomerInput" Title="Add customer" @bind-Visible="_customerOpen" Model="_newCustomer" OnFinish="SaveCustomerAsync" SubmitText="Add customer">
+    <FormItem Label="Contact name"><Input @bind-Value="context.Name" Placeholder="Olivia Bennett" /></FormItem>
+    <FormItem Label="Email"><Input @bind-Value="context.Email" Placeholder="olivia@northwind.com" /></FormItem>
+    <FormItem Label="Company"><Input @bind-Value="context.Company" Placeholder="Northwind" /></FormItem>
+    <FormItem Label="City"><Input @bind-Value="context.City" Placeholder="London" /></FormItem>
+</ModalForm>
 
 <section id="data-display" class="m-demo-section">
     <h2 class="m-section-title">Data Display</h2>
@@ -753,6 +769,23 @@
     private IReadOnlyList<Modulus.Ui.Abstractions.GridOption> _productTags = GalleryData.ProductTags;
     private string? _productColor = "blue";
     private IReadOnlyList<string> _productTagValues = ["new"];
+    private IReadOnlyList<Modulus.Ui.Abstractions.GridOption> _customerOptions = [];
+    private string? _customer;
+    private bool _customerOpen;
+    private CustomerInput _newCustomer = new();
+
+    // The customer picker lists the real store, so a customer added here also appears on /apps/customers.
+    protected override void OnInitialized() => _customerOptions = Store.CustomerOptions();
+
+    private Task<bool> SaveCustomerAsync(CustomerInput input)
+    {
+        var customer = Store.AddCustomer(input);
+        _customerOptions = Store.CustomerOptions();
+        _customer = SampleStore.CustomerOption(customer).Value;
+        _newCustomer = new();
+        _ = Message.SuccessAsync($"Added {customer.Name}");
+        return Task.FromResult(true);
+    }
     private bool _qrExpired = true;
     private bool _tour;
     private static readonly IReadOnlyList<Modulus.Ui.Abstractions.Theming.ColorPreset> ColorPresets = GalleryData.ColorPresets;

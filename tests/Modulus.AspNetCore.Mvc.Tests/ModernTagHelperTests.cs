@@ -195,6 +195,26 @@ public class ModernTagHelperTests
     }
 
     [Fact]
+    public async Task CreatableSelect_AddModalOpensAModalAndListensForTheSavedOption()
+    {
+        var html = await RenderAsync(new CreatableSelectTagHelper { Name = "Customer", Options = Colors, AddModal = "customers", AddNewText = "Add new customer" }, "app-creatable-select");
+
+        Assert.Contains("@modulus:option-added.window=\"added($event.detail)\"", html);
+        Assert.Contains("&quot;addModal&quot;:&quot;customers&quot;", html);
+        Assert.Contains("class=\"ant-btn ant-btn-text ant-btn-block m-cselect-add-new\" @click=\"addNew()\">", html);
+        Assert.Contains("<span>Add new customer</span>", html);
+        Assert.DoesNotContain("m-cselect-add\"", html); // no inline row
+    }
+
+    [Fact]
+    public void HxOptionAdded_RaisesTheEventWithTheListAndOption()
+    {
+        var http = new Microsoft.AspNetCore.Http.DefaultHttpContext();
+        Modulus.AspNetCore.Mvc.Htmx.HtmxExtensions.HxOptionAdded(http.Response, "customers", new GridOption("87", "Ada", null));
+        Assert.Equal("""{"modulus:option-added":{"list":"customers","value":"87","label":"Ada","color":null}}""", http.Response.Headers["HX-Trigger"].ToString());
+    }
+
+    [Fact]
     public async Task Tour_CollectsStepsIntoTheAlpineConfig()
     {
         var html = await RenderAsync(new Node(new TourTagHelper { Name = "intro", Type = "primary", FinishText = "Done" }, "app-tour", Children:

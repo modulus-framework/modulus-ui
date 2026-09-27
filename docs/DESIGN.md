@@ -77,6 +77,9 @@ charts
   Its dropdown is `position: fixed` (placed by `modulusShell.placeSelect`), so table cells and scrolling cards don't
   clip it. Options are `GridOption`, and `GridSchema.AddOption` checks new ones on both sides. The MVC grid adds an
   option with a round trip (`add-option:{key}:{row}`), because the option changes the posted schema.
+  For records that need a real form, the select only asks: Blazor raises `OnAddNew` and the page owns the
+  `ModalForm`; MVC opens a named `app-modal`, and the server's `HxOptionAdded` event carries the saved record back.
+  The event is broadcast by list name, so two pickers of the same list stay in step.
 - `EditableGrid` renders its columns from `GridColumn` data over AntD's `Table` (fixed columns, `ExpandTemplate`).
   Values are invariant strings (`1234.5`, `2026-12-31`, `true`, `a,b`), so Blazor, MVC and the store share
   `GridSchema` for formatting, normalising and validation. Select and DatePicker ignore `Open` on first render and

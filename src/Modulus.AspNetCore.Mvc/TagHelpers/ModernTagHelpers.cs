@@ -413,6 +413,15 @@ public class CreatableSelectTagHelper : BoundControlTagHelper
     [HtmlAttributeName("add-text")] public string AddText { get; set; } = "Add";
     [HtmlAttributeName("add-href")] public string? AddHref { get; set; }
 
+    /// <summary>
+    /// Name of an &lt;app-modal&gt; that creates a record: the footer shows one "Add new" button that opens it, instead of
+    /// the inline row. When the modal's form saves, the server calls <c>Response.HxOptionAdded(list, option)</c> with this
+    /// name as the list; the option is added and selected.
+    /// </summary>
+    [HtmlAttributeName("add-modal")] public string? AddModal { get; set; }
+
+    [HtmlAttributeName("add-new-text")] public string AddNewText { get; set; } = "Add new";
+
     [HtmlAttributeName("aria-label")]
     public string? AriaLabel { get; set; }
 
@@ -438,11 +447,13 @@ public class CreatableSelectTagHelper : BoundControlTagHelper
             placeholder = Placeholder,
             showColors = ShowColors,
             addHref = AddHref,
+            addModal = AddModal,
             colors = GridSchema.OptionColors,
             maxOptions = GridSchema.MaxOptions,
             maxLabel = GridSchema.MaxOptionLabel,
         })})"));
         output.Attributes.SetAttribute(":class", "open && 'ant-select-open ant-select-focused'");
+        if (AddModal is not null) output.Attributes.SetAttribute("@modulus:option-added.window", "added($event.detail)");
 
         var sb = new StringBuilder();
         sb.Append("""<span class="m-cselect-inputs" x-html="inputs()">""");
@@ -474,7 +485,11 @@ public class CreatableSelectTagHelper : BoundControlTagHelper
             sb.Append($$"""<div class="ant-select-item ant-select-item-option" :class="{ 'ant-select-item-option-selected': sel(o.value), 'ant-select-item-option-active': i === active }" :id="'{{listId}}-' + i" role="option" :aria-selected="sel(o.value)" @click="pick(o.value)" @mouseenter="active = i">""");
             sb.Append("""<div class="ant-select-item-option-content"><span class="m-cselect-dot" :class="'ant-tag-' + o.color" x-show="showColors && o.color && o.color !== 'default'" aria-hidden="true"></span><span x-text="o.label"></span></div>""");
             sb.Append($"""<span class="ant-select-item-option-state" x-show="sel(o.value)" aria-hidden="true">{AntIcons.Span("check")}</span></div></template></div>""");
-            if (AllowAdd)
+            if (AddModal is not null)
+            {
+                sb.Append($"""<div class="m-cselect-footer"><button type="button" class="ant-btn ant-btn-text ant-btn-block m-cselect-add-new" @click="addNew()">{AntIcons.Span("plus")}<span>{Html.E(AddNewText)}</span></button></div>""");
+            }
+            else if (AllowAdd)
             {
                 sb.Append("""<div class="m-cselect-footer"><div class="m-cselect-add">""");
                 sb.Append($"""<input class="ant-input ant-input-sm" type="text" x-ref="add" x-model="newLabel" placeholder="{Html.E(AddPlaceholder)}" aria-label="{Html.E(AddPlaceholder)}" maxlength="{GridSchema.MaxOptionLabel}" @input="error = ''" @change.stop @keydown.enter.stop.prevent="add()" @keydown.escape.stop="close()" />""");

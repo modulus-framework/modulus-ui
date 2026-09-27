@@ -1598,3 +1598,4 @@ html[data-theme='dark'] :is(.ant-color-picker-color-block, .ant-color-picker-pre
 /* MVC grid: the "Add option" panel floats under the cell editor; modulusGrid places it (position: fixed escapes the table scroller). */
 .m-grid-add-option { position: fixed; z-index: 1050; width: 280px; margin: 0; padding: 8px; border-top: 0; border-radius: var(--m-radius-lg); background: var(--m-bg-elevated); box-shadow: var(--m-shadow-popup); }
 .m-cselect.ant-select-open .ant-select-selection-item { color: inherit; }
+.m-cselect-add-new { display: flex; align-items: center; justify-content: flex-start; gap: 6px; color: var(--m-primary); }

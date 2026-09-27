@@ -4,7 +4,10 @@
    <app-creatable-select> renders the same DOM with modulusCreatableSelect in modulus-widgets.js.
 
    Adding runs GridSchema.AddOption (trimmed, unique, 50 at most) and raises OptionsChanged, unless OnAdd handles it
-   (for example to save the option first). The new option is then selected. *@
+   (for example to save the option first). The new option is then selected.
+
+   With OnAddNew the footer is one "Add new" button instead: the page opens its own create form (ModalForm) and, after
+   saving, passes the reloaded Options and the new Value. *@
 @using Modulus.Ui.Abstractions
 @inject IJSRuntime JS
 
@@ -79,7 +82,13 @@
                     </div>
                 }
             </div>
-            @if (AllowAdd)
+            @if (OnAddNew.HasDelegate)
+            {
+                <div class="m-cselect-footer">
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-block m-cselect-add-new" @onclick="AddNewAsync"><Icon Type="plus" /><span>@AddNewText</span></button>
+                </div>
+            }
+            else if (AllowAdd)
             {
                 <div class="m-cselect-footer">
                     <div class="m-cselect-add">
@@ -140,6 +149,14 @@
     /// OptionsChanged isn't raised then; pass the updated Options back.
     /// </summary>
     [Parameter] public Func<string, string, Task<(GridOption? Added, string? Error)>>? OnAdd { get; set; }
+
+    /// <summary>
+    /// Replaces the inline "Add item" row with one "Add new" button that closes the list and raises this, so the page
+    /// can open its own create form (a ModalForm, say). After saving, pass the reloaded Options and the new Value.
+    /// </summary>
+    [Parameter] public EventCallback OnAddNew { get; set; }
+
+    [Parameter] public string AddNewText { get; set; } = "Add new";
 
     /// <summary>Opens the dropdown on first render (the editable grid opens a cell's editor this way).</summary>
     [Parameter] public bool DefaultOpen { get; set; }
@@ -292,6 +309,12 @@
             await ValueChanged.InvokeAsync(added.Value);
             await Close();
         }
+    }
+
+    private async Task AddNewAsync()
+    {
+        await Close();
+        await OnAddNew.InvokeAsync();
     }
 
     private async Task AddKey(KeyboardEventArgs e)

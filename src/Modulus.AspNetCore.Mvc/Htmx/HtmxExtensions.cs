@@ -45,6 +45,13 @@ public static class HtmxExtensions
     public static HttpResponse HxCloseModal(this HttpResponse response) =>
         response.HxTrigger("modulus:modal-close");
 
+    /// <summary>
+    /// Tells every <c>&lt;app-creatable-select add-modal="{list}"&gt;</c> on the page about a record created in its
+    /// modal: they add the option, and the one that opened the modal selects it.
+    /// </summary>
+    public static HttpResponse HxOptionAdded(this HttpResponse response, string list, Modulus.Ui.Abstractions.GridOption option) =>
+        response.HxTrigger("modulus:option-added", new { list, value = option.Value, label = option.Label, color = option.Color });
+
     /// <summary>Closes the Modulus drawer.</summary>
     public static HttpResponse HxCloseDrawer(this HttpResponse response) =>
         response.HxTrigger("modulus:drawer-close");

@@ -16,6 +16,16 @@ public class UiController : SampleController
     [HttpGet("charts")]
     public IActionResult Charts() => Page("Charts", "Ui/Charts");
 
+    /// <summary>The customer picker's "Add customer" modal: the form again with errors, or a fresh one after a save.</summary>
+    [HttpPost("components/customer")]
+    public IActionResult Customer([FromServices] SampleStore store, CustomerInput input)
+    {
+        if (!ModelState.IsValid) return PartialView(CustomerPicker.FormView, input);
+        CustomerPicker.Saved(Response, store.AddCustomer(input));
+        ModelState.Clear();
+        return PartialView(CustomerPicker.FormView, new CustomerInput());
+    }
+
     [HttpPost("components/demo/{kind}")]
     [HttpPost("cards/demo/{kind}")]
     public IActionResult Demo(string kind)

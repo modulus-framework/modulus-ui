@@ -879,6 +879,7 @@
                 picked: null,
                 error: '',
                 busy: false,
+                waiting: false,
 
                 init: function () {
                     var self = this;
@@ -928,6 +929,7 @@
                     this.active = this.options.findIndex(function (o) { return o.value === current; });
                     if (this.active < 0) this.active = this.options.length ? 0 : -1;
                     this.error = '';
+                    this.waiting = false;
                     this.open = true;
                     this.$nextTick(function () {
                         var el = self.$root.querySelector('.ant-select-item-option-active');
@@ -979,6 +981,22 @@
                     else if (e.key === 'Tab') { this.close(); return; }
                     var el = this.$root.querySelectorAll('.ant-select-item-option')[this.active];
                     if (el) el.scrollIntoView({ block: 'nearest' });
+                },
+                // add-modal: "Add new" closes the list and opens the <app-modal> that creates the record. The server
+                // answers a save with HxOptionAdded, which every select of that list hears; the one that asked selects it.
+                addNew: function () {
+                    this.close();
+                    this.waiting = true;
+                    window.dispatchEvent(new CustomEvent('modulus:modal-open', { detail: cfg.addModal }));
+                },
+                added: function (d) {
+                    if (!d || d.list !== cfg.addModal || !d.value) return;
+                    var o = { value: String(d.value), label: d.label || String(d.value), color: d.color || null };
+                    if (!this.find(o.value)) this.options.unshift(o); // newest first, where the user looks
+                    if (!this.waiting) return;
+                    this.waiting = false;
+                    if (cfg.multiple) { if (this.values.indexOf(o.value) < 0) this.values.push(o.value); this.changed(); }
+                    else { this.value = o.value; this.changed(); }
                 },
                 accept: function (o) {
                     this.options.push(o);

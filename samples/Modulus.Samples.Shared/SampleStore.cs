@@ -114,6 +114,14 @@ public sealed partial class SampleStore
         lock (_gate) return _customers.FirstOrDefault(c => c.Id == id);
     }
 
+    /// <summary>Customers as select options (id, "Name · Company"), newest first, for pickers with "Add new".</summary>
+    public IReadOnlyList<GridOption> CustomerOptions()
+    {
+        lock (_gate) return [.. _customers.OrderByDescending(c => c.Id).Select(CustomerOption)];
+    }
+
+    public static GridOption CustomerOption(Customer c) => new(c.Id.ToString(System.Globalization.CultureInfo.InvariantCulture), $"{c.Name} · {c.Company}");
+
     public Customer AddCustomer(CustomerInput input)
     {
         lock (_gate)

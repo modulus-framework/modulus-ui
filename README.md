@@ -46,6 +46,9 @@ pixel-for-pixel where the controls allow it.
   ends with a name, a tag colour and Add; the new option joins the list and is selected. Adding is checked by
   `GridSchema.AddOption` (unique, trimmed, 50 at most); `OnAdd` / `add-href` can save it first. The editable grid's
   Select, Multi-select and Tag editors use it, and the data table sample filters and bulk-labels employees with it.
+  For real records, `OnAddNew` / `add-modal` swap the inline row for an "Add new" button that opens a create form
+  (a `ModalForm`, or an `app-modal` whose save answers `Response.HxOptionAdded(list, option)`); the new record is
+  added to the list and selected.
 - **Theming from one options object**: primary, success, warning, error and info colours plus border radius.
   The 10-step palette is generated with a C# port of `@ant-design/colors` (tested against the official palettes).
   Light/dark mode persists in a cookie, so the server renders the correct theme on the first byte.

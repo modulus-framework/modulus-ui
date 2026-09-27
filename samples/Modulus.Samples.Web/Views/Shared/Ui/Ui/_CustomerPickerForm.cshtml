@@ -1,0 +1,9 @@
+@model CustomerInput
+@* "Add customer" modal of the gallery's customer picker. It posts with htmx and swaps itself: back with errors, or
+   empty after a save, when the server also raises HxOptionAdded("customers", …) and closes the modal. *@
+<form id="customer-picker-form" class="ant-form ant-form-vertical ant-form-hide-required-mark" hx-post="/ui/components/customer" hx-target="this" hx-swap="outerHTML" novalidate>
+    <app-form-item asp-for="Name" label="Contact name"><app-input asp-for="Name" placeholder="Olivia Bennett" autocomplete="off" /></app-form-item>
+    <app-form-item asp-for="Email" label="Email"><app-input asp-for="Email" type="email" placeholder="olivia@northwind.com" /></app-form-item>
+    <app-form-item asp-for="Company" label="Company"><app-input asp-for="Company" placeholder="Northwind" /></app-form-item>
+    <app-form-item asp-for="City" label="City"><app-input asp-for="City" placeholder="London" /></app-form-item>
+</form>

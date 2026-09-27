@@ -107,6 +107,29 @@ public class CreatableSelectTests : BunitContext
     }
 
     [Fact]
+    public void OnAddNew_ShowsOneButtonThatClosesTheListAndRaisesIt()
+    {
+        var asked = 0;
+        var cut = Render<AppCreatableSelect>(p => p
+            .Add(s => s.Options, Colors)
+            .Add(s => s.AddNewText, "Add new customer")
+            .Add(s => s.OnAddNew, () => asked++));
+        cut.Find(".ant-select-selector").Click();
+
+        Assert.Empty(cut.FindAll(".m-cselect-add"));
+        var button = cut.Find(".m-cselect-add-new");
+        Assert.Equal("Add new customer", button.TextContent.Trim());
+        button.Click();
+
+        Assert.Equal(1, asked);
+        Assert.Empty(cut.FindAll(".m-cselect-dropdown"));
+
+        // The page saves, then passes the reloaded options and the new value.
+        cut.Render(p => p.Add(s => s.Options, [.. Colors, new GridOption("87", "Ada Lovelace · Analytical")]).Add(s => s.Value, "87"));
+        Assert.Equal("Ada Lovelace · Analytical", cut.Find(".ant-select-selection-item").TextContent);
+    }
+
+    [Fact]
     public void Multiple_AddsToTheValues_TagsRemove_AndOnAddCanSaveFirst()
     {
         IReadOnlyList<string> values = ["red"];

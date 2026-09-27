@@ -1,5 +1,6 @@
 @using Microsoft.AspNetCore.Mvc.Rendering
 @model GalleryForm
+@inject SampleStore Store
 @{
     var sections = new[] { ("general", "General"), ("layout", "Layout"), ("navigation", "Navigation"), ("data-entry", "Data Entry"), ("data-display", "Data Display"), ("feedback", "Feedback") };
     var plans = GalleryData.Plans.Select(p => new SelectListItem(p, p));
@@ -418,6 +419,19 @@
                     </div>
                     <p class="m-muted">Value: <code x-text="color">blue</code> · <code x-text="tags">new</code></p>
                 </div>
+            </app-card>
+            <app-card title="Select with Add new (modal form)">
+                <p class="m-demo-desc">"Add new customer" opens a create form. After saving, the list reloads from the store and the new customer is selected.</p>
+                <div x-data="{ customer: 'none' }" @@change="customer = ($el.querySelector('input[name=Customer]') || {}).value || 'none'">
+                    <div class="m-demo-row">
+                        <app-creatable-select name="Customer" options="Store.CustomerOptions()" add-modal="customers" add-new-text="Add new customer"
+                                              show-colors="false" placeholder="Customer" allow-clear aria-label="Customer" style="width: 320px" />
+                    </div>
+                    <p class="m-muted">Value: <code x-text="customer">none</code></p>
+                </div>
+                <app-modal name="customers" title="Add customer" ok-text="Add customer" form="customer-picker-form">
+                    <partial name="Ui/Ui/_CustomerPickerForm" model="new CustomerInput()" />
+                </app-modal>
             </app-card>
         </div>
     </section>
