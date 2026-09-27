@@ -63,6 +63,11 @@ charts
 - `ModulusLayout` is the alternative Ant Design Pro shell. It wraps `BasicLayout`, converts `MenuItemDefinition` →
   `MenuDataItem`, hides items the user isn't authorized for and renders the footer via `FooterView`.
 - Pro components are plain Razor over Ant Design components. They never touch AntDesign internals.
+- Components AntD Blazor 1.6.2 lacks (QRCode, ColorPicker, FloatButton, Tour) live in `Components/Extras` and in
+  `ModernTagHelpers.cs`. Both emit the antd v5 DOM, and the logic lives in `Modulus.Ui.Abstractions` so it is shared:
+  `QrCode` (a byte-mode QR encoder, checked by decoding with ZXing in tests), `QrSvg` / `QRCodeMarkup`, `HsvColor` and
+  `TourStep`. `modulusColorPicker` mirrors `HsvColor` in JS. `modulusShell.tour` positions the tour for both flavours,
+  and `modulusShell` drives `[data-m-back-top]` back-to-top buttons for both flavours.
 - `EditableGrid` renders its columns from `GridColumn` data over AntD's `Table` (fixed columns, `ExpandTemplate`).
   Values are invariant strings (`1234.5`, `2026-12-31`, `true`, `a,b`), so Blazor, MVC and the store share
   `GridSchema` for formatting, normalising and validation. Select and DatePicker ignore `Open` on first render and

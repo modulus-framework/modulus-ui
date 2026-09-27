@@ -12,5 +12,7 @@
     <!-- Test packages -->
     <PackageVersion Include="xunit.v3" Version="4.0.1" />
     <PackageVersion Include="bunit" Version="2.11.3" />
+    <!-- Test-only: decodes the QR codes Modulus draws. -->
+    <PackageVersion Include="ZXing.Net" Version="0.16.11" />
   </ItemGroup>
 </Project>

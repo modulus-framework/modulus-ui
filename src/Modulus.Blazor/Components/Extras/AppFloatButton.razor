@@ -1,0 +1,92 @@
+@* Float button (Ant Design 5 FloatButton; AntD Blazor 1.6.2 has none). Fixed to the bottom right of the viewport,
+   or laid out by an AppFloatButtonGroup. A link when Href is set. The MVC <app-float-button> emits the same DOM. *@
+
+@if (Href is null)
+{
+    <button type="button" class="@CssClass" style="@Style" aria-label="@Label" @onclick="OnClick" @attributes="AdditionalAttributes">
+        @Body
+    </button>
+}
+else
+{
+    <a class="@CssClass" style="@Style" href="@Href" target="@Target" aria-label="@Label" @attributes="AdditionalAttributes">
+        @Body
+    </a>
+}
+
+@code {
+    /// <summary>Ant Design icon type, e.g. "question-circle".</summary>
+    [Parameter] public string? Icon { get; set; }
+
+    /// <summary>Custom icon content; wins over <see cref="Icon"/>.</summary>
+    [Parameter] public RenderFragment? IconContent { get; set; }
+
+    /// <summary>Short text under the icon (square buttons have room for about four characters).</summary>
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Shown beside the button on hover and focus, and used as its accessible name.</summary>
+    [Parameter] public string? Tooltip { get; set; }
+
+    /// <summary>"default" or "primary".</summary>
+    [Parameter] public string Type { get; set; } = "default";
+
+    /// <summary>"circle" or "square".</summary>
+    [Parameter] public string Shape { get; set; } = "circle";
+
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public string? Target { get; set; }
+
+    /// <summary>Badge count in the top right corner (hidden when 0).</summary>
+    [Parameter] public int? BadgeCount { get; set; }
+
+    [Parameter] public bool BadgeDot { get; set; }
+
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
+
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)] public IDictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string CssClass => $"ant-float-btn ant-float-btn-{(Type == "primary" ? "primary" : "default")} ant-float-btn-{(Shape == "square" ? "square" : "circle")}"
+        + (string.IsNullOrWhiteSpace(Class) ? "" : " " + Class);
+
+    private string? Label => AriaLabel ?? Tooltip ?? Description;
+
+    private RenderFragment Body => @<text>
+        <div class="ant-float-btn-body">
+            <div class="ant-float-btn-content">
+                @if (IconContent is not null || Icon is not null || Description is null)
+                {
+                    <div class="ant-float-btn-icon">
+                        @if (IconContent is not null)
+                        {
+                            @IconContent
+                        }
+                        else
+                        {
+                            <Icon Type="@(Icon ?? "file-text")" Theme="IconThemeType.Outline" />
+                        }
+                    </div>
+                }
+                @if (Description is not null)
+                {
+                    <div class="ant-float-btn-description">@Description</div>
+                }
+            </div>
+        </div>
+        @if (BadgeDot)
+        {
+            <sup class="ant-scroll-number ant-badge-dot m-float-btn-badge"></sup>
+        }
+        else if (BadgeCount > 0)
+        {
+            <sup class="ant-scroll-number ant-badge-count m-float-btn-badge">@(BadgeCount > 99 ? "99+" : BadgeCount.ToString())</sup>
+        }
+        @if (Tooltip is not null)
+        {
+            <span class="m-float-btn-tip" aria-hidden="true">@Tooltip</span>
+        }
+    </text>;
+}

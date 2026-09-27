@@ -279,4 +279,110 @@
             }
         })();
     };
+
+    // Pointer capture for drag controls (the Blazor colour picker palette and sliders keep receiving pointermove
+    // after the pointer leaves them).
+    window.modulusShell.capture = function (el, pointerId) {
+        try { if (el && el.setPointerCapture) el.setPointerCapture(pointerId); } catch (e) { /* pointer already up */ }
+    };
+
+    // Arrow keys on colour picker sliders move the handle, not the page.
+    document.addEventListener('keydown', function (e) {
+        if (/^Arrow/.test(e.key) && e.target instanceof Element && e.target.matches('.ant-color-picker [role="slider"]')) e.preventDefault();
+    });
+
+    // Back-to-top float buttons: [data-m-back-top="<visibility height>"], optional data-m-target selector ------------
+
+    function backTopScroller(btn) {
+        var sel = btn.getAttribute('data-m-target');
+        return (sel && document.querySelector(sel)) || null;
+    }
+
+    function syncBackTops() {
+        document.querySelectorAll('[data-m-back-top]').forEach(function (btn) {
+            var scroller = backTopScroller(btn);
+            var top = scroller ? scroller.scrollTop : (window.scrollY || document.documentElement.scrollTop);
+            var show = top >= (parseInt(btn.getAttribute('data-m-back-top'), 10) || 0);
+            if (show) btn.setAttribute('data-m-visible', ''); else btn.removeAttribute('data-m-visible');
+        });
+    }
+
+    document.addEventListener('scroll', syncBackTops, { capture: true, passive: true });
+    document.addEventListener('click', function (e) {
+        var btn = e.target instanceof Element && e.target.closest('[data-m-back-top]');
+        if (!btn) return;
+        var scroller = backTopScroller(btn);
+        (scroller || window).scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    window.modulusShell.syncBackTops = syncBackTops;
+
+    // Tour: window.modulusShell.tour(root, focus) spotlights the step's data-target and places the .ant-tour card
+    // beside it (data-placement top | bottom | left | right), clamped to the viewport. Re-runs on resize and scroll.
+    var activeTour = null;
+
+    function placeTour() {
+        var root = activeTour;
+        if (!root || !root.isConnected) { activeTour = null; return; }
+        var card = root.querySelector('.ant-tour');
+        if (!card) return;
+        var sel = card.getAttribute('data-target');
+        var target = sel ? document.querySelector(sel) : null;
+        var hole = root.querySelector('.m-tour-hole');
+        var vw = window.innerWidth, vh = window.innerHeight, gap = 12, pad = 6, edge = 8;
+        var cw = card.offsetWidth, ch = card.offsetHeight;
+        var left, top, placement = card.getAttribute('data-placement') || 'bottom';
+        root.classList.toggle('m-tour-centered', !target);
+        if (!target) {
+            if (hole) ['x', 'y', 'width', 'height'].forEach(function (a) { hole.setAttribute(a, 0); });
+            left = (vw - cw) / 2;
+            top = (vh - ch) / 2;
+        } else {
+            var r = target.getBoundingClientRect();
+            if (hole) {
+                hole.setAttribute('x', r.left - pad);
+                hole.setAttribute('y', r.top - pad);
+                hole.setAttribute('width', r.width + pad * 2);
+                hole.setAttribute('height', r.height + pad * 2);
+            }
+            // Flip to the other side when the preferred one has no room.
+            if (placement === 'bottom' && r.bottom + pad + gap + ch > vh && r.top - pad - gap - ch > 0) placement = 'top';
+            else if (placement === 'top' && r.top - pad - gap - ch < 0) placement = 'bottom';
+            else if (placement === 'right' && r.right + pad + gap + cw > vw) placement = 'left';
+            else if (placement === 'left' && r.left - pad - gap - cw < 0) placement = 'right';
+            if (placement === 'top' || placement === 'bottom') {
+                left = r.left + r.width / 2 - cw / 2;
+                top = placement === 'top' ? r.top - pad - gap - ch : r.bottom + pad + gap;
+            } else {
+                top = r.top + r.height / 2 - ch / 2;
+                left = placement === 'left' ? r.left - pad - gap - cw : r.right + pad + gap;
+            }
+            var arrow = card.querySelector('.ant-tour-arrow');
+            left = Math.max(edge, Math.min(left, vw - cw - edge));
+            top = Math.max(edge, Math.min(top, vh - ch - edge));
+            if (arrow) {
+                if (placement === 'top' || placement === 'bottom') { arrow.style.left = Math.max(12, Math.min(r.left + r.width / 2 - left, cw - 12)) + 'px'; arrow.style.top = ''; }
+                else { arrow.style.top = Math.max(12, Math.min(r.top + r.height / 2 - top, ch - 12)) + 'px'; arrow.style.left = ''; }
+            }
+        }
+        ['top', 'bottom', 'left', 'right'].forEach(function (p) { card.classList.toggle('ant-tour-placement-' + p, target != null && p === placement); });
+        card.style.left = Math.round(left) + 'px';
+        card.style.top = Math.round(top) + 'px';
+    }
+
+    window.modulusShell.tour = function (root, focus) {
+        if (!root) return;
+        activeTour = root;
+        var card = root.querySelector('.ant-tour');
+        var sel = card && card.getAttribute('data-target');
+        var target = sel ? document.querySelector(sel) : null;
+        if (target) {
+            var r = target.getBoundingClientRect();
+            if (r.top < 0 || r.bottom > window.innerHeight) target.scrollIntoView({ block: 'center' });
+        }
+        placeTour();
+        if (focus && card) card.focus({ preventScroll: true });
+    };
+
+    window.addEventListener('resize', placeTour);
+    document.addEventListener('scroll', placeTour, { capture: true, passive: true });
 })();

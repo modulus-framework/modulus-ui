@@ -1,0 +1,22 @@
+@* Back-to-top float button (Ant Design 5 FloatButton.BackTop). Hidden until the page (or Target) scrolls past
+   VisibilityHeight; modulus-shell.js shows it and scrolls back up on click, for Blazor and MVC alike. *@
+
+<AppFloatButton Type="@Type" Shape="@Shape" Icon="vertical-align-top" Description="@Description" Tooltip="@Tooltip"
+                AriaLabel="@(AriaLabel ?? Tooltip ?? "Back to top")" Class="@("m-float-back-top" + (string.IsNullOrWhiteSpace(Class) ? "" : " " + Class))"
+                Style="@Style" data-m-back-top="@VisibilityHeight" data-m-target="@Target" />
+
+@code {
+    /// <summary>Scroll distance in pixels after which the button appears.</summary>
+    [Parameter] public int VisibilityHeight { get; set; } = 400;
+
+    /// <summary>CSS selector of the scrolling element; null watches the page.</summary>
+    [Parameter] public string? Target { get; set; }
+
+    [Parameter] public string Type { get; set; } = "default";
+    [Parameter] public string Shape { get; set; } = "circle";
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public string? Tooltip { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+}

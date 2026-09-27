@@ -3,7 +3,7 @@
 The plan for the Modulus UI admin template and where each piece stands. Update the status tables in the same commit
 as the work they describe.
 
-Last updated: 2026-09-26 · CI green on `main` at `bf883c9`
+Last updated: 2026-09-27 · CI green on `main` at `bf883c9`
 
 **Legend:** ✅ done and verified · 🟡 in progress · ⬜ not started · ➖ not applicable
 
@@ -122,7 +122,7 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 
 | Check | How | Last result |
 |---|---|---|
-| Unit and component tests | `dotnet test --solution Modulus.slnx` | ✅ 130 passed |
+| Unit and component tests | `dotnet test --solution Modulus.slnx` | ✅ 188 passed |
 | Release build | `dotnet build Modulus.slnx -c Release` | ✅ 0 warnings, 0 errors |
 | AntD drift | `dotnet run --project tools/antd-drift` | ✅ no drift (AntDesign 1.6.2) |
 | CI | GitHub Actions `CI` on `main` | ✅ green |
@@ -147,7 +147,7 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 | Keep filters in the URL (`hx-push-url` with the query) on the MVC list pages: all ten already push the URL; empty filter fields are now left out of it | MVC samples | ✅ |
 | MVC equivalents for Blazor-only widgets: `app-cascader`, `app-tree-select`, `app-transfer`, `app-tree`, `app-calendar`, `app-carousel`, `app-anchor` (Alpine, `modulus-widgets.js`), with gallery cards in all three samples | MVC library | ✅ |
 | Editable data grid: schema-driven columns (text, number, currency, percent, select, multi-select, tag, date, switch, progress, rating) with in-place editors and validation, expandable rows, left/right pinned columns, add/delete rows, add/remove/pin/hide/reorder columns, save. `EditableGrid` (Blazor), `app-editable-grid` + `EditableGridForm` (MVC), `GridSchema` shared | Both | ✅ |
-| Complete the AntD gallery: Link, Flex, Splitter, Affix, BackTop, DropdownButton, AutoComplete, InputGroup, CheckboxGroup, Mentions, Image, CountDown, Drawer, Watermark, Comment, plus Modulus ColorPicker, FloatButton and QRCode where AntD Blazor 1.6.2 has none | Both | 🟡 AntD components done in both flavours; Modulus ColorPicker, FloatButton, QRCode and Tour next |
+| Complete the AntD gallery: Link, Flex, Splitter, Affix, BackTop, DropdownButton, AutoComplete, InputGroup, CheckboxGroup, Mentions, Image, CountDown, Drawer, Watermark, Comment, plus Modulus ColorPicker, FloatButton and QRCode where AntD Blazor 1.6.2 has none | Both | ✅ AntD components in both flavours, plus Modulus QRCode, ColorPicker, FloatButton and Tour |
 | Tabler-parity pages: icons, typography, colours, gallery, search results, activity, tasks, logs, changelog, license, job listing, uptime, trial ended, cookie banner, users grid, widgets | Samples | ⬜ |
 | Localization: bind `LocaleProvider` to the request culture | Both | ⬜ |
 | Brand colour in dark mode (AntD dark CSS hard-codes blue) | Theming | ⬜ |
@@ -161,6 +161,7 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 
 | Date | Change |
 |---|---|
+| 2026-09-27 | Ant Design 5 components that AntD Blazor 1.6.2 lacks, in Blazor (`Components/Extras`) and MVC (`ModernTagHelpers.cs`): `AppQRCode` / `app-qr-code`, `AppColorPicker` / `app-color-picker`, `AppFloatButton` / `AppFloatButtonGroup` / `AppFloatBackTop` (`app-float-button`, `app-float-button-group`, `app-float-back-top`) and `AppTour` / `app-tour` + `tour-step`, with gallery cards in all three samples.<br>Shared logic in `Modulus.Ui.Abstractions`: a byte-mode QR encoder (`QrCode`, verified by decoding with ZXing up to version 40), `QrSvg` / `QRCodeMarkup`, `HsvColor` + `ColorPreset`, and `TourStep`. `modulus-shell.js` adds `modulusShell.tour` (spotlight and placement with flipping), back-to-top for `[data-m-back-top]` and pointer capture; `modulus-widgets.js` adds `modulusColorPicker` and `modulusTour`. The MVC expired QR code refreshes in the browser (raising `modulus-qr-refresh`) unless `refresh-href` is set. A transparent QR code gets a white backing in dark mode. 58 new tests. |
 | 2026-09-26 | Gallery: the remaining Ant Design components, in Blazor and MVC. New cards: Flex, Splitter, Layout, Menu, Dropdown button with Affix and BackTop, AutoComplete and Mentions, Input group and Checkbox group, Image (preview group), Countdown and Card meta, Comment, Drawer and Watermark. New MVC tag helpers `app-menu` / `app-sub-menu` / `app-menu-item` / `app-menu-divider`, `app-layout*`, `app-splitter` / `app-splitter-panel`, `app-affix`, `app-back-top`, `app-dropdown-button`, `app-auto-complete`, `app-mentions`, `app-input-group`, `app-image-group`, `app-countdown`, `app-comment` and `app-drawer`, plus card cover/meta/action slots; `app-flex` now emits the Blazor classes. They run on new Alpine components in `modulus-widgets.js`; drawers reuse `modulusModal`. Dark-mode menus and mention dropdowns use the container colours. 19 new tests. |
 | 2026-09-26 | Editable grid at `/tables/editable` in all three samples. Columns are `GridColumn` data; cells edit in place (input, native number, select, multi-select, date, switch, rating) with shared `GridSchema` formatting and validation; rows expand into a detail panel; columns pin left or right (sticky, with scroll shadows), hide, reorder, are removed or added from a dialog; Save validates, Discard and Reset reload. Blazor: `EditableGrid`. MVC and Razor Pages: `app-editable-grid`, which posts the whole grid (hidden columns included) through htmx, and `EditableGridForm.Read` / `Apply`. `modulusShell.openPopup` opens AntD popups on edit. Fix: the gallery's Dropdown used `MenuItem Danger`, which AntD Blazor 1.6.2 lacks and which crashed the circuit on open. 30 new tests. |
 | 2026-09-26 | MVC widgets: `app-cascader`, `app-tree-select`, `app-transfer`, `app-tree`, `app-calendar`, `app-carousel` and `app-anchor` emit the Ant Design DOM, run on small Alpine components in the new `modulus-widgets.js` and post through hidden inputs. They take their options from `TreeOption` (Modulus.Ui.Abstractions). The gallery gains Anchor, Cascader and TreeSelect, Transfer, Tree, Calendar and Carousel cards in all three samples. The Transfer stacks on phones. The manifest lists the new `mvc` entries. |

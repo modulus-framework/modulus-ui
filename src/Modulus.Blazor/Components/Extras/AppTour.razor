@@ -1,0 +1,157 @@
+@* Guided tour (Ant Design 5 Tour; AntD Blazor 1.6.2 has none). Masks the page, cuts a spotlight around each step's
+   target and places the step card beside it; modulusShell.tour in modulus-shell.js measures and positions, so the
+   MVC <app-tour> shares the geometry. *@
+@inject IJSRuntime JS
+
+@if (_open && Steps.Count > 0)
+{
+    var step = Steps[_current];
+    var last = _current == Steps.Count - 1;
+    <div class="m-tour" @ref="_root" @onkeydown="Key">
+        @if (Mask)
+        {
+            <svg class="ant-tour-mask" aria-hidden="true">
+                <defs>
+                    <mask id="@($"{_id}-mask")">
+                        <rect width="100%" height="100%" fill="white" />
+                        <rect class="m-tour-hole" x="0" y="0" width="0" height="0" rx="6" fill="black" />
+                    </mask>
+                </defs>
+                <rect width="100%" height="100%" class="m-tour-shade" mask="@($"url(#{_id}-mask)")" />
+            </svg>
+        }
+        <div class="@($"ant-tour ant-tour-placement-{step.Placement}{(Type == "primary" ? " ant-tour-primary" : "")}")"
+             role="dialog" aria-modal="true" aria-labelledby="@($"{_id}-title")" tabindex="-1"
+             data-target="@step.Target" data-placement="@step.Placement">
+            <div class="ant-tour-arrow"></div>
+            <div class="ant-tour-content">
+                <div class="ant-tour-inner">
+                    <button type="button" class="ant-tour-close" aria-label="Close" @onclick="Close"><Icon Type="close" /></button>
+                    @if (step.Cover is not null)
+                    {
+                        <div class="ant-tour-cover"><img src="@step.Cover" alt="" /></div>
+                    }
+                    <div class="ant-tour-header"><div class="ant-tour-title" id="@($"{_id}-title")">@step.Title</div></div>
+                    @if (step.Description is not null)
+                    {
+                        <div class="ant-tour-description">@step.Description</div>
+                    }
+                    <div class="ant-tour-footer">
+                        <div class="ant-tour-indicators" aria-label="@($"Step {_current + 1} of {Steps.Count}")">
+                            @for (var i = 0; i < Steps.Count; i++)
+                            {
+                                <span class="@(i == _current ? "ant-tour-indicator ant-tour-indicator-active" : "ant-tour-indicator")"></span>
+                            }
+                        </div>
+                        <div class="ant-tour-buttons">
+                            @if (_current > 0)
+                            {
+                                <button type="button" class="ant-btn ant-btn-default ant-btn-sm ant-tour-prev-btn" @onclick="Prev"><span>@PrevText</span></button>
+                            }
+                            <button type="button" class="ant-btn ant-btn-primary ant-btn-sm ant-tour-next-btn" @onclick="Next"><span>@(last ? FinishText : NextText)</span></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<TourStep> Steps { get; set; } = [];
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    [Parameter] public int Current { get; set; }
+    [Parameter] public EventCallback<int> CurrentChanged { get; set; }
+
+    /// <summary>Raised when the tour closes by the close button or Escape (not on finish).</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    [Parameter] public EventCallback OnFinish { get; set; }
+
+    /// <summary>Darkens the page around the target.</summary>
+    [Parameter] public bool Mask { get; set; } = true;
+
+    /// <summary>"default" or "primary" (a brand-coloured card).</summary>
+    [Parameter] public string Type { get; set; } = "default";
+
+    [Parameter] public string NextText { get; set; } = "Next";
+    [Parameter] public string PrevText { get; set; } = "Previous";
+    [Parameter] public string FinishText { get; set; } = "Finish";
+
+    private readonly string _id = "m-tour-" + Guid.NewGuid().ToString("N")[..8];
+    private ElementReference _root;
+    private bool _open;
+    private int _current;
+    private bool _place;
+    private bool _focus;
+
+    protected override void OnParametersSet()
+    {
+        if (Open && !_open) _focus = true;
+        _open = Open;
+        var current = Math.Clamp(Current, 0, Math.Max(Steps.Count - 1, 0));
+        if (current != _current || _open) _place = true;
+        _current = current;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_open || !_place) return;
+        _place = false;
+        var focus = _focus;
+        _focus = false;
+        try
+        {
+            await JS.InvokeVoidAsync("modulusShell.tour", _root, focus);
+        }
+        catch (JSException)
+        {
+            // Script not loaded: the card still shows, centred by CSS.
+        }
+    }
+
+    private async Task Go(int index)
+    {
+        _current = index;
+        _place = true;
+        await CurrentChanged.InvokeAsync(index);
+    }
+
+    private Task Prev() => _current > 0 ? Go(_current - 1) : Task.CompletedTask;
+
+    private async Task Next()
+    {
+        if (_current < Steps.Count - 1)
+        {
+            await Go(_current + 1);
+            return;
+        }
+        await Hide();
+        await OnFinish.InvokeAsync();
+    }
+
+    private async Task Close()
+    {
+        await Hide();
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task Hide()
+    {
+        _open = false;
+        await OpenChanged.InvokeAsync(false);
+    }
+
+    private async Task Key(KeyboardEventArgs e)
+    {
+        switch (e.Key)
+        {
+            case "Escape": await Close(); break;
+            case "ArrowRight": await Next(); break;
+            case "ArrowLeft": await Prev(); break;
+        }
+    }
+}

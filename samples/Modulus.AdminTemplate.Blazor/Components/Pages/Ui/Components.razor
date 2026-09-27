@@ -67,6 +67,23 @@
                 }
             </div>
         </Card>
+
+        <Card Bordered="false" Title="Float button">
+            <p class="m-demo-desc">An action that floats over the page corner: on its own, stacked, folded behind a toggle, or back to top. Kept inside this box here.</p>
+            <div class="m-demo-float">
+                <AppFloatButton Icon="question-circle" Tooltip="Help center" Style="right: 224px" />
+                <AppFloatButton Type="primary" Icon="customer-service" BadgeCount="5" Tooltip="Support chat" Style="right: 168px" />
+                <AppFloatButtonGroup Shape="square" Style="right: 104px">
+                    <AppFloatButton Shape="square" Icon="question-circle" Tooltip="Help" />
+                    <AppFloatButton Shape="square" Icon="message" Description="Chat" />
+                    <AppFloatBackTop Shape="square" VisibilityHeight="0" Tooltip="Back to top" />
+                </AppFloatButtonGroup>
+                <AppFloatButtonGroup Trigger="click" Type="primary" Tooltip="Quick actions" Style="right: 32px">
+                    <AppFloatButton Icon="edit" Tooltip="New note" />
+                    <AppFloatButton Icon="upload" Tooltip="Upload" />
+                </AppFloatButtonGroup>
+            </div>
+        </Card>
     </div>
 </section>
 
@@ -405,6 +422,18 @@
                 </FormItem>
             </Form>
         </Card>
+
+        <Card Bordered="false" Title="Color picker">
+            <p class="m-demo-desc">Pick from the palette or a preset, or type hex or RGB. Alpha, clear and sizes are optional.</p>
+            <div class="m-demo-row">
+                <AppColorPicker @bind-Value="_color" Presets="ColorPresets" AriaLabel="Brand colour" />
+                <AppColorPicker @bind-Value="_color" Presets="ColorPresets" ShowText AllowClear AriaLabel="Brand colour with text" />
+                <AppColorPicker Value="#52c41a" Size="small" DisabledAlpha AriaLabel="Small colour picker without alpha" />
+                <AppColorPicker Value="#fa8c16" Size="large" Format="rgb" ShowText AriaLabel="Large colour picker in RGB" />
+                <AppColorPicker Value="#722ed1" Disabled AriaLabel="Disabled colour picker" />
+            </div>
+            <p class="m-muted">Value: <code>@(_color ?? "none")</code></p>
+        </Card>
     </div>
 </section>
 
@@ -582,6 +611,27 @@
                 </ChildContent>
             </Comment>
         </Card>
+
+        <Card Bordered="false" Title="QR code">
+            <p class="m-demo-desc">A link or text for phones to scan, with brand colours, a centre icon and status overlays.</p>
+            <div class="m-demo-row m-demo-row-top">
+                <AppQRCode Value="https://modulus.dev" AriaLabel="QR code for modulus.dev" />
+                <AppQRCode Value="https://modulus.dev/invite/7Q2X" Color="#1677ff" BgColor="#e6f4ff" Icon="@GalleryData.QrIcon" ErrorLevel="QrErrorLevel.H" AriaLabel="Invite link" />
+                <AppQRCode Value="https://modulus.dev/login/5KD9" Size="120" Status="@(_qrExpired ? QRCodeStatus.Expired : QRCodeStatus.Active)" OnRefresh="@(() => _qrExpired = false)" AriaLabel="Sign-in code" />
+                <AppQRCode Value="https://modulus.dev/pair/A1" Size="120" Status="QRCodeStatus.Scanned" Bordered="false" AriaLabel="Pairing code" />
+            </div>
+        </Card>
+
+        <Card Bordered="false" Title="Tour">
+            <p class="m-demo-desc">A step-by-step walkthrough that spotlights parts of the page. Arrow keys move between steps, Escape closes.</p>
+            <div class="m-demo-row">
+                <Button Type="@ButtonType.Primary" Icon="play-circle" OnClick="@(() => _tour = true)">Begin tour</Button>
+                <Button Id="tour-upload" Icon="upload">Upload</Button>
+                <Button Id="tour-save">Save</Button>
+                <Button Id="tour-more" Icon="ellipsis">More</Button>
+            </div>
+            <AppTour Steps="GalleryData.TourSteps" @bind-Open="_tour" />
+        </Card>
     </div>
 </section>
 
@@ -690,6 +740,10 @@
     private bool _modal;
     private DrawerPlacement? _drawer;
     private readonly DateTime _deadline = GalleryData.Deadline();
+    private string? _color = "#1677ff";
+    private bool _qrExpired = true;
+    private bool _tour;
+    private static readonly IReadOnlyList<Modulus.Ui.Abstractions.Theming.ColorPreset> ColorPresets = GalleryData.ColorPresets;
 
     private static readonly string[] PeopleNames = GalleryData.People.Select(p => p.Name).ToArray();
     private static readonly string[] Schemes = ["https://", "http://"];

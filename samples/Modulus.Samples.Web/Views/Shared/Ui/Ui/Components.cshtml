@@ -75,6 +75,23 @@
                     }
                 </div>
             </app-card>
+
+            <app-card title="Float button">
+                <p class="m-demo-desc">An action that floats over the page corner: on its own, stacked, folded behind a toggle, or back to top. Kept inside this box here.</p>
+                <div class="m-demo-float">
+                    <app-float-button icon="question-circle" tooltip="Help center" style="right: 224px" />
+                    <app-float-button type="primary" icon="customer-service" badge-count="5" tooltip="Support chat" style="right: 168px" />
+                    <app-float-button-group shape="square" style="right: 104px">
+                        <app-float-button shape="square" icon="question-circle" tooltip="Help" />
+                        <app-float-button shape="square" icon="message" description="Chat" />
+                        <app-float-back-top shape="square" visibility-height="0" tooltip="Back to top" />
+                    </app-float-button-group>
+                    <app-float-button-group trigger="click" type="primary" tooltip="Quick actions" style="right: 32px">
+                        <app-float-button icon="edit" tooltip="New note" />
+                        <app-float-button icon="upload" tooltip="Upload" />
+                    </app-float-button-group>
+                </div>
+            </app-card>
         </div>
     </section>
 
@@ -378,6 +395,20 @@
                     </app-form-item>
                 </div>
             </app-card>
+
+            <app-card title="Color picker">
+                <p class="m-demo-desc">Pick from the palette or a preset, or type hex or RGB. Alpha, clear and sizes are optional.</p>
+                <div x-data="{ color: '@Model.Color' }" @@change="if ($event.target.name === 'Color') color = $event.target.value || 'none'">
+                    <div class="m-demo-row">
+                        <app-color-picker asp-for="Color" presets="GalleryData.ColorPresets" aria-label="Brand colour" />
+                        <app-color-picker name="ColorWithText" value="@Model.Color" presets="GalleryData.ColorPresets" show-text allow-clear aria-label="Brand colour with text" />
+                        <app-color-picker name="ColorSmall" value="#52c41a" size="small" disabled-alpha aria-label="Small colour picker without alpha" />
+                        <app-color-picker name="ColorRgb" value="#fa8c16" size="large" format="rgb" show-text aria-label="Large colour picker in RGB" />
+                        <app-color-picker name="ColorDisabled" value="#722ed1" disabled aria-label="Disabled colour picker" />
+                    </div>
+                    <p class="m-muted">Value: <code x-text="color">@Model.Color</code></p>
+                </div>
+            </app-card>
         </div>
     </section>
 
@@ -553,6 +584,32 @@
                     <app-comment author="Amelia Lindqvist" datetime="1 hour ago" avatar="AL" avatar-color="#722ed1"
                                  content="On it. I'll compare them with last quarter's invoices." />
                 </app-comment>
+            </app-card>
+
+            <app-card title="QR code">
+                <p class="m-demo-desc">A link or text for phones to scan, with brand colours, a centre icon and status overlays.</p>
+                <div class="m-demo-row m-demo-row-top">
+                    <app-qr-code value="https://modulus.dev" aria-label="QR code for modulus.dev" />
+                    <app-qr-code value="https://modulus.dev/invite/7Q2X" color="#1677ff" bg-color="#e6f4ff" icon="@GalleryData.QrIcon" error-level="H" aria-label="Invite link" />
+                    <app-qr-code value="https://modulus.dev/login/5KD9" size="120" status="Expired" aria-label="Sign-in code" />
+                    <app-qr-code value="https://modulus.dev/pair/A1" size="120" status="Scanned" bordered="false" aria-label="Pairing code" />
+                </div>
+            </app-card>
+
+            <app-card title="Tour">
+                <p class="m-demo-desc">A step-by-step walkthrough that spotlights parts of the page. Arrow keys move between steps, Escape closes.</p>
+                <div class="m-demo-row" x-data>
+                    <app-button type="primary" icon="play-circle" @@click="$dispatch('modulus-tour-open', 'gallery')">Begin tour</app-button>
+                    <app-button id="tour-upload" icon="upload">Upload</app-button>
+                    <app-button id="tour-save">Save</app-button>
+                    <app-button id="tour-more" icon="ellipsis">More</app-button>
+                </div>
+                <app-tour name="gallery">
+                    @foreach (var step in GalleryData.TourSteps)
+                    {
+                        <tour-step title="@step.Title" description="@step.Description" target="@step.Target" placement="@step.Placement" />
+                    }
+                </app-tour>
             </app-card>
         </div>
     </section>

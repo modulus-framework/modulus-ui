@@ -3,7 +3,7 @@
  * app-tree, app-tree-select, app-cascader, app-transfer, app-calendar, app-carousel, app-anchor,
  * app-editable-grid (EditableGridTagHelper.cs), app-menu (MenuTagHelpers.cs), app-splitter, app-affix,
  * app-back-top (FrameTagHelpers.cs), app-auto-complete, app-mentions, app-image-group and app-countdown
- * (ExtraTagHelpers.cs).
+ * (ExtraTagHelpers.cs), app-color-picker and app-tour (ModernTagHelpers.cs).
  * The server renders the initial DOM; these components keep the Ant Design classes in step with the state.
  * Loaded by <modulus-scripts /> before Alpine.
  */
@@ -785,6 +785,166 @@
                     var hours = format.indexOf('d') >= 0 ? Math.floor(total / 3600) % 24 : Math.floor(total / 3600);
                     this.text = format.replace('hh', pad(hours)).replace('mm', pad(Math.floor(total / 60) % 60)).replace('ss', pad(total % 60)).replace('d', String(days));
                     if (total === 0) clearInterval(this.timer);
+                }
+            };
+        });
+
+        // <app-color-picker> (ModernTagHelpers.cs): HSV state mirroring Modulus.Ui.Abstractions.Theming.HsvColor.
+        // cfg = { value, format: 'hex' | 'rgb', alpha: bool }. The hidden input posts the formatted colour ('' when cleared).
+        function hsvFromRgb(r, g, b, a) {
+            r /= 255; g /= 255; b /= 255;
+            var max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min, h = 0;
+            if (d > 0) {
+                if (max === r) h = ((g - b) / d) % 6;
+                else if (max === g) h = (b - r) / d + 2;
+                else h = (r - g) / d + 4;
+                h *= 60;
+                if (h < 0) h += 360;
+            }
+            return { h: h, s: max === 0 ? 0 : d / max, v: max, a: a };
+        }
+
+        function parseColor(value) {
+            if (!value || !String(value).trim()) return null;
+            var s = String(value).trim();
+            if (/^rgba?\(/i.test(s)) {
+                var m = s.slice(s.indexOf('(') + 1, s.indexOf(')')).split(',').map(function (p) { return p.trim(); });
+                if (m.length < 3 || m.length > 4) return null;
+                var rgb = m.slice(0, 3).map(function (p) { return /^\d+$/.test(p) ? parseInt(p, 10) : NaN; });
+                if (rgb.some(function (n) { return isNaN(n) || n > 255; })) return null;
+                var a = m.length === 4 ? parseFloat(m[3]) : 1;
+                if (isNaN(a)) return null;
+                return hsvFromRgb(rgb[0], rgb[1], rgb[2], Math.min(1, Math.max(0, a)));
+            }
+            if (s[0] === '#') s = s.slice(1);
+            if (s.length === 3 || s.length === 4) s = s.split('').map(function (c) { return c + c; }).join('');
+            if (!/^[0-9a-f]{6}([0-9a-f]{2})?$/i.test(s)) return null;
+            var hex = function (i) { return parseInt(s.substr(i, 2), 16); };
+            return hsvFromRgb(hex(0), hex(2), hex(4), s.length === 8 ? hex(6) / 255 : 1);
+        }
+
+        function toRgb(c) {
+            var k = c.v * c.s, x = k * (1 - Math.abs((c.h / 60) % 2 - 1)), m = c.v - k, h = c.h % 360, t;
+            t = h < 60 ? [k, x, 0] : h < 120 ? [x, k, 0] : h < 180 ? [0, k, x] : h < 240 ? [0, x, k] : h < 300 ? [x, 0, k] : [k, 0, x];
+            return t.map(function (n) { return Math.round(Math.min(1, Math.max(0, n + m)) * 255); });
+        }
+
+        function byteHex(n) { return (n < 16 ? '0' : '') + n.toString(16); }
+
+        function formatColor(c, fmt) {
+            var rgb = toRgb(c);
+            if (fmt === 'rgb') {
+                return c.a >= 1 ? 'rgb(' + rgb.join(', ') + ')' : 'rgba(' + rgb.join(', ') + ', ' + Math.round(c.a * 100) / 100 + ')';
+            }
+            return '#' + rgb.map(byteHex).join('') + (c.a >= 1 ? '' : byteHex(Math.round(c.a * 255)));
+        }
+
+        Alpine.data('modulusColorPicker', function (cfg) {
+            var start = parseColor(cfg.value) || parseColor('#1677ff');
+            if (!cfg.alpha) start.a = 1;
+            var clamp = function (n) { return Math.min(1, Math.max(0, n)); };
+            return {
+                open: false,
+                cleared: !parseColor(cfg.value),
+                h: start.h, s: start.s, v: start.v, a: start.a,
+                fmt: cfg.format === 'rgb' ? 'rgb' : 'hex',
+                dragging: null,
+                get color() { return { h: this.h, s: this.s, v: this.v, a: this.a }; },
+                get value() { return this.cleared ? '' : formatColor(this.color, cfg.format === 'rgb' ? 'rgb' : 'hex'); },
+                get text() { return formatColor(this.color, this.fmt); },
+                get css() { return formatColor(this.color, 'rgb'); },
+                get hueCss() { return formatColor({ h: this.h, s: 1, v: 1, a: 1 }, 'hex'); },
+                get alphaTrack() {
+                    var rgb = toRgb(this.color).join(',');
+                    return 'linear-gradient(to right, rgba(' + rgb + ',0), rgb(' + rgb + '))';
+                },
+                get pct() { return Math.round(this.a * 100); },
+                is: function (hex) {
+                    var c = parseColor(hex);
+                    return !this.cleared && !!c && formatColor(c, 'hex') === formatColor(this.color, 'hex');
+                },
+                set: function (c) {
+                    this.h = Math.min(360, Math.max(0, c.h));
+                    this.s = clamp(c.s);
+                    this.v = clamp(c.v);
+                    this.a = cfg.alpha ? clamp(c.a) : 1;
+                    this.cleared = false;
+                    this.changed();
+                },
+                changed: function () {
+                    var input = this.$refs.input;
+                    this.$nextTick(function () { input.dispatchEvent(new Event('change', { bubbles: true })); });
+                },
+                pick: function (hex) { var c = parseColor(hex); if (c) this.set(c); },
+                clear: function () { this.cleared = true; this.changed(); },
+                down: function (kind, e) {
+                    if (e.target.setPointerCapture) e.target.setPointerCapture(e.pointerId);
+                    this.dragging = kind;
+                    this.at(e);
+                },
+                move: function (e) { if (this.dragging) this.at(e); },
+                up: function () { this.dragging = null; },
+                at: function (e) {
+                    var r = this.$refs[this.dragging].getBoundingClientRect();
+                    var x = clamp((e.clientX - r.left) / r.width), y = clamp((e.clientY - r.top) / r.height);
+                    var c = this.color;
+                    if (this.dragging === 'palette') { c.s = x; c.v = 1 - y; }
+                    else if (this.dragging === 'hue') c.h = x * 360;
+                    else c.a = x;
+                    this.set(c);
+                },
+                key: function (kind, e) {
+                    var d = e.shiftKey ? 10 : 1, c = this.color;
+                    var dir = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[e.key];
+                    if (!dir) return;
+                    if (kind === 'palette') {
+                        if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') c.s += dir * d / 100; else c.v += dir * d / 100;
+                    } else if (kind === 'hue') c.h += dir * d;
+                    else c.a += dir * d / 100;
+                    this.set(c);
+                },
+                typed: function (e) {
+                    var c = parseColor(e.target.value);
+                    if (c) this.set(c); else e.target.value = this.text;
+                },
+                typedAlpha: function (e) {
+                    var n = parseFloat(e.target.value);
+                    if (!isNaN(n)) { var c = this.color; c.a = n / 100; this.set(c); }
+                }
+            };
+        });
+
+        // <app-tour> (ModernTagHelpers.cs): opened by $dispatch('modulus-tour-open', name); modulusShell.tour positions
+        // the card. cfg = { name, steps: [{ title, description, target, cover, placement }], open }.
+        Alpine.data('modulusTour', function (cfg) {
+            return {
+                open: false,
+                current: 0,
+                steps: cfg.steps,
+                get step() { return this.steps[this.current] || {}; },
+                get last() { return this.current === this.steps.length - 1; },
+                init: function () { if (cfg.open) this.start(); },
+                start: function (detail) {
+                    if (detail !== undefined && detail !== cfg.name) return;
+                    if (!this.steps.length) return;
+                    this.current = 0;
+                    this.open = true;
+                    this.place(true);
+                },
+                place: function (focus) {
+                    var root = this.$refs.root;
+                    this.$nextTick(function () { window.modulusShell && window.modulusShell.tour(root, focus); });
+                },
+                go: function (i) { this.current = i; this.place(false); },
+                next: function () {
+                    if (!this.last) { this.go(this.current + 1); return; }
+                    this.open = false;
+                    this.$dispatch('modulus-tour-finish', cfg.name);
+                },
+                prev: function () { if (this.current > 0) this.go(this.current - 1); },
+                close: function () {
+                    this.open = false;
+                    this.$dispatch('modulus-tour-close', cfg.name);
                 }
             };
         });

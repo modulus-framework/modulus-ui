@@ -35,6 +35,10 @@ pixel-for-pixel where the controls allow it.
 - **Charts with no JS dependency**: `LineChart` (line/area, crosshair tooltip), `ColumnChart` (grouped/stacked),
   `BarChart`, `DonutChart`, `HeatmapChart`, `Sparkline`, `MiniBar`. The geometry is shared by Blazor and MVC,
   hover tooltips are CSS-only, and each chart carries a screen-reader data table.
+- **Ant Design 5 components that AntD Blazor 1.6.2 lacks**, in both flavours: `AppQRCode` / `app-qr-code` (a tested QR
+  encoder, drawn as SVG, with icon and status overlays), `AppColorPicker` / `app-color-picker` (palette, hue and alpha
+  sliders, hex/RGB input, presets, clear), `AppFloatButton` / `AppFloatButtonGroup` / `AppFloatBackTop` and
+  `AppTour` / `app-tour` (spotlight mask, placement with flipping, keyboard).
 - **Theming from one options object**: primary, success, warning, error and info colours plus border radius.
   The 10-step palette is generated with a C# port of `@ant-design/colors` (tested against the official palettes).
   Light/dark mode persists in a cookie, so the server renders the correct theme on the first byte.
@@ -154,11 +158,11 @@ Tag helpers. `/ui/components` in the MVC and Razor Pages samples shows each one;
 
 | Category | Tag helpers |
 |---|---|
-| General | `app-button` (`loading`), `app-icon`, `app-title`, `app-text`, `app-paragraph`, `app-link` |
+| General | `app-button` (`loading`), `app-icon`, `app-title`, `app-text`, `app-paragraph`, `app-link`, `app-float-button`, `app-float-button-group` (click/hover trigger), `app-float-back-top` |
 | Layout | `app-divider`, `app-space`, `app-row` / `app-col` (24-column grid, gutters, xs–xxl), `app-flex`, `app-layout` / `app-layout-header` / `app-layout-sider` / `app-layout-content` / `app-layout-footer`, `app-splitter` / `app-splitter-panel` (drag and arrow keys) |
 | Navigation | `app-breadcrumb`, `app-tabs` / `app-tab`, `app-steps` / `app-step`, `app-dropdown` / `app-dropdown-item`, `app-dropdown-button`, `app-menu` / `app-sub-menu` / `app-menu-item` / `app-menu-divider` (horizontal, vertical, inline), `app-pagination` (htmx or plain links), `app-anchor` / `app-anchor-link` (scroll-spy), `app-affix`, `app-back-top` |
-| Data entry | `app-form-item` (`asp-for` + validation), `app-input` (affixes, addons, clear, password, datalist AutoComplete), `app-input-search`, `app-textarea` (count), `app-input-number`, `app-select`, `app-date-picker` (date/week/month/time), `app-range-picker`, `app-checkbox`, `app-checkbox-group`, `app-radio-group`, `app-switch`, `app-slider`, `app-rate`, `app-segmented`, `app-upload`, `app-cascader`, `app-tree-select`, `app-transfer`, `app-auto-complete`, `app-mentions`, `app-input-group` (compact) |
-| Data display | `app-card` (`app-card-cover`, `app-card-meta`, `app-card-action`), `app-comment` / `comment-action`, `app-countdown`, `app-image-group` (shared preview), `app-avatar` / `app-avatar-group`, `app-badge` / `app-badge-ribbon`, `app-tag`, `app-statistic`, `app-descriptions`, `app-table` (`hidden-columns`, `density`, `scroll-x`, `table-footer`), `app-table-columns` (column picker), `app-table-settings` (reload, density), `app-list`, `app-timeline`, `app-collapse` / `app-panel`, `app-image`, `app-tooltip`, `app-popover`, `app-empty`, `app-tree` (checkable), `app-calendar`, `app-carousel` / `carousel-slide` |
+| Data entry | `app-form-item` (`asp-for` + validation), `app-input` (affixes, addons, clear, password, datalist AutoComplete), `app-input-search`, `app-textarea` (count), `app-input-number`, `app-select`, `app-date-picker` (date/week/month/time), `app-range-picker`, `app-checkbox`, `app-checkbox-group`, `app-radio-group`, `app-switch`, `app-slider`, `app-rate`, `app-segmented`, `app-upload`, `app-cascader`, `app-tree-select`, `app-transfer`, `app-auto-complete`, `app-mentions`, `app-input-group` (compact), `app-color-picker` (hex/rgb, alpha, presets, clear) |
+| Data display | `app-card` (`app-card-cover`, `app-card-meta`, `app-card-action`), `app-comment` / `comment-action`, `app-countdown`, `app-image-group` (shared preview), `app-avatar` / `app-avatar-group`, `app-badge` / `app-badge-ribbon`, `app-tag`, `app-statistic`, `app-descriptions`, `app-table` (`hidden-columns`, `density`, `scroll-x`, `table-footer`), `app-table-columns` (column picker), `app-table-settings` (reload, density), `app-list`, `app-timeline`, `app-collapse` / `app-panel`, `app-image`, `app-tooltip`, `app-popover`, `app-empty`, `app-tree` (checkable), `app-calendar`, `app-carousel` / `carousel-slide`, `app-qr-code` (icon, status), `app-tour` / `tour-step` |
 | Feedback | `app-alert`, `app-progress` (line/circle/dashboard), `app-result`, `app-skeleton`, `app-spin`, `app-modal`, `app-drawer` (right/left/top/bottom), `app-watermark`; plus `Response.HxMessage`, `HxNotify`, `HxCloseModal` and `hx-confirm` |
 | Pro | `app-page-container`, `app-page-header`, `app-statistic-card`, `app-trend`, `app-editable-grid` (`grid-toolbar`, `grid-title-extra`, `grid-summary`; read posts with `EditableGridForm.Read` / `Apply`) |
 | Charts | `app-line-chart`, `app-column-chart`, `app-bar-chart`, `app-donut-chart`, `app-heatmap`, `app-sparkline`, `app-mini-bar` |
@@ -222,10 +226,11 @@ Run the samples in the **Development** environment (the default launch profile d
   so dark mode stays blue until AntDesign ships a variable-based dark theme.
 - **Icons in MVC** reuse Ant Design Blazor's icon store through reflection, because the API is internal. A unit test fails
   if an AntDesign upgrade moves it.
-- **Blazor-only widgets.** Mentions, Affix, BackTop and Splitter have no tag helper. In MVC, use a native control or render
-  a Blazor component with `<component type="…" render-mode="Server" />`. The manifest lists the MVC equivalent (or none)
-  for every component. Cascader, TreeSelect, Transfer, Tree, Calendar, Carousel and Anchor have tag helpers backed by small
-  Alpine components (`modulus-widgets.js`); they post through hidden inputs, so forms work without script.
+- **Interactive MVC widgets need Alpine.** Cascader, TreeSelect, Transfer, Tree, Calendar, Carousel, Anchor, Mentions,
+  Splitter, ColorPicker, Tour and the rest run on small Alpine components (`modulus-widgets.js`); form widgets post
+  through hidden inputs, so forms still submit without script. The manifest lists the MVC equivalent for every component.
+- **ColorPicker, FloatButton, QRCode and Tour are Modulus components**, not AntD Blazor ones (1.6.2 has none). They emit
+  the antd v5 DOM, styled by `modulus.css`, and may differ in detail from antd v5.
 - **Native pickers in MVC.** `app-date-picker` and `app-range-picker` use the browser's date/time inputs inside antd chrome,
   so the calendar popup follows the browser, not antd.
 - **Authorization** is wired for menus (`RequiredPolicy`). The sample sign-in page is a demo and does not authenticate.

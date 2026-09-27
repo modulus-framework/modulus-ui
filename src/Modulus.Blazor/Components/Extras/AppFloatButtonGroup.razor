@@ -1,0 +1,63 @@
+@* A stack of float buttons (Ant Design 5 FloatButton.Group). With a Trigger the children fold behind a toggle
+   button that opens on click or hover. The MVC <app-float-button-group> emits the same DOM. *@
+
+<div class="@CssClass" style="@Style" @onmouseenter="Enter" @onmouseleave="Leave">
+    @if (Trigger is null)
+    {
+        @ChildContent
+    }
+    else
+    {
+        @if (_open)
+        {
+            <div class="ant-float-btn-group-wrap">@ChildContent</div>
+        }
+        <AppFloatButton Type="@Type" Shape="@Shape" Icon="@(_open ? CloseIcon : Icon)" Description="@(_open ? null : Description)"
+                        Tooltip="@Tooltip" AriaLabel="@(AriaLabel ?? Tooltip ?? "Actions")" aria-expanded="@(_open ? "true" : "false")"
+                        OnClick="Click" />
+    }
+</div>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>"click" or "hover" folds the children behind a toggle; null always shows them.</summary>
+    [Parameter] public string? Trigger { get; set; }
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    /// <summary>"circle" or "square"; square groups join the buttons into one bar.</summary>
+    [Parameter] public string Shape { get; set; } = "circle";
+
+    /// <summary>Type of the toggle button.</summary>
+    [Parameter] public string Type { get; set; } = "default";
+
+    [Parameter] public string Icon { get; set; } = "plus";
+    [Parameter] public string CloseIcon { get; set; } = "close";
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public string? Tooltip { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private bool _open;
+
+    private string CssClass => $"ant-float-btn-group ant-float-btn-group-{(Shape == "square" ? "square" : "circle")}"
+        + (Shape == "square" && Trigger is null ? " ant-float-btn-group-square-shadow" : "")
+        + (_open ? " ant-float-btn-group-open" : "")
+        + (string.IsNullOrWhiteSpace(Class) ? "" : " " + Class);
+
+    protected override void OnParametersSet() => _open = Open;
+
+    private Task SetOpen(bool open)
+    {
+        if (open == _open) return Task.CompletedTask;
+        _open = open;
+        return OpenChanged.InvokeAsync(open);
+    }
+
+    private Task Click() => Trigger is null ? Task.CompletedTask : SetOpen(!_open);
+    private Task Enter() => Trigger == "hover" ? SetOpen(true) : Task.CompletedTask;
+    private Task Leave() => Trigger == "hover" ? SetOpen(false) : Task.CompletedTask;
+}

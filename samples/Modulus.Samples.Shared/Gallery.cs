@@ -1,4 +1,5 @@
 using Modulus.Ui.Abstractions;
+using Modulus.Ui.Abstractions.Theming;
 
 namespace Modulus.Samples.Shared;
 
@@ -94,6 +95,26 @@ public static class GalleryData
         ("Pine forest", Scene("#a8e063", "#56ab2f", "#2f6b3a", "#173d22", "#3f8f4e")),
     ];
 
+    /// <summary>Steps of the Tour demo; the targets are buttons in the Tour card.</summary>
+    public static readonly TourStep[] TourSteps =
+    [
+        new("Upload files", "Drop invoices or receipts here. PDF, PNG and CSV up to 20 MB.", "#tour-upload"),
+        new("Save your changes", "Saves the draft. Nothing is sent until you publish.", "#tour-save", Placement: "top"),
+        new("More actions", "Duplicate, export or archive the document from this menu.", "#tour-more", Placement: "right"),
+        new("You're all set", "Restart the tour any time from the Help menu."),
+    ];
+
+    /// <summary>Centre image of the QR code demo: the Modulus mark on a rounded square.</summary>
+    public static readonly string QrIcon = "data:image/svg+xml;base64," + Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="9" fill="#1677ff"/><path d="M10 29V12h4l6 9 6-9h4v17h-4V19l-6 8.5L14 19v10z" fill="#fff"/></svg>"""));
+
+    /// <summary>The Color picker demo's own swatch row, shown above the recommended one.</summary>
+    public static readonly ColorPreset[] ColorPresets =
+    [
+        new("Brand", ["#066fd1", "#4263eb", "#ae3ec9", "#d6336c", "#f76707", "#2fb344", "#0ca678", "#17a2b8"]),
+        ColorPreset.Recommended,
+    ];
+
     private static string Scene(string sky1, string sky2, string far, string near, string water)
     {
         var svg = $"""
@@ -128,6 +149,7 @@ public sealed class GalleryForm
     public bool Sms { get; set; }
     public string Priority { get; set; } = "normal";
     public string Size { get; set; } = "m";
+    public string? Color { get; set; } = "#1677ff";
     public string View { get; set; } = "List";
     public double Discount { get; set; } = 20;
     public decimal Rating { get; set; } = 4;

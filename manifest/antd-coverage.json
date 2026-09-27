@@ -460,6 +460,28 @@
         "status": "modulus",
         "mvc": "app-bar-chart"
       }
+    },
+    "Antd5": {
+      "QRCode": {
+        "status": "modulus",
+        "note": "AppQRCode (Components/Extras); AntD Blazor 1.6.2 has no QRCode",
+        "mvc": "app-qr-code"
+      },
+      "ColorPicker": {
+        "status": "modulus",
+        "note": "AppColorPicker (Components/Extras)",
+        "mvc": "app-color-picker"
+      },
+      "FloatButton": {
+        "status": "modulus",
+        "note": "AppFloatButton, AppFloatButtonGroup, AppFloatBackTop (Components/Extras)",
+        "mvc": "app-float-button, app-float-button-group, app-float-back-top"
+      },
+      "Tour": {
+        "status": "modulus",
+        "note": "AppTour + TourStep (Components/Extras)",
+        "mvc": "app-tour"
+      }
     }
   },
   "knownComponentTypes": [

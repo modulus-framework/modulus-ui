@@ -1,0 +1,76 @@
+@* QR code (Ant Design 5 QRCode; AntD Blazor 1.6.2 has none). Encoded by Modulus.Ui.Abstractions.Qr and drawn as SVG,
+   so the MVC <app-qr-code> draws the same modules. Status shows an expired / loading / scanned overlay. *@
+@using Modulus.Ui.Abstractions.Qr
+
+<div class="@CssClass" style="@CssStyle">
+    @((MarkupString)_svg)
+    @if (Status != QRCodeStatus.Active)
+    {
+        <div class="ant-qrcode-mask">
+            @switch (Status)
+            {
+                case QRCodeStatus.Loading:
+                    <div class="ant-spin ant-spin-spinning" role="status" aria-label="Loading"><span class="ant-spin-dot ant-spin-dot-spin"><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i></span></div>
+                    break;
+                case QRCodeStatus.Expired:
+                    <p class="ant-qrcode-expired">@ExpiredText</p>
+                    @if (OnRefresh.HasDelegate)
+                    {
+                        <button type="button" class="ant-btn ant-btn-link" @onclick="OnRefresh"><Icon Type="reload" /><span>@RefreshText</span></button>
+                    }
+                    break;
+                case QRCodeStatus.Scanned:
+                    <p class="ant-qrcode-scanned">@ScannedText</p>
+                    break;
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The text to encode (UTF-8).</summary>
+    [Parameter, EditorRequired] public string Value { get; set; } = "";
+
+    /// <summary>Outer width and height in pixels, including the 12px padding when bordered.</summary>
+    [Parameter] public int Size { get; set; } = 160;
+
+    [Parameter] public string Color { get; set; } = "#000";
+
+    [Parameter] public string BgColor { get; set; } = "transparent";
+
+    [Parameter] public QrErrorLevel ErrorLevel { get; set; } = QrErrorLevel.M;
+
+    /// <summary>Image URL drawn in the centre. Pair it with <see cref="QrErrorLevel.H"/>.</summary>
+    [Parameter] public string? Icon { get; set; }
+
+    [Parameter] public int IconSize { get; set; } = 40;
+
+    [Parameter] public bool Bordered { get; set; } = true;
+
+    [Parameter] public QRCodeStatus Status { get; set; }
+
+    /// <summary>Shows a Refresh button on the expired overlay.</summary>
+    [Parameter] public EventCallback OnRefresh { get; set; }
+
+    [Parameter] public string ExpiredText { get; set; } = "QR code expired";
+    [Parameter] public string RefreshText { get; set; } = "Refresh";
+    [Parameter] public string ScannedText { get; set; } = "Scanned";
+
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private string _svg = "";
+    private string? _key;
+
+    private string CssClass => QRCodeMarkup.CssClass(Bordered, Class);
+    private string CssStyle => QRCodeMarkup.CssStyle(Size, BgColor, Style);
+
+    protected override void OnParametersSet()
+    {
+        var key = $"{Value}|{Size}|{Color}|{BgColor}|{ErrorLevel}|{Icon}|{IconSize}|{Bordered}|{AriaLabel}";
+        if (key == _key) return;
+        _key = key;
+        _svg = QRCodeMarkup.Svg(Value, Size, Color, BgColor, ErrorLevel, Icon, IconSize, Bordered, AriaLabel);
+    }
+}

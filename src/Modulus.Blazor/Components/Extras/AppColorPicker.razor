@@ -1,0 +1,323 @@
+@* Colour picker (Ant Design 5 ColorPicker; AntD Blazor 1.6.2 has none). Saturation/value palette, hue and alpha
+   sliders, hex/rgb input, preset swatches and clear. The colour model is Modulus.Ui.Abstractions.Theming.HsvColor,
+   which modulusColorPicker in modulus-widgets.js mirrors for the MVC <app-color-picker>. *@
+@using Modulus.Ui.Abstractions.Theming
+@inject IJSRuntime JS
+
+<span class="m-color-picker @Class" style="@Style">
+    <div class="@TriggerClass" id="@Id" tabindex="@(Disabled ? -1 : 0)" role="button" aria-haspopup="dialog"
+         aria-expanded="@(_open ? "true" : "false")" aria-label="@(AriaLabel ?? "Pick a colour")" aria-disabled="@(Disabled ? "true" : null)"
+         @onclick="Toggle" @onkeydown="TriggerKey">
+        <div class="ant-color-picker-color-block">
+            @if (_cleared)
+            {
+                <div class="ant-color-picker-clear"></div>
+            }
+            else
+            {
+                <div class="ant-color-picker-color-block-inner" style="background:@_hsv.ToRgbString()"></div>
+            }
+        </div>
+        @if (ShowText)
+        {
+            <div class="ant-color-picker-trigger-text">@(_cleared ? "" : _hsv.Format(Format))</div>
+        }
+    </div>
+
+    @if (_open)
+    {
+        <div class="m-color-picker-backdrop" @onclick="Close"></div>
+        <div class="ant-popover ant-color-picker ant-popover-placement-bottomLeft m-color-picker-popup" @onkeydown="PopupKey">
+            <div class="ant-popover-content">
+                <div class="ant-popover-inner" role="dialog" aria-label="@(AriaLabel ?? "Colour picker")">
+                    <div class="ant-popover-inner-content">
+                        <div class="ant-color-picker-inner-content">
+                            @if (AllowClear)
+                            {
+                                <div class="m-color-picker-header">
+                                    <button type="button" class="ant-color-picker-clear m-color-picker-clear-btn" title="Clear" aria-label="Clear colour" @onclick="Clear"></button>
+                                </div>
+                            }
+                            <div class="ant-color-picker-panel">
+                                <div class="ant-color-picker-palette" style="background-color:@_hsv.HueHex()">
+                                    <div class="ant-color-picker-select" tabindex="0" role="slider" aria-label="Saturation and brightness"
+                                         aria-valuetext="@($"Saturation {Pct(_hsv.S)}%, brightness {Pct(_hsv.V)}%")"
+                                         @ref="_paletteRef" @onpointerdown="PaletteDown" @onpointermove="PaletteMove" @onpointerup="PointerUp"
+                                         @onkeydown="PaletteKey">
+                                        <div class="ant-color-picker-saturation"></div>
+                                        <div class="ant-color-picker-handler" style="left:@Px(_hsv.S * PaletteWidth);top:@Px((1 - _hsv.V) * PaletteHeight);background-color:@_hsv.ToHex()"></div>
+                                    </div>
+                                </div>
+                                <div class="ant-color-picker-slider-container">
+                                    <div class="ant-color-picker-slider-group">
+                                        <div class="ant-color-picker-slider ant-color-picker-slider-hue" tabindex="0" role="slider" aria-label="Hue"
+                                             aria-valuemin="0" aria-valuemax="360" aria-valuenow="@((int)Math.Round(_hsv.H))"
+                                             @ref="_hueRef" @onpointerdown="HueDown" @onpointermove="HueMove" @onpointerup="PointerUp"
+                                             @onkeydown="HueKey">
+                                            <div class="ant-color-picker-handler ant-color-picker-handler-sm" style="left:@Px(_hsv.H / 360 * SliderWidth);background-color:@_hsv.HueHex()"></div>
+                                        </div>
+                                        @if (!DisabledAlpha)
+                                        {
+                                            <div class="ant-color-picker-slider ant-color-picker-slider-alpha" tabindex="0" role="slider" aria-label="Alpha"
+                                                 aria-valuemin="0" aria-valuemax="100" aria-valuenow="@Pct(_hsv.A)"
+                                                 @ref="_alphaRef" @onpointerdown="AlphaDown" @onpointermove="AlphaMove" @onpointerup="PointerUp"
+                                                 @onkeydown="AlphaKey">
+                                                <div class="ant-color-picker-slider-track" style="background:@AlphaGradient"></div>
+                                                <div class="ant-color-picker-handler ant-color-picker-handler-sm" style="left:@Px(_hsv.A * SliderWidth);background-color:@_hsv.ToRgbString()"></div>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="ant-color-picker-color-block">
+                                        <div class="ant-color-picker-color-block-inner" style="background:@_hsv.ToRgbString()"></div>
+                                    </div>
+                                </div>
+                                <div class="ant-color-picker-input-container">
+                                    <select class="m-color-picker-format" aria-label="Colour format" value="@_format" @onchange="FormatChanged">
+                                        <option value="hex">HEX</option>
+                                        <option value="rgb">RGB</option>
+                                    </select>
+                                    <div class="ant-color-picker-input">
+                                        <input class="ant-input ant-input-sm" aria-label="@(_format == "rgb" ? "RGB value" : "Hex value")" value="@_text"
+                                               @onchange="TextChanged" spellcheck="false" />
+                                    </div>
+                                    @if (!DisabledAlpha)
+                                    {
+                                        <div class="ant-color-picker-alpha-input">
+                                            <input class="ant-input ant-input-sm" type="number" min="0" max="100" aria-label="Alpha percent"
+                                                   value="@Pct(_hsv.A)" @onchange="AlphaTextChanged" />
+                                            <span class="m-color-picker-suffix">%</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            @foreach (var preset in Presets ?? DefaultPresets)
+                            {
+                                <div class="ant-color-picker-presets">
+                                    <div class="ant-color-picker-presets-label">@preset.Label</div>
+                                    <div class="ant-color-picker-presets-items">
+                                        @foreach (var color in preset.Colors)
+                                        {
+                                            var c = HsvColor.Parse(color);
+                                            var isChecked = !_cleared && c.ToHex() == _hsv.ToHex();
+                                            <button type="button" class="ant-color-picker-presets-color @(isChecked ? "ant-color-picker-presets-color-checked" : "") @(c.V > 0.85 && c.S < 0.15 ? "ant-color-picker-presets-color-bright" : "")"
+                                                    style="--m-swatch:@color" title="@color" aria-label="@color" aria-pressed="@(isChecked ? "true" : "false")"
+                                                    @onclick="() => Pick(c)"></button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</span>
+
+@code {
+    // Fixed panel geometry (Ant Design 5): 234 × 160 palette, sliders beside a 28px preview block.
+    private const double PaletteWidth = 234, PaletteHeight = 160, SliderWidth = 198;
+
+    private static readonly IReadOnlyList<ColorPreset> DefaultPresets = [ColorPreset.Recommended];
+
+    /// <summary>The colour as #rrggbb(aa) or rgb()/rgba(), per <see cref="Format"/>; null when cleared.</summary>
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    /// <summary>"hex" (default) or "rgb".</summary>
+    [Parameter] public string Format { get; set; } = "hex";
+
+    [Parameter] public bool DisabledAlpha { get; set; }
+    [Parameter] public bool AllowClear { get; set; }
+    [Parameter] public bool ShowText { get; set; }
+
+    /// <summary>"small", "middle" (default) or "large".</summary>
+    [Parameter] public string Size { get; set; } = "middle";
+
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Swatch rows; null shows <see cref="ColorPreset.Recommended"/>, an empty list shows none.</summary>
+    [Parameter] public IReadOnlyList<ColorPreset>? Presets { get; set; }
+
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private HsvColor _hsv = HsvColor.Parse(null);
+    private bool _cleared;
+    private bool _open;
+    private string _format = "hex";
+    private string _text = "";
+    private string? _lastValue = "\0";
+    private bool _dragging;
+    private ElementReference _paletteRef, _hueRef, _alphaRef;
+
+    private string TriggerClass => "ant-color-picker-trigger"
+        + (Size == "small" ? " ant-color-picker-sm" : Size == "large" ? " ant-color-picker-lg" : "")
+        + (_open ? " ant-color-picker-trigger-active" : "")
+        + (Disabled ? " ant-color-picker-trigger-disabled" : "");
+
+    private string AlphaGradient
+    {
+        get
+        {
+            var (r, g, b) = _hsv.ToRgb();
+            return $"linear-gradient(to right, rgba({r},{g},{b},0), rgb({r},{g},{b}))";
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Value == _lastValue) return;
+        _lastValue = Value;
+        _cleared = string.IsNullOrWhiteSpace(Value);
+        if (!_cleared && HsvColor.TryParse(Value, out var parsed)) _hsv = DisabledAlpha ? parsed with { A = 1 } : parsed;
+        if (_format != Format && !_open) _format = Format == "rgb" ? "rgb" : "hex";
+        _text = _hsv.Format(_format);
+    }
+
+    private void Toggle()
+    {
+        if (Disabled) return;
+        _open = !_open;
+    }
+
+    private void Close() => _open = false;
+
+    private void TriggerKey(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or " ") Toggle();
+        else if (e.Key == "Escape") Close();
+    }
+
+    private void PopupKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") Close();
+    }
+
+    private Task Set(HsvColor color)
+    {
+        _hsv = color with
+        {
+            H = Math.Clamp(color.H, 0, 360),
+            S = Math.Clamp(color.S, 0, 1),
+            V = Math.Clamp(color.V, 0, 1),
+            A = DisabledAlpha ? 1 : Math.Clamp(color.A, 0, 1),
+        };
+        _cleared = false;
+        _text = _hsv.Format(_format);
+        var value = _hsv.Format(Format == "rgb" ? "rgb" : "hex");
+        _lastValue = value;
+        return ValueChanged.InvokeAsync(value);
+    }
+
+    private Task Pick(HsvColor color) => Set(color);
+
+    private async Task Clear()
+    {
+        _cleared = true;
+        _lastValue = null;
+        await ValueChanged.InvokeAsync(null);
+    }
+
+    private async Task Capture(ElementReference element, long pointerId)
+    {
+        _dragging = true;
+        try
+        {
+            await JS.InvokeVoidAsync("modulusShell.capture", element, pointerId);
+        }
+        catch (JSException)
+        {
+            // Script not loaded: dragging still works while the pointer stays over the control.
+        }
+    }
+
+    private void PointerUp() => _dragging = false;
+
+    private async Task PaletteDown(PointerEventArgs e)
+    {
+        await Capture(_paletteRef, e.PointerId);
+        await PaletteAt(e);
+    }
+
+    private Task PaletteMove(PointerEventArgs e) => _dragging ? PaletteAt(e) : Task.CompletedTask;
+
+    private Task PaletteAt(PointerEventArgs e) =>
+        Set(_hsv with { S = e.OffsetX / PaletteWidth, V = 1 - e.OffsetY / PaletteHeight });
+
+    private async Task HueDown(PointerEventArgs e)
+    {
+        await Capture(_hueRef, e.PointerId);
+        await Set(_hsv with { H = e.OffsetX / SliderWidth * 360 });
+    }
+
+    private Task HueMove(PointerEventArgs e) => _dragging ? Set(_hsv with { H = e.OffsetX / SliderWidth * 360 }) : Task.CompletedTask;
+
+    private async Task AlphaDown(PointerEventArgs e)
+    {
+        await Capture(_alphaRef, e.PointerId);
+        await Set(_hsv with { A = e.OffsetX / SliderWidth });
+    }
+
+    private Task AlphaMove(PointerEventArgs e) => _dragging ? Set(_hsv with { A = e.OffsetX / SliderWidth }) : Task.CompletedTask;
+
+    private static int Step(KeyboardEventArgs e) => e.ShiftKey ? 10 : 1;
+
+    private Task PaletteKey(KeyboardEventArgs e)
+    {
+        var d = Step(e) / 100.0;
+        return e.Key switch
+        {
+            "ArrowLeft" => Set(_hsv with { S = _hsv.S - d }),
+            "ArrowRight" => Set(_hsv with { S = _hsv.S + d }),
+            "ArrowUp" => Set(_hsv with { V = _hsv.V + d }),
+            "ArrowDown" => Set(_hsv with { V = _hsv.V - d }),
+            _ => Task.CompletedTask,
+        };
+    }
+
+    private Task HueKey(KeyboardEventArgs e)
+    {
+        return e.Key switch
+        {
+            "ArrowLeft" or "ArrowDown" => Set(_hsv with { H = _hsv.H - Step(e) }),
+            "ArrowRight" or "ArrowUp" => Set(_hsv with { H = _hsv.H + Step(e) }),
+            _ => Task.CompletedTask,
+        };
+    }
+
+    private Task AlphaKey(KeyboardEventArgs e)
+    {
+        var d = Step(e) / 100.0;
+        return e.Key switch
+        {
+            "ArrowLeft" or "ArrowDown" => Set(_hsv with { A = _hsv.A - d }),
+            "ArrowRight" or "ArrowUp" => Set(_hsv with { A = _hsv.A + d }),
+            _ => Task.CompletedTask,
+        };
+    }
+
+    private void FormatChanged(ChangeEventArgs e)
+    {
+        _format = e.Value as string == "rgb" ? "rgb" : "hex";
+        _text = _hsv.Format(_format);
+    }
+
+    private Task TextChanged(ChangeEventArgs e)
+    {
+        if (HsvColor.TryParse(e.Value as string, out var parsed)) return Set(parsed);
+        _text = _hsv.Format(_format); // put back the last valid value
+        return Task.CompletedTask;
+    }
+
+    private Task AlphaTextChanged(ChangeEventArgs e) =>
+        double.TryParse(e.Value as string, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var pct)
+            ? Set(_hsv with { A = pct / 100 })
+            : Task.CompletedTask;
+
+    private static int Pct(double v) => (int)Math.Round(v * 100);
+
+    private static string Px(double v) => v.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + "px";
+}
