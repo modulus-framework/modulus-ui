@@ -13,13 +13,16 @@
  *
  * <script src=".../modulus-theme.js" data-default="light|dark"
  *         data-layout="horizontal" data-width="boxed" data-nav="light"
- *         data-menu="all" data-font="sans" data-base="gray"></script>
+ *         data-menu="all" data-font="sans" data-base="gray" data-side="left"
+ *         data-sidebar="default" data-fold="full" data-header="fixed" data-topbar="light"
+ *         data-dir="ltr"></script>
  * Omit data-default to follow the OS until the user picks a theme.
  *
  * Theme settings (layout, content width, navigation theme, menu scope, font,
- * theme base, corner radius, colour scheme) are cookies too; the first six become
- * attributes on <html> before first paint, radius and colour are also rendered by
- * the server (ThemeCss).
+ * theme base, sidebar side / style / fold, header mode / colour, text direction,
+ * corner radius, colour scheme) are cookies too; all but the last two become
+ * data-* attributes on <html> before first paint (and dir="rtl" for the direction),
+ * radius and colour are also rendered by the server (ThemeCss).
  */
 (function () {
     'use strict';
@@ -30,12 +33,18 @@
     var script = document.currentScript;
     var configuredDefault = script ? script.getAttribute('data-default') : null;
     var PREFS = {
-        layout: { cookie: 'modulus-layout', values: ['horizontal', 'vertical'] },
-        width: { cookie: 'modulus-width', values: ['boxed', 'fluid'] },
+        layout: { cookie: 'modulus-layout', values: ['horizontal', 'vertical', 'condensed'] },
+        width: { cookie: 'modulus-width', values: ['boxed', 'fluid', 'framed'] },
         nav: { cookie: 'modulus-nav', values: ['light', 'dark'] },
         menu: { cookie: 'modulus-menu', values: ['all', 'app'] },
         font: { cookie: 'modulus-font', values: ['sans', 'system', 'serif', 'mono'] },
-        base: { cookie: 'modulus-base', values: ['gray', 'slate', 'zinc', 'neutral', 'stone'] }
+        base: { cookie: 'modulus-base', values: ['gray', 'slate', 'zinc', 'neutral', 'stone'] },
+        side: { cookie: 'modulus-side', values: ['left', 'right'] },
+        sidebar: { cookie: 'modulus-sidebar', values: ['default', 'transparent', 'floating'] },
+        fold: { cookie: 'modulus-fold', values: ['full', 'folded', 'hover'] },
+        header: { cookie: 'modulus-header', values: ['fixed', 'sticky', 'static', 'floating'] },
+        topbar: { cookie: 'modulus-topbar', values: ['light', 'dark'] },
+        dir: { cookie: 'modulus-dir', values: ['ltr', 'rtl'] }
     };
     var RADIUS_COOKIE = 'modulus-radius';
     var PRIMARY_COOKIE = 'modulus-primary';
@@ -60,6 +69,11 @@
         if (p.values.indexOf(saved) >= 0) return saved;
         var configured = script ? script.getAttribute('data-' + name) : null;
         return p.values.indexOf(configured) >= 0 ? configured : p.values[0];
+    }
+
+    function setAttr(name, value) {
+        root.setAttribute('data-' + name, value);
+        if (name === 'dir') root.setAttribute('dir', value);
     }
 
     function applyRadius(px) {
@@ -98,12 +112,12 @@
         toggle: function () { return api.set(api.current() === 'dark' ? 'light' : 'dark'); },
         /** Forget the explicit choice and follow the operating system (or the configured default). */
         useSystem: function () { deleteCookie(THEME_COOKIE); return apply(preferred()); },
-        /** Theme settings: layout | width | nav | menu | font | base | radius | primary. */
+        /** Theme settings: layout | width | nav | menu | font | base | side | sidebar | fold | header | topbar | dir | radius | primary. */
         setPref: function (name, value, css) {
             if (PREFS[name]) {
                 if (PREFS[name].values.indexOf(value) < 0) return;
                 writeCookie(PREFS[name].cookie, value);
-                root.setAttribute('data-' + name, value);
+                setAttr(name, value);
             } else if (name === 'radius') {
                 writeCookie(RADIUS_COOKIE, value);
                 applyRadius(value);
@@ -134,5 +148,5 @@
 
     window.modulusTheme = api;
     apply(preferred());
-    for (var name in PREFS) root.setAttribute('data-' + name, pref(name));
+    for (var name in PREFS) setAttr(name, pref(name));
 })();

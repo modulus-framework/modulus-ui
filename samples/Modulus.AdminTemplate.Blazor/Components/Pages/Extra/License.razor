@@ -1,0 +1,35 @@
+@page "/extra/license"
+
+<PageTitle>License · Modulus</PageTitle>
+
+<PageHeading Pretitle="Extra" Title="License" Subtitle="@($"Modulus Commercial License · last updated {Fmt.Date(new DateTime(2026, 9, 1))}")">
+    <Actions>
+    <a class="ant-btn ant-btn-default" href="/extra/license" onclick="window.print();return false"><Ti Name="printer" /><span>Print</span></a>
+    </Actions>
+</PageHeading>
+
+<div class="m-license">
+    <nav class="m-card m-toc" aria-label="Sections">
+        <ul class="m-nav-list">
+            @foreach (var s in ExtraContent.License)
+            {
+                <li><a href="/extra/license#@s.Id"><span>@s.Title</span></a></li>
+            }
+        </ul>
+    </nav>
+    <article class="m-card">
+        <div class="m-card-body m-license-body" style="padding:32px">
+            <div class="ant-alert ant-alert-info m-mb-24" role="note"><span class="ant-alert-icon m-text-info"><Ti Name="info-circle" /></span><div class="ant-alert-content"><div class="ant-alert-message">This is a plain-language summary for the sample app, not legal advice.</div></div></div>
+            @foreach (var s in ExtraContent.License)
+            {
+                <h2 id="@s.Id">@s.Title</h2>
+                @foreach (var p in s.Paragraphs)
+                {
+                    <p>@p</p>
+                }
+            }
+            <div class="m-hr"></div>
+            <p class="m-small">Questions about licensing? Write to <a href="mailto:legal@modulus.dev">legal@modulus.dev</a>.</p>
+        </div>
+    </article>
+</div>

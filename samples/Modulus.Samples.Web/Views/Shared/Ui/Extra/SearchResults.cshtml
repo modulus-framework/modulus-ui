@@ -1,0 +1,58 @@
+@{
+    var q = Context.Request.Query;
+    var m = ExtraContent.Search(q.ContainsKey("q") ? q["q"].ToString() : "dashboard", q["tab"].ToString());
+    string Href(string tab) => "/extra/search?q=" + Uri.EscapeDataString(m.Q) + (tab == "" ? "" : "&tab=" + tab);
+}
+<app-page-header pretitle="Extra" title="Search results" />
+
+<div class="m-card m-mb-16">
+    <div class="m-card-body">
+        <form class="m-search-head" method="get" action="/extra/search" role="search">
+            <input class="ant-input ant-input-lg" type="search" name="q" value="@m.Q" placeholder="Search pages, customers, files and help" aria-label="Search" />
+            <button type="submit" class="ant-btn ant-btn-primary ant-btn-lg"><app-ti name="search" /><span>Search</span></button>
+        </form>
+        <p class="m-muted m-small m-mt-8">About @m.Counts[""] @(m.Counts[""] == 1 ? "result" : "results")@(m.Q == "" ? "" : $" for “{m.Q}”")</p>
+    </div>
+    <nav class="m-tabs-nav" aria-label="Result types">
+        @foreach (var t in ExtraContent.SearchTabs)
+        {
+            <a href="@Href(t.Key)" aria-current="@(t.Key == m.Tab ? "page" : null)">@t.Label <span class="m-badge m-badge-gray-lt">@m.Counts[t.Key]</span></a>
+        }
+    </nav>
+</div>
+
+<div class="m-row-cards m-cols-8-4">
+    <div class="m-card" style="align-self:start">
+        @if (m.Hits.Count == 0)
+        {
+            <div class="m-empty"><span class="m-empty-icon"><app-ti name="file-search" /></span><p class="m-empty-title">No results</p><p class="m-empty-subtitle">Check the spelling or try a broader term, like “invoice” or “customer”.</p></div>
+        }
+        @foreach (var h in m.Hits)
+        {
+            <div class="m-search-hit">
+                <span class="m-icon-tile m-tile-gray-lt"><app-ti name="@h.Icon" /></span>
+                <div style="min-width:0">
+                    <div class="m-search-hit-path">@h.Path</div>
+                    <a class="m-search-hit-title" href="@h.Href">@foreach (var (text, hit) in ExtraContent.Highlight(h.Title, m.Q)) { if (hit) { <mark class="m-mark">@text</mark>} else { @text } }</a>
+                    <p>@foreach (var (text, hit) in ExtraContent.Highlight(h.Snippet, m.Q)) { if (hit) { <mark class="m-mark">@text</mark>} else { @text } }</p>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="m-row-cards" style="align-content:start">
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Related searches</h3></div>
+            <div class="m-card-body m-tag-list">
+                @foreach (var s in new[] { "invoice", "customer", "report", "settings", "security", "export" })
+                {
+                    <a class="m-badge m-badge-gray-lt" href="/extra/search?q=@s"><app-ti name="search" /> @s</a>
+                }
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-body">
+                <div class="m-flex m-gap-12"><span class="m-icon-tile m-tile-primary-lt"><app-ti name="lifebuoy" /></span><div><div class="m-medium m-heading">Can't find it?</div><p class="m-muted m-small">Our support team answers within a few hours.</p><a class="ant-btn ant-btn-sm ant-btn-default" href="/pages/help-center"><span>Visit help center</span></a></div></div>
+            </div>
+        </div>
+    </div>
+</div>

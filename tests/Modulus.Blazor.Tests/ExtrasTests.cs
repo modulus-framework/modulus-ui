@@ -216,4 +216,21 @@ public class ExtrasTests : BunitContext
         Assert.True(closed);
         Assert.Empty(cut.FindAll(".ant-tour"));
     }
+
+    [Fact]
+    public void Lightbox_RendersTheGridAndTheOverlayTheScriptClones()
+    {
+        var cut = Render<AppLightbox>(p => p.Add(l => l.Items,
+            [new LightboxItem("a.png", "Lake", "Morning light"), new LightboxItem("b.png", "Dunes", Thumb: "b-small.png")]));
+
+        var root = cut.Find("[data-m-lightbox]");
+        Assert.Equal(LightboxItem.Json([new("a.png", "Lake", "Morning light"), new("b.png", "Dunes", Thumb: "b-small.png")]), root.GetAttribute("data-items"));
+        Assert.Equal("--m-lightbox-min:180px;--m-lightbox-aspect:4 / 3", root.GetAttribute("style"));
+        Assert.Equal("Morning light", cut.Find(".m-lightbox-item-caption").TextContent);
+        Assert.Equal("b-small.png", cut.FindAll(".m-lightbox-tile img")[1].GetAttribute("src"));
+        Assert.Equal("1", cut.FindAll("[data-lightbox-index]")[1].GetAttribute("data-lightbox-index"));
+        Assert.True(cut.Find(".m-lightbox-source").HasAttribute("hidden"));
+        foreach (var part in new[] { "progress", "close", "zoom-in", "zoom-out", "rotate-right", "rotate-left", "download", "pan", "img", "prev", "next", "spin", "footer", "text", "title", "caption", "thumbs" })
+            Assert.Single(cut.FindAll($"[data-lb='{part}']"));
+    }
 }

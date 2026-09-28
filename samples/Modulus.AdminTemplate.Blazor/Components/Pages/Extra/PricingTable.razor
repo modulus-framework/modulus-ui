@@ -1,0 +1,50 @@
+@page "/extra/pricing-table"
+
+<PageTitle>Pricing table · Modulus</PageTitle>
+
+<PageHeading Pretitle="Extra" Title="Pricing table" Subtitle="Compare every plan side by side" />
+
+<div class="m-card">
+    <div class="ant-table-wrapper m-table-flush m-ptable">
+        <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+            <table style="table-layout:auto">
+                <thead class="ant-table-thead">
+                    <tr>
+                        <th class="ant-table-cell" style="width:28%"><div class="m-h3">Choose a plan</div><div class="m-muted m-small" style="font-weight:400">All prices in USD, billed yearly.</div></th>
+                        @foreach (var p in ExtraContent.TablePlans)
+                        {
+                            <th class="ant-table-cell @(p.Popular ? "m-ptable-popular" : "")">
+                                <div class="m-medium">@p.Name@if (p.Popular) {<span class="m-badge m-badge-primary m-ml-8">Popular</span>}</div>
+                                <span class="m-ptable-price">@Fmt.Money0(p.Price)</span>
+                                <div class="m-muted m-small" style="font-weight:400">@p.Note</div>
+                                <a class="ant-btn ant-btn-sm @(p.Popular ? "ant-btn-primary" : "ant-btn-default") m-mt-12" href="@(p.Price == 0 ? "/auth/register" : "/extra/pay")"><span>@(p.Price == 0 ? "Start free" : "Choose")</span></a>
+                            </th>
+                        }
+                    </tr>
+                </thead>
+                <tbody class="ant-table-tbody">
+                    @foreach (var g in ExtraContent.PricingTable)
+                    {
+                        <tr class="m-ptable-group"><td class="ant-table-cell" colspan="@(ExtraContent.TablePlans.Count + 1)">@g.Group</td></tr>
+                        @foreach (var row in g.Rows)
+                        {
+                            <tr class="ant-table-row">
+                                <td class="ant-table-cell m-medium m-heading">@row.Feature</td>
+                                @for (var i = 0; i < row.Values.Length; i++)
+                                {
+                                    var v = row.Values[i];
+                                    <td class="ant-table-cell @(ExtraContent.TablePlans[i].Popular ? "m-ptable-popular" : "")">
+                                        @if (v == "✓") { <span class="m-text-success" aria-label="Included"><Ti Name="check" /></span> }
+                                        else if (v == "—") { <span class="m-text-quaternary" aria-label="Not included"><Ti Name="minus" /></span> }
+                                        else { <span class="m-muted">@v</span> }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div></div></div>
+    </div>
+</div>
+<p class="m-center m-muted m-mt-16">Need more than 500 seats or on-premises hosting? <a href="/apps/chat">Talk to sales</a>.</p>

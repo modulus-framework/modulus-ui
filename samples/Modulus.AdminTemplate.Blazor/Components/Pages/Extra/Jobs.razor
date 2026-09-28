@@ -1,0 +1,91 @@
+@page "/extra/jobs"
+
+<PageTitle>Job listing · Modulus</PageTitle>
+
+<PageHeading Pretitle="Extra" Title="Job listing" Subtitle="@($"{jobs.Count} open {(jobs.Count == 1 ? "position" : "positions")} at Modulus")">
+    <Actions>
+    <a class="ant-btn ant-btn-primary" href="/extra/jobs"><Ti Name="plus" /><span>Post a job</span></a>
+    </Actions>
+</PageHeading>
+
+<div class="m-jobs">
+    <form class="m-card" method="get" action="/extra/jobs" aria-label="Filter jobs">
+        <div class="m-card-body">
+            <div class="m-filter-group">
+                <label class="m-subheader" for="job-q">Search</label>
+                <input id="job-q" class="ant-input" type="search" name="q" value="@search" placeholder="Title or skill" />
+            </div>
+            <div class="m-filter-group">
+                <span class="m-subheader">Job type</span>
+                @foreach (var t in ExtraContent.JobTypes)
+                {
+                    <label class="m-check"><input type="checkbox" name="type" value="@t" checked="@types.Contains(t)" /><span>@t</span><span class="m-muted m-small" style="margin-left:auto">@ExtraContent.Jobs.Count(j => j.Type == t)</span></label>
+                }
+            </div>
+            <div class="m-filter-group">
+                <label class="m-subheader" for="job-dept">Department</label>
+                <select id="job-dept" class="ant-input" name="department">
+                    <option value="">All departments</option>
+                    @foreach (var d in ExtraContent.JobDepartments)
+                    {
+                        <option value="@d" selected="@(d == dept)">@d</option>
+                    }
+                </select>
+            </div>
+            <div class="m-filter-group">
+                <label class="m-check"><input type="checkbox" name="remote" value="1" checked="@remote" /><span>Remote only</span></label>
+            </div>
+            <div class="m-flex m-gap-8 m-mt-16">
+                <button type="submit" class="ant-btn ant-btn-primary m-grow"><span>Apply filters</span></button>
+                <a class="ant-btn ant-btn-default" href="/extra/jobs"><span>Reset</span></a>
+            </div>
+        </div>
+    </form>
+
+    <div class="m-row-cards" style="align-content:start">
+        @if (jobs.Count == 0)
+        {
+            <div class="m-card"><div class="m-empty"><span class="m-empty-icon"><Ti Name="briefcase" /></span><p class="m-empty-title">No positions match</p><p class="m-empty-subtitle">Try fewer filters, or check back soon — we post new roles every week.</p><a class="ant-btn ant-btn-default" href="/extra/jobs"><span>Clear filters</span></a></div></div>
+        }
+        @foreach (var j in jobs)
+        {
+            <div class="m-card">
+                <div class="m-card-body m-job">
+                    <span class="m-icon-tile m-tile-lg m-tile-@(SampleUi.Tone(Fmt.Tint(j.Department)))-lt"><Ti Name="briefcase" /></span>
+                    <div class="m-grow" style="min-width:0">
+                        <a class="m-job-title" href="/extra/jobs?q=@Uri.EscapeDataString(j.Title)">@j.Title</a>@if (j.Featured) {<span class="m-badge m-badge-primary-lt m-ml-8">Featured</span>}
+                        <div class="m-job-meta">
+                            <span><Ti Name="building" />@j.Department</span>
+                            <span><Ti Name="map-pin" />@j.Location</span>
+                            <span><Ti Name="clock" />@j.Type</span>
+                        </div>
+                        <div class="m-tag-list m-mt-8">
+                            @foreach (var t in j.Tags)
+                            {
+                                <span class="m-badge m-badge-gray-lt">@t</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="m-job-side">
+                        <div class="m-medium m-heading">@j.Salary</div>
+                        <div class="m-muted m-small">Posted @Fmt.Relative(j.Posted)</div>
+                        <a class="ant-btn ant-btn-sm ant-btn-primary m-mt-8" href="/auth/register"><span>Apply</span></a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "q")] public string? Q { get; set; }
+    [SupplyParameterFromQuery(Name = "type")] public string[]? Types { get; set; }
+    [SupplyParameterFromQuery] public string? Department { get; set; }
+    [SupplyParameterFromQuery] public string? Remote { get; set; }
+
+    private string search => Q ?? "";
+    private string[] types => Types ?? [];
+    private string dept => Department ?? "";
+    private bool remote => Remote == "1";
+    private IReadOnlyList<Job> jobs => ExtraContent.FindJobs(search, types, dept, remote);
+}

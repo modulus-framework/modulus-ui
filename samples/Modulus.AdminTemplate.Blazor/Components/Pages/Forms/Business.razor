@@ -1,0 +1,101 @@
+@page "/forms/business"
+@inject IMessageService Message
+
+<PageTitle>Business fields · Modulus</PageTitle>
+
+@* Every business field on one sales order (data annotations on BusinessFormInput). After the first submit, errors
+   update as you type. MVC and Razor Pages render the same page from Samples.Web Views/Shared/Ui/Forms/Business.cshtml. *@
+<PageHeading Pretitle="Forms" Title="Business fields" Subtitle="Money, quantities, durations, lookups and the other fields ERP forms are made of." />
+
+<div class="m-row-cards m-cols-8-4">
+    <div class="m-card">
+        <form class="ant-form ant-form-vertical" novalidate @onsubmit="Submit">
+            <div class="m-card-header"><div><h2 class="m-card-title">Sales order</h2><p class="m-card-subtitle">Submit the empty form to see every message.</p></div></div>
+            <div class="m-card-body">
+                <FieldItem Label="Status" Errors="@Err(nameof(BusinessFormInput.Stage))"><AppStatusBar Stages="BusinessFormsDemo.Stages" @bind-Value="_input.Stage" AriaLabel="Order status" /></FieldItem>
+                <div class="m-form-grid">
+                    <FieldItem Label="Customer" For="Customer" Required Help="Type a name or code, or press F4" Errors="@Err(nameof(BusinessFormInput.Customer))">
+                        <AppLookup Id="Customer" @bind-Value="_input.Customer" Items="BusinessFormsDemo.Customers" Columns="BusinessFormsDemo.CustomerColumns"
+                                   Title="Search customers" AriaLabel="Customer" Placeholder="Azure Interior" Status="@St(nameof(BusinessFormInput.Customer))" />
+                    </FieldItem>
+                    <FieldItem Label="Product" For="Product" Required Help="@($"{BusinessFormsDemo.Products.Count} products, searched on the server")" Errors="@Err(nameof(BusinessFormInput.Product))">
+                        <AppLookup Id="Product" @bind-Value="_input.Product" SearchAsync="SearchProducts" Label="@BusinessFormsDemo.ProductLabel(_input.Product)" Columns="BusinessFormsDemo.ProductColumns"
+                                   Title="Search products" AriaLabel="Product" Placeholder="Office chair" Status="@St(nameof(BusinessFormInput.Product))" />
+                    </FieldItem>
+                    <FieldItem Label="Unit price" For="UnitPrice" Required Errors="@Err(nameof(BusinessFormInput.UnitPrice))">
+                        <AppMoneyInput Id="UnitPrice" @bind-Value="_input.UnitPrice" @bind-Currency="_input.Currency" AriaLabel="Unit price" Status="@St(nameof(BusinessFormInput.UnitPrice))" />
+                    </FieldItem>
+                    <FieldItem Label="Quantity" For="Quantity" Required Errors="@Err(nameof(BusinessFormInput.Quantity))">
+                        <AppQuantityInput Id="Quantity" @bind-Value="_input.Quantity" @bind-Unit="_input.Unit" AriaLabel="Quantity" Status="@St(nameof(BusinessFormInput.Quantity))" />
+                    </FieldItem>
+                    <FieldItem Label="Setup time" For="SetupMinutes" Help="1:30, 1.5, 90m or 1h 30m" Errors="@Err(nameof(BusinessFormInput.SetupMinutes))">
+                        <AppDurationInput Id="SetupMinutes" @bind-Value="_input.SetupMinutes" AriaLabel="Setup time" Status="@St(nameof(BusinessFormInput.SetupMinutes))" />
+                    </FieldItem>
+                    <FieldItem Label="Delivery window" For="LeadFrom" Errors="@Err(nameof(BusinessFormInput.LeadTo))">
+                        <AppNumberRange Id="LeadFrom" @bind-From="_input.LeadFrom" @bind-To="_input.LeadTo" Decimals="0" Suffix="days" AriaLabel="Delivery window" Status="@St(nameof(BusinessFormInput.LeadTo))" />
+                    </FieldItem>
+                    <FieldItem Label="Contact phone" For="Phone" Required Errors="@Err(nameof(BusinessFormInput.Phone))">
+                        <AppPhoneInput Id="Phone" @bind-Value="_input.Phone" DefaultCountry="US" Placeholder="202 555 0111" AriaLabel="Contact phone" Status="@St(nameof(BusinessFormInput.Phone))" />
+                    </FieldItem>
+                    <FieldItem Label="Tax id" For="TaxId" Required Errors="@Err(nameof(BusinessFormInput.TaxId))">
+                        <AppMaskedInput Id="TaxId" @bind-Value="_input.TaxId" Mask="@BusinessFormsDemo.TaxIdMask" AriaLabel="Tax id" Status="@St(nameof(BusinessFormInput.TaxId))" />
+                    </FieldItem>
+                    <FieldItem Label="Approval code" For="ApprovalCode" Required Help="The 6-digit code sent to the approver" Class="m-span-2" Errors="@Err(nameof(BusinessFormInput.ApprovalCode))">
+                        <AppOtpInput Id="ApprovalCode" @bind-Value="_input.ApprovalCode" Length="6" Separator="3" AriaLabel="Approval code" Status="@St(nameof(BusinessFormInput.ApprovalCode))" />
+                    </FieldItem>
+                    <FieldItem Label="Terms and notes" Class="m-span-2" Errors="@Err(nameof(BusinessFormInput.Notes))">
+                        <AppRichText @bind-Value="_input.Notes" Placeholder="Payment terms, delivery instructions…" AriaLabel="Terms and notes" Status="@St(nameof(BusinessFormInput.Notes))" />
+                    </FieldItem>
+                    <FieldItem Label="Customer signature" Required Class="m-span-2" Errors="@Err(nameof(BusinessFormInput.Signature))">
+                        <AppSignaturePad @bind-Value="_input.Signature" AriaLabel="Customer signature" Status="@St(nameof(BusinessFormInput.Signature))" />
+                    </FieldItem>
+                </div>
+            </div>
+            <div class="m-card-footer m-form-actions">
+                <Button Type="@ButtonType.Primary" HtmlType="submit">Save order</Button>
+                <Button OnClick="Reset">Reset</Button>
+            </div>
+        </form>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><h2 class="m-card-title">What each field posts</h2></div>
+        <div class="m-card-body">
+            <ul class="m-check-list m-mt-0 m-small">
+                @foreach (var (field, stores) in BusinessFormsDemo.Storage)
+                {
+                    <li><Ti Name="check" /><span><span class="m-heading m-medium">@field</span><br /><span class="m-muted">@stores</span></span></li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
+
+@code {
+    private BusinessFormInput _input = new();
+    private bool _submitted;
+
+    // After the first submit the errors follow the input on every render (live validation).
+    private string[]? Err(string field) => _submitted ? ModelValidation.Validate(_input).GetValueOrDefault(field) : null;
+
+    private string? St(string field) => Err(field) is { Length: > 0 } ? "error" : null;
+
+    // A server search in a real app; here the catalogue is in memory.
+    private static Task<IReadOnlyList<LookupItem>> SearchProducts(string text, int max, CancellationToken cancel) =>
+        Task.FromResult(BusinessFormsDemo.SearchProducts(text, max));
+
+    private void Submit()
+    {
+        _submitted = true;
+        _input.Notes = RichText.Sanitize(_input.Notes);
+        if (ModelValidation.Validate(_input).Count > 0) return;
+        _ = Message.SuccessAsync(BusinessFormsDemo.Summary(_input));
+        Reset();
+    }
+
+    private void Reset()
+    {
+        _input = new();
+        _submitted = false;
+    }
+}

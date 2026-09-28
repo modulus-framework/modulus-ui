@@ -1,0 +1,72 @@
+@{
+    var m = ExtraContent.ActivityFeed(Context.Request.Query["type"].ToString());
+}
+<app-page-header pretitle="Extra" title="Activity" subtitle="Everything that happened across orders, invoices and your team">
+    <a class="ant-btn ant-btn-default" href="/extra/activity"><app-ti name="refresh" /><span>Refresh</span></a>
+</app-page-header>
+
+<div class="m-row-cards m-cols-8-4">
+    <div>
+        <div class="m-filter-bar m-mb-16">
+            <div class="ant-segmented" role="group" aria-label="Activity type">
+                <div class="ant-segmented-group">
+                    @foreach (var t in ExtraContent.ActivityTypes)
+                    {
+                        <a class="ant-segmented-item @(t.Key == m.Type ? "ant-segmented-item-selected" : "")" href="/extra/activity@(t.Key == "" ? "" : "?type=" + t.Key)" aria-current="@(t.Key == m.Type ? "true" : null)">
+                            <div class="ant-segmented-item-label">@t.Label <span class="m-muted">@m.Counts[t.Key]</span></div>
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+        @foreach (var g in m.Groups)
+        {
+            <h2 class="m-day-head">@g.Day</h2>
+            <div class="m-card m-mb-16">
+                @foreach (var a in g.Items)
+                {
+                    <div class="m-feed-item">
+                        <span class="m-icon-tile m-tile-round m-tile-@(a.Tone)-lt"><app-ti name="@a.Icon" /></span>
+                        <div class="m-feed-text">
+                            <div><strong>@a.Actor</strong> @a.Action <strong>@a.Target</strong></div>
+                            @if (a.Detail is not null)
+                            {
+                                <div class="m-feed-detail">@a.Detail</div>
+                            }
+                        </div>
+                        <time class="m-feed-time" datetime="@a.At.ToString("s")">@Fmt.Time(a.At)</time>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+    <div class="m-row-cards" style="align-content:start">
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">This week</h3></div>
+            <div class="m-card-body">
+                <div class="m-row-cards m-cols-2">
+                    @foreach (var t in ExtraContent.ActivityTypes.Skip(1))
+                    {
+                        <div>
+                            <div class="m-h2">@m.Counts[t.Key]</div>
+                            <div class="m-muted m-small">@t.Label</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Most active</h3></div>
+            <ul class="m-list">
+                @foreach (var p in ExtraContent.Activity.GroupBy(a => a.Actor).OrderByDescending(g => g.Count()).ThenBy(g => g.Key).Take(5))
+                {
+                    <li class="m-list-item">
+                        <span class="m-avatar m-avatar-sm m-av-@Fmt.Tint(p.Key)">@Fmt.Initials(p.Key)</span>
+                        <div class="m-list-item-text"><span class="m-list-item-title">@p.Key</span><span class="m-list-item-sub">Last seen @Fmt.Relative(p.Max(a => a.At))</span></div>
+                        <span class="m-list-item-end m-badge m-badge-gray-lt">@p.Count()</span>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>

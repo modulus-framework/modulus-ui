@@ -26,6 +26,12 @@ public static class ThemeCss
     public const string MenuCookie = "modulus-menu";
     public const string FontCookie = "modulus-font";
     public const string BaseCookie = "modulus-base";
+    public const string SideCookie = "modulus-side";
+    public const string SidebarCookie = "modulus-sidebar";
+    public const string FoldCookie = "modulus-fold";
+    public const string HeaderCookie = "modulus-header";
+    public const string TopbarCookie = "modulus-topbar";
+    public const string DirCookie = "modulus-dir";
 
     /// <summary>
     /// Applies the user's theme-settings cookies to a copy of <paramref name="options"/>.
@@ -42,6 +48,12 @@ public static class ThemeCss
         if (Enum.TryParse<MenuScope>(cookie(MenuCookie), true, out var menu)) o.MenuScope = menu;
         if (Enum.TryParse<ThemeFont>(cookie(FontCookie), true, out var font)) o.Font = font;
         if (Enum.TryParse<ThemeBase>(cookie(BaseCookie), true, out var @base)) o.Base = @base;
+        if (Enum.TryParse<SidebarPosition>(cookie(SideCookie), true, out var side)) o.SidebarPosition = side;
+        if (Enum.TryParse<SidebarStyle>(cookie(SidebarCookie), true, out var sidebar)) o.SidebarStyle = sidebar;
+        if (Enum.TryParse<SidebarFold>(cookie(FoldCookie), true, out var fold)) o.SidebarFold = fold;
+        if (Enum.TryParse<HeaderMode>(cookie(HeaderCookie), true, out var header)) o.Header = header;
+        if (Enum.TryParse<HeaderTheme>(cookie(TopbarCookie), true, out var topbar)) o.HeaderTheme = topbar;
+        if (Enum.TryParse<TextDirection>(cookie(DirCookie), true, out var dir)) o.Direction = dir;
         return o;
     }
 
@@ -51,7 +63,8 @@ public static class ThemeCss
     /// on <c>&lt;html&gt;</c> before first paint.
     /// </summary>
     public static string ScriptAttributes(ModulusThemeOptions o) =>
-        $"""data-layout="{Lower(o.Layout)}" data-width="{Lower(o.ContentWidth)}" data-nav="{Lower(o.NavTheme)}" data-menu="{Lower(o.MenuScope)}" data-font="{Lower(o.Font)}" data-base="{Lower(o.Base)}" """.TrimEnd();
+        $"""data-layout="{Lower(o.Layout)}" data-width="{Lower(o.ContentWidth)}" data-nav="{Lower(o.NavTheme)}" data-menu="{Lower(o.MenuScope)}" data-font="{Lower(o.Font)}" data-base="{Lower(o.Base)}" """
+        + $"""data-side="{Lower(o.SidebarPosition)}" data-sidebar="{Lower(o.SidebarStyle)}" data-fold="{Lower(o.SidebarFold)}" data-header="{Lower(o.Header)}" data-topbar="{Lower(o.HeaderTheme)}" data-dir="{Lower(o.Direction)}" """.TrimEnd();
 
     private static string Lower<T>(T value) where T : struct, Enum => value.ToString().ToLowerInvariant();
 

@@ -1,0 +1,134 @@
+@inject Microsoft.Extensions.Options.IOptions<Modulus.Ui.Abstractions.Theming.ModulusThemeOptions> ThemeOptions
+<div class="m-mkt">
+    <header class="m-mkt-nav">
+        <div class="m-mkt-wrap">
+            <div>@Html.Raw(ShellRenderer.Brand(ThemeOptions.Value))</div>
+            <nav class="m-mkt-links" aria-label="Site">
+                <a href="/extra/marketing#features">Features</a>
+                <a href="/extra/marketing#customers">Customers</a>
+                <a href="/pages/pricing">Pricing</a>
+                <a href="/pages/help-center">Docs</a>
+            </nav>
+            <div class="m-flex m-gap-8" style="margin-left:auto">
+                <a class="ant-btn ant-btn-text" href="/auth/login"><span>Sign in</span></a>
+                <a class="ant-btn ant-btn-primary" href="/auth/register"><span>Get started</span></a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="m-mkt-hero">
+            <div class="m-mkt-wrap">
+                <span class="m-badge m-badge-primary-lt"><app-ti name="sparkles" /> New · layout presets and dark mode</span>
+                <h1>The admin template your ASP.NET team will actually ship</h1>
+                <p>Dashboards, apps and business forms for Blazor, MVC and Razor Pages — one design, three flavors, zero JavaScript frameworks.</p>
+                <div class="m-mkt-cta">
+                    <a class="ant-btn ant-btn-primary ant-btn-lg" href="/auth/register"><span>Start free trial</span><app-ti name="arrow-right" /></a>
+                    <a class="ant-btn ant-btn-default ant-btn-lg" href="/"><app-ti name="player-play" /><span>Live demo</span></a>
+                </div>
+                <div class="m-mkt-shot" aria-hidden="true">
+                    <div class="m-mkt-shot-bar"><span></span><span></span><span></span></div>
+                    <div class="m-row-cards m-cols-3">
+                        @foreach (var (label, value, delta) in new[] { ("Revenue", "$48,210", 12.4), ("Active users", "2,941", 6.1), ("Churn", "1.8%", -0.4) })
+                        {
+                            <div class="m-card m-card-sm"><div class="m-card-body">
+                                <div class="m-subheader">@label</div>
+                                <div class="m-flex m-gap-8" style="align-items:baseline"><span class="m-h2">@value</span><span class="m-delta @(delta >= 0 ? "m-delta-up" : "m-delta-down")">@Fmt.Delta(delta)</span></div>
+                            </div></div>
+                        }
+                    </div>
+                    <div class="m-card m-mt-16"><div class="m-card-body">
+                        <app-line-chart labels="UiShowcase.Months" series="UiShowcase.Sessions" area suffix="k" title="Sessions per month" height="200" />
+                    </div></div>
+                </div>
+            </div>
+        </section>
+
+        <div class="m-mkt-wrap">
+            <div class="m-mkt-logos" aria-label="Trusted by">
+                <span><app-ti name="brand-slack" />Slackline</span>
+                <span><app-ti name="brand-github" />Octoforge</span>
+                <span><app-ti name="brand-figma" />Framewise</span>
+                <span><app-ti name="brand-stripe" />Stripefield</span>
+                <span><app-ti name="brand-dribbble" />Dribblio</span>
+            </div>
+        </div>
+
+        <section class="m-mkt-section m-mkt-section-alt" id="features">
+            <div class="m-mkt-wrap">
+                <div class="m-mkt-title">
+                    <div class="m-pretitle">Features</div>
+                    <h2>Everything a back office needs</h2>
+                    <p>Start from 60+ pages and a component library that looks the same in every ASP.NET flavor.</p>
+                </div>
+                <div class="m-row-cards m-cols-3">
+                    @foreach (var f in ExtraContent.Features)
+                    {
+                        <div class="m-card"><div class="m-card-body m-feature">
+                            <span class="m-icon-tile m-tile-@(f.Tone)-lt"><app-ti name="@f.Icon" /></span>
+                            <div><h3>@f.Title</h3><p>@f.Text</p></div>
+                        </div></div>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section class="m-mkt-section">
+            <div class="m-mkt-wrap">
+                <div class="m-mkt-stats">
+                    @foreach (var s in ExtraContent.MarketingStats)
+                    {
+                        <div><strong>@s.Value</strong><span class="m-muted">@s.Label</span></div>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section class="m-mkt-section m-mkt-section-alt" id="customers">
+            <div class="m-mkt-wrap">
+                <div class="m-mkt-title">
+                    <div class="m-pretitle">Customers</div>
+                    <h2>Loved by teams who build internal tools</h2>
+                </div>
+                <div class="m-row-cards m-cols-3">
+                    @foreach (var t in ExtraContent.Testimonials)
+                    {
+                        <figure class="m-card" style="margin:0"><div class="m-card-body m-mkt-quote">
+                            <div class="m-text-yellow">@for (var i = 0; i < 5; i++) { <app-ti name="star" /> }</div>
+                            <blockquote>“@t.Quote”</blockquote>
+                            <figcaption class="m-flex m-gap-12" style="align-items:center">
+                                <span class="m-avatar m-av-@Fmt.Tint(t.Name)">@Fmt.Initials(t.Name)</span>
+                                <span><span class="m-medium m-heading" style="display:block">@t.Name</span><span class="m-muted m-small">@t.Role</span></span>
+                            </figcaption>
+                        </div></figure>
+                    }
+                </div>
+            </div>
+        </section>
+
+        <section class="m-mkt-section">
+            <div class="m-mkt-wrap">
+                <div class="m-mkt-band">
+                    <h2>Ready to build your back office?</h2>
+                    <p>Free for 14 days. No credit card required.</p>
+                    <a class="ant-btn ant-btn-lg m-mt-12" href="/auth/register"><span>Create your account</span></a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="m-mkt-foot">
+        <div class="m-mkt-wrap">
+            <div class="m-mkt-foot-grid">
+                <div>
+                    @Html.Raw(ShellRenderer.Brand(ThemeOptions.Value))
+                    <p class="m-muted m-small m-mt-12" style="max-width:280px">Admin template and component library for ASP.NET Core.</p>
+                </div>
+                <div><h4>Product</h4><ul><li><a href="/extra/marketing#features">Features</a></li><li><a href="/pages/pricing">Pricing</a></li><li><a href="/extra/uptime">Status</a></li></ul></div>
+                <div><h4>Company</h4><ul><li><a href="/extra/jobs">Careers</a></li><li><a href="/extra/license">License</a></li><li><a href="/pages/faq">FAQ</a></li></ul></div>
+                <div><h4>Support</h4><ul><li><a href="/pages/help-center">Help center</a></li><li><a href="/apps/chat">Contact</a></li><li><a href="/extra/cookie-banner">Cookies</a></li></ul></div>
+            </div>
+            <p class="m-muted m-small m-mt-24">© 2026 Modulus Labs. All rights reserved.</p>
+        </div>
+    </footer>
+</div>

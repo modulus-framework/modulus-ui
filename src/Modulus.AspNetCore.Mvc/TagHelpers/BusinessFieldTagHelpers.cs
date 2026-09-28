@@ -290,7 +290,7 @@ public class PhoneInputTagHelper : BoundControlTagHelper
         output.TagName = "span";
         output.TagMode = TagMode.StartTagAndEndTag;
         output.AddClasses("ant-input-group-wrapper", SizeClass("ant-input-group-wrapper"), StatusClass("ant-input-group-wrapper"), "m-field m-phone");
-        output.Attributes.SetAttribute("x-data", new HtmlString($"modulusPhone({Widgets.Config(new { country = country?.Code, national, dials = list.ToDictionary(c => c.Code, c => c.DialCode) })})"));
+        output.Attributes.SetAttribute("x-data", new HtmlString($"modulusPhone({Widgets.Config(new { country = country?.Code, national, home = Country.Find(DefaultCountry, list)?.Code, dials = list.ToDictionary(c => c.Code, c => c.DialCode) })})"));
 
         var sb = new StringBuilder("""<span class="ant-input-wrapper ant-input-group"><span class="ant-input-group-addon m-addon-select">""");
         sb.Append($"""<span class="m-addon-select-text" aria-hidden="true" x-text="prefix">{Html.E(country is null ? "+" : $"{country.Code} +{country.DialCode}")}</span>""");

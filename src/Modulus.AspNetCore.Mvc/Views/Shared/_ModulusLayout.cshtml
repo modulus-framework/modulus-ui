@@ -35,8 +35,7 @@
 <body modulus-antiforgery>
     <div class="m-page">
         @Html.Raw(ShellRenderer.Sidebar(shell))
-        @Html.Raw(ShellRenderer.Topbar(shell))
-        @Html.Raw(ShellRenderer.Navbar(shell))
+        @Html.Raw(ShellRenderer.Header(shell))
         <div class="m-page-wrapper">
             @* x-data: every page can use Alpine directives (@click="$store.drawer.load(…)") without its own scope. *@
             <main class="m-page-body" id="main" x-data>

@@ -1,0 +1,73 @@
+@{
+    var q = Context.Request.Query;
+    var m = ExtraContent.Quote(q["plan"].ToString(), q["cycle"].ToString(), int.TryParse(q["seats"], out var s) ? s : null);
+    var cycle = m.Yearly ? "yearly" : "monthly";
+}
+<app-page-header pretitle="Settings" title="Plan" subtitle="Choose the plan and seats that fit your team" />
+
+<div class="m-side-page">
+    <nav class="m-card" aria-label="Settings">
+        <ul class="m-nav-list">
+            @foreach (var n in ExtraContent.SettingsNav)
+            {
+                <li><a href="@n.Href" aria-current="@(n.Href == "/extra/settings-plan" ? "page" : null)"><app-ti name="@n.Icon" /><span>@n.Label</span></a></li>
+            }
+        </ul>
+    </nav>
+    <form class="m-row-cards" method="get" action="/extra/settings-plan">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Billing cycle</h3><p class="m-card-subtitle">Pay yearly and save 20%</p></div>
+                <div class="ant-segmented" role="group" aria-label="Billing cycle" style="margin-left:auto">
+                    <div class="ant-segmented-group">
+                        @foreach (var c in new[] { "monthly", "yearly" })
+                        {
+                            <a class="ant-segmented-item @(c == cycle ? "ant-segmented-item-selected" : "")" href="/extra/settings-plan?plan=@m.Plan.Name&cycle=@c&seats=@m.Seats" aria-current="@(c == cycle ? "true" : null)"><div class="ant-segmented-item-label">@(c == "yearly" ? "Yearly" : "Monthly")</div></a>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="m-card-body">
+                <input type="hidden" name="cycle" value="@cycle" />
+                <div class="m-plan-options" role="radiogroup" aria-label="Plan">
+                    @foreach (var p in SampleContent.Plans)
+                    {
+                        var price = m.Yearly ? p.Yearly : p.Monthly;
+                        <label class="m-choice-card">
+                            <input type="radio" name="plan" value="@p.Name" checked="@(p.Name == m.Plan.Name)" />
+                            <span>
+                                <span class="m-medium m-heading">@p.Name@if (p.Popular) {<span class="m-badge m-badge-primary-lt m-ml-8">Popular</span>}</span>
+                                <span class="m-h2">@Fmt.Money0(price)<span class="m-muted m-small"> / seat / mo</span></span>
+                                <span class="m-muted m-small">@p.Tagline</span>
+                            </span>
+                        </label>
+                    }
+                </div>
+                <div class="m-hr"></div>
+                <div class="m-flex m-flex-wrap m-gap-16" style="align-items:center">
+                    <label for="plan-seats" class="m-grow"><span class="m-medium m-heading" style="display:block">Seats</span><span class="m-muted m-small">You're using 18 seats today.</span></label>
+                    <input id="plan-seats" class="ant-input" type="number" name="seats" min="1" max="500" value="@m.Seats" style="width:120px" />
+                </div>
+            </div>
+            <div class="m-card-footer m-flex m-gap-8" style="justify-content:flex-end">
+                <button type="submit" class="ant-btn ant-btn-default"><app-ti name="refresh" /><span>Update total</span></button>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Summary</h3></div>
+            <div class="m-card-body">
+                <div class="m-summary-row"><span>@m.Plan.Name · @cycle</span><span>@Fmt.Money0(m.PerSeat) / seat / mo</span></div>
+                <div class="m-summary-row"><span>Seats</span><span>× @m.Seats</span></div>
+                @if (m.Yearly)
+                {
+                    <div class="m-summary-row"><span>Months</span><span>× 12</span></div>
+                }
+                <div class="m-summary-row m-summary-total"><span>Total per @(m.Yearly ? "year" : "month")</span><span>@Fmt.Money0(m.Total)</span></div>
+            </div>
+            <div class="m-card-footer m-flex m-gap-8" style="justify-content:flex-end">
+                <a class="ant-btn ant-btn-default" href="/extra/billing"><span>Cancel</span></a>
+                <a class="ant-btn ant-btn-primary" href="/extra/pay?plan=@m.Plan.Name"><span>Confirm plan</span></a>
+            </div>
+        </div>
+    </form>
+</div>

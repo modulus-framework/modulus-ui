@@ -95,6 +95,17 @@ public static class GalleryData
         ("Pine forest", Scene("#a8e063", "#56ab2f", "#2f6b3a", "#173d22", "#3f8f4e")),
     ];
 
+    /// <summary>Images of the Lightbox demo: the Image photos plus a few more, with captions (one left without).</summary>
+    public static readonly LightboxItem[] LightboxPhotos =
+    [
+        new(Photos[0].Src, Photos[0].Title, "Still water below the ridge, just after sunrise."),
+        new(Photos[1].Src, Photos[1].Title, "Wind-carved ridges in the late afternoon light."),
+        new(Photos[2].Src, Photos[2].Title, "Morning mist over the valley floor."),
+        new(Scene("#ffecd2", "#fcb69f", "#b0706a", "#5e3a4a", "#d98f7e"), "Coastal cliffs", "Low tide on the south shore."),
+        new(Scene("#c2e9fb", "#a1c4fd", "#7a8fb8", "#3b4a6b", "#8fb3e0"), "Glacier valley"),
+        new(Scene("#2c3e50", "#4ca1af", "#1f3a4a", "#0d1b24", "#3a7d8a"), "Night harbour", "Boats at anchor under a clear sky."),
+    ];
+
     /// <summary>Steps of the Tour demo; the targets are buttons in the Tour card.</summary>
     public static readonly TourStep[] TourSteps =
     [
@@ -123,7 +134,7 @@ public static class GalleryData
         ColorPreset.Recommended,
     ];
 
-    private static string Scene(string sky1, string sky2, string far, string near, string water)
+    internal static string Scene(string sky1, string sky2, string far, string near, string water)
     {
         var svg = $"""
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200">

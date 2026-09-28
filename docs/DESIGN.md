@@ -51,6 +51,12 @@ charts
   `ant-design-blazor.variable.css` reads (`--ant-primary-color`, `-hover`, `-active`, `-outline`, `--ant-primary-1..10`, …),
   computed with antd's own `registerTheme` rules, plus `--m-*` tokens for the Modulus layer.
 - Dark mode uses AntDesign's `dark.css`. Modulus tokens have dark overrides under `html[data-theme='dark']`.
+- Layout settings are attributes on `<html>` (`data-layout`, `data-width`, `data-header`, `data-topbar`, `data-side`,
+  `data-sidebar`, `data-fold`, `dir`) that `modulus-theme.js` sets from cookies before first paint, so the shell switches
+  without a server round trip; CSS in `modulus-shell.css` does the rest. `ShellRenderer.Header` wraps the header row and
+  navbar so header modes and the condensed row can style them as one unit. The shell uses logical properties
+  (`inset-inline-start`, `padding-inline`) so right-to-left and end-side sidebars mirror it; page widgets and Ant Design
+  components are not mirrored yet.
 - The v5 refresh (in `modulus.css`) touches only visual properties: radius, shadow, menu item shape, table header weight
   and control heights. Layout and behaviour stay Ant Design's.
 
@@ -131,6 +137,25 @@ charts
   row and column operations; save, discard and reset stay with the app. htmx swaps just the grid card.
 - Cell editing is client-side (`modulusGrid` in `modulus-widgets.js`) with the same formatting and validation rules
   as `GridSchema`, so edits cost no round trip until a structural action or Save.
+
+### Business fields
+
+- **One rule set, two front ends.** Each field's parsing and checking is a static class in
+  `Modulus.Ui.Abstractions.Forms`: `NumberText` (group separators, `(1,250)` negatives, trailing minus), `DurationText`,
+  `Currency` / `UnitOfMeasure` (decimals per code), `InputMask` (`9` digit, `A` letter, `*` either, `\` literal),
+  `PhoneNumber`, `LookupSearch` (every word must match; labels starting with the text first), `RichText` (an allow-list
+  sanitizer) and `SignatureImage`. Blazor components call them directly; the MVC tag helpers render the same DOM and
+  `modulus-shell.js` / `modulus-widgets.js` mirror the rules, and the server re-checks with the C# version.
+- **Post plain values.** What the user sees is formatted (`1,234.50`, `1:30`, `(202) 555-0111`); what posts is invariant
+  (`1234.5`, `90`, `+1 202 555-0111`) in a hidden input named by `asp-for`, so model binding needs nothing special.
+  Companion fields post under their own names (`currency-for`, `unit-for`, `from-for` / `to-for`).
+- **Lookups** take local `Items` or a server search. Blazor: `SearchAsync(text, max, ct)`. MVC: `search-href`, called as
+  `?q=text&max=n` (the widget asks for one more than it shows, to know there are more) and answering
+  `[{ value, label, description, fields }]`. `fields` fill the dialog's extra `Columns`.
+- **One-time code**: typed keys are handled in `beforeinput` (replace the box, move on), so fast typing never depends
+  on the caret; a paste or an autofill into one box spreads over the boxes. Blazor sees every change as `input`.
+- **Rich text** is `contenteditable` with `document.execCommand` for the toolbar. The posted HTML is never trusted:
+  pages sanitize it before saving, and `ToPlainText` backs required and length checks.
 
 ### MVC / Razor Pages
 

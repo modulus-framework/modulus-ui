@@ -1,0 +1,76 @@
+@page "/extra/logs"
+
+<PageTitle>Logs · Modulus</PageTitle>
+
+<PageHeading Pretitle="Extra" Title="Logs" Subtitle="Application log for today, newest first">
+    <Actions>
+    <a class="ant-btn ant-btn-default" href="@Href(level)"><Ti Name="refresh" /><span>Refresh</span></a>
+    <a class="ant-btn ant-btn-default" href="/extra/logs"><Ti Name="download" /><span>Export</span></a>
+    </Actions>
+</PageHeading>
+
+<div class="m-row-cards m-cols-4 m-mb-16">
+    @foreach (var lv in ExtraContent.LogLevels.AsEnumerable().Reverse())
+    {
+        var n = ExtraContent.Logs.Count(l => l.Level == lv);
+        <div class="m-card m-card-sm"><div class="m-card-body"><div class="m-stat">
+            <span class="m-icon-tile m-tile-@(lv switch { "error" => "red", "warn" => "yellow", "info" => "azure", _ => "gray" })-lt"><Ti Name="@(lv switch { "error" => "circle-x", "warn" => "alert-triangle", "info" => "info-circle", _ => "bug" })" /></span>
+            <div class="m-stat-text"><div class="m-stat-value">@n</div><div class="m-stat-sub">@(lv == "warn" ? "Warnings" : lv == "error" ? "Errors" : lv == "info" ? "Info" : "Debug")</div></div>
+        </div></div></div>
+    }
+</div>
+
+<div class="m-card">
+    <div class="m-card-header m-filter-bar">
+        <div class="ant-segmented" role="group" aria-label="Level">
+            <div class="ant-segmented-group">
+                @foreach (var lv in new[] { "" }.Concat(ExtraContent.LogLevels))
+                {
+                    <a class="ant-segmented-item @(lv == level ? "ant-segmented-item-selected" : "")" href="@Href(lv)" aria-current="@(lv == level ? "true" : null)"><div class="ant-segmented-item-label">@(lv == "" ? "All" : lv)</div></a>
+                }
+            </div>
+        </div>
+        <form method="get" action="/extra/logs" role="search" style="margin-left:auto">
+            @if (level != "")
+            {
+                <input type="hidden" name="level" value="@level" />
+            }
+            <input class="ant-input" type="search" name="q" value="@search" placeholder="Search message, source or request" aria-label="Search logs" />
+        </form>
+    </div>
+    <div class="ant-table-wrapper m-table-flush m-log-table">
+        <div class="ant-table ant-table-small"><div class="ant-table-container"><div class="ant-table-content">
+            <table style="table-layout:auto">
+                <thead class="ant-table-thead"><tr><th class="ant-table-cell">Time</th><th class="ant-table-cell">Level</th><th class="ant-table-cell">Source</th><th class="ant-table-cell">Message</th><th class="ant-table-cell">Request</th></tr></thead>
+                <tbody class="ant-table-tbody">
+                    @if (logs.Count == 0)
+                    {
+                        <tr class="ant-table-row"><td class="ant-table-cell m-center m-muted" colspan="5" style="padding:32px">No log entries match.</td></tr>
+                    }
+                    @foreach (var l in logs)
+                    {
+                        <tr class="ant-table-row @(l.Level == "error" ? "m-log-row-error" : "")">
+                            <td class="ant-table-cell m-mono">@l.At.ToString("HH:mm:ss")</td>
+                            <td class="ant-table-cell"><span class="m-badge @ExtraContent.LogBadge(l.Level)">@l.Level.ToUpperInvariant()</span></td>
+                            <td class="ant-table-cell"><span class="m-badge m-badge-gray-lt">@l.Source</span></td>
+                            <td class="ant-table-cell m-log-msg">@foreach (var (text, hit) in ExtraContent.Highlight(l.Message, search)) { if (hit) { <mark class="m-mark">@text</mark> } else { @text } }</td>
+                            <td class="ant-table-cell m-mono">@l.RequestId</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div></div></div>
+    </div>
+    <div class="m-card-footer m-muted m-small">Showing @logs.Count of @ExtraContent.Logs.Count entries</div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "level")] public string? LevelQuery { get; set; }
+    [SupplyParameterFromQuery(Name = "q")] public string? Q { get; set; }
+
+    private string level => ExtraContent.LogLevels.Contains(LevelQuery) ? LevelQuery! : "";
+    private string search => Q ?? "";
+    private IReadOnlyList<LogEntry> logs => ExtraContent.FindLogs(level, search);
+
+    private string Href(string lv) => "/extra/logs" + (lv == "" && search == "" ? "" : "?" + string.Join("&", new[] { lv == "" ? null : "level=" + lv, search == "" ? null : "q=" + Uri.EscapeDataString(search) }.Where(x => x is not null)));
+}

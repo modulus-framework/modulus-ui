@@ -365,7 +365,7 @@ public class EditableGridTests : BunitContext
         Assert.Equal(2, cut.FindAll(".m-table-filters .ant-select").Count); // owner, priority
         Assert.NotNull(cut.Find("thead th.ant-table-selection-column"));
         Assert.Equal(2, cut.FindAll("tbody td.ant-table-selection-column").Count);
-        Assert.Equal("owner", cut.FindAll("thead .m-grid-th")[1].GetAttribute("data-key"));
+        Assert.Equal("owner", cut.FindAll("thead .m-th")[1].GetAttribute("data-key"));
     }
 
     [Fact]

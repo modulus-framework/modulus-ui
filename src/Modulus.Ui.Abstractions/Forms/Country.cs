@@ -59,15 +59,18 @@ public static class PhoneNumber
 {
     /// <summary>
     /// Splits a stored number into its country and national part. Calling codes shared by several countries
-    /// (+1, +7) resolve to <paramref name="preferred"/> when it has that code, otherwise to the first in the list.
-    /// Text without a leading "+" is a national number of the preferred country.
+    /// (+1, +7) resolve to <paramref name="preferred"/> when it has that code, then to <paramref name="fallback"/>
+    /// (a field's default country), otherwise to the first in the list. Text without a leading "+" is a national
+    /// number of the preferred country.
     /// </summary>
-    public static (Country? Country, string National) Split(string? value, IEnumerable<Country>? countries = null, string? preferred = null)
+    public static (Country? Country, string National) Split(string? value, IEnumerable<Country>? countries = null, string? preferred = null, string? fallback = null)
     {
         var list = (countries ?? Country.All).ToList();
-        var fallback = Country.Find(preferred, list) ?? list.FirstOrDefault();
+        var first = Country.Find(preferred, list);
+        var second = Country.Find(fallback, list);
+        var home = first ?? second ?? list.FirstOrDefault();
         var s = (value ?? "").Trim();
-        if (!s.StartsWith('+')) return (fallback, s);
+        if (!s.StartsWith('+')) return (home, s);
 
         var digits = Digits(s);
         for (var len = Math.Min(4, digits.Length); len >= 1; len--)
@@ -75,10 +78,10 @@ public static class PhoneNumber
             var code = digits[..len];
             var matches = list.Where(c => c.DialCode == code).ToList();
             if (matches.Count == 0) continue;
-            var country = matches.FirstOrDefault(c => c.Code == fallback?.Code) ?? matches[0];
+            var country = matches.FirstOrDefault(c => c.Code == first?.Code) ?? matches.FirstOrDefault(c => c.Code == second?.Code) ?? matches[0];
             return (country, NationalPart(s, len));
         }
-        return (fallback, s[1..].Trim());
+        return (home, s[1..].Trim());
     }
 
     /// <summary>"+{code} {national}", or "" when the national part has no digits.</summary>

@@ -9,9 +9,12 @@
  *   [data-m-nav-open]      opens the sidebar drawer (small screens); [data-m-nav-close] closes it
  *   [data-m-search]        filters every navigation link; Ctrl+K or "/" focuses it
  *   [data-m-theme-toggle]  light / dark
- *   [data-m-customizer]    theme settings panel (colour mode, scheme, base, font, radius, layout, menu, nav, width)
- *   [data-m-launcher]      full-screen app launcher (Odoo home menu): [data-m-launcher-open] opens it, typing
- *                          filters the apps and lists matching menu entries, arrow keys move between tiles
+ *   [data-m-customizer]    theme settings panel (colour mode, scheme, base, font, radius, layout presets, layout, width,
+ *                          header, sidebar, menu, direction)
+ *   [data-m-fold-toggle]   folds or unfolds the vertical sidebar; a folded sidebar shows groups and names as flyouts
+ *   [data-m-launcher]      full-screen app launcher (Odoo home menu, Oracle navigator): [data-m-launcher-open] opens it,
+ *                          typing filters the apps and lists matching menu entries, arrow keys move between cards;
+ *                          [data-m-recent] lists the menu pages opened lately (localStorage modulus-recent)
  *   [data-m-mark-read]     marks header notifications as read
  *   [data-m-tenant]        tenant switcher: writes the modulus-tenant cookie and reloads (cancel modulus:tenant-change to
  *                          handle it yourself); [data-m-tenant-filter] filters the tenant list. Multi-company:
@@ -65,16 +68,20 @@
         if (link) {
             var open = link.closest('details.m-dropdown[open], details[data-m-dropdown][open]');
             if (open) open.removeAttribute('open');
-            if (link.closest('.m-sidebar')) closeNav();
+            if (link.closest('.m-sidebar')) { closeNav(); closeFly(); }
             if (link.closest('.m-search-results')) closeSearch(true);
         }
 
         if (t.closest('[data-m-nav-open]')) { root.classList.add('m-nav-open'); return; }
         if (t.closest('[data-m-nav-close]')) { closeNav(); return; }
+        if (t.closest('[data-m-fold-toggle]')) { toggleFold(); return; }
+        if (folded() && t.closest('.m-sidebar .m-snav-group > summary')) { e.preventDefault(); return; }
         if (t.closest('[data-m-theme-toggle]')) { window.modulusTheme && window.modulusTheme.toggle(); syncCustomizer(); return; }
         if (t.closest('[data-m-customizer-open]')) { openCustomizer(); return; }
         if (t.closest('[data-m-customizer-close]')) { closeCustomizer(); return; }
         if (t.closest('[data-m-customizer-reset]')) { window.modulusTheme && window.modulusTheme.reset(); return; }
+        var settingTab = t.closest('[data-m-customizer-tab]');
+        if (settingTab) { showSettingPane(settingTab.getAttribute('data-m-customizer-tab')); return; }
         if (t.closest('[data-m-launcher-open]')) { openLauncher(); return; }
         if (t.closest('[data-m-launcher-close]') || t.matches('.m-launcher-panel') || (link && link.closest('[data-m-launcher]'))) { closeLauncher(); return; }
         if (t.closest('[data-m-search-open]')) { openSearch(); return; }
@@ -92,6 +99,7 @@
         if (e.key === 'Escape') {
             closeDropdowns(null);
             closeNav();
+            closeFly();
             closeCustomizer();
             closeLauncher();
             if (document.activeElement && document.activeElement.classList.contains('m-search-input')) closeSearch(true);
@@ -227,16 +235,19 @@
         var seen = {}, items = [];
         document.querySelectorAll('.m-sidebar a[href], .m-navbar a[href]').forEach(function (a) {
             var href = a.getAttribute('href');
-            if (!href || seen[href]) return;
-            seen[href] = true;
+            if (!href) return;
+            var icon = a.querySelector('svg use');
+            // Sidebar links under a group have no icon; the navbar's copy of the same entry usually does.
+            if (seen[href]) { if (!seen[href].icon && icon) seen[href].icon = icon.getAttribute('href'); return; }
             var group = a.closest('.m-snav-sub');
             var section = a.getAttribute('data-m-trail') || '';
             if (!section && group) {
                 var summary = group.parentElement && group.parentElement.querySelector(':scope > summary .m-snav-title');
                 section = summary ? summary.textContent.trim() : '';
             }
-            var icon = a.querySelector('svg use');
-            items.push({ href: href, label: a.textContent.trim(), section: section, icon: icon ? icon.getAttribute('href') : null });
+            var item = { href: href, label: a.textContent.trim(), section: section, icon: icon ? icon.getAttribute('href') : null };
+            seen[href] = item;
+            items.push(item);
         });
         return items;
     }
@@ -337,6 +348,8 @@
         launcherFocus = document.activeElement;
         var input = l.querySelector('[data-m-launcher-search]');
         input.value = '';
+        greet(l);
+        renderRecent(l);
         filterLauncher(l, '');
         l.hidden = false;
         root.classList.add('m-launcher-open');
@@ -355,6 +368,81 @@
         launcherFocus = null;
     }
 
+    function greet(l) {
+        var title = l.querySelector('[data-m-greeting]');
+        var now = new Date(), hour = now.getHours();
+        if (title) {
+            var name = title.getAttribute('data-m-greeting');
+            title.textContent = (hour < 5 ? 'Good evening' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening') + (name ? ', ' + name : '');
+        }
+        var today = l.querySelector('[data-m-today]');
+        if (today) today.textContent = now.toLocaleDateString(root.lang || undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+    }
+
+    // Recent pages: menu entries the user opened, newest first, in this browser only.
+    var recentKey = 'modulus-recent', recentMax = 6;
+
+    function readRecent() {
+        try { var list = JSON.parse(localStorage.getItem(recentKey) || '[]'); return Array.isArray(list) ? list : []; }
+        catch (err) { return []; }
+    }
+
+    function remember(href) {
+        if (!href) return;
+        var item = index().filter(function (i) { return i.href === href; })[0];
+        if (!item) return;
+        var list = readRecent().filter(function (r) { return r && r.href !== href; });
+        list.unshift({ href: item.href, label: item.label, section: item.section, icon: item.icon });
+        try { localStorage.setItem(recentKey, JSON.stringify(list.slice(0, recentMax + 1))); } catch (err) { /* storage blocked */ }
+    }
+
+    // The menu entry of the page on screen (its link carries aria-current), for direct loads and full reloads.
+    function rememberCurrent() {
+        var link = document.querySelector('.m-sidebar a[aria-current="page"], .m-navbar a[aria-current="page"]');
+        if (link) remember(link.getAttribute('href'));
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', rememberCurrent); else rememberCurrent();
+    window.addEventListener('load', function () {
+        if (window.Blazor && window.Blazor.addEventListener) window.Blazor.addEventListener('enhancedload', rememberCurrent);
+    });
+    // Blazor's interactive router changes pages without a load event, so links remember themselves when clicked.
+    document.addEventListener('click', function (e) {
+        var link = e.target instanceof Element && e.target.closest('a[href]');
+        if (link && !e.defaultPrevented && link.origin === location.origin) remember(link.getAttribute('href'));
+    });
+
+    function renderRecent(l) {
+        var rail = l.querySelector('[data-m-recent]');
+        if (!rail) return;
+        var box = rail.querySelector('.m-launcher-recent');
+        box.textContent = '';
+        var here = document.querySelector('.m-sidebar a[aria-current="page"], .m-navbar a[aria-current="page"]');
+        var current = here ? here.getAttribute('href') : null;
+        var list = readRecent().filter(function (r) { return r && r.href && r.href !== current; }).slice(0, recentMax);
+        list.forEach(function (r) {
+            var a = document.createElement('a');
+            a.className = 'm-launcher-recent-item';
+            a.href = r.href;
+            a.appendChild(iconSvg(r.icon));
+            var text = document.createElement('span');
+            text.className = 'm-launcher-recent-text';
+            var label = document.createElement('span');
+            label.className = 'm-launcher-recent-label';
+            label.textContent = r.label;
+            text.appendChild(label);
+            if (r.section) {
+                var trail = document.createElement('span');
+                trail.className = 'm-launcher-recent-trail';
+                trail.textContent = r.section;
+                text.appendChild(trail);
+            }
+            a.appendChild(text);
+            box.appendChild(a);
+        });
+        rail.hidden = list.length === 0;
+        l.classList.toggle('m-launcher-has-recent', list.length > 0);
+    }
+
     function filterLauncher(l, query) {
         var q = query.trim().toLowerCase();
         var shown = 0;
@@ -363,6 +451,10 @@
             a.hidden = !match;
             if (match) shown++;
         });
+        l.querySelectorAll('.m-launcher-group').forEach(function (g) {
+            g.hidden = !g.querySelector('.m-launcher-app:not([hidden])');
+        });
+        l.classList.toggle('m-launcher-searching', !!q);
         var results = l.querySelector('.m-launcher-results');
         results.textContent = '';
         var found = !q ? [] : index().filter(function (i) {
@@ -390,12 +482,24 @@
     }
 
     function launcherItems(l) {
-        return Array.prototype.filter.call(l.querySelectorAll('.m-launcher-app, .m-launcher-result'), function (el) { return !el.hidden; });
+        return Array.prototype.filter.call(l.querySelectorAll('.m-launcher-app, .m-launcher-result, .m-launcher-recent-item'),
+            function (el) { return el.offsetParent !== null; });
     }
 
-    function launcherColumns(l) {
-        var grid = l.querySelector('.m-launcher-grid');
-        return Math.max(1, getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length);
+    // The nearest item on screen in the arrow's direction, so keys follow the card grid, groups and the recent rail.
+    function launcherNeighbour(items, from, key) {
+        var a = from.getBoundingClientRect(), ax = a.left + a.width / 2, ay = a.top + a.height / 2;
+        var best = null, bestScore = Infinity;
+        items.forEach(function (el) {
+            if (el === from) return;
+            var b = el.getBoundingClientRect(), dx = b.left + b.width / 2 - ax, dy = b.top + b.height / 2 - ay;
+            var ahead = { ArrowDown: dy > a.height / 2, ArrowUp: dy < -a.height / 2, ArrowRight: dx > a.width / 2, ArrowLeft: dx < -a.width / 2 }[key];
+            if (!ahead) return;
+            var vertical = key === 'ArrowDown' || key === 'ArrowUp';
+            var score = vertical ? Math.abs(dy) + Math.abs(dx) * 2 : Math.abs(dx) + Math.abs(dy) * 4;
+            if (score < bestScore) { bestScore = score; best = el; }
+        });
+        return best;
     }
 
     document.addEventListener('input', function (e) {
@@ -414,16 +518,11 @@
         }
         if (!(t instanceof Element) || !l.contains(t)) return;
         var items = launcherItems(l);
-        var i = items.indexOf(t);
-        if (i >= 0 && /^Arrow/.test(e.key)) {
+        if (items.indexOf(t) >= 0 && /^Arrow/.test(e.key)) {
             e.preventDefault();
-            var app = t.classList.contains('m-launcher-app');
-            var cols = app ? launcherColumns(l) : 1;
-            var step = { ArrowRight: app ? 1 : 0, ArrowLeft: app ? -1 : 0, ArrowDown: cols, ArrowUp: -cols }[e.key];
-            var next = i + step;
-            if (next < 0) { input.focus(); return; }
-            if (next >= items.length) next = items.length - 1;
-            items[next].focus();
+            var next = launcherNeighbour(items, t, e.key);
+            if (next) next.focus();
+            else if (e.key === 'ArrowUp') input.focus();
             return;
         }
         // Typing anywhere in the launcher searches.
@@ -448,7 +547,7 @@
         lastFocus = document.activeElement;
         syncCustomizer();
         panel.hidden = false;
-        var first = panel.querySelector('input:checked, input');
+        var first = panel.querySelector('.m-setting-pane:not([hidden]) input:checked, .m-setting-pane:not([hidden]) input');
         if (first) first.focus();
     }
 
@@ -466,12 +565,49 @@
         if (!panel || !theme) return;
         var mode = document.cookie.match(/(?:^|; )modulus-theme=(light|dark)/) ? theme.current() : 'system';
         check(panel, 'mode', mode);
-        ['layout', 'width', 'nav', 'menu', 'font', 'base'].forEach(function (n) { check(panel, n, theme.getPref(n)); });
+        LAYOUT_PREFS.concat(['nav', 'menu', 'font', 'base']).forEach(function (n) { check(panel, n, theme.getPref(n)); });
+        syncPresets(panel);
         var primary = theme.getPref('primary');
         if (primary) check(panel, 'primary', primary);
         var radius = theme.getPref('radius');
         if (radius) check(panel, 'radius', radius);
     }
+
+    var LAYOUT_PREFS = ['layout', 'width', 'side', 'sidebar', 'fold', 'header', 'topbar', 'dir'];
+
+    /** Checks the preset whose settings all match the current ones (none when the mix is custom). */
+    function syncPresets(panel) {
+        var theme = window.modulusTheme;
+        panel.querySelectorAll('input[name="preset"]').forEach(function (input) {
+            var preset = JSON.parse(input.getAttribute('data-preset'));
+            input.checked = Object.keys(preset).every(function (k) { return theme.getPref(k) === preset[k]; });
+        });
+    }
+
+    /** Shows one pane of the theme settings (Appearance or Layout); arrow keys move between the tabs. */
+    function showSettingPane(name, focus) {
+        var panel = customizer();
+        if (!panel) return;
+        panel.querySelectorAll('[data-m-customizer-tab]').forEach(function (tab) {
+            var on = tab.getAttribute('data-m-customizer-tab') === name;
+            tab.setAttribute('aria-selected', on ? 'true' : 'false');
+            tab.tabIndex = on ? 0 : -1;
+            var pane = document.getElementById(tab.getAttribute('aria-controls'));
+            if (pane) pane.hidden = !on;
+            if (on && focus) tab.focus();
+        });
+        var body = panel.querySelector('.m-offcanvas-body');
+        if (body) body.scrollTop = 0;
+    }
+
+    document.addEventListener('keydown', function (e) {
+        var tab = e.target instanceof Element && e.target.closest('[data-m-customizer-tab]');
+        if (!tab || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+        var tabs = Array.prototype.slice.call(tab.parentNode.querySelectorAll('[data-m-customizer-tab]'));
+        var next = tabs[(tabs.indexOf(tab) + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        e.preventDefault();
+        showSettingPane(next.getAttribute('data-m-customizer-tab'), true);
+    });
 
     function check(panel, name, value) {
         var input = panel.querySelector('input[name="' + name + '"][value="' + value + '"]');
@@ -487,10 +623,74 @@
             if (input.value === 'system') theme.useSystem(); else theme.set(input.value);
         } else if (input.name === 'primary') {
             theme.setPref('primary', input.value, input.getAttribute('data-css'));
+        } else if (input.name === 'preset') {
+            var preset = JSON.parse(input.getAttribute('data-preset'));
+            Object.keys(preset).forEach(function (k) { theme.setPref(k, preset[k]); });
+            syncCustomizer();
         } else {
             theme.setPref(input.name, input.value);
+            if (LAYOUT_PREFS.indexOf(input.name) >= 0) syncPresets(customizer());
         }
     });
+
+    // Folded sidebar ------------------------------------------------------------------------------
+
+    function folded() {
+        return root.getAttribute('data-layout') === 'vertical' && root.getAttribute('data-fold') === 'folded' && wide.matches;
+    }
+
+    function toggleFold() {
+        var theme = window.modulusTheme;
+        if (!theme) return;
+        theme.setPref('fold', theme.getPref('fold') === 'full' ? 'folded' : 'full');
+        syncCustomizer();
+    }
+
+    // The flyout is the item's own submenu (or name), shown fixed next to the icon: the sidebar scrolls, so it
+    // can't be positioned in CSS alone. A closed <details> renders nothing, so the group opens while it flies out.
+    var fly = null;
+
+    function openFly(item) {
+        if (fly && fly.item === item) return;
+        closeFly();
+        var details = item.querySelector(':scope > details');
+        var rect = item.getBoundingClientRect();
+        var bar = item.closest('.m-sidebar').getBoundingClientRect();
+        var toLeft = bar.left + bar.width / 2 > window.innerWidth / 2;
+        item.style.setProperty('--m-fly-top', Math.max(8, rect.top) + 'px');
+        item.style.setProperty(toLeft ? '--m-fly-right' : '--m-fly-left', (toLeft ? window.innerWidth - bar.left + 8 : bar.right + 8) + 'px');
+        item.style.removeProperty(toLeft ? '--m-fly-left' : '--m-fly-right');
+        item.classList.toggle('m-fly-left', toLeft);
+        item.classList.add('m-fly');
+        fly = { item: item, details: details, wasOpen: !!(details && details.open) };
+        if (details) details.open = true;
+    }
+
+    function closeFly() {
+        if (!fly) return;
+        fly.item.classList.remove('m-fly', 'm-fly-left');
+        if (fly.details) fly.details.open = fly.wasOpen;
+        fly = null;
+    }
+
+    function flyTarget(t) {
+        return t instanceof Element && folded() ? t.closest('.m-sidebar .m-snav > .m-snav-item') : null;
+    }
+
+    document.addEventListener('mouseover', function (e) {
+        var item = flyTarget(e.target);
+        if (item) openFly(item);
+        else if (fly && !(e.target instanceof Node && fly.item.contains(e.target))) closeFly();
+    });
+    document.addEventListener('focusin', function (e) {
+        var item = flyTarget(e.target);
+        if (item) openFly(item); else closeFly();
+    });
+    document.documentElement.addEventListener('mouseleave', closeFly);
+    document.addEventListener('scroll', function (e) {
+        if (fly && !(e.target instanceof Node && fly.item.contains(e.target))) closeFly();
+    }, { capture: true, passive: true });
+    window.addEventListener('modulus:pref', function () { if (!folded()) closeFly(); });
 
     // Close the drawer when the viewport grows past the breakpoint.
     var wide = window.matchMedia('(min-width: 992px)');
@@ -935,17 +1135,34 @@
         var root = el.closest('.ant-otp');
         if (!root) return;
         var boxes = otpBoxes(root), i = boxes.indexOf(el), v = el.value;
+        // A key typed into a box that already has a character replaces it (the caret was not over the old one).
+        if (v.length > 1 && e.inputType === 'insertText' && e.data && e.data.length === 1) v = el.value = e.data;
         if (v.length > 1) {
-            // Autofill or a fast typist: keep the first character here, spread the rest after this handler.
-            var rest = v.slice(1);
-            el.value = otpAllowed(root, v[0]) ? v[0] : '';
-            setTimeout(function () { otpFill(root, i + 1, rest); });
+            // Autofill into one box: keep the first character here and spread the rest now, so the focus has moved
+            // on before the next key arrives.
+            el.value = otpAllowed(root, v[0]) ? (root.getAttribute('data-m-otp') === 'numeric' ? v[0] : v[0].toUpperCase()) : '';
+            otpFill(root, i + 1, v.slice(1));
             return;
         }
         if (v && !otpAllowed(root, v)) el.value = '';
         else if (v && root.getAttribute('data-m-otp') !== 'numeric') el.value = v.toUpperCase();
         if (el.value && i < boxes.length - 1) boxes[i + 1].focus();
         setTimeout(function () { otpSync(root); });
+    }, true);
+    // A typed key replaces the box's character and moves the focus on before the browser inserts anything, so fast
+    // typing never depends on where the caret was or on the focus select having run yet.
+    document.addEventListener('beforeinput', function (e) {
+        var el = e.target;
+        if (e.inputType !== 'insertText' || !e.data || e.data.length !== 1) return;
+        if (!(el instanceof HTMLInputElement) || !el.classList.contains('ant-otp-input')) return;
+        var root = el.closest('.ant-otp');
+        if (!root) return;
+        e.preventDefault();
+        if (!otpAllowed(root, e.data)) return;
+        var boxes = otpBoxes(root), i = boxes.indexOf(el);
+        otpSet(el, root.getAttribute('data-m-otp') === 'numeric' ? e.data : e.data.toUpperCase());
+        if (i < boxes.length - 1) boxes[i + 1].focus();
+        otpSync(root);
     }, true);
     document.addEventListener('keydown', function (e) {
         var el = e.target;
@@ -964,7 +1181,8 @@
     }, true);
     document.addEventListener('focusin', function (e) {
         var el = e.target;
-        if (el instanceof HTMLInputElement && el.classList.contains('ant-otp-input')) setTimeout(function () { el.select(); });
+        // select() would also focus the box, so skip it once the focus has moved on (fast typing).
+        if (el instanceof HTMLInputElement && el.classList.contains('ant-otp-input')) setTimeout(function () { if (document.activeElement === el) el.select(); });
     });
 
     // ---- Lookup fields (.m-lookup): keys that must not scroll the page or submit the form while the list is open ----

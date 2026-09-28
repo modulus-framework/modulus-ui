@@ -1,0 +1,70 @@
+@page "/extra/cookie-banner"
+
+<PageTitle>Cookie banner · Modulus</PageTitle>
+
+<PageHeading Pretitle="Extra" Title="Cookie banner" Subtitle="A consent banner with per-category preferences" />
+
+<div class="m-row-cards m-cols-8-4 @(c.Decided ? "" : "m-page-pad-bottom")">
+    <div class="m-card">
+        <div class="m-card-header"><h3 class="m-card-title">Cookie preferences</h3></div>
+        <div class="m-card-body">
+            @if (c.Decided)
+            {
+                <div class="ant-alert ant-alert-success m-mb-16" role="status"><span class="ant-alert-icon m-text-success"><Ti Name="circle-check" /></span><div class="ant-alert-content"><div class="ant-alert-message">Your choice has been saved. <a href="/extra/cookie-banner">Show the banner again</a></div></div></div>
+            }
+            <form method="get" action="/extra/cookie-banner">
+                <input type="hidden" name="consent" value="custom" />
+                @foreach (var cat in ExtraContent.CookieCategories)
+                {
+                    <label class="m-cookie-row">
+                        <input type="checkbox" name="c" value="@cat.Key" checked="@(cat.Required || c.Allows(cat.Key))" disabled="@cat.Required" />
+                        <span class="m-grow">
+                            <span class="m-medium m-heading">@cat.Title</span>@if (cat.Required) {<span class="m-badge m-badge-gray-lt m-ml-8">Always on</span>}
+                            <span class="m-muted m-small" style="display:block">@cat.Text</span>
+                        </span>
+                    </label>
+                }
+                <div class="m-flex m-gap-8 m-mt-12" style="justify-content:flex-end">
+                    <a class="ant-btn ant-btn-default" href="/extra/cookie-banner?consent=necessary"><span>Reject optional</span></a>
+                    <button type="submit" class="ant-btn ant-btn-primary"><span>Save preferences</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-header"><h3 class="m-card-title">Current consent</h3></div>
+        <ul class="m-list">
+            @foreach (var cat in ExtraContent.CookieCategories)
+            {
+                var on = c.Allows(cat.Key);
+                <li class="m-list-item">
+                    <span class="m-status"><span class="m-status-dot m-status-@(on ? "green" : "gray")"></span>@cat.Title</span>
+                    <span class="m-list-item-end m-muted m-small">@(on ? "Allowed" : "Blocked")</span>
+                </li>
+            }
+        </ul>
+    </div>
+</div>
+
+@if (!c.Decided)
+{
+    <div class="m-cookie-banner" role="dialog" aria-label="Cookie consent">
+        <span class="m-icon-tile m-tile-lg m-tile-orange-lt"><Ti Name="cookie" /></span>
+        <div class="m-cookie-banner-text">
+            <strong>We use cookies</strong>
+            Some keep the site working; others help us understand usage and improve it. Choose what you allow — you can change this any time.
+        </div>
+        <div class="m-cookie-banner-actions">
+            <a class="ant-btn ant-btn-default" href="/extra/cookie-banner?consent=necessary"><span>Necessary only</span></a>
+            <a class="ant-btn ant-btn-primary" href="/extra/cookie-banner?consent=all"><span>Accept all</span></a>
+        </div>
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery] public string? Consent { get; set; }
+    [SupplyParameterFromQuery(Name = "c")] public string[]? Categories { get; set; }
+    [SupplyParameterFromQuery] public string? Settings { get; set; }
+
+    private CookieConsent c => ExtraContent.Consent(Consent, Categories, Settings == "1");
+}

@@ -1,0 +1,27 @@
+@{
+    var cat = Context.Request.Query["category"].ToString();
+    var photos = ExtraContent.GalleryPhotos(cat);
+}
+<app-page-header pretitle="Extra" title="Gallery" subtitle="@($"{photos.Count} photos · click one to open the lightbox")">
+    <a class="ant-btn ant-btn-primary" href="/extra/gallery"><app-ti name="upload" /><span>Upload photos</span></a>
+</app-page-header>
+
+<div class="m-filter-bar m-mb-16">
+    <div class="ant-segmented" role="group" aria-label="Category">
+        <div class="ant-segmented-group">
+            @foreach (var c in ExtraContent.GalleryCategories)
+            {
+                var active = c.Key == cat || (c.Key == "" && !ExtraContent.GalleryCategories.Any(x => x.Key == cat));
+                <a class="ant-segmented-item @(active ? "ant-segmented-item-selected" : "")" href="/extra/gallery@(c.Key == "" ? "" : "?category=" + c.Key)" aria-current="@(active ? "true" : null)">
+                    <div class="ant-segmented-item-label">@c.Label</div>
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="m-card">
+    <div class="m-card-body">
+        <app-lightbox items="ExtraContent.Lightbox(photos)" min-width="220" />
+    </div>
+</div>

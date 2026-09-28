@@ -22,8 +22,7 @@
 
 <div class="m-page">
     @((MarkupString)_sidebar)
-    @((MarkupString)_topbar)
-    @((MarkupString)_navbar)
+    @((MarkupString)_header)
     <div class="m-page-wrapper">
         <main class="m-page-body" id="main">
             <div class="m-container">
@@ -52,7 +51,7 @@
 
     private IReadOnlyList<MenuItemDefinition> _menu = [];
     private ShellContent _content = new();
-    private string _sidebar = "", _topbar = "", _navbar = "", _footer = "", _customizer = "", _launcher = "";
+    private string _sidebar = "", _header = "", _footer = "", _customizer = "", _launcher = "";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -63,7 +62,6 @@
         _content = Content ?? await ShellContentProvider.GetContentAsync(user);
 
         var view = View();
-        _topbar = ShellRenderer.Topbar(view);
         _footer = ShellRenderer.Footer(view);
         _customizer = ShellRenderer.Customizer(view);
         RenderNavigation(view);
@@ -80,7 +78,7 @@
     private void RenderNavigation(ShellView view)
     {
         _sidebar = ShellRenderer.Sidebar(view);
-        _navbar = ShellRenderer.Navbar(view);
+        _header = ShellRenderer.Header(view);
         _launcher = ShellRenderer.AppLauncher(view);
     }
 

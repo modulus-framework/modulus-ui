@@ -24,7 +24,11 @@ public class AppCalendar : AntDesign.Calendar { }
 
 public class AppCard : AntDesign.Card { }
 
-public class AppCarousel : AntDesign.Carousel { }
+/// <summary>Carousel with dots on by default, as in Ant Design (AntD Blazor 1.6.2 defaults <c>Dots</c> to false).</summary>
+public class AppCarousel : AntDesign.Carousel
+{
+    public AppCarousel() => Dots = true;
+}
 
 public class AppCollapse : AntDesign.Collapse { }
 

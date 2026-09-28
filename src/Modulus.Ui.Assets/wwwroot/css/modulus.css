@@ -707,7 +707,7 @@ html[data-theme='dark'] .ant-tooltip-inner, html[data-theme='dark'] .ant-tooltip
 
 /* Component gallery / showcase pages */
 .m-demo-nav {
-    position: sticky; top: calc(var(--m-header-height) + 8px); z-index: 8;
+    position: sticky; top: calc(var(--m-sticky-top, var(--m-header-height)) + 8px); z-index: 8;
     display: flex; flex-wrap: wrap; gap: 4px; padding: 4px; margin-bottom: 24px;
     width: fit-content; max-width: 100%;
     background: var(--m-bg-container); border-radius: var(--m-radius-lg);
@@ -717,7 +717,7 @@ html[data-theme='dark'] .ant-tooltip-inner, html[data-theme='dark'] .ant-tooltip
 .m-demo-nav.m-demo-nav-stuck { box-shadow: var(--m-shadow-popup); }
 .m-demo-nav a { padding: 5px 14px; border-radius: var(--m-radius); color: var(--m-text-secondary); transition: background 0.2s, color 0.2s; }
 .m-demo-nav a:hover { background: var(--m-fill); color: var(--m-text); }
-.m-demo-section { scroll-margin-top: calc(var(--m-header-height) + 72px); margin-bottom: 32px; }
+.m-demo-section { scroll-margin-top: calc(var(--m-sticky-top, var(--m-header-height)) + 72px); margin-bottom: 32px; }
 .m-section-title { margin: 0 0 12px; font-size: 16px; font-weight: 600; line-height: 24px; color: var(--m-text); }
 .m-demo-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr)); align-items: start; }
 .m-demo-desc { margin: -4px 0 16px; color: var(--m-text-tertiary); }
@@ -1316,11 +1316,17 @@ html.m-scroll-lock { overflow: hidden; }
 .m-image-mask { border: 0; padding: 0; font: inherit; width: 100%; border-radius: var(--m-radius); }
 .m-image-mask:focus-visible { opacity: 1; }
 .m-image-group { display: contents; }
+/* AntD's 45% mask lets the page's own header icons show through at full size right behind the white toolbar icons
+   and arrows, so they can't be told apart. A near-black backdrop, as photo viewers use, keeps the controls readable. */
+.ant-image-preview-mask { background-color: rgba(0, 0, 0, 0.85); }
+.ant-image-preview-operations { background: rgba(0, 0, 0, 0.6); }
+.ant-image-preview-switch-left, .ant-image-preview-switch-right { background: rgba(255, 255, 255, 0.12); }
+.ant-image-preview-switch-left:hover, .ant-image-preview-switch-right:hover { background: rgba(255, 255, 255, 0.24); }
 .m-image-preview .ant-image-preview-operations-operation {
     display: flex; margin-left: 12px; border: 0; background: none; color: inherit; font: inherit; line-height: 1;
 }
 .m-image-preview .ant-image-preview-operations > li:last-child > .ant-image-preview-operations-operation { margin-left: 0; }
-.m-image-preview .ant-image-preview-operations-operation:hover { background: rgba(0, 0, 0, 0.2); }
+.m-image-preview .ant-image-preview-operations-operation:hover { background: rgba(255, 255, 255, 0.15); }
 .m-image-preview .ant-image-preview-operations-operation-disabled:hover { background: none; }
 .m-image-preview .ant-image-preview-switch-left,
 .m-image-preview .ant-image-preview-switch-right { border: 0; padding: 0; font: inherit; }
@@ -1904,8 +1910,8 @@ html[data-theme='dark'] :is(.ant-color-picker-color-block, .ant-color-picker-pre
 .ant-otp-separator { color: var(--m-text-tertiary); }
 
 /* Workflow status bar: chevrons; done stages tinted and the current one filled (the checked radio). */
-.m-statusbar { display: inline-flex; flex-wrap: wrap; max-width: 100%; border: 1px solid var(--m-border); border-radius: 6px; overflow: hidden; background: var(--m-border); gap: 0; }
-.m-statusbar-item { position: relative; display: inline-flex; align-items: center; min-height: 32px; margin: 0; padding: 0 16px 0 24px; color: var(--m-text-secondary); font-size: 13px; cursor: pointer; user-select: none;
+.m-statusbar { display: inline-flex; flex-wrap: nowrap; max-width: 100%; border: 1px solid var(--m-border); border-radius: 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; background: var(--m-border); gap: 0; }
+.m-statusbar-item { position: relative; display: inline-flex; flex: none; align-items: center; min-height: 32px; margin: 0; padding: 0 16px 0 24px; color: var(--m-text-secondary); font-size: 13px; cursor: pointer; user-select: none;
     background: var(--m-bg-container); clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%, 10px 50%); }
 .m-statusbar-item:first-child { padding-left: 14px; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%); }
 .m-statusbar-item:last-child { padding-right: 14px; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%, 10px 50%); }

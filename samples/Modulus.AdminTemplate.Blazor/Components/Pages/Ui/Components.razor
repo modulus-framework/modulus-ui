@@ -399,7 +399,7 @@
                     <AutoComplete TOption="string" @bind-Value="context.Assignee" Options="PeopleNames" Placeholder="Start typing a name" />
                 </FormItem>
                 <FormItem Label="Comment">
-                    <Mentions @bind-Value="context.Comment" Rows="3" Placeholder="Type @@ to mention a teammate">
+                    <Mentions @bind-Value="context.Comment" Rows="3" Placeholder="@("Type @ to mention a teammate")">
                         @foreach (var p in GalleryData.People)
                         {
                             <MentionsOption Value="@p.Handle">@p.Name</MentionsOption>
@@ -588,7 +588,7 @@
 
         <Card Bordered="false" Title="Carousel">
             <p class="m-demo-desc">Rotate through a few highlights in the same space.</p>
-            <Carousel Autoplay="TimeSpan.FromSeconds(5)">
+            <Carousel Autoplay="TimeSpan.FromSeconds(5)" Dots>
                 @foreach (var (title, text, tone) in GalleryData.Slides)
                 {
                     <CarouselSlick>
@@ -608,6 +608,11 @@
                     }
                 </div>
             </ImagePreviewGroup>
+        </Card>
+
+        <Card Bordered="false" Title="Lightbox">
+            <p class="m-demo-desc">A captioned image grid; the preview adds a caption bar, thumbnails and download.</p>
+            <AppLightbox Items="GalleryData.LightboxPhotos" MinWidth="140" />
         </Card>
 
         <Card Bordered="false" Title="Countdown and Card meta">

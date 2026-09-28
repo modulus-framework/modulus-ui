@@ -1,0 +1,25 @@
+@page "/extra/photogrid"
+
+<PageTitle>Photogrid · Modulus</PageTitle>
+
+<PageHeading Pretitle="Extra" Title="Photogrid" Subtitle="A dense, mixed-size photo wall">
+    <Actions>
+    <a class="ant-btn ant-btn-default" href="/extra/gallery"><Ti Name="layout-grid" /><span>Gallery view</span></a>
+    </Actions>
+</PageHeading>
+
+<div class="m-photogrid">
+    @for (var i = 0; i < ExtraContent.Photos.Count * 2; i++)
+    {
+        var p = ExtraContent.Photos[(i * 5) % ExtraContent.Photos.Count];
+        var size = (i % 7) switch { 0 => "m-photogrid-wide m-photogrid-tall", 3 => "m-photogrid-tall", 5 => "m-photogrid-wide", _ => "" };
+        <figure class="m-photogrid-item @size">
+            <img src="@p.Src" alt="@p.Title" loading="lazy" />
+            <figcaption class="m-photogrid-meta">
+                <span class="m-avatar m-avatar-xs m-av-@Fmt.Tint(p.Author)">@Fmt.Initials(p.Author)</span>
+                <span class="m-grow">@p.Author</span>
+                <Ti Name="heart" /><span>@(p.Likes + i)</span>
+            </figcaption>
+        </figure>
+    }
+</div>

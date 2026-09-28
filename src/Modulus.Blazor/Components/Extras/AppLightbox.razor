@@ -1,0 +1,56 @@
+@* Image grid that opens a full-screen lightbox: captions under each image, then in the preview a caption bar,
+   a thumbnail strip, zoom, rotate, drag, swipe, keyboard paging and download. Same DOM as the MVC <app-lightbox>;
+   the preview runs in modulus-shell.js, so there is no JS interop here. *@
+@using Modulus.Ui.Abstractions
+
+<div class="@CssClass" style="@CssStyle" data-m-lightbox data-items="@_json">
+    <div class="m-lightbox-grid">
+        @for (var i = 0; i < Items.Count; i++)
+        {
+            var item = Items[i];
+            <figure class="m-lightbox-item">
+                <button type="button" class="m-lightbox-tile" data-lightbox-index="@i" aria-label="Open @item.Title">
+                    <img src="@(item.Thumb ?? item.Src)" alt="@item.Title" loading="lazy" />
+                    <span class="m-lightbox-tile-mask" aria-hidden="true"><Icon Type="zoom-in" /></span>
+                </button>
+                @if (Captions && (item.Title.Length > 0 || item.Caption is not null))
+                {
+                    <figcaption>
+                        @if (item.Title.Length > 0)
+                        {
+                            <div class="m-lightbox-item-title">@item.Title</div>
+                        }
+                        @if (item.Caption is not null)
+                        {
+                            <div class="m-lightbox-item-caption">@item.Caption</div>
+                        }
+                    </figcaption>
+                }
+            </figure>
+        }
+    </div>
+    <LightboxOverlay />
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<LightboxItem> Items { get; set; } = [];
+
+    /// <summary>Smallest tile width in pixels; the grid fits as many columns as the width allows.</summary>
+    [Parameter] public int MinWidth { get; set; } = 180;
+
+    /// <summary>Tile shape as a CSS aspect-ratio, e.g. "4 / 3" or "1".</summary>
+    [Parameter] public string Aspect { get; set; } = "4 / 3";
+
+    /// <summary>Shows the title and caption under each tile (they always show in the preview).</summary>
+    [Parameter] public bool Captions { get; set; } = true;
+
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private string _json = "[]";
+
+    private string CssClass => string.IsNullOrEmpty(Class) ? "m-lightbox" : "m-lightbox " + Class;
+    private string CssStyle => $"--m-lightbox-min:{MinWidth}px;--m-lightbox-aspect:{Aspect}" + (string.IsNullOrEmpty(Style) ? "" : ";" + Style);
+
+    protected override void OnParametersSet() => _json = LightboxItem.Json(Items);
+}

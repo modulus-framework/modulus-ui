@@ -110,7 +110,7 @@ public class NestedGridTagHelperTests
         Assert.Contains("hx-get=\"/nested/level?depth=2&amp;level=1&amp;parent=PO-1\" hx-trigger=\"intersect once\" hx-target=\"this\" hx-swap=\"outerHTML\"", html);
         Assert.Contains("Save this row to add its styles.", html);
         Assert.Contains("name=\"q\"", html);
-        Assert.Contains("<option value=\"qty:desc\">Qty ↓</option>", html);
+        Assert.Contains("hx-get=\"/nested/level?depth=2&amp;level=0&amp;sort=qty%3Aasc\" hx-target=\"#nested-0-root\"", html); // the Qty header sorts the level
         Assert.Contains("ant-pagination-item-3", html); // 5 rows, 2 per page
         Assert.Contains("hx-get=\"/nested/level?depth=2&amp;level=0&amp;page=2\"", html);
         Assert.Contains("<span class=\"m-badge m-badge-gray-lt\">5</span>", html);

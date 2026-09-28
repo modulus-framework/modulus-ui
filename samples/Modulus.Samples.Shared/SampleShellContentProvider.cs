@@ -36,18 +36,16 @@ public sealed class SampleShellContentProvider : IShellContentProvider
             AppLauncher = AppLauncherStyle.Overlay,
             Apps =
             [
-                new("Dashboards", "", "layout-dashboard", "blue", "Analytics, CRM and eCommerce") { MenuKey = "dashboards" },
-                new("Sales", "apps/ecommerce/orders", "shopping-cart", "orange", "Orders, products and customers") { MenuKey = "ecommerce" },
-                new("Invoicing", "apps/invoice/list", "file-invoice", "teal", "Invoices and payments") { MenuKey = "invoice" },
-                new("Email", "apps/email", "mail", "azure") { MenuKey = "email" },
-                new("Discuss", "apps/chat", "messages", "green", "Chat") { MenuKey = "chat" },
-                new("Calendar", "apps/calendar", "calendar", "red") { MenuKey = "calendar" },
-                new("Project", "apps/kanban", "layout-kanban", "purple", "Kanban board") { MenuKey = "kanban" },
-                new("Users", "apps/users/list", "users", "indigo", "Users, roles and permissions") { MenuKey = "access" },
-                new("Settings", "pages/account-settings", "settings", "gray", "Account settings") { MenuKey = "account-settings" },
-                new("Website", "pages/profile", "world", "pink", "Pages, authentication and errors") { MenuKey = "pages" },
-                new("UI kit", "ui/components", "components", "cyan", "Components, cards and charts") { MenuKey = "ui" },
-                new("Forms & tables", "forms/layouts", "forms", "lime", "Forms, wizard, grids") { MenuKey = "forms" },
+                new("Overview", "", "layout-dashboard", "blue", "Analytics, CRM and eCommerce dashboards") { MenuKey = "dashboards", Group = "Insights" },
+                new("Sales", "apps/ecommerce/orders", "shopping-cart", "orange", "Orders, products and customers") { MenuKey = "sales", Group = "Sales & finance" },
+                new("Invoicing", "apps/invoice/list", "file-invoice", "teal", "Customer invoices and payments") { MenuKey = "invoicing", Group = "Sales & finance" },
+                new("Email", "apps/email", "mail", "azure", "Inbox, drafts and sent mail") { MenuKey = "email", Group = "Productivity" },
+                new("Discuss", "apps/chat", "messages", "green", "Team and customer chat") { MenuKey = "chat", Group = "Productivity" },
+                new("Calendar", "apps/calendar", "calendar", "red", "Meetings and deadlines") { MenuKey = "calendar", Group = "Productivity" },
+                new("Project", "apps/kanban", "layout-kanban", "purple", "Tasks on a kanban board") { MenuKey = "kanban", Group = "Productivity" },
+                new("Settings", "apps/users/list", "settings", "gray", "Users, roles, companies and preferences") { MenuKey = "settings", Group = "Administration" },
+                new("Website", "pages/pricing", "world", "pink", "Pages, sign-in and error screens") { MenuKey = "pages", Group = "Administration" },
+                new("Developer", "ui/components", "code", "indigo", "Components, forms, tables and charts") { MenuKey = "developer", Group = "Administration" },
             ],
             Activities =
             [

@@ -1,0 +1,123 @@
+@{
+    var today = DateTime.Today;
+    var events = new HashSet<int> { 3, 9, 14, 21, 27 };
+    var todo = ExtraContent.Tasks.Where(t => !t.Done).Take(4).ToList();
+}
+<app-page-header pretitle="Extra" title="Widgets" subtitle="Small cards to compose dashboards from" />
+
+<div class="m-row-cards m-cols-3">
+    <div class="m-card">
+        <div class="m-card-body">
+            <div class="m-subheader">Warsaw, Poland</div>
+            <div class="m-weather m-mt-8">
+                <app-ti name="sun-wind" class="m-weather-art" />
+                <div><div class="m-weather-temp">21°</div><div class="m-muted">Sunny, light breeze</div></div>
+            </div>
+            <div class="m-flex m-gap-16 m-mt-12 m-muted m-small"><span><app-ti name="droplet" /> 48%</span><span><app-ti name="wind" /> 12 km/h</span><span><app-ti name="temperature" /> 24° / 13°</span></div>
+            <div class="m-weather-days">
+                @foreach (var (d, icon, t) in new[] { ("Tue", "sun", 22), ("Wed", "sun-wind", 20), ("Thu", "droplet", 17), ("Fri", "wind", 16), ("Sat", "sun", 19) })
+                {
+                    <div>@d<app-ti name="@icon" /><strong>@(t)°</strong></div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><h3 class="m-card-title">@ExtraContent.MonthName(today)</h3><a class="m-small" href="/apps/calendar" style="margin-left:auto">Open calendar</a></div>
+        <div class="m-card-body">
+            <table class="m-minical">
+                <thead><tr>@foreach (var d in new[] { "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su" }) { <th scope="col">@d</th> }</tr></thead>
+                <tbody>
+                    @foreach (var week in ExtraContent.MonthGrid(today))
+                    {
+                        <tr>
+                            @foreach (var d in week)
+                            {
+                                <td>@if (d > 0) { <span class="@(d == today.Day ? "m-minical-today" : events.Contains(d) ? "m-minical-event" : "")">@d</span>}</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-body">
+            <div class="m-kpi-head"><span class="m-subheader">Visitors</span><span class="m-delta m-delta-up" style="margin-left:auto">+8.5% <app-ti name="trending-up" /></span></div>
+            <div class="m-kpi-value"><span class="m-h1">24,190</span></div>
+            <div class="m-kpi-foot">Last 12 weeks</div>
+            <div class="m-kpi-chart"><app-sparkline data="ExtraContent.VisitorsTrend" area="true" aria-label="Visitors per week" /></div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><h3 class="m-card-title">Goals this month</h3></div>
+        <div class="m-card-body">
+            @foreach (var g in ExtraContent.Goals)
+            {
+                <div class="m-meter">
+                    <div class="m-meter-head"><span class="m-medium m-heading">@g.Label</span><span class="m-muted">@g.Done / @g.Goal</span></div>
+                    <div class="m-progress"><div class="m-progress-bar" style="width:@Fmt.Pct(g.Done, g.Goal)%;--c:var(--m-@g.Tone)"></div></div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><h3 class="m-card-title">Storage</h3><span class="m-muted m-small" style="margin-left:auto">64.2 of 100 GB</span></div>
+        <div class="m-card-body">
+            <app-donut-chart slices="ExtraContent.StorageSlices" suffix=" GB" center-label="Used" title="Storage by type" size="150" />
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><h3 class="m-card-title">To do</h3><a class="m-small" href="/extra/tasks" style="margin-left:auto">All tasks</a></div>
+        <div>
+            @foreach (var t in todo)
+            {
+                <label class="m-task">
+                    <input type="checkbox" aria-label="Mark “@t.Title” done" />
+                    <span class="m-task-text"><span class="m-task-title">@t.Title</span><span class="m-task-meta"><span>@ExtraContent.Due(t.DueInDays)</span><span class="m-badge @ExtraContent.PriorityBadge(t.Priority)">@t.Priority</span></span></span>
+                </label>
+            }
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-body m-center">
+            <span class="m-avatar m-avatar-xl m-av-3" style="margin:8px auto 12px">PK</span>
+            <div class="m-h3">Paweł Kuna</div>
+            <div class="m-muted">UI Designer · Warsaw</div>
+            <div class="m-row-cards m-cols-3 m-mt-16">
+                <div><div class="m-h3">128</div><div class="m-muted m-small">Posts</div></div>
+                <div><div class="m-h3">4.2k</div><div class="m-muted m-small">Followers</div></div>
+                <div><div class="m-h3">312</div><div class="m-muted m-small">Following</div></div>
+            </div>
+        </div>
+        <div class="m-card-footer m-flex m-gap-8"><a class="ant-btn ant-btn-default m-grow" href="/apps/chat"><app-ti name="message" /><span>Message</span></a><a class="ant-btn ant-btn-primary m-grow" href="/pages/profile"><app-ti name="user-plus" /><span>Follow</span></a></div>
+    </div>
+
+    <div class="m-card m-quote-card">
+        <app-ti name="quote" />
+        <div class="m-card-body">
+            <blockquote>“Simplicity is prerequisite for reliability.”</blockquote>
+            <div class="m-muted m-mt-12">— Edsger W. Dijkstra</div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><h3 class="m-card-title">Team online</h3></div>
+        <ul class="m-list">
+            @foreach (var (name, role, status) in new[] { ("Jeffie Lewzey", "Developer", "online"), ("Mallory Hulme", "CTO", "busy"), ("Dunn Slane", "Sales", "away"), ("Emmy Levet", "Designer", "online") })
+            {
+                <li class="m-list-item">
+                    <span class="m-avatar m-avatar-sm m-av-@Fmt.Tint(name)">@Fmt.Initials(name)<span class="m-avatar-status m-status-@status"></span></span>
+                    <div class="m-list-item-text"><span class="m-list-item-title">@name</span><span class="m-list-item-sub">@role</span></div>
+                    <a class="m-list-item-end ant-btn ant-btn-sm ant-btn-text" href="/apps/chat" aria-label="Message @name"><app-ti name="message" /></a>
+                </li>
+            }
+        </ul>
+    </div>
+</div>

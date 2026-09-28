@@ -1,0 +1,83 @@
+@page "/extra/uptime"
+
+<PageTitle>Uptime monitor · Modulus</PageTitle>
+
+<PageHeading Pretitle="Extra" Title="Uptime monitor" Subtitle="Availability of our services over the last 60 days">
+    <Actions>
+    <a class="ant-btn ant-btn-primary" href="/extra/uptime"><Ti Name="plus" /><span>Add monitor</span></a>
+    </Actions>
+</PageHeading>
+
+<div class="m-row-cards">
+    <div class="m-status-banner @(down == 0 ? "m-status-banner-ok" : "m-status-banner-warn")" role="status">
+        <Ti Name="@(down == 0 ? "circle-check" : "alert-triangle")" />
+        <div><h2>@(down == 0 ? "All systems operational" : $"{down} of {ExtraContent.Monitors.Count} services affected")</h2><p>Checked every 60 seconds from 6 regions · last check @Fmt.Time(ExtraContent.Now)</p></div>
+    </div>
+
+    <div class="m-row-cards m-cols-4">
+        @foreach (var (label, value, icon, tone) in new[] {
+            ("Overall uptime", Fmt.Number(ExtraContent.Monitors.Average(x => x.Uptime), "0.00") + "%", "activity", "green"),
+            ("Monitors", ExtraContent.Monitors.Count.ToString(), "heartbeat", "primary"),
+            ("Avg. response", Fmt.Number(ExtraContent.Monitors.Where(x => x.ResponseMs > 0).Average(x => x.ResponseMs)) + " ms", "clock", "azure"),
+            ("Open incidents", ExtraContent.Incidents.Count(i => i.Status != "Resolved").ToString(), "alert-triangle", "red") })
+        {
+            <div class="m-card m-card-sm"><div class="m-card-body"><div class="m-stat">
+                <span class="m-icon-tile m-tile-@(tone)-lt"><Ti Name="@icon" /></span>
+                <div class="m-stat-text"><div class="m-stat-value">@value</div><div class="m-stat-sub">@label</div></div>
+            </div></div></div>
+        }
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><h3 class="m-card-title">Monitors</h3></div>
+        @foreach (var mon in ExtraContent.Monitors)
+        {
+            var tone = ExtraContent.MonitorTone(mon.Status);
+            <div class="m-monitor">
+                <div class="m-monitor-head">
+                    <span class="m-status"><span class="m-status-dot m-status-@tone"></span><span class="m-medium m-heading">@mon.Name</span></span>
+                    <span class="m-muted m-small m-truncate" style="max-width:320px">@mon.Url</span>
+                    <span class="m-grow"></span>
+                    <span class="m-badge m-badge-@(tone)-lt">@ExtraContent.MonitorLabel(mon.Status)</span>
+                    <span class="m-small m-muted m-nowrap">@(mon.ResponseMs > 0 ? mon.ResponseMs + " ms" : "—")</span>
+                    <span class="m-small m-medium m-heading m-nowrap">@Fmt.Number(mon.Uptime, "0.00")%</span>
+                </div>
+                <div class="m-uptime-bars" role="img" aria-label="@($"{mon.Name}: {mon.Days.Count(d => d == "down")} days with downtime in the last 60 days")">
+                    @for (var i = 0; i < mon.Days.Length; i++)
+                    {
+                        <span class="@(mon.Days[i] == "up" ? "" : "m-ub-" + mon.Days[i])" title="@Fmt.Date(DateTime.Today.AddDays(i - 59)): @(mon.Days[i] == "up" ? "no downtime" : mon.Days[i])"></span>
+                    }
+                </div>
+                <div class="m-uptime-legend"><span>60 days ago</span><span>Today</span></div>
+            </div>
+        }
+    </div>
+
+    <div class="m-row-cards m-cols-8-4">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Response time</h3><p class="m-card-subtitle">Today, by hour</p></div></div>
+            <div class="m-card-body">
+                <LineChart Labels="ExtraContent.UptimeHours" Series="ExtraContent.ResponseTimes" Suffix=" ms" Title="Response time by hour" Height="260" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Incidents</h3></div>
+            <ul class="m-list">
+                @foreach (var i in ExtraContent.Incidents)
+                {
+                    <li class="m-list-item" style="align-items:flex-start">
+                        <div class="m-list-item-text">
+                            <div class="m-flex m-gap-8" style="align-items:center"><span class="m-medium m-heading">@i.Title</span><span class="m-badge @ExtraContent.IncidentBadge(i.Status)">@i.Status</span></div>
+                            <div class="m-muted m-small m-mt-4">@i.Text</div>
+                            <div class="m-muted m-xsmall m-mt-4">@i.Monitor · @Fmt.DateTime(i.At) · @i.Duration</div>
+                        </div>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+</div>
+
+@code {
+    private static int down => ExtraContent.Monitors.Count(x => x.Status != "up");
+}

@@ -14,6 +14,9 @@ public abstract class SampleController : Controller
     /// <summary>Renders <c>Views/Shared/Ui/{view}.cshtml</c> in the centred sign-in frame (no shell).</summary>
     protected ViewResult AuthPage(string title, string view, object? model = null) => Render(title, view, model, "_AuthLayout");
 
+    /// <summary>Renders <c>Views/Shared/Ui/{view}.cshtml</c> full page, with no shell or frame (landing pages, loaders).</summary>
+    protected ViewResult BlankPage(string title, string view, object? model = null) => Render(title, view, model, "_BlankLayout");
+
     /// <summary>Queues a toast for the next page (Post/Redirect/Get).</summary>
     protected void Flash(string message, string type = "success")
     {

@@ -1,0 +1,40 @@
+@page "/extra/signatures"
+
+<PageTitle>Signatures · Modulus</PageTitle>
+
+<PageHeading Pretitle="Extra" Title="Signatures" Subtitle="Signed documents and your saved signature" />
+
+<div class="m-row-cards m-cols-8-4">
+    <div class="m-row-cards m-cols-2" style="align-content:start">
+        @foreach (var s in ExtraContent.Signatures)
+        {
+            <div class="m-card">
+                <div class="m-card-body">
+                    <div class="m-flex m-gap-12 m-mb-12" style="align-items:center">
+                        <span class="m-avatar m-avatar-sm m-av-@Fmt.Tint(s.Name)">@Fmt.Initials(s.Name)</span>
+                        <div class="m-grow" style="min-width:0"><div class="m-medium m-heading m-truncate">@s.Name</div><div class="m-muted m-small m-truncate">@s.Role</div></div>
+                        <span class="m-badge @ExtraContent.SignatureBadge(s.Status)">@s.Status</span>
+                    </div>
+                    @if (s.Status == "Signed")
+                    {
+                        <img class="m-sig-paper" src="@ExtraContent.SignatureSvg(s.Name)" alt="Signature of @s.Name" />
+                    }
+                    else
+                    {
+                        <div class="m-sig-paper m-flex" style="align-items:center;justify-content:center;color:#8b95a5">@(s.Status == "Pending" ? "Awaiting signature" : "Signature declined")</div>
+                    }
+                    <div class="m-muted m-small m-mt-8 m-truncate"><Ti Name="file-text" /> @s.Document</div>
+                    <div class="m-muted m-small">@Fmt.DateTime(s.At)</div>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="m-card" style="align-self:start">
+        <div class="m-card-header"><div><h3 class="m-card-title">Your signature</h3><p class="m-card-subtitle">Draw it or type your name</p></div></div>
+        <form class="m-card-body" method="get" action="/extra/signatures">
+            <AppSignaturePad AriaLabel="Your signature" />
+            <label class="m-check m-mt-12"><input type="checkbox" name="default" value="1" checked /><span>Use as my default signature</span></label>
+            <button type="submit" class="ant-btn ant-btn-primary ant-btn-block m-mt-12"><Ti Name="signature" /><span>Save signature</span></button>
+        </form>
+    </div>
+</div>

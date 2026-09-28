@@ -63,7 +63,7 @@
     {
         if (Value == _last) return;
         _last = Value;
-        (_country, _national) = PhoneNumber.Split(Value, CountryList, _country?.Code ?? DefaultCountry);
+        (_country, _national) = PhoneNumber.Split(Value, CountryList, _country?.Code ?? DefaultCountry, DefaultCountry);
     }
 
     private Task OnCountryChanged(ChangeEventArgs e)
@@ -75,7 +75,7 @@
     private Task OnNationalChanged(ChangeEventArgs e)
     {
         var typed = (e.Value as string ?? "").Trim();
-        if (typed.StartsWith('+')) (_country, _national) = PhoneNumber.Split(typed, CountryList, _country?.Code ?? DefaultCountry);
+        if (typed.StartsWith('+')) (_country, _national) = PhoneNumber.Split(typed, CountryList, _country?.Code ?? DefaultCountry, DefaultCountry);
         else _national = PhoneNumber.Clean(typed);
         return Emit();
     }

@@ -129,7 +129,7 @@ public class NestedGridTests : BunitContext
         Assert.Contains("All groups", cut.Find(".m-table-toolbar-title").TextContent);
         Assert.Equal("7", cut.Find(".m-table-toolbar-title .m-badge").TextContent);
         Assert.NotNull(cut.Find(".m-nested-level-0 .m-nested-search"));
-        Assert.Equal(3, cut.FindAll("select.m-nested-sort option").Count); // default + Name ↑ ↓
+        Assert.Single(cut.FindAll("thead .m-th-sort")); // the Name header sorts the level
         Assert.Contains("First", cut.Markup);
         Assert.NotEmpty(cut.FindAll(".ant-pagination")); // 7 rows, 5 per page
     }

@@ -459,6 +459,81 @@
       "BarChart": {
         "status": "modulus",
         "mvc": "app-bar-chart"
+      },
+      "ColumnChart": {
+        "status": "modulus",
+        "note": "ColumnChart (Components/Charts)",
+        "mvc": "app-column-chart"
+      },
+      "LineChart": {
+        "status": "modulus",
+        "note": "LineChart (Components/Charts)",
+        "mvc": "app-line-chart"
+      },
+      "DonutChart": {
+        "status": "modulus",
+        "note": "DonutChart (Components/Charts)",
+        "mvc": "app-donut-chart"
+      },
+      "HeatmapChart": {
+        "status": "modulus",
+        "note": "HeatmapChart (Components/Charts)",
+        "mvc": "app-heatmap"
+      },
+      "RankedBarChart": {
+        "status": "modulus",
+        "note": "RankedBarChart (Components/Charts)",
+        "mvc": "app-ranked-bar-chart"
+      },
+      "StackedBarChart": {
+        "status": "modulus",
+        "note": "StackedBarChart (Components/Charts)",
+        "mvc": "app-stacked-bar-chart"
+      },
+      "ComboChart": {
+        "status": "modulus",
+        "note": "ComboChart (Components/Charts)",
+        "mvc": "app-combo-chart"
+      },
+      "WaterfallChart": {
+        "status": "modulus",
+        "note": "WaterfallChart (Components/Charts)",
+        "mvc": "app-waterfall-chart"
+      },
+      "FunnelChart": {
+        "status": "modulus",
+        "note": "FunnelChart (Components/Charts)",
+        "mvc": "app-funnel-chart"
+      },
+      "GaugeChart": {
+        "status": "modulus",
+        "note": "GaugeChart (Components/Charts)",
+        "mvc": "app-gauge"
+      },
+      "BulletChart": {
+        "status": "modulus",
+        "note": "BulletChart (Components/Charts)",
+        "mvc": "app-bullet-chart"
+      },
+      "VarianceChart": {
+        "status": "modulus",
+        "note": "VarianceChart (Components/Charts)",
+        "mvc": "app-variance-chart"
+      },
+      "ScatterChart": {
+        "status": "modulus",
+        "note": "ScatterChart (Components/Charts)",
+        "mvc": "app-scatter-chart"
+      },
+      "TreemapChart": {
+        "status": "modulus",
+        "note": "TreemapChart (Components/Charts)",
+        "mvc": "app-treemap"
+      },
+      "ParetoChart": {
+        "status": "modulus",
+        "note": "ParetoChart (Components/Charts)",
+        "mvc": "app-pareto-chart"
       }
     },
     "Antd5": {
@@ -481,6 +556,63 @@
         "status": "modulus",
         "note": "AppTour + TourStep (Components/Extras)",
         "mvc": "app-tour"
+      }
+    },
+    "Business": {
+      "MoneyInput": {
+        "status": "modulus",
+        "note": "AppMoneyInput (Components/Fields): amount with its currency (Odoo monetary)",
+        "mvc": "app-money-input"
+      },
+      "QuantityInput": {
+        "status": "modulus",
+        "note": "AppQuantityInput: quantity with its unit of measure",
+        "mvc": "app-quantity-input"
+      },
+      "DurationInput": {
+        "status": "modulus",
+        "note": "AppDurationInput: minutes typed as 1:30, 1.5, 90m or 1h 30m",
+        "mvc": "app-duration-input"
+      },
+      "NumberRange": {
+        "status": "modulus",
+        "note": "AppNumberRange: from–to numbers in one range box",
+        "mvc": "app-number-range"
+      },
+      "PhoneInput": {
+        "status": "modulus",
+        "note": "AppPhoneInput: calling code list and national number",
+        "mvc": "app-phone-input"
+      },
+      "MaskedInput": {
+        "status": "modulus",
+        "note": "AppMaskedInput: fixed-format codes (InputMask)",
+        "mvc": "app-masked-input"
+      },
+      "OtpInput": {
+        "status": "modulus",
+        "note": "AppOtpInput: Ant Design 5 Input.OTP; AntD Blazor 1.6.2 has none",
+        "mvc": "app-otp-input"
+      },
+      "Lookup": {
+        "status": "modulus",
+        "note": "AppLookup: suggestions plus a \"Search more…\" dialog (F4), local items or a server search",
+        "mvc": "app-lookup"
+      },
+      "StatusBar": {
+        "status": "modulus",
+        "note": "AppStatusBar: workflow stages as chevrons (Odoo statusbar)",
+        "mvc": "app-status-bar"
+      },
+      "SignaturePad": {
+        "status": "modulus",
+        "note": "AppSignaturePad: drawn or typed signature as a PNG data URL",
+        "mvc": "app-signature-pad"
+      },
+      "RichText": {
+        "status": "modulus",
+        "note": "AppRichText: formatting toolbar over an editable area; HTML cleaned by RichText.Sanitize",
+        "mvc": "app-rich-text"
       }
     }
   },

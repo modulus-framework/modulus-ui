@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Modulus.Samples.Shared;
 using Modulus.Samples.Web.Models;
+using Modulus.Ui.Abstractions.Forms;
 
 namespace Modulus.AdminTemplate.Mvc.Controllers;
 
@@ -57,6 +58,22 @@ public class FormsController : SampleController
         Flash($"Profile for {input.Name} submitted");
         return Redirect("~/forms/validation");
     }
+
+    [HttpGet("business")]
+    public IActionResult Business() => Page("Business fields", "Forms/Business", new BusinessFormInput());
+
+    [HttpPost("business")]
+    public IActionResult Business(BusinessFormInput input)
+    {
+        input.Notes = RichText.Sanitize(input.Notes);
+        if (!ModelState.IsValid) return Page("Business fields", "Forms/Business", input);
+        Flash(BusinessFormsDemo.Summary(input));
+        return Redirect("~/forms/business");
+    }
+
+    // The product lookup's search (app-lookup search-href): JSON LookupItems.
+    [HttpGet("business/products")]
+    public IActionResult Products(string? q, int max = 20) => Json(BusinessFormsDemo.SearchProducts(q, max));
 
     private ViewResult WizardView(WizardInput input, int step) => Page("Wizard", "Forms/Wizard", new WizardPage(input, step));
 

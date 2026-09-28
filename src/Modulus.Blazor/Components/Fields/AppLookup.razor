@@ -185,7 +185,10 @@
         Status is { Length: > 0 } ? $"ant-input-affix-wrapper-status-{Status}" : null,
         Disabled ? "ant-input-affix-wrapper-disabled" : null);
 
-    private string CountText => _total > _rows.Count ? $"Showing {_rows.Count} of {_total}. Refine the search to see more." : _rows.Count == 1 ? "1 record" : $"{_rows.Count} records";
+    // _total is -1 when a server search found more than it returned (its real count is unknown).
+    private string CountText => _total < 0 ? $"Showing the first {_rows.Count}. Refine the search to see more."
+        : _total > _rows.Count ? $"Showing {_rows.Count} of {_total}. Refine the search to see more."
+        : _rows.Count == 1 ? "1 record" : $"{_rows.Count} records";
 
     private static string Cx(params string?[] parts) => string.Join(' ', parts.Where(p => !string.IsNullOrEmpty(p)));
 
@@ -222,9 +225,9 @@
             var all = LookupSearch.Filter(Items ?? [], text);
             return (all.Take(max).ToList(), all.Count);
         }
-        // Ask for one more than shown, to know whether there are more.
+        // Ask for one more than shown, to know whether there are more (the total is then unknown: -1).
         var found = await SearchAsync(text ?? "", max + 1, token);
-        return (found.Take(max).ToList(), found.Count);
+        return (found.Take(max).ToList(), found.Count > max ? -1 : found.Count);
     }
 
     private CancellationToken Restart()

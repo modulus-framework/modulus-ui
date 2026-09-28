@@ -1,0 +1,65 @@
+@page "/extra/text-features"
+
+<PageTitle>Text features · Modulus</PageTitle>
+
+<PageHeading Pretitle="Extra" Title="Text features" Subtitle="Feature sections for product and landing pages" />
+
+<div class="m-row-cards">
+    <div class="m-card">
+        <div class="m-card-body" style="padding:40px 32px">
+            <div class="m-center m-mb-24"><div class="m-pretitle">Why Modulus</div><h2 class="m-h2 m-mt-8">Built for the back office</h2><p class="m-muted">Six reasons teams pick Modulus for their internal tools.</p></div>
+            <div class="m-row-cards m-cols-3" style="gap:32px 24px">
+                @foreach (var f in ExtraContent.Features)
+                {
+                    <div class="m-feature"><span class="m-icon-tile m-tile-@(f.Tone)-lt"><Ti Name="@f.Icon" /></span><div><h3>@f.Title</h3><p>@f.Text</p></div></div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-3">
+        @foreach (var f in ExtraContent.Features.Take(3))
+        {
+            <div class="m-card"><div class="m-card-body m-feature m-feature-center" style="padding:32px 24px">
+                <span class="m-icon-tile m-tile-lg m-tile-round m-tile-@(f.Tone)"><Ti Name="@f.Icon" /></span>
+                <div><h3>@f.Title</h3><p>@f.Text</p></div>
+                <a href="/extra/text-features">Learn more <Ti Name="arrow-right" /></a>
+            </div></div>
+        }
+    </div>
+
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Get started in three steps</h3></div>
+            <div class="m-card-body">
+                @for (var i = 0; i < ExtraContent.Steps.Count; i++)
+                {
+                    var st = ExtraContent.Steps[i];
+                    <div class="m-feature @(i > 0 ? "m-mt-24" : "")"><span class="m-step-num">@(i + 1)</span><div><h3>@st.Title</h3><p>@st.Text</p></div></div>
+                }
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Included in every plan</h3></div>
+            <div class="m-card-body">
+                <ul class="m-check-list" style="margin-top:0">
+                    @foreach (var line in new[] { "Unlimited dashboards and reports", "Light and dark themes", "Right-to-left layouts", "Accessible, keyboard-friendly components", "Free updates for 12 months", "Help center and email support" })
+                    {
+                        <li><Ti Name="check" /><span>@line</span></li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-body">
+            <div class="m-row-cards m-cols-4 m-center">
+                @foreach (var s in ExtraContent.MarketingStats)
+                {
+                    <div><div class="m-h1 m-text-primary">@s.Value</div><div class="m-muted">@s.Label</div></div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

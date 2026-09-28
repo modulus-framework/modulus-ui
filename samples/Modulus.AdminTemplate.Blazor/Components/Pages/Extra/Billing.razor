@@ -1,0 +1,99 @@
+@page "/extra/billing"
+
+<PageTitle>Billing · Modulus</PageTitle>
+
+<PageHeading Pretitle="Extra" Title="Billing" Subtitle="Your plan, usage, payment methods and invoices">
+    <Actions>
+    <a class="ant-btn ant-btn-default" href="/extra/settings-plan"><Ti Name="crown" /><span>Change plan</span></a>
+    </Actions>
+</PageHeading>
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-8-4">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Current plan</h3><p class="m-card-subtitle">Renews on @Fmt.Date(DateTime.Today.AddDays(20))</p></div><span class="m-badge m-badge-green-lt" style="margin-left:auto">Active</span></div>
+            <div class="m-card-body">
+                <div class="m-flex m-flex-wrap m-gap-16" style="align-items:center">
+                    <span class="m-icon-tile m-tile-lg m-tile-primary-lt"><Ti Name="@plan.Icon" /></span>
+                    <div class="m-grow" style="flex-basis:160px">
+                        <div class="m-h3">@plan.Name · yearly</div>
+                        <div class="m-muted">@plan.Tagline</div>
+                    </div>
+                    <div class="m-right">
+                        <div class="m-h2">@Fmt.Money0(plan.Yearly)<span class="m-muted m-small"> / seat / mo</span></div>
+                        <div class="m-muted m-small">25 seats · @Fmt.Money0(plan.Yearly * 25 * 12) per year</div>
+                    </div>
+                </div>
+                <div class="m-hr"></div>
+                @foreach (var u in ExtraContent.Usage)
+                {
+                    var share = u.Used / u.Limit;
+                    <div class="m-meter">
+                        <div class="m-meter-head"><span class="m-medium m-heading">@u.Label</span><span class="m-muted">@Fmt.Number(u.Used, u.Used % 1 == 0 ? "N0" : "N1") of @Fmt.Number(u.Limit) @u.Unit</span></div>
+                        <div class="m-progress"><div class="m-progress-bar" style="width:@Fmt.Pct(u.Used, u.Limit)%;--c:@(share >= 0.8 ? "var(--m-warning)" : "var(--m-primary)")"></div></div>
+                    </div>
+                }
+            </div>
+            <div class="m-card-footer m-flex m-gap-8" style="justify-content:flex-end">
+                <a class="ant-btn ant-btn-text ant-btn-dangerous" href="/extra/trial-ended"><span>Cancel subscription</span></a>
+                <a class="ant-btn ant-btn-primary" href="/extra/settings-plan"><span>Upgrade plan</span></a>
+            </div>
+        </div>
+        <div class="m-row-cards" style="align-content:start">
+            <div class="m-card">
+                <div class="m-card-header"><h3 class="m-card-title">Payment methods</h3><a class="ant-btn ant-btn-sm ant-btn-default" href="/extra/pay" style="margin-left:auto"><Ti Name="plus" /><span>Add</span></a></div>
+                <ul class="m-list">
+                    @foreach (var p in ExtraContent.PaymentMethods)
+                    {
+                        <li class="m-list-item">
+                            <span class="m-icon-tile m-tile-gray-lt"><Ti Name="@p.Icon" /></span>
+                            <div class="m-list-item-text"><span class="m-list-item-title">@p.Label</span><span class="m-list-item-sub">@p.Detail</span></div>
+                            @if (p.Default)
+                            {
+                                <span class="m-list-item-end m-badge m-badge-primary-lt">Default</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            </div>
+            <div class="m-card">
+                <div class="m-card-header"><h3 class="m-card-title">Billing address</h3></div>
+                <div class="m-card-body">
+                    <address style="font-style:normal" class="m-muted">
+                        <strong class="m-heading">Modulus Labs Sp. z o.o.</strong><br />
+                        ul. Prosta 51<br />00-838 Warszawa, Poland<br />VAT ID PL 527 000 00 00
+                    </address>
+                    <a class="ant-btn ant-btn-sm ant-btn-default m-mt-12" href="/pages/account-settings?tab=billing"><Ti Name="edit" /><span>Edit address</span></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><h3 class="m-card-title">Billing history</h3></div>
+        <div class="ant-table-wrapper m-table-flush">
+            <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                <table style="table-layout:auto">
+                    <thead class="ant-table-thead"><tr><th class="ant-table-cell">Invoice</th><th class="ant-table-cell">Date</th><th class="ant-table-cell">Description</th><th class="ant-table-cell m-right">Amount</th><th class="ant-table-cell">Status</th><th class="ant-table-cell"><span class="m-sr-only">Download</span></th></tr></thead>
+                    <tbody class="ant-table-tbody">
+                        @foreach (var i in ExtraContent.BillingHistory)
+                        {
+                            <tr class="ant-table-row">
+                                <td class="ant-table-cell m-medium m-heading m-nowrap">@i.Number</td>
+                                <td class="ant-table-cell m-nowrap">@Fmt.Date(i.Date)</td>
+                                <td class="ant-table-cell">@i.Description</td>
+                                <td class="ant-table-cell m-right m-nowrap">@Fmt.Money(i.Amount)</td>
+                                <td class="ant-table-cell"><span class="m-badge @ExtraContent.BillingBadge(i.Status)">@i.Status</span></td>
+                                <td class="ant-table-cell m-right"><a class="ant-btn ant-btn-sm ant-btn-text" href="/apps/invoice/list" aria-label="Download @i.Number"><Ti Name="download" /></a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div></div></div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private static readonly PricingPlan plan = SampleContent.Plans.First(p => p.Popular);
+}

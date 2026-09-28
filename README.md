@@ -21,9 +21,13 @@ pixel-for-pixel where the controls allow it.
 - **Every Ant Design Blazor component**, as-is. Modulus adds thin `App*` aliases (`AppButton : AntDesign.Button`),
   so every upstream parameter works and new ones arrive automatically on upgrade. The coverage manifest lists 90 aliases;
   CI verifies them against the pinned AntDesign package.
-- **Tabler-style shell**: header with page search (Ctrl K), an app switcher, a tenant switcher, notifications and account menu; a horizontal navbar or a
-  vertical sidebar, boxed or fluid width and a light or dark nav, all switchable in a settings panel and remembered in
-  cookies; footer; light/dark mode with no flash on load. One renderer (`ShellRenderer`) produces the markup for
+- **Tabler-style shell**: header with page search (Ctrl K), an app switcher, a tenant switcher, notifications and account menu; a horizontal navbar,
+  a condensed one-row header or a vertical sidebar, all switchable in a settings panel and remembered in cookies. Layout
+  settings: content width (boxed, fluid, framed), header (fixed, sticky, static, floating; light or dark), sidebar
+  (start or end side; default, transparent or floating; full, folded with flyouts, or folded until hovered), light or
+  dark menu, and left-to-right or right-to-left. Fifteen one-click presets cover the usual demo layouts (Boxed,
+  Condensed, Fluid, Fluid vertical, Horizontal, Navbar dark / floating / sticky, Right vertical, RTL, Vertical,
+  Vertical transparent / floating, Folded sidebar, Folded hover); defaults come from `ModulusThemeOptions`; footer; light/dark mode with no flash on load. One renderer (`ShellRenderer`) produces the markup for
   Blazor's `AppShell` and MVC's `_ModulusLayout`. The Ant Design Pro `ModulusLayout` is still available for Blazor.
   Header content (user, notifications, `Apps`, `Tenants`, links) comes from your `IShellContentProvider`. A tenant
   without an `Href` is switched by writing the `modulus-tenant` cookie and reloading (cancel the `modulus:tenant-change`
@@ -58,6 +62,17 @@ pixel-for-pixel where the controls allow it.
   For real records, `OnAddNew` / `add-modal` swap the inline row for an "Add new" button that opens a create form
   (a `ModalForm`, or an `app-modal` whose save answers `Response.HxOptionAdded(list, option)`); the new record is
   added to the list and selected.
+- **Business fields** for ERP-style forms, in both flavours (`Components/Fields` / `app-*`), all posting plain
+  invariant values: `AppMoneyInput` (grouped amount, currency picker, the currency's decimals), `AppQuantityInput`
+  (unit of measure with its precision), `AppDurationInput` (`1:30`, `1.5`, `90m` → minutes), `AppNumberRange`,
+  `AppPhoneInput` (country picker + national number → `+1 202 555-0111`), `AppMaskedInput` (`99-9999999`),
+  `AppOtpInput` (one box per character, paste and SMS autofill spread over the boxes), `AppLookup` (a many-to-one
+  field with type-ahead and a "Search more…" dialog; local items or a server search), `AppStatusBar` (workflow
+  stages with folded ones), `AppSignaturePad` (PNG data URL) and `AppRichText` (a small `contenteditable` editor
+  whose HTML is cleaned by `RichText.Sanitize`). The parsing and checks live in `Modulus.Ui.Abstractions.Forms`
+  (`NumberText`, `DurationText`, `Currency`, `UnitOfMeasure`, `InputMask`, `PhoneNumber`, `LookupSearch`,
+  `RichText`, `SignatureImage`), so the server validates exactly what the browser accepts. A server lookup takes
+  `GET {search-href}?q=text&max=n` and answers `[{ value, label, description, fields }]`.
 - **Theming from one options object**: primary, success, warning, error and info colours plus border radius.
   The 10-step palette is generated with a C# port of `@ant-design/colors` (tested against the official palettes).
   Light/dark mode persists in a cookie, so the server renders the correct theme on the first byte.
@@ -75,7 +90,7 @@ pixel-for-pixel where the controls allow it.
   - **Pages**: profile, account settings, pricing, FAQ, help center; sign-in, register, forgot/reset password,
     verify email, two-step verification; 404, 403, 500, maintenance and coming soon.
   - **Interface, forms and tables**: component gallery (every Ant Design category), cards, charts, form layouts,
-    a validated multi-step wizard, a validation showcase, and a data table (search, filters, sorting, paging,
+    a validated multi-step wizard, a validation showcase, a business-fields form, and a data table (search, filters, sorting, paging,
     column picker, density, selection and CSV export).
 
 ## Quick start — Blazor
@@ -248,6 +263,10 @@ Run the samples in the **Development** environment (the default launch profile d
 - **Interactive MVC widgets need Alpine.** Cascader, TreeSelect, Transfer, Tree, Calendar, Carousel, Anchor, Mentions,
   Splitter, ColorPicker, Tour and the rest run on small Alpine components (`modulus-widgets.js`); form widgets post
   through hidden inputs, so forms still submit without script. The manifest lists the MVC equivalent for every component.
+- **Business fields are Modulus components** with no AntD Blazor counterpart. The rich-text editor covers
+  formatting, lists and links only (no images or tables), and its HTML must still be sanitized on the server
+  (`RichText.Sanitize`). Phone numbers are checked for shape (`+`, calling code, 8–15 digits), not against each
+  country's numbering plan.
 - **ColorPicker, FloatButton, QRCode and Tour are Modulus components**, not AntD Blazor ones (1.6.2 has none). They emit
   the antd v5 DOM, styled by `modulus.css`, and may differ in detail from antd v5.
 - **Native pickers in MVC.** `app-date-picker` and `app-range-picker` use the browser's date/time inputs inside antd chrome,

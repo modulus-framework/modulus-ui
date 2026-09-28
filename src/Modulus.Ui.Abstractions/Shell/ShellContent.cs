@@ -22,6 +22,12 @@ public sealed record ShellApp(string Name, string Href, string Icon, string Tone
     /// current app: with <see cref="Theming.MenuScope.App"/> the navbar and sidebar show only its menu, as in Odoo.
     /// </summary>
     public string? MenuKey { get; init; }
+
+    /// <summary>
+    /// Heading the full-screen launcher files this app under ("Sales &amp; finance", "Productivity"), like the spaces of
+    /// SAP Fiori or Oracle's navigator. Apps keep their order within a group; groups appear in order of first use.
+    /// </summary>
+    public string? Group { get; init; }
 }
 
 /// <summary>How the header app switcher opens.</summary>

@@ -23,6 +23,67 @@ public enum ShellLayout
     Horizontal,
     /// <summary>Fixed sidebar with collapsible groups.</summary>
     Vertical,
+    /// <summary>One header row: brand, the menu and the header actions (no separate navbar).</summary>
+    Condensed,
+}
+
+/// <summary>Side of the window the sidebar sits on (vertical layout). Follows the text direction.</summary>
+public enum SidebarPosition
+{
+    /// <summary>Start side: left, or right in right-to-left mode.</summary>
+    Left,
+    /// <summary>End side: right, or left in right-to-left mode.</summary>
+    Right,
+}
+
+/// <summary>Surface of the sidebar (vertical layout).</summary>
+public enum SidebarStyle
+{
+    /// <summary>Full-height panel along the window edge.</summary>
+    Default,
+    /// <summary>No panel: the menu sits on the page background.</summary>
+    Transparent,
+    /// <summary>Rounded panel inset from the window edges, with a shadow.</summary>
+    Floating,
+}
+
+/// <summary>Width of the sidebar (vertical layout).</summary>
+public enum SidebarFold
+{
+    /// <summary>Icons and labels.</summary>
+    Full,
+    /// <summary>Icons only; groups open as flyouts and labels show as tooltips.</summary>
+    Folded,
+    /// <summary>Icons only until the pointer rests on it, then it expands over the page.</summary>
+    Hover,
+}
+
+/// <summary>How the header behaves when the page scrolls.</summary>
+public enum HeaderMode
+{
+    /// <summary>The header row stays at the top; the navbar scrolls away.</summary>
+    Fixed,
+    /// <summary>The header row and the navbar both stay at the top.</summary>
+    Sticky,
+    /// <summary>Everything scrolls with the page.</summary>
+    Static,
+    /// <summary>A rounded bar inset from the window edges that stays at the top.</summary>
+    Floating,
+}
+
+/// <summary>Colour of the header row.</summary>
+public enum HeaderTheme
+{
+    Light,
+    Dark,
+}
+
+public enum TextDirection
+{
+    /// <summary>Left to right.</summary>
+    Ltr,
+    /// <summary>Right to left (Arabic, Hebrew, Persian, Urdu): <c>dir="rtl"</c> on &lt;html&gt;.</summary>
+    Rtl,
 }
 
 public enum ContentWidth
@@ -31,6 +92,8 @@ public enum ContentWidth
     Boxed,
     /// <summary>Content uses the full window width.</summary>
     Fluid,
+    /// <summary>The whole page (header, navigation, content) in a centred frame on a tinted backdrop.</summary>
+    Framed,
 }
 
 /// <summary>What the navbar and sidebar list.</summary>
@@ -106,6 +169,18 @@ public class ModulusThemeOptions
 
     public ContentWidth ContentWidth { get; set; } = ContentWidth.Boxed;
 
+    public SidebarPosition SidebarPosition { get; set; } = SidebarPosition.Left;
+
+    public SidebarStyle SidebarStyle { get; set; } = SidebarStyle.Default;
+
+    public SidebarFold SidebarFold { get; set; } = SidebarFold.Full;
+
+    public HeaderMode Header { get; set; } = HeaderMode.Fixed;
+
+    public HeaderTheme HeaderTheme { get; set; } = HeaderTheme.Light;
+
+    public TextDirection Direction { get; set; } = TextDirection.Ltr;
+
     /// <summary>The whole menu (Tabler) or only the current app's menu (Odoo).</summary>
     public MenuScope MenuScope { get; set; } = MenuScope.All;
 
@@ -126,7 +201,7 @@ public class ModulusThemeOptions
         ["teal"] = "#0ca678",
     };
 
-    /// <summary>Show the theme settings panel (colour mode, scheme, font, base, layout, menu, width, radius).</summary>
+    /// <summary>Show the theme settings panel (colour mode, scheme, font, base, radius, layout presets, layout, sidebar, header, menu, width, direction).</summary>
     public bool ShowCustomizer { get; set; } = true;
 
     /// <summary>Sidebar / legacy ProLayout sider width in px.</summary>

@@ -1,0 +1,36 @@
+@page "/extra/empty"
+
+<PageTitle>Empty page · Modulus</PageTitle>
+
+<PageHeading Pretitle="Extra" Title="Empty page">
+    <Actions>
+    <a class="ant-btn ant-btn-primary" href="/extra/empty"><Ti Name="plus" /><span>Create new</span></a>
+    </Actions>
+</PageHeading>
+
+<div class="m-row-cards">
+    <div class="m-card">
+        <div class="m-empty" style="padding:72px 16px">
+            <span class="m-empty-icon"><Ti Name="mood-smile" /></span>
+            <p class="m-empty-title">Nothing here yet</p>
+            <p class="m-empty-subtitle">This page is a blank canvas inside the app shell. Start from it when you add a new module, or create the first record below.</p>
+            <div class="m-flex m-gap-8">
+                <a class="ant-btn ant-btn-primary" href="/extra/empty"><Ti Name="plus" /><span>Add your first item</span></a>
+                <a class="ant-btn ant-btn-default" href="/pages/help-center"><Ti Name="book" /><span>Read the guide</span></a>
+            </div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-3">
+        @foreach (var e in ExtraContent.EmptyStates)
+        {
+            <div class="m-card">
+                <div class="m-empty">
+                    <span class="m-empty-icon"><Ti Name="@e.Icon" /></span>
+                    <p class="m-empty-title">@e.Title</p>
+                    <p class="m-empty-subtitle">@e.Text</p>
+                    <a class="ant-btn ant-btn-default" href="/extra/empty"><span>@e.Action</span></a>
+                </div>
+            </div>
+        }
+    </div>
+</div>

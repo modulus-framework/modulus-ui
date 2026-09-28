@@ -1571,7 +1571,7 @@
             };
         });
 
-        // app-phone-input: PhoneNumber.Split / Join. cfg: { country, national, dials: { ISO code: calling code } }.
+        // app-phone-input: PhoneNumber.Split / Join. cfg: { country, national, home (default country), dials: { ISO code: calling code } }.
         Alpine.data('modulusPhone', function (cfg) {
             function clean(s) {
                 var out = '';
@@ -1591,14 +1591,14 @@
                     return this.country ? '+' + this.dial(this.country) + ' ' + n : n;
                 },
                 // A number typed or pasted with "+": pick the country with the longest matching calling code,
-                // preferring the current one for shared codes (+1, +7).
+                // preferring the current one, then the default one, for shared codes (+1, +7).
                 split: function (s) {
                     var digits = s.replace(/[^0-9]/g, ''), codes = Object.keys(cfg.dials || {}), self = this;
                     for (var len = Math.min(4, digits.length); len >= 1; len--) {
                         var code = digits.slice(0, len);
                         var matches = codes.filter(function (c) { return cfg.dials[c] === code; });
                         if (!matches.length) continue;
-                        this.country = matches.indexOf(self.country) >= 0 ? self.country : matches[0];
+                        this.country = matches.indexOf(self.country) >= 0 ? self.country : matches.indexOf(cfg.home) >= 0 ? cfg.home : matches[0];
                         var seen = 0;
                         for (var i = 0; i < s.length; i++) {
                             if (!/[0-9]/.test(s[i])) continue;
@@ -1655,7 +1655,9 @@
                 value: cfg.value || '', label: cfg.label || '', text: cfg.label || '', cols: cfg.columns || [],
                 open: false, active: -1, list: [], loading: false,
                 dialog: false, query: '', rows: [], total: 0, row: -1,
+                // total is -1 when a server search found more than it returned (its real count is unknown).
                 get countText() {
+                    if (this.total < 0) return 'Showing the first ' + this.rows.length + '. Refine the search to see more.';
                     if (this.total > this.rows.length) return 'Showing ' + this.rows.length + ' of ' + this.total + '. Refine the search to see more.';
                     return this.rows.length === 1 ? '1 record' : this.rows.length + ' records';
                 },
@@ -1673,7 +1675,7 @@
                         .then(function (r) { return r.ok ? r.json() : []; })
                         .then(function (data) {
                             var items = (data || []).map(function (i) { return { v: String(i.value), l: String(i.label), d: i.description || null, f: i.fields || null }; });
-                            return { items: items.slice(0, max), total: items.length };
+                            return { items: items.slice(0, max), total: items.length > max ? -1 : items.length };
                         })
                         .catch(function () { return { items: [], total: 0 }; });
                 },

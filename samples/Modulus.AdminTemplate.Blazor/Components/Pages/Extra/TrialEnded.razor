@@ -1,0 +1,25 @@
+@page "/extra/trial-ended"
+
+<PageTitle>Trial ended · Modulus</PageTitle>
+
+<div class="m-trial">
+    <span class="m-icon-tile m-tile-lg m-tile-round m-tile-warning-lt" style="margin:0 auto 16px"><Ti Name="hourglass" /></span>
+    <h1 class="m-h1">Your free trial has ended</h1>
+    <p class="m-muted" style="max-width:560px;margin:8px auto 0">Thanks for trying Modulus! Pick a plan to keep your dashboards, invoices and team. Your data is kept safe for 30 days, until @Fmt.Date(DateTime.Today.AddDays(30)).</p>
+    <div class="m-pricing">
+        @foreach (var p in SampleContent.Plans)
+        {
+            <div class="m-card m-price-card @(p.Popular ? "m-price-popular" : "")">
+                @if (p.Popular)
+                {
+                    <span class="m-badge m-badge-primary m-price-ribbon">Popular</span>
+                }
+                <div class="m-price-name">@p.Name</div>
+                <div class="m-price"><span class="m-price-currency">$</span><span class="m-price-value">@p.Yearly.ToString("0")</span><span class="m-price-period">/mo</span></div>
+                <p class="m-muted m-mt-8">@p.Tagline</p>
+                <a class="ant-btn @(p.Popular ? "ant-btn-primary" : "ant-btn-default") ant-btn-block m-mt-16" href="@(p.Monthly == 0 ? "/" : "/extra/pay?plan=" + p.Name)"><span>@(p.Monthly == 0 ? "Continue on Basic" : "Upgrade to " + p.Name)</span></a>
+            </div>
+        }
+    </div>
+    <p class="m-muted m-mt-24">Not ready yet? <a href="/apps/chat">Talk to sales</a> about extending your trial, or <a href="/pages/account-settings?tab=billing">export your data</a>.</p>
+</div>

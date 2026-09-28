@@ -179,7 +179,7 @@
 
     @if (_errors.Count > 0)
     {
-        <Alert Type="@AlertType.Error" Class="m-table-alert" ShowIcon Message="@($"{_errors.Count} {(_errors.Count == 1 ? "cell needs" : "cells need")} attention before saving.")" />
+        <Alert Type="@AlertType.Error" Class="m-table-alert" ShowIcon="true" Message="@($"{_errors.Count} {(_errors.Count == 1 ? "cell needs" : "cells need")} attention before saving.")" />
     }
 
     <CascadingValue Value="HeaderScope">

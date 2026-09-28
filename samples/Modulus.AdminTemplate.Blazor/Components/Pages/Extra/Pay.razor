@@ -1,0 +1,104 @@
+@page "/extra/pay"
+
+<PageTitle>Checkout · Modulus</PageTitle>
+
+@if (paid)
+{
+    <div class="m-card" style="max-width:520px;margin:24px auto">
+        <div class="m-card-body m-center" style="padding:40px 32px">
+            <span class="m-icon-tile m-tile-lg m-tile-round m-tile-success-lt" style="margin:0 auto 16px"><Ti Name="check" /></span>
+            <h1 class="m-h2">Payment successful</h1>
+            <p class="m-muted">Thanks! We charged <strong class="m-heading">@Fmt.Money(m.Total)</strong> for the @m.Plan.Name plan. A receipt is on its way to your inbox.</p>
+            <div class="m-plan-box m-mt-16" style="text-align:left">
+                <div class="m-summary-row"><span>Receipt</span><span>MOD-2026-1004</span></div>
+                <div class="m-summary-row"><span>Plan</span><span>@m.Plan.Name · yearly</span></div>
+                <div class="m-summary-row"><span>Paid with</span><span>@ExtraContent.PayMethods.First(x => x.Key == m.Method).Label</span></div>
+            </div>
+            <div class="m-flex m-gap-8 m-mt-24" style="justify-content:center">
+                <a class="ant-btn ant-btn-default" href="/extra/billing"><span>View billing</span></a>
+                <a class="ant-btn ant-btn-primary" href="/"><span>Go to dashboard</span></a>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <PageHeading Pretitle="Extra" Title="Checkout" Subtitle="Complete your purchase — you can cancel any time" />
+    <div class="m-pay">
+        <form class="m-card" method="get" action="/extra/pay">
+            <input type="hidden" name="paid" value="1" />
+            <input type="hidden" name="plan" value="@m.Plan.Name" />
+            <input type="hidden" name="method" value="@m.Method" />
+            <div class="m-card-header"><h3 class="m-card-title">Payment method</h3></div>
+            <div class="m-card-body">
+                <nav class="m-pay-methods" aria-label="Payment method">
+                    @foreach (var pm in ExtraContent.PayMethods)
+                    {
+                        <a href="/extra/pay?plan=@m.Plan.Name&method=@pm.Key" aria-current="@(pm.Key == m.Method ? "true" : null)"><Ti Name="@pm.Icon" /><span>@pm.Label</span></a>
+                    }
+                </nav>
+                @if (m.Method == "card")
+                {
+                    <div class="m-form-grid m-mt-24">
+                        <label class="m-span-2 m-field"><span class="m-medium m-heading m-small">Name on card</span><input class="ant-input m-mt-4" name="name" autocomplete="cc-name" placeholder="Paweł Kuna" required /></label>
+                        <label class="m-span-2 m-field"><span class="m-medium m-heading m-small">Card number</span><input class="ant-input m-mt-4" name="number" inputmode="numeric" autocomplete="cc-number" placeholder="4242 4242 4242 4242" required /></label>
+                        <label class="m-field"><span class="m-medium m-heading m-small">Expiry</span><input class="ant-input m-mt-4" name="exp" autocomplete="cc-exp" placeholder="MM / YY" required /></label>
+                        <label class="m-field"><span class="m-medium m-heading m-small">CVC</span><input class="ant-input m-mt-4" name="cvc" inputmode="numeric" autocomplete="cc-csc" placeholder="123" required /></label>
+                        <label class="m-span-2 m-field"><span class="m-medium m-heading m-small">Country</span>
+                            <select class="ant-input m-mt-4" name="country" autocomplete="country"><option>Poland</option><option>Germany</option><option>United Kingdom</option><option>United States</option></select>
+                        </label>
+                    </div>
+                }
+                else if (m.Method == "paypal")
+                {
+                    <div class="m-plan-box m-mt-24 m-center">
+                        <p class="m-muted">You'll be redirected to PayPal to approve the payment, then brought back here.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="m-plan-box m-mt-24">
+                        <div class="m-summary-row"><span>Beneficiary</span><span>Modulus Labs Sp. z o.o.</span></div>
+                        <div class="m-summary-row"><span>IBAN</span><span>PL61 1090 1014 0000 0712 1981 2874</span></div>
+                        <div class="m-summary-row"><span>SWIFT</span><span>WBKPPLPP</span></div>
+                        <div class="m-summary-row"><span>Reference</span><span>MOD-2026-1004</span></div>
+                    </div>
+                }
+                <label class="m-check m-mt-16"><input type="checkbox" name="terms" required /><span>I agree to the <a href="/extra/license">license terms</a> and automatic yearly renewal.</span></label>
+            </div>
+            <div class="m-card-footer m-flex" style="justify-content:flex-end">
+                <button type="submit" class="ant-btn ant-btn-primary ant-btn-lg"><Ti Name="lock" /><span>Pay @Fmt.Money(m.Total)</span></button>
+            </div>
+        </form>
+        <div class="m-card">
+            <div class="m-card-header"><h3 class="m-card-title">Order summary</h3></div>
+            <div class="m-card-body">
+                <div class="m-flex m-gap-12" style="align-items:center">
+                    <span class="m-icon-tile m-tile-primary-lt"><Ti Name="@m.Plan.Icon" /></span>
+                    <div class="m-grow"><div class="m-medium m-heading">@m.Plan.Name plan</div><div class="m-muted m-small">Billed yearly · 1 seat</div></div>
+                </div>
+                <div class="m-hr"></div>
+                <div class="m-summary-row"><span>@Fmt.Money0(m.Plan.Yearly) × 12 months</span><span>@Fmt.Money(m.Subtotal)</span></div>
+                <div class="m-summary-row"><span>Discount <span class="m-badge m-badge-success-lt">WELCOME10</span></span><span class="m-text-success">−@Fmt.Money(m.Discount)</span></div>
+                <div class="m-summary-row"><span>Tax (8%)</span><span>@Fmt.Money(m.Tax)</span></div>
+                <div class="m-summary-row m-summary-total"><span>Total due today</span><span>@Fmt.Money(m.Total)</span></div>
+                <ul class="m-check-list m-mt-16">
+                    @foreach (var f in m.Plan.Features.Take(3))
+                    {
+                        <li><Ti Name="check" /><span>@f</span></li>
+                    }
+                </ul>
+                <p class="m-muted m-small m-mt-12"><Ti Name="shield-check" /> Payments are encrypted and processed by Stripe.</p>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery] public string? Plan { get; set; }
+    [SupplyParameterFromQuery] public string? Method { get; set; }
+    [SupplyParameterFromQuery] public string? Paid { get; set; }
+
+    private PayPage m => ExtraContent.Pay(Plan, Method);
+    private bool paid => Paid == "1";
+}

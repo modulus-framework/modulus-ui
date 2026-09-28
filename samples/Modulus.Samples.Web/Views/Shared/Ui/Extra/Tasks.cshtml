@@ -1,0 +1,53 @@
+@{
+    var m = ExtraContent.TaskList(Context.Request.Query["view"].ToString());
+}
+<app-page-header pretitle="Extra" title="Tasks" subtitle="@($"{m.Done} of {m.Total} done")">
+    <a class="ant-btn ant-btn-primary" href="/extra/tasks"><app-ti name="plus" /><span>New task</span></a>
+</app-page-header>
+
+<div class="m-card m-mb-16">
+    <div class="m-card-body">
+        <div class="m-meter-head"><span class="m-medium m-heading">Overall progress</span><span class="m-muted">@Fmt.Percent((double)m.Done / m.Total)</span></div>
+        <div class="m-progress m-progress-lg"><div class="m-progress-bar" style="width:@Fmt.Pct(m.Done, m.Total)%;--c:var(--m-success)"></div></div>
+    </div>
+    <nav class="m-tabs-nav" aria-label="Task views">
+        @foreach (var v in ExtraContent.TaskViews)
+        {
+            <a href="/extra/tasks@(v.Key == "" ? "" : "?view=" + v.Key)" aria-current="@(v.Key == m.View ? "page" : null)">@v.Label <span class="m-badge m-badge-gray-lt">@m.Counts[v.Key]</span></a>
+        }
+    </nav>
+</div>
+
+<div class="m-row-cards m-cols-2">
+    @if (m.Groups.Count == 0)
+    {
+        <div class="m-card m-span-all"><div class="m-empty"><span class="m-empty-icon"><app-ti name="checks" /></span><p class="m-empty-title">Nothing to do</p><p class="m-empty-subtitle">Enjoy the quiet — or plan ahead in Upcoming.</p></div></div>
+    }
+    @foreach (var g in m.Groups)
+    {
+        <div class="m-card" style="align-self:start">
+            <div class="m-card-header"><h3 class="m-card-title">@g.Project</h3><span class="m-badge m-badge-gray-lt" style="margin-left:auto">@g.Items.Count</span></div>
+            <div>
+                @foreach (var t in g.Items)
+                {
+                    var overdue = !t.Done && t.DueInDays < 0;
+                    <label class="m-task">
+                        <input type="checkbox" checked="@t.Done" aria-label="Mark “@t.Title” done" />
+                        <span class="m-task-text">
+                            <span class="m-task-title">@t.Title</span>
+                            <span class="m-task-meta">
+                                <span class="@(overdue ? "m-task-overdue" : "")"><app-ti name="calendar" /> @ExtraContent.Due(t.DueInDays)</span>
+                                <span class="m-badge @ExtraContent.PriorityBadge(t.Priority)">@t.Priority</span>
+                                @foreach (var tag in t.Tags)
+                                {
+                                    <span class="m-badge m-badge-gray-lt">@tag</span>
+                                }
+                            </span>
+                        </span>
+                        <span class="m-avatar m-avatar-sm m-av-@Fmt.Tint(t.Assignee)" title="@t.Assignee">@Fmt.Initials(t.Assignee)</span>
+                    </label>
+                }
+            </div>
+        </div>
+    }
+</div>

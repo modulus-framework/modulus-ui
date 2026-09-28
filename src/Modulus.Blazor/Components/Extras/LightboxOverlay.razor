@@ -1,0 +1,17 @@
+@* The lightbox overlay that modulus-shell.js clones into <body> when a [data-lightbox-index] inside the
+   [data-m-lightbox] root is clicked: Ant Design's image preview DOM plus a caption and a thumbnail strip.
+   Same markup as the MVC Lightbox.Overlay, kept hidden here; the script fills and drives the copy. *@
+
+<div class="m-lightbox-source" hidden><div class="ant-image-preview-root m-image-preview m-lightbox-overlay"><div class="ant-image-preview-mask"></div><div class="ant-image-preview-wrap" role="dialog" aria-modal="true" tabindex="-1"><div class="ant-image-preview" role="document"><div class="ant-image-preview-content"><div class="ant-image-preview-body"><ul class="ant-image-preview-operations"><li class="ant-image-preview-operations-progress" data-lb="progress" aria-live="polite"></li>@foreach (var (action, icon, label) in Operations)
+{<li><button type="button" class="ant-image-preview-operations-operation" data-lb="@action" aria-label="@label" title="@label"><Icon Type="@icon" Class="ant-image-preview-operations-icon" /></button></li>}<li><a class="ant-image-preview-operations-operation" data-lb="download" href="#" download aria-label="Download" title="Download"><Icon Type="download" Class="ant-image-preview-operations-icon" /></a></li></ul><div class="ant-image-preview-img-wrapper" data-lb="pan"><img class="ant-image-preview-img" data-lb="img" alt="" draggable="false" /></div><button type="button" class="ant-image-preview-switch-left" data-lb="prev" aria-label="Previous image"><Icon Type="left" /></button><button type="button" class="ant-image-preview-switch-right" data-lb="next" aria-label="Next image"><Icon Type="right" /></button><div class="ant-spin ant-spin-spinning m-image-preview-spin" data-lb="spin" role="status" aria-label="Loading image" hidden><span class="ant-spin-dot ant-spin-dot-spin"><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i></span></div><div class="m-lightbox-footer" data-lb="footer"><div class="m-lightbox-text" data-lb="text" aria-live="polite"><div class="m-lightbox-title" data-lb="title"></div><div class="m-lightbox-caption" data-lb="caption"></div></div><div class="m-lightbox-strip" data-lb="thumbs"></div></div></div></div></div></div></div></div>
+
+@code {
+    private static readonly (string Action, string Icon, string Label)[] Operations =
+    [
+        ("close", "close", "Close (Esc)"),
+        ("zoom-in", "zoom-in", "Zoom in (+)"),
+        ("zoom-out", "zoom-out", "Zoom out (-)"),
+        ("rotate-right", "rotate-right", "Rotate right"),
+        ("rotate-left", "rotate-left", "Rotate left"),
+    ];
+}

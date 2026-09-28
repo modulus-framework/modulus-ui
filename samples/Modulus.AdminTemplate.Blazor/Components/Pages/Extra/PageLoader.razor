@@ -1,0 +1,20 @@
+@page "/extra/page-loader"
+@layout BlankLayout
+@inject IOptions<ModulusThemeOptions> ThemeOptions
+
+<PageTitle>Loading · Modulus</PageTitle>
+
+<main class="m-loader-page" aria-busy="true">
+    <div>@((MarkupString)ShellRenderer.Brand(ThemeOptions.Value))</div>
+    <div class="m-loader-bar" role="progressbar" aria-label="Loading"></div>
+    <div>
+        <h1 class="m-h3">Preparing your workspace…</h1>
+        <p class="m-muted">Loading dashboards, menus and your preferences. This only takes a moment.</p>
+    </div>
+    <div class="m-loader-samples" aria-hidden="true">
+        <div class="m-spinner-ring"></div>
+        <div class="m-loader-dots"><span></span><span></span><span></span></div>
+        <span class="m-muted"><Ti Name="loader-2" Class="m-spin-icon" /></span>
+    </div>
+    <a class="ant-btn ant-btn-default" href="/"><Ti Name="arrow-left" /><span>Back to dashboard</span></a>
+</main>
