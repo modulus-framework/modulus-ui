@@ -3,9 +3,9 @@
 The plan for the Modulus UI admin template and where each piece stands. Update the status tables in the same commit
 as the work they describe.
 
-Last updated: 2026-09-27 · CI green on `main` at `bf883c9`
+Last updated: 2026-09-28 · `main` at `4d81bee` · CI red: one culture-dependent test (see §5)
 
-**Legend:** ✅ done and verified · 🟡 in progress · ⬜ not started · ➖ not applicable
+**Legend:** ✅ done and verified · 🟡 in progress · ⬜ not started · ❌ failing · ➖ not applicable
 
 ## 1. Goal
 
@@ -73,6 +73,7 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 | Analytics | `/` | ✅ | ✅ | ✅ |
 | CRM | `/dashboards/crm` | ✅ | ✅ | ✅ |
 | eCommerce | `/dashboards/ecommerce` | ✅ | ✅ | ✅ |
+| ERP analytics | `/dashboards/erp` | ✅ | ✅ | ✅ |
 
 ### Apps
 
@@ -118,6 +119,36 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 | Business fields (money, quantity, duration, range, phone, mask, one-time code, lookup, status bar, rich text, signature) | `/forms/business` | ✅ | ✅ | ✅ |
 | Data table (search, filters, sort, paging, columns, selection, CSV) | `/tables/advanced` | ✅ | ✅ | ✅ |
 | Editable grid (schema-driven columns, in-place editors, expandable rows, pinned columns, add/remove columns) | `/tables/editable` | ✅ | ✅ | ✅ |
+| Nested grid (lazy child levels, per-level columns, 1–4 levels) | `/tables/nested` | ✅ | ✅ | ✅ |
+
+### Extra (Tabler extra pages)
+
+Menu group *Extra*. Page bodies are in `Views/Shared/Ui/Extra`, data and page logic in `ExtraContent` (`Samples.Shared`). Marketing and Page loader use the blank layout.
+
+| Page | Route | B | M | R |
+|---|---|---|---|---|
+| Billing (plan, usage meters, payment methods, history) | `/extra/billing` | ✅ | ✅ | ✅ |
+| Settings plan (billing cycle, plan, seats, quote) | `/extra/settings-plan` | ✅ | ✅ | ✅ |
+| Checkout / pay (card, PayPal, bank transfer, order summary) | `/extra/pay` | ✅ | ✅ | ✅ |
+| Pricing table | `/extra/pricing-table` | ✅ | ✅ | ✅ |
+| Trial ended | `/extra/trial-ended` | ✅ | ✅ | ✅ |
+| License (table of contents) | `/extra/license` | ✅ | ✅ | ✅ |
+| Activity (type filter, grouped by day) | `/extra/activity` | ✅ | ✅ | ✅ |
+| Tasks (views, groups, progress) | `/extra/tasks` | ✅ | ✅ | ✅ |
+| Logs (level filter, search) | `/extra/logs` | ✅ | ✅ | ✅ |
+| Uptime monitor (60-day bars, response times, incidents) | `/extra/uptime` | ✅ | ✅ | ✅ |
+| Music (player, albums, tracks) | `/extra/music` | ✅ | ✅ | ✅ |
+| Job listing (search, type, department, remote filters) | `/extra/jobs` | ✅ | ✅ | ✅ |
+| Search results (tabs, highlighted matches) | `/extra/search` | ✅ | ✅ | ✅ |
+| Gallery (category filter, lightbox) | `/extra/gallery` | ✅ | ✅ | ✅ |
+| Photogrid | `/extra/photogrid` | ✅ | ✅ | ✅ |
+| Signatures | `/extra/signatures` | ✅ | ✅ | ✅ |
+| Widgets (weather, mini calendar, visitors, goals, storage, to-do) | `/extra/widgets` | ✅ | ✅ | ✅ |
+| Text features | `/extra/text-features` | ✅ | ✅ | ✅ |
+| Marketing landing page | `/extra/marketing` | ✅ | ✅ | ✅ |
+| Cookie banner (per-category consent) | `/extra/cookie-banner` | ✅ | ✅ | ✅ |
+| Empty page and empty states | `/extra/empty` | ✅ | ✅ | ✅ |
+| Page loader | `/extra/page-loader` | ✅ | ✅ | ✅ |
 
 ### Plugins (planned)
 
@@ -134,7 +165,7 @@ A new **Plugins** menu group in `AdminMenuContributor`, with one page per plugin
 | Sortable (NEW): reorder a list, drag between two lists, handles, sortable grid of cards | `/plugins/sortable` | Dragging only in Kanban and grid column reorder | ⬜ | ⬜ | ⬜ |
 | Fullcalendar | `/apps/calendar` | Done | ✅ | ✅ | ✅ |
 | Inline player: video and audio with custom controls, poster, captions | `/plugins/player` | Missing | ⬜ | ⬜ | ⬜ |
-| Lightbox: image grid with full-screen preview, captions, keyboard paging | `/plugins/lightbox` | AntD `ImagePreviewGroup` gallery card | ⬜ | ⬜ | ⬜ |
+| Lightbox: image grid with full-screen preview, captions, keyboard paging | `/plugins/lightbox` | `AppLightbox` / `app-lightbox` gallery card; used on `/extra/gallery` | ⬜ | ⬜ | ⬜ |
 | Map: markers with popups, zoom | `/plugins/map` | Missing | ⬜ | ⬜ | ⬜ |
 | Map fullsize: the map fills the content area, with a floating side panel | `/plugins/map-fullsize` | Missing | ⬜ | ⬜ | ⬜ |
 | Map vector: world/region choropleth with hover values and a legend | `/plugins/map-vector` | Missing | ⬜ | ⬜ | ⬜ |
@@ -157,13 +188,13 @@ A new **Plugins** menu group in `AdminMenuContributor`, with one page per plugin
 
 | Check | How | Last result |
 |---|---|---|
-| Unit and component tests | `dotnet test --solution Modulus.slnx` | ✅ 364 passed |
+| Unit and component tests | `dotnet test --solution Modulus.slnx` | ✅ 371 passed |
 | Release build | `dotnet build Modulus.slnx -c Release` | ✅ 0 warnings, 0 errors |
 | AntD drift | `dotnet run --project tools/antd-drift` | ✅ no drift (AntDesign 1.6.2) |
-| CI | GitHub Actions `CI` on `main` | ✅ green |
-| Route sweep, desktop | Every sidebar route in each sample: HTTP 200, no console errors | ✅ 44 × 3 |
-| Route sweep, 390 px | Same, plus no horizontal page scroll | ✅ 44 × 3 |
-| Route sweep, dark mode | Same, with the dark theme | ✅ 44 × 3 |
+| CI | GitHub Actions `CI` on `main` | ❌ red since `9579950`: `EditableGridTests.RendersColumnsFromSchema_WithPinnedCellsAndRequiredMarks` expects `$1,200`, but the runner's invariant culture renders `¤1,200`. Passes locally. |
+| Route sweep, desktop | Every sidebar route in each sample: HTTP 200, no console errors | ✅ 44 × 3 (2026-09-27); the 22 `/extra/*` routes × 3 on 2026-09-28 |
+| Route sweep, 390 px | Same, plus no horizontal page scroll | ✅ 44 × 3 (2026-09-27); the 22 `/extra/*` routes × 3 on 2026-09-28 |
+| Route sweep, dark mode | Same, with the dark theme | ✅ 44 × 3 (2026-09-27); the 22 `/extra/*` routes × 3 on 2026-09-28 |
 | Page scrolling | Mouse-wheel scroll on long pages; the page locks only while the drawer is open | ✅ all three samples |
 | Visual parity | Screenshot diff of Blazor vs MVC and Razor Pages at 1440 px | ✅ identical or accepted diffs only |
 | Icons | Every rendered `<use>` resolves in `tabler.svg` | ✅ 146 of 146 |
@@ -184,12 +215,13 @@ A new **Plugins** menu group in `AdminMenuContributor`, with one page per plugin
 | Editable data grid: schema-driven columns (text, number, currency, percent, select, multi-select, tag, date, switch, progress, rating) with in-place editors and validation, expandable rows, left/right pinned columns, add/delete rows, add/remove/pin/hide/reorder columns, save. `EditableGrid` (Blazor), `app-editable-grid` + `EditableGridForm` (MVC), `GridSchema` shared | Both | ✅ |
 | Complete the AntD gallery: Link, Flex, Splitter, Affix, BackTop, DropdownButton, AutoComplete, InputGroup, CheckboxGroup, Mentions, Image, CountDown, Drawer, Watermark, Comment, plus Modulus ColorPicker, FloatButton and QRCode where AntD Blazor 1.6.2 has none | Both | ✅ AntD components in both flavours, plus Modulus QRCode, ColorPicker, FloatButton and Tour |
 | Plugin pages: Charts advanced, Color picker, Date picker, Dropzone, Sortable, Inline player, Lightbox, Map, Map fullsize, Map vector, Tour, WYSIWYG editor (see §4 *Plugins (planned)*) | Both | ⬜ |
-| Tabler-parity pages: icons, typography, colours, gallery, search results, activity, tasks, logs, changelog, license, job listing, uptime, trial ended, cookie banner, users grid, widgets | Samples | ⬜ |
+| Tabler-parity pages: gallery, search results, activity, tasks, logs, license, job listing, uptime, trial ended, cookie banner and widgets are done (§4 *Extra*); icons, typography, colours, changelog and users grid remain | Samples | 🟡 |
 | Localization: bind `LocaleProvider` to the request culture | Both | ⬜ |
 | Brand colour in dark mode (AntD dark CSS hard-codes blue) | Theming | ⬜ |
 | Replace `AntIcons` reflection if AntDesign makes its icon store public | MVC library | ⬜ |
 | bUnit tests for `ProTable` (`TitleExtra`, `RowSelectable`) and tests for sample logic (`EmployeeDirectory`, `WizardInput`, `ModelValidation`) | Tests | ⬜ |
 | Real authentication in the samples (sign-in is a demo) | Samples | ⬜ |
+| Make `EditableGridTests` culture-independent (set the culture in the test or format with a fixed currency), so CI goes green again | Tests | ⬜ |
 | Update GitHub Actions off Node 20 (`checkout`, `setup-dotnet`, `upload-artifact` v4 warnings) | CI | ⬜ |
 | NuGet packaging and versioning | Release | ⬜ |
 
@@ -197,6 +229,7 @@ A new **Plugins** menu group in `AdminMenuContributor`, with one page per plugin
 
 | Date | Change |
 |---|---|
+| 2026-09-28 | Tabler extra pages: a new *Extra* menu group with 22 pages in all three samples (see §4 *Extra*), covering the Tabler "Extra" list alongside the existing Chat, Email, FAQ, Invoice, Pricing, Settings, Users and Wizard pages. Query-driven pages (activity, jobs, logs, search, tasks, cookie consent, settings plan, checkout) build their model in `ExtraContent` and read the same query string in every flavour; sample times are anchored to the app's start time. `modulus-pages.css` gains an *Extra pages* section; 25 new Tabler icons (`cloud-sun` is not in Tabler, so the weather widget uses `sun-wind`). MVC `SampleController.BlankPage` renders a page in `_BlankLayout`. Parity fixes: inline badges and search highlights no longer depend on whitespace (Razor keeps it, Blazor drops it), and the marketing brand is no longer wrapped in a second link. Also committed: the layout settings panel (content width, header and sidebar styles, folded sidebar, RTL, fifteen presets). Commit `4d81bee`. |
 | 2026-09-27 | Business fields sample at `/forms/business` in all three apps (menu *Forms → Business fields*): a sales-order form with a status bar, customer and product lookups (the product lookup searches 250 products on the server: MVC `GET /forms/business/products`, Razor Pages `?handler=products`, Blazor a `SearchAsync` delegate), money, quantity, duration, lead-time range, phone, tax id mask, approval code, notes (rich text) and a signature. `BusinessFormInput` / `BusinessFormsDemo` in `Samples.Shared` hold the model, the demo data and the validation attributes (`NumberRangeValue`, `PhoneNumberValue`, `MaskComplete`, `SignatureValue`). Fixes: a phone number with a shared calling code (+1) now keeps the field's default country instead of the first match (`PhoneNumber.Split` takes a fallback); the one-time-code boxes lost characters when typed fast (a delayed `select()` pulled the focus back; typed keys are now handled in `beforeinput`); a server lookup that returns more rows than it shows says "Showing the first N" instead of a wrong total; the form status bar scrolls sideways on phones instead of wrapping. Build fixes in `EditableGrid.razor` (RZ2008) and the gallery's Mentions placeholder (RZ9986); three grid tests updated for header sorting. Manifest: a *Business* section with the 11 fields, and the 15 business charts under *Pro*. 98 new tests (shared rules, bUnit components, tag helpers). |
 | 2026-09-27 | Lightbox: one engine in modulus-shell.js drives `AppLightbox` (Blazor, new), `<app-lightbox>` (MVC, new), `<app-image>` and `<app-image-group>`; the Alpine `modulusImageGroup` is gone and Blazor needs no JS interop. A `[data-m-lightbox]` root carries its images as `data-items` JSON (`LightboxItem` in Ui.Abstractions: src, title, caption, thumb); clicking a `[data-lightbox-index]` clones the hidden overlay (Ant Design's image preview DOM, `LightboxOverlay` / `Lightbox.Overlay`) into `<body>`. The preview has the toolbar ("n / total", close, zoom in/out, rotate, download), side arrows, a caption bar that keeps its height from image to image, and a thumbnail strip. Zoom works with the wheel, `+`/`-`/`0` and double click. Drag pans a zoomed image, swipe pages at 100%, and Home/End jump to the first/last image. Also: loading spinner, preloading, scroll lock, Tab kept inside, focus returned on close. `AppLightbox`/`app-lightbox` render a responsive tile grid (`MinWidth`, `Aspect`, `Captions`). New Lightbox card on /ui/components. 2 new tests (one per flavour). |
 | 2026-09-27 | One table design for the data table, editable grid and nested grid, the same in Blazor, MVC and Razor Pages. `EditableGrid` / `app-editable-grid` now have the data-table toolbar: a search box with an icon, Columns (show/hide, plus pin/move with column editing), Export CSV, reload and density. They also have a filter row built from `Filterable` Select/Tag/MultiSelect/Switch columns ("Any …", Clear filters), row checkboxes with a batch bar (Set value…, Export selected, Delete, plus `BatchActions` / `grid-batch`), and styled cells: an avatar with initials and a tint (`GridColumn.Avatar`), a second line (`SubtitleKey`), and option icons (`GridOption.Icon`). The rules live in `GridSchema` (`Matches`, `FilterColumns`, `Csv`, `Initials`, `Tint`) and are mirrored in `modulusGrid`. The editable grid searches and filters in the browser; MVC keeps search and filters in sessionStorage, and hidden rows still post. Nested levels search and filter on the server (`NestedGridRequest.Filters`, `f.{key}` in the URL), and the pager shows "a–b of n". All three tables have resizable columns: a drag grip on `.m-resizable` headers sets the `<col>` width, and the editable grid saves the width into its schema. They also have expandable rows: `ProTable.RowDetail` / `RowExpandable`, and MVC `data-toggle-detail` rows. The data table sample shows an employee detail panel. |
