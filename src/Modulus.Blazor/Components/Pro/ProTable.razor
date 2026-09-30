@@ -16,9 +16,10 @@
 *@
 @typeparam TItem
 @attribute [CascadingTypeParameter(nameof(TItem))]
+@using Modulus.Ui.Abstractions.Plugins
 @implements IColumnHeaderHost
 
-<Card Bordered="false" Class="@($"m-table-card{(Resizable ? " m-resizable" : "")} {Class}")">
+<Card Bordered="false" Id="@TableId" Class="@($"m-table-card{(Resizable ? " m-resizable" : "")} {Class}")">
     <div class="m-table-toolbar">
         <div class="m-table-toolbar-title">
             @HeaderTitle
@@ -30,10 +31,27 @@
         </div>
         <div class="m-table-toolbar-actions">
             @ToolBar
+            @if (FiltersActive || _searches is not null)
+            {
+                @* One click clears the column searches and, through OnClearFilters, the page's own search and filters. *@
+                <button type="button" class="ant-btn ant-btn-text m-table-clear" title="Clear the search and filters" @onclick="ClearFiltersAsync"><Icon Type="close-circle" /><span>Clear</span></button>
+            }
+            @* Columns and Export CSV work on the rendered table (modulus-shell.js), as in the MVC <app-table-settings>. *@
+            @if (ColumnSettings)
+            {
+                <button type="button" class="ant-btn ant-btn-default m-table-columns" data-m-table-columns aria-haspopup="dialog" aria-expanded="false" title="Show or hide columns"><Icon Type="setting" /><span>Columns</span></button>
+            }
+            @if (Exportable)
+            {
+                <button type="button" class="ant-btn ant-btn-default m-table-export" data-m-table-export="@(ExportFileName ?? HeaderTitle ?? "export")" title="Export the rows shown to a CSV file"><Icon Type="download" /><span>Export CSV</span></button>
+            }
+            @if (FilterRow)
+            {
+                <button type="button" class="@($"ant-btn ant-btn-text ant-btn-icon-only m-table-filter-toggle{(_filterRow ? " active" : "")}")" aria-label="Filter row"
+                        title="@(_filterRow ? "Hide the filter row" : "Show the filter row")" aria-pressed="@(_filterRow ? "true" : "false")" @onclick="() => _filterRow = !_filterRow"><Icon Type="filter" /></button>
+            }
             <div class="m-table-toolbar-settings">
-                <AntDesign.Tooltip Title="@("Reload")">
-                    <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Reload" @onclick="() => ReloadAsync()"><Icon Type="reload" /></button>
-                </AntDesign.Tooltip>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Reload" title="Reload" @onclick="() => ReloadAsync()"><Icon Type="reload" /></button>
                 <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight">
                     <Overlay>
                         <Menu SelectedKeys="@(new[] { _size.ToString() })" OnMenuItemClicked="OnDensity">
@@ -43,9 +61,7 @@
                         </Menu>
                     </Overlay>
                     <ChildContent>
-                        <AntDesign.Tooltip Title="@("Density")">
-                            <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Table density"><Icon Type="column-height" /></button>
-                        </AntDesign.Tooltip>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Table density" title="Density"><Icon Type="column-height" /></button>
                     </ChildContent>
                 </Dropdown>
             </div>
@@ -69,6 +85,14 @@
         </Alert>
     }
 
+    @* With OnRowMove, rows drag by their handle; modulus-plugins.js reports the move through the hidden input. *@
+    <div class="m-sort-rows" data-m-sort-rows="@(Draggable ? TableId : null)" data-m-sort-root="@Draggable" data-m-sort-mode="@(Draggable ? "event" : null)"
+         data-m-sort-disabled="@(Draggable && DragLocked)" data-m-sort-title="@(Draggable ? HeaderTitle : null)">
+    @if (Draggable)
+    {
+        <input type="hidden" data-m-sort-result @onchange="RowMovedAsync" />
+        @((MarkupString)SortableHtml.RowsHelp(HelpId))
+    }
     <CascadingValue Value="HeaderScope">
     <Table TItem="TItem"
            DataSource="_data"
@@ -89,6 +113,12 @@
            RowExpandable="RowExpandableFor"
            PaginationTemplate="PaginationWithTotal">
         <ChildContent>
+            @if (Draggable)
+            {
+                <ActionColumn Title="" Width="@SortableHtml.RowHandleWidth.ToString(System.Globalization.CultureInfo.InvariantCulture)" Align="ColumnAlign.Center" Class="m-row-drag-cell">
+                    @((MarkupString)SortableHtml.RowHandle(IdOf(context), RowLabel?.Invoke(context) ?? "row", HelpId, DragLocked))
+                </ActionColumn>
+            }
             @if (Selectable)
             {
                 <Selection Width="48" Disabled="@(RowSelectable is not null && !RowSelectable(context))" />
@@ -97,6 +127,7 @@
         </ChildContent>
     </Table>
     </CascadingValue>
+    </div>
 </Card>
 
 @code {
@@ -146,6 +177,63 @@
     [Parameter] public bool Resizable { get; set; } = true;
 
     [Parameter] public string? Class { get; set; }
+
+    /// <summary>
+    /// A filter button in the toolbar that shows each searchable <see cref="ColumnHeader"/>'s search as a box under
+    /// its title (a filter row), instead of behind the header's search icon. Turn it on for tables whose columns use ColumnHeader.
+    /// </summary>
+    [Parameter] public bool FilterRow { get; set; }
+
+    /// <summary>The page's own search or filters (outside the table) are set: shows the toolbar's Clear button.</summary>
+    [Parameter] public bool FiltersActive { get; set; }
+
+    /// <summary>Clears the page's own search and filters; the Clear button then clears the column searches and loads page 1.</summary>
+    [Parameter] public EventCallback OnClearFilters { get; set; }
+
+    /// <summary>A Columns button that shows or hides columns; the choice is remembered in the browser, per page and table.</summary>
+    [Parameter] public bool ColumnSettings { get; set; } = true;
+
+    /// <summary>An Export CSV button that saves the rows shown (this page, in the visible columns).</summary>
+    [Parameter] public bool Exportable { get; set; } = true;
+
+    /// <summary>File name of the export, without ".csv" (defaults to the title).</summary>
+    [Parameter] public string? ExportFileName { get; set; }
+
+    /// <summary>Id of the table's card; it also keys the remembered columns (defaults to one made from the title).</summary>
+    [Parameter] public string? Id { get; set; }
+
+    /// <summary>
+    /// Rows drag by a handle to a new place on the page (or move with Up, Down, Home, End on the handle); needs
+    /// <see cref="RowKey"/>. Store <see cref="RowMove.Order"/>; the page reloads afterwards. Locked while a column sort is on.
+    /// </summary>
+    [Parameter] public EventCallback<RowMove> OnRowMove { get; set; }
+
+    /// <summary>With <see cref="OnRowMove"/>: the name read out when a row moves (default "row").</summary>
+    [Parameter] public Func<TItem, string>? RowLabel { get; set; }
+
+    private bool Draggable => OnRowMove.HasDelegate && RowKey is not null;
+
+    // A column sort decides the order, so a drop would not stay where it was put.
+    private bool DragLocked => _sortField is not null;
+
+    private string HelpId => $"{TableId}-drag-help";
+
+    private string IdOf(TItem item) => RowKey?.Invoke(item)?.ToString() ?? "";
+
+    private async Task RowMovedAsync(ChangeEventArgs e)
+    {
+        if (!Draggable || DragLocked || !SortMove.TryParse(e.Value?.ToString(), out var move)) return;
+        var rows = _data.ToList();
+        var order = move.Within(rows.Select(IdOf));
+        var byId = rows.GroupBy(IdOf).ToDictionary(g => g.Key, g => g.First());
+        _data = order.Where(byId.ContainsKey).Select(id => byId[id]).ToList(); // shown at once, before the reload
+        await OnRowMove.InvokeAsync(new RowMove(move.Id, move.Index, order));
+        await LoadAsync();
+    }
+
+    private string TableId => Id ??"table-" + System.Text.RegularExpressions.Regex.Replace((HeaderTitle ?? "data").ToLowerInvariant(), "[^a-z0-9]+", "-").Trim('-');
+
+    private bool _filterRow;
 
     private RenderFragment<AntDesign.TableModels.RowData<TItem>>? ExpandFragment => RowDetail is null ? null : row => RowDetail(row.Data);
 
@@ -242,11 +330,11 @@
     {
         get
         {
-            var state = $"{_sortField}|{_sortOrder}|{string.Join('|', (_searches ?? new Dictionary<string, string?>()).Select(s => $"{s.Key}={s.Value}"))}";
+            var state = $"{_filterRow}|{_sortField}|{_sortOrder}|{string.Join('|', (_searches ?? new Dictionary<string, string?>()).Select(s => $"{s.Key}={s.Value}"))}";
             if (_headerScope is null || state != _headerState)
             {
                 _headerState = state;
-                _headerScope = new ColumnHeaderScope(this, ++_headerVersion);
+                _headerScope = new ColumnHeaderScope(this, ++_headerVersion, _filterRow);
             }
             return _headerScope;
         }
@@ -281,5 +369,12 @@
         _searches = null;
         await ReloadAsync(resetPage: true);
     }
+    private async Task ClearFiltersAsync()
+    {
+        _searches = null;
+        if (OnClearFilters.HasDelegate) await OnClearFilters.InvokeAsync();
+        await ReloadAsync(resetPage: true);
+    }
+
     private void OnDensity(MenuItem item) => _size = Enum.Parse<TableSize>(item.Key);
 }

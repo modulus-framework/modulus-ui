@@ -169,8 +169,12 @@ public class BackTopTagHelper : TagHelper
         output.TagMode = TagMode.StartTagAndEndTag;
         output.AddClasses("ant-back-top");
         output.Attributes.SetAttribute("x-data", new HtmlString($"modulusBackTop({VisibilityHeight})"));
+        // The whole fixed box hides, as Ant Design's does, so it never catches clicks while the page is at the top.
+        output.Attributes.SetAttribute("x-show", "visible");
+        output.Attributes.Add(new TagHelperAttribute("x-transition.opacity"));
+        output.Attributes.Add(new TagHelperAttribute("x-cloak"));
         output.Content.SetHtmlContent(
-            $"""<div><button type="button" class="ant-back-top-content m-back-top-button" x-show="visible" x-transition.opacity x-cloak @click="top()" aria-label="Back to top"><div class="ant-back-top-icon">{AntIcons.Span("vertical-align-top")}</div></button></div>""");
+            $"""<button type="button" class="ant-back-top-content m-back-top-button" @click="top()" aria-label="Back to top"><div class="ant-back-top-icon">{AntIcons.Span("vertical-align-top")}</div></button>""");
     }
 }
 
@@ -189,6 +193,9 @@ public class DropdownButtonTagHelper : TagHelper
 
     public string Icon { get; set; } = "ellipsis";
 
+    /// <summary>hover (Ant Design's default: the menu opens when the pointer rests on the arrow button) | click</summary>
+    public string Trigger { get; set; } = "hover";
+
     public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
     {
         var menu = (await output.GetChildContentAsync()).GetContent();
@@ -198,11 +205,13 @@ public class DropdownButtonTagHelper : TagHelper
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;
         output.AddStyle("display: inline-block; width: fit-content;");
+        var hover = Trigger == "hover";
         output.Content.SetHtmlContent(
-            $"""<div class="m-dropdown" x-data="dropdown" @click.outside="close()" @keydown.escape="close()">""" +
+            $"""<div class="m-dropdown" x-data="dropdown" @click.outside="close()" @keydown.escape="close()"{(hover ? " @mouseleave=\"hoverClose()\"" : "")}>""" +
             $"""<div class="ant-dropdown-button ant-btn-group"><button class="{btn}"{extra}><span>{Html.E(Text)}</span></button>""" +
-            $"""<span><button type="button" class="ant-dropdown-trigger {btn} ant-btn-icon-only" @click="toggle()" :class="open && 'ant-dropdown-open'" aria-haspopup="menu" :aria-expanded="open" aria-label="More options">{AntIcons.Span(Icon)}</button></span></div>""" +
-            """<div class="ant-dropdown ant-dropdown-placement-bottomRight m-dropdown-panel m-dropdown-right" x-show="open" x-transition.opacity x-cloak @click="close()">""" +
+            // With hover, a click (touch, keyboard) only opens: the pointer-enter that precedes a tap must not be undone by it.
+            $"""<span><button type="button" class="ant-dropdown-trigger {btn} ant-btn-icon-only" {(hover ? "@mouseenter=\"hoverOpen()\" @click=\"open || toggle()\"" : "@click=\"toggle()\"")} :class="open && 'ant-dropdown-open'" aria-haspopup="menu" :aria-expanded="open" aria-label="More options">{AntIcons.Span(Icon)}</button></span></div>""" +
+            $"""<div class="ant-dropdown ant-dropdown-placement-bottomRight m-dropdown-panel m-dropdown-right" x-show="open" x-transition.opacity x-cloak @click="close()"{(hover ? " @mouseenter=\"hoverOpen()\"" : "")}>""" +
             $"""<ul class="ant-dropdown-menu ant-dropdown-menu-root ant-dropdown-menu-vertical ant-dropdown-menu-light" role="menu">{menu}</ul></div></div>""");
     }
 }

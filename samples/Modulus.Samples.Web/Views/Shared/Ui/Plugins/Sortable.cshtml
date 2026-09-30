@@ -1,0 +1,70 @@
+@using Modulus.AspNetCore.Mvc
+@* Sortable: a checklist, a three-list board that posts its order, and a grid of tiles. Drag, or use the arrow keys on a handle. *@
+@{
+    var saved = Context.Request.Query.ContainsKey("save");
+    var board = PluginsContent.Board(name => Context.Request.Query[name].AsEnumerable());
+}
+<app-page-header pretitle="Plugins" title="Sortable" subtitle="Drag to reorder, or focus a handle and use the arrow keys. Items can move between lists of the same group."></app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Board</h3><p class="m-card-subtitle">Move tasks within and between lists, then save: the form posts every list in its order</p></div></div>
+        <div class="m-card-body">
+            @if (saved)
+            {
+                <app-alert type="success" show-icon message="Board saved" description="@string.Join(" · ", PluginsContent.BoardLists.Select(l => $"{l.Title}: {board[l.Name].Count}"))" class="m-mb-16"></app-alert>
+            }
+            <form method="get" action="/plugins/sortable">
+                <div class="m-sort-board">
+                    @foreach (var (name, title) in PluginsContent.BoardLists)
+                    {
+                        <section class="m-sort-column" aria-labelledby="col-@name">
+                            <h4 class="m-sort-column-title" id="col-@name">@title</h4>
+                            <app-sortable name="@name" input="@name" group="board" title="@title">
+                                @foreach (var task in board[name])
+                                {
+                                    <app-sortable-item item-id="@task.Id" label="@task.Title">
+                                        <div class="m-sort-task"><span class="m-sort-task-title">@task.Title</span><span class="ant-tag ant-tag-@task.Tone">@task.Meta</span></div>
+                                    </app-sortable-item>
+                                }
+                            </app-sortable>
+                        </section>
+                    }
+                </div>
+                <div class="m-demo-row" style="margin-top: 16px">
+                    <button type="submit" name="save" value="1" class="ant-btn ant-btn-primary"><app-icon type="save" /><span>Save board</span></button>
+                    <a class="ant-btn ant-btn-default" href="/plugins/sortable"><span>Reset</span></a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Release checklist</h3><p class="m-card-subtitle">One list; Home and End jump to the start and end</p></div></div>
+            <div class="m-card-body">
+                <app-sortable name="checklist" title="Release checklist">
+                    @foreach (var step in PluginsContent.Checklist)
+                    {
+                        <app-sortable-item item-id="@step.Id" label="@step.Title">
+                            <div class="m-sort-task"><span class="m-sort-task-title">@step.Title</span><span class="ant-tag ant-tag-@step.Tone">@step.Meta</span></div>
+                        </app-sortable-item>
+                    }
+                </app-sortable>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Grid</h3><p class="m-card-subtitle">Tiles in rows; the arrow keys move along the grid</p></div></div>
+            <div class="m-card-body">
+                <app-sortable name="tiles" layout="Grid" title="Shortcuts" style="--m-sort-min: 120px">
+                    @foreach (var tile in PluginsContent.Tiles)
+                    {
+                        <app-sortable-item item-id="@tile.Id" label="@tile.Title">
+                            <div class="m-sort-tile"><span class="m-sort-tile-icon m-sort-tile-@tile.Tone"><app-icon type="@tile.Meta" /></span><span>@tile.Title</span></div>
+                        </app-sortable-item>
+                    }
+                </app-sortable>
+            </div>
+        </div>
+    </div>
+</div>

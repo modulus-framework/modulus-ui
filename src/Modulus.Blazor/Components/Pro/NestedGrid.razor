@@ -15,33 +15,48 @@
 @using System.Globalization
 
 <div class="@($"m-nested m-nested-level-{Level}")">
-    <EditableGrid @ref="_grid" Columns="_columns" Rows="_rows" HeaderTitle="@Title" PageSize="LevelPageSize + 50"
+    <EditableGrid @ref="_grid" Columns="_columns" Rows="_rows" HeaderTitle="@Title" Paged="false"
                   AllowAddRow="@(LevelSettings.Editable && LevelSettings.AllowAdd)" AllowDeleteRow="@(LevelSettings.Editable && LevelSettings.AllowDelete)"
                   AllowColumnEdit="false" Size="@(Level == 0 ? TableSize.Middle : TableSize.Small)"
                   RowDetail="@(HasChildren ? ChildFragment : null)" RowExpandable="row => Settings.CanExpand(Level, row)"
-                  Searchable="false" ClientFilters="false" Filters="@(FilterColumns.Count > 0 ? FilterRow : null)"
+                  Searchable="false" ClientFilters="false" Filters="@(FilterBarShown ? FilterRow : null)"
                   ExportFileName="@LevelSettings.Title" OnReload="ReloadAsync"
-                  Sortable="LevelSettings.Sortable" OnSort="SortAsync" SortField="@_sortField" SortDescending="_descending"
-                  ColumnSearchable="LevelSettings.Searchable" OnColumnSearch="ColumnSearchAsync" Searches="_searches"
-                  OnSave="SaveAsync" OnDiscard="ReloadAsync" OnChange="() => _dirty = true" Class="m-nested-grid">
+                  Sortable="LevelSettings.Sortable" OnSort="SortAsync" RowDraggable="LevelSettings.RowDraggable" SortField="@_sortField" SortDescending="_descending"
+                  ColumnSearchable="LevelSettings.Searchable" OnColumnSearch="ColumnSearchAsync" Searches="_searches" FilterRowOpen="LevelSettings.Searchable"
+                  FiltersLocked="_dirty"
+                  OnSave="SaveAsync" OnDiscard="ReloadAsync" OnChange="() => _dirty = _grid?.HasRowChanges ?? true" Class="m-nested-grid"
+                  AddRowText="@($"Add {GridSchema.Singular(LevelSettings.Title)}")">
         <TitleExtra><span class="m-badge m-badge-gray-lt">@_total</span></TitleExtra>
         <ToolBar>
-            @if (LevelSettings.Searchable)
+            @if (LevelSettings.Searchable && (_searchOpen || !string.IsNullOrEmpty(_keyword)))
             {
                 <Input TValue="string" @bind-Value="_keyword" Placeholder="@($"Search {LevelSettings.Title.ToLowerInvariant()}…")" AllowClear Size="@InputSize.Default"
-                       Class="m-table-toolbar-search m-nested-search" Prefix="SearchIcon"
-                       OnPressEnter="SearchAsync" OnClear="SearchAsync" Disabled="_dirty" aria-label="@($"Search {Title}")" />
+                       Class="m-table-toolbar-search m-nested-search" Prefix="SearchIcon" AutoFocus="_searchOpen"
+                       OnPressEnter="SearchAsync" OnClear="SearchAsync" Disabled="_dirty" aria-label="@($"Search {Title}")"
+                       OnBlur="() => _searchOpen = !string.IsNullOrEmpty(_keyword)" />
+            }
+            else if (LevelSettings.Searchable)
+            {
+                @* An empty search folds into its icon, as in the grid's own toolbar. *@
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-table-search-toggle" aria-label="@($"Search {Title}")" title="@(_dirty ? LockedText : "Search (Ctrl+F)")"
+                        data-m-search-toggle disabled="@_dirty" @onclick="() => _searchOpen = true"><Icon Type="search" /></button>
+            }
+            @if (FiltersActive)
+            {
+                @* One click clears the level's keyword, filters and column searches. *@
+                <button type="button" class="ant-btn ant-btn-text m-table-clear" title="@(_dirty ? LockedText : "Clear the search and filters")" disabled="@_dirty" @onclick="ClearFiltersAsync"><Icon Type="close-circle" /><span>Clear</span></button>
             }
         </ToolBar>
         <Summary>
             @if (_dirty)
             {
-                <span class="m-small m-muted">Save or discard to search, sort or change page.</span>
+                <span class="m-grid-locked" role="status"><Icon Type="lock" /> @LockedText</span>
             }
             @if (_total > 0)
             {
-                <Pagination Current="_page" Total="_total" PageSize="LevelPageSize" Size="PaginationSize.Small" Disabled="_dirty" ShowTotal="ShowTotal"
-                            OnChange="e => PageAsync(e.Page)" Class="m-nested-pager" />
+                <Pagination Current="_page" Total="_total" PageSize="_pageSize" Size="PaginationSize.Small" Disabled="_dirty" ShowTotal="ShowTotal"
+                            ShowSizeChanger="true" PageSizeOptions="@Paging.SizesWith(LevelPageSize).ToArray()"
+                            OnChange="e => PageAsync(e.Page, e.PageSize)" Class="m-nested-pager" />
             }
         </Summary>
     </EditableGrid>
@@ -66,11 +81,20 @@
     [Parameter] public string? HeaderTitle { get; set; }
 
     private EditableGrid? _grid;
-    private static readonly Func<PaginationTotalContext, string> ShowTotal = ctx => $"{ctx.Range.Item1}–{ctx.Range.Item2} of {ctx.Total}";
-    private static readonly RenderFragment SearchIcon = @<Ti Name="search" />;
+    private static readonly Func<PaginationTotalContext, string> ShowTotal = ctx =>
+        $"{ctx.Range.Item1.ToString("N0", CultureInfo.CurrentCulture)}–{ctx.Range.Item2.ToString("N0", CultureInfo.CurrentCulture)} of {ctx.Total.ToString("N0", CultureInfo.CurrentCulture)}";
+
+    private const string LockedText = "Save or discard your changes to search, filter, sort or change page.";
+    private static readonly RenderFragment SearchIcon = @<Icon Type="search" />;
     private readonly Dictionary<string, string?> _filters = new(StringComparer.Ordinal);
 
-    private IReadOnlyList<GridColumn> FilterColumns => GridSchema.FilterColumns(_columns);
+    // A searchable level filters in the row under its headers (a select for option columns), so the bar above the
+    // table only keeps its dropdowns for a level without column searches, and "Clear filters" while any is set.
+    private IReadOnlyList<GridColumn> FilterColumns => LevelSettings.Searchable ? [] : GridSchema.FilterColumns(_columns);
+
+    private bool FiltersActive => _filters.Values.Any(v => !string.IsNullOrEmpty(v)) || _searches is not null || !string.IsNullOrEmpty(_keyword);
+
+    private bool FilterBarShown => FilterColumns.Count > 0;
 
     // The level's filters run on the server (Load gets them in the request), like its search, sort and paging.
     private RenderFragment FilterRow => __builder =>
@@ -88,10 +112,6 @@
                 </SelectOptions>
             </Select>
         }
-        if (_filters.Values.Any(v => !string.IsNullOrEmpty(v)) || _searches is not null)
-        {
-            <button type="button" class="ant-btn ant-btn-link m-grid-clear-filters" disabled="@_dirty" @onclick="ClearFiltersAsync"><span>Clear filters</span></button>
-        }
     };
 
     private async Task FilterAsync(string key, string? value)
@@ -103,8 +123,11 @@
 
     private async Task ClearFiltersAsync()
     {
+        if (_dirty) return;
         _filters.Clear();
         _searches = null;
+        _keyword = null;
+        _searchOpen = false;
         _page = 1;
         await LoadPageAsync();
     }
@@ -112,9 +135,9 @@
     private List<GridColumn> _columns = [];
     private List<GridRecord> _rows = [];
     private HashSet<string> _loadedIds = [];
-    private int _total, _page = 1;
+    private int _total, _page = 1, _pageSize;
     private string? _keyword, _sortField;
-    private bool _descending, _dirty;
+    private bool _descending, _dirty, _searchOpen;
 
     private NestedGridLevel LevelSettings => Settings.Level(Level) ?? new NestedGridLevel();
     private int LevelPageSize => Math.Max(1, LevelSettings.PageSize);
@@ -137,6 +160,7 @@
     protected override async Task OnInitializedAsync()
     {
         _columns = Settings.ColumnsFor(Level, Parent);
+        _pageSize = LevelPageSize;
         if (!LevelSettings.Editable) foreach (var c in _columns) c.Editable = false;
         await LoadPageAsync();
     }
@@ -144,10 +168,10 @@
     private async Task LoadPageAsync()
     {
         var filters = _filters.Where(f => !string.IsNullOrEmpty(f.Value)).ToDictionary(f => f.Key, f => f.Value, StringComparer.Ordinal);
-        var result = await Load(new NestedGridRequest(Level, Parent?.Id, _keyword, _sortField, _descending, _page, LevelPageSize, filters.Count == 0 ? null : filters, _searches));
+        var result = await Load(new NestedGridRequest(Level, Parent?.Id, _keyword, _sortField, _descending, _page, _pageSize, filters.Count == 0 ? null : filters, _searches));
         _rows = [.. result.Rows];
         _total = result.Total;
-        _page = NestedGridQuery.ClampPage(new NestedGridRequest(Level, Parent?.Id, Page: _page, PageSize: LevelPageSize), _total);
+        _page = NestedGridQuery.ClampPage(new NestedGridRequest(Level, Parent?.Id, Page: _page, PageSize: _pageSize), _total);
         _loadedIds = [.. _rows.Select(r => r.Id)];
         _dirty = false;
         _grid?.MarkSaved();
@@ -179,8 +203,15 @@
         await LoadPageAsync();
     }
 
-    private async Task PageAsync(int page)
+    // A new page size starts again from the first page.
+    private async Task PageAsync(int page, int size)
     {
+        if (_dirty) return;
+        if (size > 0 && size != _pageSize)
+        {
+            _pageSize = Paging.Size(size, LevelPageSize);
+            page = 1;
+        }
         _page = page;
         await LoadPageAsync();
     }
@@ -190,7 +221,7 @@
         if (Save is not null)
         {
             var deleted = _loadedIds.Except(_rows.Select(r => r.Id)).ToList();
-            await Save(new NestedGridChanges(Level, Parent?.Id, _columns, _rows, deleted));
+            await Save(new NestedGridChanges(Level, Parent?.Id, _columns, _rows, deleted) { Ordered = _sortField is null });
         }
         await LoadPageAsync();
     }

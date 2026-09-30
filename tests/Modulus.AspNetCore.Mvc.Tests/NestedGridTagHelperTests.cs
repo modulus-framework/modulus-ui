@@ -44,6 +44,13 @@ public class NestedGridTagHelperTests
         Assert.Equal("/x?depth=2&level=1&parent=PO-1&q=shirt&sort=style%3Adesc&page=3", NestedGridForm.Url("/x?depth=2", request));
         Assert.Equal("/x?level=1&parent=PO-1&sort=style%3Adesc&page=3", NestedGridForm.Url("/x", request, "q"));
 
+        // Rows per page: a size the pager offers is kept (size=); any other falls back to the level's.
+        var sized = NestedGridForm.ReadRequest(new QueryCollection(new Dictionary<string, StringValues> { ["level"] = "1", ["parent"] = "PO-1", ["size"] = "20" }), Settings());
+        Assert.Equal((20, true), (sized.PageSize, sized.CustomPageSize));
+        Assert.Equal("/x?level=1&parent=PO-1&size=20", NestedGridForm.Url("/x", sized));
+        var odd = NestedGridForm.ReadRequest(new QueryCollection(new Dictionary<string, StringValues> { ["size"] = "7" }), Settings());
+        Assert.Equal((2, false), (odd.PageSize, odd.CustomPageSize));
+
         // Level 0 has no parent; an out-of-range level is clamped.
         var top = NestedGridForm.ReadRequest(new QueryCollection(new Dictionary<string, StringValues> { ["level"] = "9", ["parent"] = "x" }), Settings());
         Assert.Equal((1, "x"), (top.Level, top.ParentId));
@@ -74,8 +81,17 @@ public class NestedGridTagHelperTests
         var request = new NestedGridRequest(0, null, PageSize: 2).WithFilter("qty", "10");
         var html = await RenderAsync(new NestedGridView(s, request, columns, [Row("PO-1", "PO-1")], 3, ["PO-1"], Title: "Orders"));
 
-        Assert.Contains("""<select class="m-select" name="f.qty" aria-label="Qty" hx-get="/nested/level?depth=2&amp;level=0" hx-trigger="change" hx-include="this" hx-target="#nested-0-root" hx-swap="outerHTML" onchange="event.stopPropagation()"><option value="">Any qty</option><option value="10" selected>Ten</option></select>""", html);
-        Assert.Contains("<span>Clear filters</span>", html);
+        // The filters sit under the column headers from the start (a select for an option column), so there is no bar
+        // above the table.
+        Assert.Contains("""<select class="m-select m-th-filter" aria-label="Filter Qty" x-ref="inline" @click.stop @change="applyInline()"><option value="">Any qty</option><option value="=Ten">Ten</option></select>""", html);
+        Assert.Contains("data-m-filter-row-open", html);
+        Assert.Contains("""<thead class="ant-table-thead m-filter-row-on">""", html);
+        Assert.DoesNotContain("name=\"f.qty\"", html);
+        // The toolbar's Clear drops the keyword, filters and column searches.
+        Assert.Contains("""class="ant-btn ant-btn-text m-table-clear" title="Clear the search and filters" hx-get="/nested/level?depth=2&amp;level=0" """.TrimEnd(), html);
+        // Rows per page: the select adds size= to the level's URL.
+        Assert.Contains("""<select class="m-select m-select-sm m-pager-size" name="size" aria-label="Rows per page" hx-get="/nested/level?depth=2&amp;level=0&amp;f.qty=10" """.TrimEnd(), html);
+        Assert.Contains("""<option value="2" selected>2 / page</option>""", html);
         Assert.Contains("""aria-label="Reload" title="Reload" hx-get="/nested/level?depth=2&amp;level=0&amp;f.qty=10" hx-target="#nested-0-root" hx-swap="outerHTML">""", html);
         Assert.Contains("<li class=\"ant-pagination-total-text\">1–2 of 3</li>", html);
         // The level searches and filters on the server, so the grid's in-browser search is off.

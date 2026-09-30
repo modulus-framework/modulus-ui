@@ -1,0 +1,84 @@
+@page "/plugins/tour"
+
+<PageTitle>Tour · Modulus</PageTitle>
+
+<PageHeading Pretitle="Plugins" Title="Tour" Subtitle="A guided walkthrough that spotlights parts of the page, one step at a time.">
+    <Actions>
+    <button type="button" class="ant-btn ant-btn-primary" @onclick="Start"><Icon Type="play-circle" /><span>Start tour</span></button>
+    <button type="button" class="ant-btn ant-btn-default" @onclick="Start"><Icon Type="reload" /><span>Restart tour</span></button>
+    </Actions>
+</PageHeading>
+
+<div class="m-tour-demo">
+    <div class="m-card m-tour-actions" id="tour-actions">
+        <div class="m-card-header"><h3 class="m-card-title">Quick actions</h3></div>
+        <div class="m-card-body m-tour-action-list">
+            <button type="button" class="ant-btn ant-btn-default ant-btn-block"><Icon Type="plus" /><span>New order</span></button>
+            <button type="button" class="ant-btn ant-btn-default ant-btn-block"><Icon Type="user-add" /><span>Invite teammate</span></button>
+            <button type="button" class="ant-btn ant-btn-default ant-btn-block"><Icon Type="download" /><span>Export report</span></button>
+        </div>
+    </div>
+
+    <div class="m-tour-main">
+        <div class="m-tour-kpis" id="tour-kpis">
+            @foreach (var k in PluginsContent.TourKpis)
+            {
+                <div class="m-card"><div class="m-card-body">
+                    <div class="m-subheader">@k.Label</div>
+                    <div class="m-tour-kpi"><span class="m-h2">@k.Value</span><span class="m-delta @(k.Up ? "m-delta-up" : "m-delta-down")">@k.Delta</span></div>
+                </div></div>
+            }
+        </div>
+        <div class="m-card" id="tour-orders">
+            <div class="m-card-header"><h3 class="m-card-title">Recent orders</h3></div>
+            <div class="ant-table-wrapper m-table-flush">
+                <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                    <table style="table-layout:auto">
+                        <thead class="ant-table-thead"><tr><th class="ant-table-cell">Order</th><th class="ant-table-cell">Customer</th><th class="ant-table-cell m-right">Total</th><th class="ant-table-cell">Status</th></tr></thead>
+                        <tbody class="ant-table-tbody">
+                            @foreach (var o in PluginsContent.TourOrders)
+                            {
+                                <tr class="ant-table-row"><td class="ant-table-cell m-medium m-heading m-nowrap">@o.Id</td><td class="ant-table-cell">@o.Customer</td><td class="ant-table-cell m-right m-nowrap">@o.Total</td><td class="ant-table-cell"><span class="ant-tag ant-tag-@o.Tone">@o.Status</span></td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card m-tour-filters" id="tour-filters">
+        <div class="m-card-header"><h3 class="m-card-title">Filters</h3></div>
+        <div class="m-card-body ant-form ant-form-vertical">
+            <FieldItem Label="Period">@(Segmented("period", ["Week", "Month", "Year"], _period, v => _period = v))</FieldItem>
+            <FieldItem Label="Channel">@(Segmented("channel", ["All", "Online", "Retail"], _channel, v => _channel = v))</FieldItem>
+        </div>
+    </div>
+</div>
+
+<AppTour Steps="PluginsContent.TourSteps" @bind-Open="_open" @bind-Current="_current" Type="primary" />
+
+@code {
+    private bool _open;
+    private int _current;
+    private string _period = "Month";
+    private string _channel = "All";
+
+    private void Start()
+    {
+        _current = 0;
+        _open = true;
+    }
+
+    // The markup of the MVC <app-segmented block>, so the filters look the same in every sample.
+    private RenderFragment Segmented(string name, string[] items, string current, Action<string> set) =>
+        @<div class="ant-segmented ant-segmented-block" role="radiogroup">
+            <div class="ant-segmented-group">
+                @foreach (var item in items)
+                {
+                    var on = item == current;
+                    <label class="ant-segmented-item@(on ? " ant-segmented-item-selected" : "")"><input class="ant-segmented-item-input" type="radio" name="@name" value="@item" checked="@on" @onchange="() => set(item)" /><div class="ant-segmented-item-label" title="@item">@item</div></label>
+                }
+            </div>
+        </div>;
+}

@@ -26,7 +26,13 @@ public static partial class RichText
         "script", "style", "iframe", "object", "embed", "template", "noscript", "textarea", "select", "svg", "math", "head", "title", "frameset", "frame", "xml",
     };
 
-    public static string Sanitize(string? html)
+    public static string Sanitize(string? html) => Sanitize(html, images: false);
+
+    /// <summary>
+    /// As <see cref="Sanitize(string?)"/>; with <paramref name="images"/> it also keeps <c>&lt;img&gt;</c> with an http(s) or
+    /// relative <c>src</c> (never a data: or script URL) and its <c>alt</c> text: the WYSIWYG editor's images.
+    /// </summary>
+    public static string Sanitize(string? html, bool images)
     {
         if (string.IsNullOrEmpty(html)) return "";
         var sb = new StringBuilder(html.Length);
@@ -76,6 +82,16 @@ public static partial class RichText
                 if (!closing && !m.Groups[3].Value.TrimEnd().EndsWith('/')) skip = name;
                 continue;
             }
+            if (name == "img")
+            {
+                if (images && !closing && SafeSrc(m.Groups[3].Value) is { } src)
+                {
+                    var alt = Alt().Match(m.Groups[3].Value);
+                    var text = alt.Success ? WebUtility.HtmlDecode(alt.Groups[2].Success ? alt.Groups[2].Value : alt.Groups[3].Success ? alt.Groups[3].Value : alt.Groups[4].Value) : "";
+                    sb.Append($"<img src=\"{WebUtility.HtmlEncode(src)}\" alt=\"{WebUtility.HtmlEncode(text)}\">");
+                }
+                continue;
+            }
             if (!Allowed.Contains(name)) continue;
 
             if (closing)
@@ -112,6 +128,21 @@ public static partial class RichText
         return Spaces().Replace(text, " ").Trim();
     }
 
+    private static string? SafeSrc(string attributes)
+    {
+        var m = Src().Match(attributes);
+        if (!m.Success) return null;
+        var raw = m.Groups[2].Success ? m.Groups[2].Value : m.Groups[3].Success ? m.Groups[3].Value : m.Groups[4].Value;
+        var src = string.Concat(WebUtility.HtmlDecode(raw).Trim().Where(c => c > ' '));
+        if (src.Length == 0) return null;
+        if (src.StartsWith("//", StringComparison.Ordinal)) return "https:" + src;
+        var colon = src.IndexOf(':');
+        var boundary = src.IndexOfAny(['/', '?', '#']);
+        if (colon >= 0 && (boundary < 0 || colon < boundary))
+            return src[..colon].ToLowerInvariant() is "http" or "https" ? src : null;
+        return src;
+    }
+
     private static string? SafeHref(string attributes)
     {
         var m = Href().Match(attributes);
@@ -134,6 +165,12 @@ public static partial class RichText
 
     [GeneratedRegex("""\bhref\s*=\s*("([^"]*)"|'([^']*)'|([^\s>"']+))""", RegexOptions.IgnoreCase)]
     private static partial Regex Href();
+
+    [GeneratedRegex("""\bsrc\s*=\s*("([^"]*)"|'([^']*)'|([^\s>"']+))""", RegexOptions.IgnoreCase)]
+    private static partial Regex Src();
+
+    [GeneratedRegex("""\balt\s*=\s*("([^"]*)"|'([^']*)'|([^\s>"']+))""", RegexOptions.IgnoreCase)]
+    private static partial Regex Alt();
 
     [GeneratedRegex("<br>|</p>|</div>|</li>|</h[1-4]>")]
     private static partial Regex Breaks();

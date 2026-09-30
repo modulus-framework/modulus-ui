@@ -1,0 +1,46 @@
+@page "/pages/changelog"
+@using System.Globalization
+
+<PageTitle>Changelog · Modulus</PageTitle>
+
+@* Release notes as a timeline. MVC and Razor Pages render the same page from Samples.Web Views/Shared/Ui/Pages/Changelog.cshtml. *@
+<PageHeading Pretitle="Pages" Title="Changelog" Subtitle="What changed in each release of the template." />
+
+<div class="m-changelog">
+    <aside class="m-card m-changelog-nav">
+        <div class="m-card-header"><h3 class="m-card-title">Releases</h3></div>
+        <ul class="m-nav-list">
+            @foreach (var r in UiContent.Changelog)
+            {
+                <li><a href="#v@(r.Version)"><span>v@(r.Version)</span><span class="m-count">@r.Date.ToString("MMM d", CultureInfo.InvariantCulture)</span></a></li>
+            }
+        </ul>
+    </aside>
+    <ol class="m-release-list">
+        @foreach (var r in UiContent.Changelog)
+        {
+            <li class="m-release" id="v@(r.Version)">
+                <span class="m-release-dot@(r.Major ? " m-release-dot-major" : "")" aria-hidden="true"></span>
+                <div class="m-card">
+                    <div class="m-card-header">
+                        <div>
+                            <h2 class="m-card-title m-release-title">
+                                <span class="ant-tag @(r.Major ? "ant-tag-blue" : "")">v@(r.Version)</span> @r.Title
+                            </h2>
+                            <p class="m-card-subtitle"><time datetime="@r.Date.ToString("yyyy-MM-dd")">@r.Date.ToString("MMMM d, yyyy", CultureInfo.InvariantCulture)</time>@(r == UiContent.Changelog[0] ? " · Latest" : "")</p>
+                        </div>
+                    </div>
+                    <div class="m-card-body">
+                        <p class="m-muted m-mb-16">@r.Summary</p>
+                        <ul class="m-release-changes">
+                            @foreach (var c in r.Changes)
+                            {
+                                <li><span class="ant-tag ant-tag-@UiContent.KindTone(c.Kind) m-release-kind"><Icon Type="@UiContent.KindIcon(c.Kind)" /> @c.Kind</span><span>@c.Text</span></li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </li>
+        }
+    </ol>
+</div>

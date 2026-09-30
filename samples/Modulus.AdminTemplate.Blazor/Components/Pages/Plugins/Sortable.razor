@@ -1,0 +1,78 @@
+@page "/plugins/sortable"
+
+<PageTitle>Sortable · Modulus</PageTitle>
+
+<PageHeading Pretitle="Plugins" Title="Sortable" Subtitle="Drag to reorder, or focus a handle and use the arrow keys. Items can move between lists of the same group." />
+
+<div class="m-row-cards">
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Board</h3><p class="m-card-subtitle">Move tasks within and between lists, then save: the form posts every list in its order</p></div></div>
+        <div class="m-card-body">
+            @if (_saved)
+            {
+                <Alert Type="@AlertType.Success" ShowIcon Message="Board saved" Description="@string.Join(" · ", PluginsContent.BoardLists.Select(l => $"{l.Title}: {_board[l.Name].Count}"))" Class="m-mb-16" />
+            }
+            <div class="m-sort-board">
+                @foreach (var (name, title) in PluginsContent.BoardLists)
+                {
+                    <section class="m-sort-column" aria-labelledby="col-@name">
+                        <h4 class="m-sort-column-title" id="col-@name">@title</h4>
+                        <AppSortable TItem="SortTask" Name="@name" Group="board" Title="@title" Items="_board[name]" IdOf="t => t.Id" LabelOf="t => t.Title" OnSort="MoveTask">
+                            <ItemTemplate Context="task">
+                                <div class="m-sort-task"><span class="m-sort-task-title">@task.Title</span><span class="ant-tag ant-tag-@task.Tone">@task.Meta</span></div>
+                            </ItemTemplate>
+                        </AppSortable>
+                    </section>
+                }
+            </div>
+            <div class="m-demo-row" style="margin-top: 16px">
+                <button type="button" class="ant-btn ant-btn-primary" @onclick="() => _saved = true"><Icon Type="save" /><span>Save board</span></button>
+                <button type="button" class="ant-btn ant-btn-default" @onclick="Reset"><span>Reset</span></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Release checklist</h3><p class="m-card-subtitle">One list; Home and End jump to the start and end</p></div></div>
+            <div class="m-card-body">
+                <AppSortable TItem="SortTask" Name="checklist" Title="Release checklist" Items="_checklist" IdOf="t => t.Id" LabelOf="t => t.Title" OnSort="m => Move(_checklist, m)">
+                    <ItemTemplate Context="step">
+                        <div class="m-sort-task"><span class="m-sort-task-title">@step.Title</span><span class="ant-tag ant-tag-@step.Tone">@step.Meta</span></div>
+                    </ItemTemplate>
+                </AppSortable>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Grid</h3><p class="m-card-subtitle">Tiles in rows; the arrow keys move along the grid</p></div></div>
+            <div class="m-card-body">
+                <AppSortable TItem="SortTask" Name="tiles" Layout="SortableLayout.Grid" Title="Shortcuts" Style="--m-sort-min: 120px" Items="_tiles" IdOf="t => t.Id" LabelOf="t => t.Title" OnSort="m => Move(_tiles, m)">
+                    <ItemTemplate Context="tile">
+                        <div class="m-sort-tile"><span class="m-sort-tile-icon m-sort-tile-@tile.Tone"><Icon Type="@tile.Meta" /></span><span>@tile.Title</span></div>
+                    </ItemTemplate>
+                </AppSortable>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private Dictionary<string, List<SortTask>> _board = PluginsContent.Board();
+    private readonly List<SortTask> _checklist = [.. PluginsContent.Checklist];
+    private readonly List<SortTask> _tiles = [.. PluginsContent.Tiles];
+    private bool _saved;
+
+    private void MoveTask(SortMove move)
+    {
+        if (move.Apply(_board, t => t.Id)) _saved = false;
+    }
+
+    private static void Move(List<SortTask> list, SortMove move) =>
+        move.Apply(new Dictionary<string, List<SortTask>> { [move.From] = list }, t => t.Id);
+
+    private void Reset()
+    {
+        _board = PluginsContent.Board();
+        _saved = false;
+    }
+}

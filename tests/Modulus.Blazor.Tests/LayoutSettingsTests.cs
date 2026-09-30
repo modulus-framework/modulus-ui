@@ -48,6 +48,20 @@ public class LayoutSettingsTests
     }
 
     [Fact]
+    public void Density_DefaultsToCompactAndFollowsItsCookie()
+    {
+        Assert.Contains("data-density=\"compact\"", ThemeCss.ScriptAttributes(new ModulusThemeOptions()));
+
+        var o = ThemeCss.ResolveOptions(new ModulusThemeOptions(), name => name == ThemeCss.DensityCookie ? "comfortable" : null);
+        Assert.Equal(ThemeDensity.Comfortable, o.Density);
+        Assert.Contains("data-density=\"comfortable\"", ThemeCss.ScriptAttributes(o));
+
+        var html = ShellRenderer.Customizer(View(o));
+        Assert.Contains("name=\"density\" value=\"compact\" />", html);
+        Assert.Contains("name=\"density\" value=\"comfortable\" checked", html);
+    }
+
+    [Fact]
     public void Customizer_OffersTheLayoutPresetsAndChecksTheMatchingOne()
     {
         var html = ShellRenderer.Customizer(View(new ModulusThemeOptions { Layout = ShellLayout.Vertical, SidebarFold = SidebarFold.Hover }));
@@ -78,12 +92,39 @@ public class LayoutSettingsTests
         var view = View(new ModulusThemeOptions(), menu);
 
         var header = ShellRenderer.Header(view);
-        Assert.StartsWith("<div class=\"m-header\"><header class=\"m-topbar\">", header);
+        Assert.StartsWith("<div class=\"m-header\" id=\"m-header\"><header class=\"m-topbar\">", header);
         Assert.Contains("data-m-fold-toggle", header);
         Assert.EndsWith("</nav></div>", header);
 
         var sidebar = ShellRenderer.Sidebar(view);
         Assert.Contains("<span class=\"m-snav-initial\" aria-hidden=\"true\">H</span>", sidebar);
         Assert.Contains("<li class=\"m-snav-flyout-title\" aria-hidden=\"true\">Apps</li>", sidebar);
+    }
+
+    [Fact]
+    public void NestedMenus_DropdownSectionsThenFoldingGroups_SidebarTree_OpenAlongThePathToThePage()
+    {
+        var settings = new MenuItemDefinition("settings", "Settings", icon: "settings");
+        var access = new MenuItemDefinition("access", "Users & companies");
+        var rights = new MenuItemDefinition("rights", "Access rights");
+        rights.Children.Add(new MenuItemDefinition("roles", "Roles", "apps/roles"));
+        access.Children.Add(new MenuItemDefinition("users", "Users", "apps/users"));
+        access.Children.Add(rights);
+        settings.Children.Add(access);
+        var view = new ShellView(new ModulusThemeOptions(), [settings], "apps/roles", new ShellContent());
+
+        var navbar = ShellRenderer.Navbar(view);
+        Assert.Contains("<div class=\"m-dropdown-menu m-tree\">", navbar);
+        // Odoo: a group directly in the dropdown is a section heading; a group inside it folds open.
+        Assert.Contains("<div class=\"m-menu-section m-in-path\" role=\"group\" aria-label=\"Users &amp; companies\"><div class=\"m-menu-section-title\" aria-hidden=\"true\">Users &amp; companies</div><a class=\"m-dropdown-item\" href=\"/apps/users\">Users</a>", navbar);
+        Assert.Contains("<details class=\"m-tree-group m-in-path\" open><summary class=\"m-dropdown-item\"><span class=\"m-tree-label\">Access rights</span>", navbar);
+        Assert.Contains("<div class=\"m-tree-sub\" style=\"--m-depth:2\"><a class=\"m-dropdown-item active\" href=\"/apps/roles\" aria-current=\"page\">Roles</a>", navbar);
+        Assert.DoesNotContain("m-dropdown-columns", navbar);
+
+        var sidebar = ShellRenderer.Sidebar(view);
+        Assert.Contains("<li class=\"m-snav-item m-snav-branch m-in-path\"><details class=\"m-snav-group\" open><summary class=\"m-snav-link\"><span class=\"m-snav-title\">Access rights</span>", sidebar);
+        Assert.Contains("<ul class=\"m-snav-sub\" style=\"--m-depth:2\">", sidebar);
+        Assert.Contains("data-m-trail=\"Settings › Users &amp; companies › Access rights\"", sidebar);
+        Assert.DoesNotContain("m-snav-header", sidebar);
     }
 }

@@ -87,7 +87,7 @@ public static class SampleUi
     {
         "Hardware" => "cpu",
         "Software" => "code",
-        "Services" => "headset",
+        "Services" => "ant:customer-service",
         _ => "plug",
     };
 
@@ -139,7 +139,7 @@ public static class SampleUi
 
     /// <summary>Email side menu: folders in order with their icons.</summary>
     public static readonly (MailFolder Folder, string Icon)[] MailFolders =
-        [(MailFolder.Inbox, "mail"), (MailFolder.Sent, "send"), (MailFolder.Draft, "file-text"), (MailFolder.Starred, "star"), (MailFolder.Spam, "alert-octagon"), (MailFolder.Trash, "trash")];
+        [(MailFolder.Inbox, "mail"), (MailFolder.Sent, "send"), (MailFolder.Draft, "file-text"), (MailFolder.Starred, "star"), (MailFolder.Spam, "ant:stop"), (MailFolder.Trash, "trash")];
 
     public static MailFolder ParseFolder(string? folder) => Enum.TryParse<MailFolder>(folder, true, out var f) ? f : MailFolder.Inbox;
 

@@ -1,0 +1,60 @@
+@* Tour: a multi-step walkthrough over a mock dashboard, one step per placement (bottom, left, top, right) plus centred
+   intro and wrap-up steps. Arrow keys move between steps, Escape closes. *@
+<app-page-header pretitle="Plugins" title="Tour" subtitle="A guided walkthrough that spotlights parts of the page, one step at a time.">
+    <button type="button" class="ant-btn ant-btn-primary" x-data @@click="$dispatch('modulus-tour-open', 'plugins')"><app-icon type="play-circle" /><span>Start tour</span></button>
+    <button type="button" class="ant-btn ant-btn-default" x-data @@click="$dispatch('modulus-tour-open', 'plugins')"><app-icon type="reload" /><span>Restart tour</span></button>
+</app-page-header>
+
+<div class="m-tour-demo">
+    <div class="m-card m-tour-actions" id="tour-actions">
+        <div class="m-card-header"><h3 class="m-card-title">Quick actions</h3></div>
+        <div class="m-card-body m-tour-action-list">
+            <button type="button" class="ant-btn ant-btn-default ant-btn-block"><app-icon type="plus" /><span>New order</span></button>
+            <button type="button" class="ant-btn ant-btn-default ant-btn-block"><app-icon type="user-add" /><span>Invite teammate</span></button>
+            <button type="button" class="ant-btn ant-btn-default ant-btn-block"><app-icon type="download" /><span>Export report</span></button>
+        </div>
+    </div>
+
+    <div class="m-tour-main">
+        <div class="m-tour-kpis" id="tour-kpis">
+            @foreach (var k in PluginsContent.TourKpis)
+            {
+                <div class="m-card"><div class="m-card-body">
+                    <div class="m-subheader">@k.Label</div>
+                    <div class="m-tour-kpi"><span class="m-h2">@k.Value</span><span class="m-delta @(k.Up ? "m-delta-up" : "m-delta-down")">@k.Delta</span></div>
+                </div></div>
+            }
+        </div>
+        <div class="m-card" id="tour-orders">
+            <div class="m-card-header"><h3 class="m-card-title">Recent orders</h3></div>
+            <div class="ant-table-wrapper m-table-flush">
+                <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                    <table style="table-layout:auto">
+                        <thead class="ant-table-thead"><tr><th class="ant-table-cell">Order</th><th class="ant-table-cell">Customer</th><th class="ant-table-cell m-right">Total</th><th class="ant-table-cell">Status</th></tr></thead>
+                        <tbody class="ant-table-tbody">
+                            @foreach (var o in PluginsContent.TourOrders)
+                            {
+                                <tr class="ant-table-row"><td class="ant-table-cell m-medium m-heading m-nowrap">@o.Id</td><td class="ant-table-cell">@o.Customer</td><td class="ant-table-cell m-right m-nowrap">@o.Total</td><td class="ant-table-cell"><span class="ant-tag ant-tag-@o.Tone">@o.Status</span></td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div></div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card m-tour-filters" id="tour-filters">
+        <div class="m-card-header"><h3 class="m-card-title">Filters</h3></div>
+        <div class="m-card-body ant-form ant-form-vertical">
+            <app-form-item label="Period"><app-segmented name="period" items="@(new[] { "Week", "Month", "Year" })" value="Month" block /></app-form-item>
+            <app-form-item label="Channel"><app-segmented name="channel" items="@(new[] { "All", "Online", "Retail" })" value="All" block /></app-form-item>
+        </div>
+    </div>
+</div>
+
+<app-tour name="plugins" type="primary">
+    @foreach (var step in PluginsContent.TourSteps)
+    {
+        <tour-step title="@step.Title" description="@step.Description" target="@step.Target" cover="@step.Cover" placement="@step.Placement" />
+    }
+</app-tour>

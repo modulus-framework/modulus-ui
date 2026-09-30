@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Modulus.AspNetCore.Mvc;
 using Modulus.AspNetCore.Mvc.Htmx;
@@ -6,6 +7,7 @@ using Modulus.Samples.Shared;
 using Modulus.Samples.Web;
 using Modulus.Samples.Web.Models;
 using Modulus.Ui.Abstractions;
+using Modulus.Ui.Abstractions.Plugins;
 
 namespace Modulus.AdminTemplate.Mvc.Controllers;
 
@@ -19,6 +21,25 @@ public class TablesController : SampleController
     [HttpGet("advanced")]
     public IActionResult Advanced([FromQuery] EmployeeQuery query, [FromQuery] ProTableRequest request, string? hide) =>
         Page("Data table", "Tables/Advanced", EmployeeTablePage.Load(WithSearches(query), request, hide));
+
+    /// <summary>Large data: 100,000 shipments in pages, with infinite scrolling or in a virtual table (mode).</summary>
+    [HttpGet("large")]
+    public IActionResult Large(string? mode, [FromQuery] ShipmentFilter filter, [FromQuery] ProTableRequest request)
+    {
+        request.Searches = Request.Query.ColumnSearches();
+        return Page("Large data", "Tables/Large", LargeTablePage.Load(mode, filter, request));
+    }
+
+    /// <summary>More rows for the large-data table: the next infinite page (cursor) or a virtual block (current, pageSize).</summary>
+    [HttpGet("large/rows")]
+    public IActionResult LargeRows(string? mode, [FromQuery] ShipmentFilter filter, [FromQuery] ProTableRequest request)
+    {
+        request.Searches = Request.Query.ColumnSearches();
+        ViewData["RowsUrl"] = Request.Path + QueryString.Create(Request.Query
+            .Where(q => q.Key is not ("current" or "pageSize" or "cursor"))
+            .Select(q => new KeyValuePair<string, string?>(q.Key, q.Value.ToString())));
+        return PartialView("~/Views/Shared/Ui/Tables/_LargeRows.cshtml", LargeTablePage.Rows(mode, filter, request));
+    }
 
     /// <summary>CSV of the selected rows (ids) or of every row matching the filters.</summary>
     [HttpGet("advanced/export")]
@@ -34,6 +55,14 @@ public class TablesController : SampleController
     public IActionResult Tag([FromQuery] EmployeeQuery query, [FromQuery] ProTableRequest request, string? hide, [FromForm] int[] ids, [FromForm] string? label)
     {
         if (EmployeeLabelActions.Apply(ids, label) is { } message) Response.HxMessage(MessageType.Success, message);
+        return Page("Data table", "Tables/Advanced", EmployeeTablePage.Load(WithSearches(query), request, hide));
+    }
+
+    /// <summary>A row dragged to a new place on the page shown: stores the new order and re-renders the grid.</summary>
+    [HttpPost("advanced/move")]
+    public IActionResult Move([FromQuery] EmployeeQuery query, [FromQuery] ProTableRequest request, string? hide, [FromForm] string? move)
+    {
+        if (SortMove.TryParse(move, out var m)) EmployeeDirectory.Move(WithSearches(query), request, m);
         return Page("Data table", "Tables/Advanced", EmployeeTablePage.Load(WithSearches(query), request, hide));
     }
 

@@ -1,0 +1,92 @@
+@page "/plugins/date-picker"
+
+<PageTitle>Date picker · Modulus</PageTitle>
+
+<PageHeading Pretitle="Plugins" Title="Date picker" Subtitle="Dates, times, weeks, months, quarters and years; ranges with presets; disabled dates." />
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Date and time</h3><p class="m-card-subtitle">A date, a date with a time, or a time of day</p></div></div>
+            <div class="m-card-body ant-form ant-form-vertical">
+                <FieldItem Label="Invoice date"><DatePicker TValue="DateTime?" @bind-Value="_date" Style="width: 100%" /></FieldItem>
+                <FieldItem Label="Meeting starts"><DatePicker TValue="DateTime?" @bind-Value="_meeting" ShowTime="true" Style="width: 100%" /></FieldItem>
+                <FieldItem Label="Daily report at"><TimePicker TValue="DateTime?" @bind-Value="_report" Format="HH:mm" Style="width: 100%" /></FieldItem>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Week, month, quarter and year</h3><p class="m-card-subtitle">Pick a whole period instead of a day</p></div></div>
+            <div class="m-card-body ant-form ant-form-vertical">
+                <FieldItem Label="Sprint week"><DatePicker TValue="DateTime?" @bind-Value="_week" Picker="DatePickerType.Week" Style="width: 100%" /></FieldItem>
+                <FieldItem Label="Billing month"><DatePicker TValue="DateTime?" @bind-Value="_month" Picker="DatePickerType.Month" Style="width: 100%" /></FieldItem>
+                <FieldItem Label="Reporting quarter"><DatePicker TValue="DateTime?" @bind-Value="_quarter" Picker="DatePickerType.Quarter" Style="width: 100%" /></FieldItem>
+                <FieldItem Label="Fiscal year"><DatePicker TValue="DateTime?" @bind-Value="_year" Picker="DatePickerType.Year" Style="width: 100%" /></FieldItem>
+            </div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Range with presets</h3><p class="m-card-subtitle">One click fills both ends; Show orders submits the range</p></div></div>
+            <div class="m-card-body">
+                <div class="ant-form ant-form-vertical">
+                    <FieldItem Label="Order date"><RangePicker TValue="DateTime?[]" @bind-Value="_range" Ranges="_presets" Style="width: 100%" /></FieldItem>
+                    <button type="button" class="ant-btn ant-btn-primary" @onclick="ShowOrders"><Icon Type="search" /><span>Show orders</span></button>
+                </div>
+                <p class="m-muted m-mt-12">@(From is { Length: > 0 } && To is { Length: > 0 } ? $"Orders from {From} to {To}." : "No range submitted yet.")</p>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Disabled dates</h3><p class="m-card-subtitle">Delivery on weekdays, from tomorrow up to 60 days ahead</p></div></div>
+            <div class="m-card-body ant-form ant-form-vertical">
+                <FieldItem Label="Delivery date"><DatePicker TValue="DateTime?" DisabledDate="PluginsContent.DeliveryDisabled" Style="width: 100%" /></FieldItem>
+                <FieldItem Label="Delivery window"><RangePicker TValue="DateTime?[]" DisabledDate="PluginsContent.DeliveryDisabled" Style="width: 100%" /></FieldItem>
+                <p class="m-muted">Days outside the window and weekends can't be picked.</p>
+            </div>
+        </div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Sizes and states</h3><p class="m-card-subtitle">Small, middle and large; read-only and disabled</p></div></div>
+        <div class="m-card-body">
+            <div class="m-demo-row">
+                <DatePicker TValue="DateTime?" Size="InputSize.Small" />
+                <DatePicker TValue="DateTime?" />
+                <DatePicker TValue="DateTime?" Size="InputSize.Large" />
+                <DatePicker TValue="DateTime?" Value="DateTime.Today" InputReadOnly />
+                <DatePicker TValue="DateTime?" Value="DateTime.Today" Disabled />
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? From { get; set; }
+    [SupplyParameterFromQuery] public string? To { get; set; }
+
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
+    private DateTime? _date = DateTime.Today;
+    private DateTime? _meeting = DateTime.Today.AddDays(2).AddHours(10);
+    private DateTime? _report = DateTime.Today.AddHours(8.5);
+    private DateTime? _week = DateTime.Today;
+    private DateTime? _month = DateTime.Today;
+    private DateTime? _quarter = DateTime.Today;
+    private DateTime? _year = DateTime.Today;
+    private DateTime?[] _range = [null, null];
+
+    private readonly Dictionary<string, DateTime?[]> _presets = PluginsContent.RangePresets.ToDictionary(
+        p => p.Label, p => new DateTime?[] { p.From.ToDateTime(TimeOnly.MinValue), p.To.ToDateTime(TimeOnly.MinValue) });
+
+    protected override void OnParametersSet()
+    {
+        _range = [Parse(From), Parse(To)];
+
+        static DateTime? Parse(string? s) => DateOnly.TryParseExact(s, "yyyy-MM-dd", out var d) ? d.ToDateTime(TimeOnly.MinValue) : null;
+    }
+
+    // Same URL as the MVC form: ?from=yyyy-MM-dd&to=yyyy-MM-dd.
+    private void ShowOrders()
+    {
+        if (_range is not [{ } a, { } b]) return;
+        Nav.NavigateTo($"/plugins/date-picker?from={a:yyyy-MM-dd}&to={b:yyyy-MM-dd}");
+    }
+}

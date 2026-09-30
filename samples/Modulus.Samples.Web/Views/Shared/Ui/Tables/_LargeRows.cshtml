@@ -1,0 +1,30 @@
+@model LargeTablePage
+@* Rows of the large-data table: the page's rows, a block for the virtual table, or the next infinite page with the
+   next <app-load-more>. ViewData["RowsUrl"] is the rows endpoint with the table's filters and sort. *@
+@{
+    var rowsUrl = ViewData["RowsUrl"] as string ?? "";
+    static string Tone(ShipmentStatus s) => s switch
+    {
+        ShipmentStatus.Pending => "yellow",
+        ShipmentStatus.Packed => "azure",
+        ShipmentStatus.Shipped => "blue",
+        ShipmentStatus.Delivered => "green",
+        _ => "red",
+    };
+}
+@foreach (var s in Model.Page.Items)
+{
+    <tr class="ant-table-row ant-table-row-level-0" data-row-key="@s.Id">
+        <td class="ant-table-cell"><span class="m-num m-heading">@s.Reference</span></td>
+        <td class="ant-table-cell">@s.Customer</td>
+        <td class="ant-table-cell"><span class="m-muted">@s.City</span></td>
+        <td class="ant-table-cell"><span class="m-badge m-badge-@Tone(s.Status)-lt">@s.Status</span></td>
+        <td class="ant-table-cell" style="text-align:right"><span class="m-num">@Fmt.Money(s.Amount)</span></td>
+        <td class="ant-table-cell"><span class="m-num m-muted">@s.Date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</span></td>
+    </tr>
+}
+@if (Model.Mode == "infinite")
+{
+    <app-load-more url="@rowsUrl" cursor="@Model.Page.NextCursor" colspan="6"
+                   end-text="@($"All {(Model.Page.Offset + Model.Page.Items.Count).ToString("N0")} shipments loaded")" />
+}

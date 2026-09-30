@@ -41,6 +41,32 @@ public static class EmployeeDirectory
 
     public static IReadOnlyList<Employee> All { get; } = Seed();
 
+    // The order rows are dragged into (ids), used whenever no column sort is on; kept in memory for the whole app.
+    private static readonly Lock OrderGate = new();
+    private static readonly List<string> Order = [.. All.Select(e => Key(e.Id))];
+    private static Dictionary<int, int> _rank = Rank();
+
+    private static string Key(int id) => id.ToString(CultureInfo.InvariantCulture);
+
+    private static Dictionary<int, int> Rank() => Order.Select((id, i) => (Id: int.Parse(id, CultureInfo.InvariantCulture), i)).ToDictionary(x => x.Id, x => x.i);
+
+    /// <summary>Stores a page's rows in the order they were dragged to (see <see cref="GridSchema.Reorder"/>).</summary>
+    public static void Reorder(IEnumerable<string> pageOrder)
+    {
+        lock (OrderGate)
+        {
+            GridSchema.Reorder(Order, pageOrder, id => id);
+            _rank = Rank();
+        }
+    }
+
+    /// <summary>A row dragged on the page <paramref name="request"/> shows (the MVC table posts the move): stores the page's new order.</summary>
+    public static void Move(EmployeeQuery query, ProTableRequest request, Modulus.Ui.Abstractions.Plugins.SortMove move)
+    {
+        if (request.SortField is not null) return; // a column sort decides the order then
+        Reorder(move.Within(Query(query, request).Data.Select(e => Key(e.Id))));
+    }
+
     public static string StatusLabel(EmployeeStatus s) => s == EmployeeStatus.OnLeave ? "On leave" : s.ToString();
 
     /// <summary>The fields of an expanded row on the data table (both flavours render these).</summary>
@@ -112,8 +138,9 @@ public static class EmployeeDirectory
     public static ProTableResponse<Employee> Query(EmployeeQuery query, ProTableRequest request)
     {
         var rows = Filter(query);
+        var rank = _rank;
         rows = request.SortField is null
-            ? rows.OrderBy(e => e.Id)
+            ? rows.OrderBy(e => rank.GetValueOrDefault(e.Id, int.MaxValue))
             : rows.SortBy(request, nameof(Employee.Name), e => e.Name)
                   .SortBy(request, nameof(Employee.Position), e => e.Position)
                   .SortBy(request, nameof(Employee.Department), e => e.Department)

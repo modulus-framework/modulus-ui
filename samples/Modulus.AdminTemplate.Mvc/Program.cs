@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Modulus.AspNetCore.Mvc;
 using Modulus.Samples.Shared;
 using Modulus.Ui.Abstractions.Navigation;
@@ -14,6 +15,20 @@ builder.Services.AddModulusMvc(theme => builder.Configuration.GetSection("Modulu
 builder.Services.AddTransient<IMenuContributor, AdminMenuContributor>();
 builder.Services.AddSingleton<IShellContentProvider, SampleShellContentProvider>();
 
+// Cookie sign-in (SampleAuth). With Samples:RequireSignIn every page but the sign-in and error pages needs it.
+builder.Services.AddAuthentication(SampleAuth.Scheme).AddCookie(o =>
+{
+    o.LoginPath = SampleAuth.LoginPath;
+    o.LogoutPath = SampleAuth.LogoutPath;
+    o.AccessDeniedPath = SampleAuth.DeniedPath;
+    o.SlidingExpiration = true;
+});
+builder.Services.AddAuthorization(o =>
+{
+    if (builder.Configuration.GetValue<bool>(SampleAuth.RequireSignInKey))
+        o.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+});
+
 builder.Services.AddSingleton<SampleStore>();
 builder.Services.AddSingleton<ProjectGridStore>();
 builder.Services.AddSingleton<GarmentStore>();
@@ -27,10 +42,13 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStatusCodePagesWithReExecute("/not-found");
 app.UseHttpsRedirection();
+// Request culture from the theme settings language picker (Modulus:Theme:Cultures).
+app.UseModulusLocalization();
 app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapStaticAssets();
+app.MapStaticAssets().AllowAnonymous();
 app.MapControllers().WithStaticAssets();
 
 app.Run();

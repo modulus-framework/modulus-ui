@@ -119,6 +119,18 @@ public enum ThemeFont
     Mono,
 }
 
+/// <summary>Spacing and type size of the whole interface (SAP Fiori's "compact" and "cozy").</summary>
+public enum ThemeDensity
+{
+    /// <summary>
+    /// Data-dense, for ERP screens: 13 px text, 30 px controls, 32 px table rows and a tighter menu. Body text stays at 13 px,
+    /// small print at 12 px (11 px for uppercase labels), contrast is unchanged and every control stays above the 24 px WCAG 2.2 target size.
+    /// </summary>
+    Compact,
+    /// <summary>Tabler's spacing: 14 px text, 36 px controls, roomier cards and menus.</summary>
+    Comfortable,
+}
+
 /// <summary>Neutral palette of surfaces, borders and text (Tabler's "theme base").</summary>
 public enum ThemeBase
 {
@@ -201,17 +213,24 @@ public class ModulusThemeOptions
         ["teal"] = "#0ca678",
     };
 
-    /// <summary>Show the theme settings panel (colour mode, scheme, font, base, radius, layout presets, layout, sidebar, header, menu, width, direction).</summary>
+    /// <summary>Show the theme settings panel (colour mode, scheme, base, density, font, radius, layout presets, layout, sidebar, header, menu, width, direction).</summary>
     public bool ShowCustomizer { get; set; } = true;
 
-    /// <summary>Sidebar / legacy ProLayout sider width in px.</summary>
+    /// <summary>
+    /// Languages offered in the theme settings panel, as culture names ("en-US", "de-DE" …); the first is the default. With two or
+    /// more the panel shows a language picker that sets the request culture (see <see cref="ModulusCulture"/>); the app must call
+    /// <c>UseRequestLocalization</c> with the same cultures (MVC: <c>app.UseModulusLocalization()</c>).
+    /// </summary>
+    public List<string> Cultures { get; set; } = [];
+
+    /// <summary>Sidebar / legacy ProLayout sider width in px (comfortable density; compact uses 224).</summary>
     public int SiderWidth { get; set; } = 240;
 
-    /// <summary>Header height in px (Ant Design Pro uses 56).</summary>
+    /// <summary>Header height in px (Ant Design Pro uses 56) for comfortable density; compact uses 48.</summary>
     public int HeaderHeight { get; set; } = 56;
 
-    /// <summary>Tighter control heights and table padding for data-dense screens.</summary>
-    public bool Compact { get; set; }
+    /// <summary>Spacing and type size: compact (data-dense, the default) or comfortable.</summary>
+    public ThemeDensity Density { get; set; } = ThemeDensity.Compact;
 
     /// <summary>Footer copyright line. Null hides the copyright.</summary>
     public string? Copyright { get; set; } = $"{DateTime.UtcNow.Year} Modulus";
@@ -219,11 +238,23 @@ public class ModulusThemeOptions
     /// <summary>Version label shown in the footer, e.g. "v1.0.0". Null hides it.</summary>
     public string? Version { get; set; }
 
+    /// <summary>
+    /// MVC / Razor Pages: SPA-style navigation. Links and forms inside the shell load through htmx (<c>hx-boost</c>), the
+    /// server answers with only the page body and the navigation, and the shell, scripts and Alpine state stay loaded.
+    /// Pages that aren't in the shell (sign-in, status pages, downloads) still load normally. Blazor has its own enhanced
+    /// navigation and ignores this.
+    /// </summary>
+    public bool SpaNavigation { get; set; }
+
+    /// <summary>With <see cref="SpaNavigation"/>: fetch a page when the pointer rests on its link, so the click shows it at once.</summary>
+    public bool SpaPrefetch { get; set; } = true;
+
     /// <summary>Returns a copy, so per-request overrides (theme settings cookies) never touch the singleton.</summary>
     public ModulusThemeOptions Clone()
     {
         var copy = (ModulusThemeOptions)MemberwiseClone();
         copy.ColorPresets = new Dictionary<string, string>(ColorPresets);
+        copy.Cultures = [.. Cultures];
         return copy;
     }
 }

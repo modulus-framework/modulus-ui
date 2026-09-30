@@ -90,7 +90,7 @@ public readonly record struct AntColor(double R, double G, double B, double A = 
         return new AntColor(r * 255, g * 255, b * 255);
     }
 
-    private (double H, double S, double L) ToHsl()
+    internal (double H, double S, double L) ToHsl()
     {
         double r = R / 255, g = G / 255, b = B / 255;
         double max = Math.Max(r, Math.Max(g, b)), min = Math.Min(r, Math.Min(g, b));
@@ -107,7 +107,7 @@ public readonly record struct AntColor(double R, double G, double B, double A = 
         return (h, s, l);
     }
 
-    private static AntColor FromHsl(double h, double s, double l, double a)
+    internal static AntColor FromHsl(double h, double s, double l, double a)
     {
         if (s == 0) return new AntColor(l * 255, l * 255, l * 255, a);
         static double Hue(double p, double q, double t)

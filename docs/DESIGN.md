@@ -34,10 +34,12 @@ Why Modulus is built the way it is, and which conventions come from which Ant De
 ## 2. Architecture
 
 ```
-Modulus.Ui.Abstractions   theme options + palette, menus, ProTable request/response, chart geometry  (no UI deps)
+Modulus.Ui.Abstractions   theme options + palette, menus, ShellRenderer, ProTable request/response, TableQuery,
+        │                 Paging, chart geometry, form rules, plugin renderers  (no UI deps)
         │
-Modulus.Ui.Assets         modulus.css (tokens, v5 refresh, Pro primitives), modulus-theme.js, modulus-mvc.js,
-        │                 htmx 2.0.11, Alpine 3.17.4; brings AntDesign + ProLayout static CSS to every flavor
+Modulus.Ui.Assets         modulus*.css (tokens, v5 refresh, shell, pages), antd-dark-brand.css, modulus-*.js
+        │                 (theme, shell, mvc, widgets, plugins, spa, virtual), htmx 2.0.11, Alpine 3.17.4,
+        │                 Leaflet, Quill, jsVectorMap; brings AntDesign + ProLayout static CSS to every flavor
    ┌────┴─────────────┐
 Modulus.Blazor         Modulus.AspNetCore.Mvc
 App* aliases, ProLayout    tag helpers, _ModulusLayout, htmx response helpers, AntIcons
@@ -51,6 +53,16 @@ charts
   `ant-design-blazor.variable.css` reads (`--ant-primary-color`, `-hover`, `-active`, `-outline`, `--ant-primary-1..10`, …),
   computed with antd's own `registerTheme` rules, plus `--m-*` tokens for the Modulus layer.
 - Dark mode uses AntDesign's `dark.css`. Modulus tokens have dark overrides under `html[data-theme='dark']`.
+- `dark.css` hard-codes antd's blue shades, so the brand colour would stop at the light theme. `antd-dark-brand.css`
+  repeats only the declarations that use one of those shades (`AntDarkBrand.Sources`), each shade as a `--m-adp-*`
+  variable, and `ThemeCss.Build` sets the variables from the brand: `AntDarkBrand.Recolor` turns each shade's hue by as
+  much as the brand's dark primary differs from antd's. The file is generated from the pinned package
+  (`tools/antd-drift -- --write-dark-brand`) and the drift check fails when it no longer matches. Selectors for the
+  `-blue` preset keep antd's blue.
+- Localization: `ModulusThemeOptions.Cultures` lists the languages. The settings panel writes the standard
+  `.AspNetCore.Culture` cookie (`ModulusCulture.CookieValue`) and reloads; the host's `UseRequestLocalization`
+  (`app.UseModulusLocalization()` in MVC) sets the request culture, and AntD's `LocaleProvider`, the tag helpers and
+  the number and date formatting follow it. `ModulusCulture.Match` picks the closest supported culture.
 - Layout settings are attributes on `<html>` (`data-layout`, `data-width`, `data-header`, `data-topbar`, `data-side`,
   `data-sidebar`, `data-fold`, `dir`) that `modulus-theme.js` sets from cookies before first paint, so the shell switches
   without a server round trip; CSS in `modulus-shell.css` does the rest. `ShellRenderer.Header` wraps the header row and
@@ -70,6 +82,11 @@ charts
   own tenancy: the app names the current tenant, or lets the switcher keep it in the `modulus-tenant` cookie. The
   interactive Blazor circuit has no `HttpContext`, so the host reads the cookie while prerendering and passes
   `AppShell TenantId`. Switching reloads the page, so every server-rendered part picks up the new tenant.
+- Nested menus are trees, not columns. A navbar dropdown is one list (`.m-tree`): a group directly under it is a
+  section (`.m-menu-section`, a bold heading with its entries indented, as in Odoo's app menus) and deeper groups are
+  `<details class="m-tree-group">` that fold open in place, indented by `--m-depth`. In the sidebar, groups below the
+  top level are folding branches (`.m-snav-branch`). Branches on the path to the current page render open
+  (`m-in-path`), so the server paints the right state with no script; the folded sidebar's flyout shows the same tree.
 - `ModulusLayout` is the alternative Ant Design Pro shell. It wraps `BasicLayout`, converts `MenuItemDefinition` →
   `MenuDataItem`, hides items the user isn't authorized for and renders the footer via `FooterView`.
 - Pro components are plain Razor over Ant Design components. They never touch AntDesign internals.
@@ -180,6 +197,57 @@ charts
   that slides the sidebar in as a drawer; below 768 px search collapses to an icon. Layout choices live in cookies,
   so the server renders them on the first paint.
 
+### SPA navigation (MVC / Razor Pages)
+
+`ModulusThemeOptions.SpaNavigation` turns the shell into a single-page app without a client framework:
+
+- `_ModulusLayout` puts `hx-boost` on `<body>`. A boosted request (`Request.IsBoosted()`) gets a fragment: `<title>`,
+  the sidebar and header as out-of-band swaps (they show the active item, the app's menu and the breadcrumb), the app
+  launcher only when the app changed (`X-Modulus-App`), and `<main>` with the page's `Head` and `Scripts` sections.
+  `SpaNavigation.PrepareFragment` marks it (`X-Modulus-Fragment`). The client swaps a page navigation (nearest `hx-boost`
+  is `<body>`) into `#main`; a boost area of its own (a list's filters and pager) keeps its `hx-target` and `hx-select`.
+- `Request.IsHtmx()` is false for boosted requests: controllers answer them like a browser (redirects, pages).
+- `modulus-spa.js` loads anything that isn't a fragment (a page outside the shell, an error page, a file) as a whole
+  page, aborts a navigation still in flight, shows a delayed progress bar, prefetches on hover (one use, 30 s),
+  restores the sidebar and scroll positions, closes overlays and moves focus to `#main`.
+- Back and forward reload `.m-page` (the `hx-history-elt`) from the server: htmx keeps no snapshots, because
+  DOM that Alpine rendered would be initialised twice.
+- Page scripts: `Modulus.onPage(fn)` runs on every page view, `Modulus.page(fn)` for this page only; either may
+  return a cleanup that runs when the user leaves. External scripts a fragment brings are skipped when the page
+  already has them.
+
+### Large data
+
+- `TableQuery<T>` (`Modulus.Ui.Abstractions.Data`) turns a `ProTableRequest` into an `IQueryable` the database runs:
+  registered sorts and column searches only (anything else in the query string is ignored), order by the sort key then
+  the id, `Skip`/`Take` for numbered pages, and a keyset cursor (`WHERE key > v OR (key = v AND id > i)`) for the rows
+  after a page. `CountMode.None` skips `COUNT(*)` and reads one extra row to know whether more follow. Nullable keys and
+  types SQL can't compare fall back to the cursor's offset. Values go into the query as parameters.
+- MVC: `<app-load-more>` (infinite scroll: replaces itself with the next rows when revealed) and `<app-virtual-table>`
+  with `modulus-virtual.js` (only the rows in view are in the DOM; server-rendered `<tr>` blocks by page number, cached,
+  cancelled when scrolled past, the first block seeded with the page). Blazor uses `Virtualize` over the same query.
+- A page's own boost area (`hx-sync="#area:replace"`) cancels a filter or sort request still running when another starts.
+
+### Plugins
+
+- **One renderer, two front ends.** Each plugin's markup is a static class in `Modulus.Ui.Abstractions.Plugins`
+  (`EditorHtml`, `MapHtml`, `MediaPlayerHtml`, `SortableHtml`); the Blazor component and the tag helper both call it,
+  so they emit the same DOM. `modulus-plugins.js` finds the `[data-m-*]` roots (`data-m-editor`, `data-m-map`,
+  `data-m-vector-map`, `data-m-player`, `data-m-sortable`) and wires them in both flavours, after htmx swaps and Blazor
+  renders alike.
+- **Libraries load on first use.** Quill, Leaflet and jsVectorMap are vendored in `Modulus.Ui.Assets/wwwroot/lib` and
+  loaded (script and CSS) only when a page has a matching root, so pages without a plugin pay nothing. Maps and the
+  editor wrap the library; the media player and sortable are Modulus code.
+- **Values post as form fields.** The editor writes its HTML into a hidden input (`[data-m-editor-value]`) and raises
+  `change`; Sortable writes the order. Servers clean editor HTML with `RichText.Sanitize(images: true)`.
+- **One sortable engine** moves list items, cards and table rows. On a table (`data-m-sort-rows` around it,
+  `data-m-sort-row` on the handle) it drags by the handle only, carries expanded and nested rows with their row, uses
+  a one-row table as the ghost and skips hidden rows. Up, Down, Home and End on a focused handle move the row, and a
+  live region reads out the move. Blazor gets the move as a `RowMove` and reorders itself (`EditableGrid`,
+  `ProTable.OnRowMove`); in MVC the DOM moves, so the grid posts its rows in the new order. Only the page's rows swap
+  slots (`GridSchema.Reorder`, `SortMove.Within`), and handles lock while a column sort is on, because a sorted view
+  has no order to change.
+
 ### Samples
 
 - One page, three hosts. MVC and Razor Pages render the same page bodies from `Modulus.Samples.Web/Views/Shared/Ui/**`:
@@ -189,6 +257,9 @@ charts
   chart series) live in `Modulus.Samples.Shared`, because the Blazor sample does not reference `Samples.Web`.
 - Blazor pages reproduce the MVC markup where a component would differ (for example `FieldItem`, which emits the same
   form-item DOM as `app-form-item`), so screenshots of the same URL match.
+- Sign-in is a real cookie sign-in against the in-memory sample users (`SampleAuth`: check, principal, safe return
+  URL). Blazor posts the form to `/auth/sign-in` through `modulusShell.submit`, because an interactive circuit cannot
+  set cookies. `Samples:RequireSignIn` requires sign-in on every page except the auth and error pages.
 
 ## 3. Conventions
 
@@ -201,11 +272,15 @@ charts
 | Feedback | Toast (`message`) for success; inline form errors for validation; `Result` pages for 403/404/500 |
 | KPIs | `StatisticCard`: label, headline value, 46 px chart slot, divider, footer metric; trends always carry text, never colour alone |
 | Charts | One series per chart, one axis from zero, recessive grid, hover tooltips, a screen-reader table |
-| Icons | Tabler icons (`<Ti Name="users" />` / `<app-ti name="users" />`, from one SVG sprite) for page content and navigation; Ant Design icons inside Ant Design controls |
-| Menus | Modules add items through `IMenuContributor`; `Order` 0–99 for app sections, 90+ for settings |
+| Icons | Tabler icons (`<Ti Name="users" />` / `<app-ti name="users" />`, from one SVG sprite) for page content and navigation; Ant Design icons inside Ant Design controls, on grid toolbars and on plugin pages (a Tabler name missing from the sprite uses an `ant:` icon instead) |
+| Menus | Modules add items through `IMenuContributor`; `Order` 0–99 for app sections, 90+ for settings. In a menu, plain entries come first, then sections |
+| Page scripts (MVC) | `Modulus.page(fn)` or `Modulus.onPage(fn)`, returning a cleanup if needed, never `DOMContentLoaded`, so pages work with SPA navigation |
 
 ## 4. Roadmap (not built yet)
 
-- Localization: bind `LocaleProvider` to the request culture.
-- Brand colour in dark mode once AntDesign ships variable-based dark CSS, or a generated dark override.
+See [PLAN.md](PLAN.md) for status. Not started:
+
+- A Fluid (Liquid) flavour: `Modulus.AspNetCore.Fluid` with a Liquid layout and tag expander.
+- Hardening: error policy, CSP nonce, compression and caching, observability.
+- Quality gates in CI: parity snapshots, Playwright flows, performance budgets.
 - Replace `AntIcons` reflection if AntDesign makes its icon store public.

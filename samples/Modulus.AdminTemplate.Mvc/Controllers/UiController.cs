@@ -16,6 +16,15 @@ public class UiController : SampleController
     [HttpGet("charts")]
     public IActionResult Charts() => Page("Charts", "Ui/Charts");
 
+    [HttpGet("icons")]
+    public IActionResult Icons() => Page("Icons", "Ui/Icons");
+
+    [HttpGet("typography")]
+    public IActionResult Typography() => Page("Typography", "Ui/Typography");
+
+    [HttpGet("colors")]
+    public IActionResult Colors() => Page("Colours", "Ui/Colors");
+
     /// <summary>The customer picker's "Add customer" modal: the form again with errors, or a fresh one after a save.</summary>
     [HttpPost("components/customer")]
     public IActionResult Customer([FromServices] SampleStore store, CustomerInput input)

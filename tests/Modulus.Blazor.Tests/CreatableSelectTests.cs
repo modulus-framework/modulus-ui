@@ -29,7 +29,9 @@ public class CreatableSelectTests : BunitContext
 
         // An unknown colour takes the next one in turn; a taken key gets a number.
         var (_, next, _) = GridSchema.AddOption([.. Colors, new("green", "Leaf", "green")], "Green", "#123456");
-        Assert.Equal(new GridOption("green2", "Green", GridSchema.OptionColors[3]), next);
+        Assert.Equal(new GridOption("green2", "Green", GridSchema.PickerColors[3]), next);
+        Assert.Equal("Pink", GridSchema.ColorName("magenta"));
+        Assert.Equal(GridSchema.PickerColors[1], GridSchema.NextColor(GridSchema.PickerColors.Count + 1));
     }
 
     [Theory]
@@ -75,8 +77,16 @@ public class CreatableSelectTests : BunitContext
         cut.Find(".ant-select-selector").Click();
         Assert.Equal("true", cut.Find(".ant-select-selector").GetAttribute("aria-expanded"));
         Assert.Equal(["Red", "Blue"], cut.FindAll(".ant-select-item-option").Select(o => o.TextContent));
-        Assert.Equal(GridSchema.OptionColors.Count, cut.FindAll(".m-cselect-swatch").Count);
+        Assert.Empty(cut.FindAll(".m-cselect-swatch")); // creating is a separate step
+
+        cut.Find(".m-cselect-create").Click();
+        Assert.Empty(cut.FindAll(".ant-select-item-option")); // the form takes the list's place
+        Assert.Equal(GridSchema.PickerColors.Count, cut.FindAll(".m-cselect-swatch").Count);
         Assert.Equal("true", cut.Find(".m-cselect-swatch.ant-tag-orange").GetAttribute("aria-checked")); // third colour for a third option
+        Assert.Equal("Orange", cut.Find(".m-cselect-color-name").TextContent);
+        Assert.Equal("Pink", cut.Find(".m-cselect-swatch.ant-tag-magenta").GetAttribute("aria-label"));
+
+        cut.Find(".m-cselect-cancel").Click();
 
         cut.FindAll(".ant-select-item-option")[1].Click();
         Assert.Equal("blue", value);
@@ -93,6 +103,7 @@ public class CreatableSelectTests : BunitContext
             .Add(s => s.OptionsChanged, o => options = o)
             .Add(s => s.ValueChanged, v => value = v));
         cut.Find(".ant-select-selector").Click();
+        cut.Find(".m-cselect-create").Click();
 
         cut.Find(".m-cselect-add input").Input("red");
         cut.Find(".m-cselect-add-btn").Click();
@@ -147,6 +158,7 @@ public class CreatableSelectTests : BunitContext
 
         Assert.Equal("ant-select-selection-item m-cselect-tag ant-tag-red", cut.Find(".ant-select-selection-item").GetAttribute("class"));
         cut.Find(".ant-select-selector").Click();
+        cut.Find(".m-cselect-create").Click();
         cut.Find(".m-cselect-add input").Input("Teal");
         cut.Find(".m-cselect-add-btn").Click();
 

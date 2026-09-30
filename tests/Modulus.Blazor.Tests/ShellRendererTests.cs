@@ -50,13 +50,42 @@ public class ShellRendererTests
     }
 
     [Fact]
-    public void OverlayLauncher_GreetsTheUser_FilesAppsUnderTheirGroups_AndMarksTheCurrentApp()
+    public void AppSwitchers_WithManyApps_AddAFilter_FileAppsUnderGroups_AndWiden()
+    {
+        var sales = new MenuItemDefinition("sales", "Sales", null, "shopping-cart");
+        sales.Children.Add(new MenuItemDefinition("orders", "Orders", "apps/orders"));
+        var apps = Enumerable.Range(1, 14)
+            .Select(i => new ShellApp($"App {i}", $"apps/{i}", "box") { Group = i <= 7 ? "Operations" : "Finance" })
+            .Prepend(new ShellApp("Sales", "apps/orders", "shopping-cart", "orange") { MenuKey = "sales", Group = "Operations" })
+            .ToList();
+        var view = new ShellView(new ModulusThemeOptions(), [sales], "apps/orders", new ShellContent { Apps = apps, AppLauncher = AppLauncherStyle.Overlay });
+
+        var navbar = ShellRenderer.Navbar(view);
+        Assert.Contains("""<div class="m-dropdown-menu m-module-menu m-module-menu-wide" data-m-app-menu>""", navbar);
+        Assert.Contains("""<span class="m-app-menu-count">15 apps</span>""", navbar);
+        Assert.Contains("data-m-app-filter", navbar);
+        Assert.Equal(2, navbar.Split("""<section class="m-app-menu-group" """).Length - 1);
+        Assert.Contains("""<a class="m-module-item active" href="/apps/orders" style="--m-app-tone: var(--m-orange)" aria-current="true">""", navbar);
+        Assert.Contains("data-m-launcher-open", navbar);
+
+        var topbar = ShellRenderer.Topbar(View(new ShellContent { Apps = apps }));
+        Assert.Contains("m-apps-menu m-apps-menu-wide", topbar);
+        Assert.Contains("""<div class="m-dropdown-header">Finance</div>""", topbar);
+
+        // A handful of apps: no filter, one column, no group headings when no app has a group.
+        var few = ShellRenderer.Topbar(View(new ShellContent { Apps = apps.Take(3).Select(a => a with { Group = null }).ToList() }));
+        Assert.DoesNotContain("data-m-app-filter", few);
+        Assert.DoesNotContain("m-apps-menu-wide", few);
+        Assert.DoesNotContain("m-dropdown-header", few);
+    }
+
+    [Fact]
+    public void OverlayLauncher_ShowsOneGridWithGroupsTogether_AndMarksTheCurrentApp()
     {
         var sales = new MenuItemDefinition("sales", "Sales", null, "shopping-cart");
         sales.Children.Add(new MenuItemDefinition("orders", "Orders", "apps/orders"));
         var view = new ShellView(new ModulusThemeOptions(), [sales], "apps/orders", new ShellContent
         {
-            User = new ShellUser("Serena Park"),
             AppLauncher = AppLauncherStyle.Overlay,
             Apps =
             [
@@ -68,15 +97,13 @@ public class ShellRendererTests
 
         var html = ShellRenderer.AppLauncher(view);
 
-        Assert.Contains("""<h2 class="m-launcher-title" id="m-launcher-title" data-m-greeting="Serena">Welcome back, Serena</h2>""", html);
-        // One section per group, in order of first use; Invoicing joins Sales although Email comes between them.
-        Assert.Equal(2, html.Split("""<section class="m-launcher-group">""").Length - 1);
-        var finance = html.IndexOf("Sales &amp; finance</h3>", StringComparison.Ordinal);
-        Assert.True(finance < html.IndexOf(">Invoicing<", StringComparison.Ordinal));
-        Assert.True(html.IndexOf(">Invoicing<", StringComparison.Ordinal) < html.IndexOf("Productivity</h3>", StringComparison.Ordinal));
-        Assert.Contains("""<a class="m-launcher-app active" href="/apps/orders" data-m-launcher-name="Sales Orders &amp; customers Sales &amp; finance" aria-current="true">""", html);
-        Assert.Contains("""<span class="m-launcher-desc">Orders &amp; customers</span></span><span class="m-launcher-open-tag">Open</span>""", html);
-        Assert.Contains("""<aside class="m-launcher-rail" data-m-recent hidden>""", html);
+        // One grid, no headings or greeting (Odoo's home menu); Invoicing joins Sales although Email comes between them.
+        Assert.Equal(1, html.Split("""<div class="m-launcher-grid">""").Length - 1);
+        Assert.DoesNotContain("<h2", html);
+        Assert.DoesNotContain("<h3", html);
+        Assert.True(html.IndexOf(">Invoicing<", StringComparison.Ordinal) < html.IndexOf(">Email<", StringComparison.Ordinal));
+        Assert.Contains("""<a class="m-launcher-app active" href="/apps/orders" style="--m-app-tone: var(--m-orange); --m-i: 0" data-m-launcher-name="Sales Orders &amp; customers Sales &amp; finance" title="Orders &amp; customers" aria-current="true">""", html);
+        Assert.Contains("""<span class="m-launcher-name">Sales</span></a>""", html);
         Assert.Empty(ShellRenderer.AppLauncher(View(new ShellContent { Apps = view.Content.Apps })));
     }
 

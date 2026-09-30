@@ -5,7 +5,7 @@
     Columns can be pinned left or right (Ant Design fixed columns), hidden, reordered, resized, removed and added.
     Like the data table it has a search box, a filter row (Filterable columns), row selection with a batch bar
     (set a value, export, delete) and CSV export. Every column header sorts (ascending, descending, unsorted) and
-    has a column search (ColumnHeader).
+    has a column search (ColumnHeader). Rows drag by their handle to a new place (RowDraggable).
 
     <EditableGrid Columns="_columns" Rows="_rows" HeaderTitle="Projects" OnSave="SaveAsync">
         <RowDetail>…@context["notes"]…</RowDetail>
@@ -15,28 +15,59 @@
 *@
 @using System.Globalization
 @using AntDesign.TableModels
+@using Modulus.Ui.Abstractions.Plugins
 @implements IDisposable
 @implements IColumnHeaderHost
 @inject IJSRuntime JS
 
 <Card Bordered="false" Id="@_gridId" Class="@($"m-table-card m-grid{(Resizable ? " m-resizable" : "")} {Class}")">
+    @* One compact toolbar for every grid level: the title and count on the left; on the right the unsaved-changes
+       count with Discard and Save, then icon buttons with tooltips (search, filter row, columns, add row, reload)
+       and a "More" menu (export, add column, density). modulus-shell.js adds the keys: Ctrl+S saves, Insert adds a
+       row, Ctrl+F searches, the arrow keys move between cells. *@
     <div class="m-table-toolbar">
         <div class="m-table-toolbar-title">
             @HeaderTitle
             @TitleExtra
-            @if (_dirty)
-            {
-                <span class="m-grid-dirty"><Badge Status="BadgeStatus.Warning" Text="Unsaved changes" /></span>
-            }
         </div>
         <div class="m-table-toolbar-actions">
+            @if (_dirty)
+            {
+                <span class="m-grid-dirty" role="status"><span class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-warning"></span><span class="ant-badge-status-text">@ChangesText</span></span></span>
+                if (OnDiscard.HasDelegate)
+                {
+                    <button type="button" class="ant-btn ant-btn-text m-grid-discard" @onclick="DiscardAsync"><span>Discard</span></button>
+                }
+            }
+            @if (OnSave.HasDelegate)
+            {
+                <button type="button" class="@($"ant-btn {(_dirty ? "ant-btn-primary" : "ant-btn-default")} m-grid-save{(_saving ? " ant-btn-loading" : "")}")" title="Save (Ctrl+S)"
+                        data-m-grid-save disabled="@_saving" @onclick="SaveAsync"><Icon Type="@(_saving ? "loading" : "save")" Spin="_saving" /><span>Save</span></button>
+            }
             @if (Searchable)
             {
-                <Input TValue="string" Value="_keyword" ValueChanged="SearchChanged" BindOnInput AllowClear
-                       Placeholder="@($"Search {(HeaderTitle ?? "rows").ToLowerInvariant()}…")" Class="m-table-toolbar-search m-grid-search"
-                       Prefix="SearchIcon" aria-label="@($"Search {HeaderTitle ?? "rows"}")" />
+                if (SearchShown)
+                {
+                    <Input TValue="string" Value="_keyword" ValueChanged="SearchChanged" BindOnInput AllowClear AutoFocus="_searchOpen"
+                           Placeholder="@($"Search {(HeaderTitle ?? "rows").ToLowerInvariant()}…")" Class="m-table-toolbar-search m-grid-search"
+                           Prefix="SearchIcon" aria-label="@($"Search {HeaderTitle ?? "rows"}")" OnBlur="SearchBlur" />
+                }
+                else
+                {
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-table-search-toggle" aria-label="@($"Search {HeaderTitle ?? "rows"}")" title="Search (Ctrl+F)"
+                            data-m-search-toggle @onclick="() => _searchOpen = true"><Icon Type="search" /></button>
+                }
             }
             @ToolBar
+            @if (AnyFilter)
+            {
+                <button type="button" class="ant-btn ant-btn-text m-table-clear" title="Clear the search and filters" @onclick="ClearFilters"><Icon Type="close-circle" /><span>Clear</span></button>
+            }
+            @if (ColumnSearchable)
+            {
+                <button type="button" class="@($"ant-btn ant-btn-text ant-btn-icon-only m-table-filter-toggle{(_filterRow ? " active" : "")}")" aria-label="Filter row"
+                        title="@(_filterRow ? "Hide the filter row" : "Show the filter row")" aria-pressed="@(_filterRow ? "true" : "false")" @onclick="() => _filterRow = !_filterRow"><Icon Type="filter" /></button>
+            }
             @if (AllowColumnHide || AllowColumnEdit)
             {
                 <Popover Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight" OverlayClassName="m-grid-columns-popover">
@@ -66,49 +97,42 @@
                         </ul>
                     </ContentTemplate>
                     <ChildContent>
-                        <button type="button" class="ant-btn ant-btn-default" aria-label="Column settings"><Ti Name="columns" /><span>Columns</span></button>
+                        <button type="button" class="ant-btn ant-btn-default m-table-columns-toggle" aria-label="Columns" title="Show, hide, pin and order columns"><Icon Type="setting" /><span>Columns</span></button>
                     </ChildContent>
                 </Popover>
             }
             @if (Exportable)
             {
-                <button type="button" class="ant-btn ant-btn-default" @onclick="() => ExportAsync(_view)"><Ti Name="download" /><span>Export CSV</span></button>
+                <button type="button" class="ant-btn ant-btn-default m-grid-export" title="Export the rows (after search and filters) to a CSV file" @onclick="() => ExportAsync(_view)"><Icon Type="download" /><span>Export CSV</span></button>
             }
             @if (AllowAddRow)
             {
-                <Button Icon="plus" OnClick="AddRow">Add row</Button>
-            }
-            @if (AllowColumnEdit)
-            {
-                <Button Icon="insert-row-right" OnClick="() => { _newTitleError = null; _addColumnOpen = true; }">Add column</Button>
-            }
-            @if (OnDiscard.HasDelegate)
-            {
-                <Button Disabled="!_dirty" OnClick="DiscardAsync">Discard</Button>
-            }
-            @if (OnSave.HasDelegate)
-            {
-                <Button Type="@ButtonType.Primary" Icon="save" Loading="_saving" OnClick="SaveAsync">Save</Button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-grid-add" aria-label="@AddRowText" title="@($"{AddRowText} (Insert)")"
+                        data-m-grid-add @onclick="AddRow"><Icon Type="plus" /></button>
             }
             <div class="m-table-toolbar-settings">
                 @if (OnReload.HasDelegate)
                 {
-                    <AntDesign.Tooltip Title="@("Reload")">
-                        <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Reload" @onclick="() => OnReload.InvokeAsync()"><Icon Type="reload" /></button>
-                    </AntDesign.Tooltip>
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Reload" title="Reload" @onclick="() => OnReload.InvokeAsync()"><Icon Type="reload" /></button>
                 }
-                <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight">
+                <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight" OverlayClassName="m-table-more">
                     <Overlay>
-                        <Menu SelectedKeys="@(new[] { _size.ToString() })" OnMenuItemClicked="OnDensity">
-                            <MenuItem Key="@nameof(TableSize.Default)">Comfortable</MenuItem>
-                            <MenuItem Key="@nameof(TableSize.Middle)">Standard</MenuItem>
-                            <MenuItem Key="@nameof(TableSize.Small)">Compact</MenuItem>
+                        <Menu Selectable="false" OnMenuItemClicked="OnMore">
+                            @if (AllowColumnEdit)
+                            {
+                                <MenuItem Key="add-column" Icon="insert-row-right">Add column</MenuItem>
+                                <MenuDivider />
+                            }
+                            <MenuItemGroup Title="Density">
+                                @foreach (var (size, label) in Densities)
+                                {
+                                    <MenuItem Key="@($"density-{size}")" Class="@(_size == size ? "ant-dropdown-menu-item-selected" : null)">@label</MenuItem>
+                                }
+                            </MenuItemGroup>
                         </Menu>
                     </Overlay>
                     <ChildContent>
-                        <AntDesign.Tooltip Title="@("Density")">
-                            <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Table density"><Icon Type="column-height" /></button>
-                        </AntDesign.Tooltip>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="More actions" title="More actions"><Icon Type="more" /></button>
                     </ChildContent>
                 </Dropdown>
             </div>
@@ -135,10 +159,7 @@
                     </SelectOptions>
                 </Select>
             }
-            @if (Filtered)
-            {
-                <button type="button" class="ant-btn ant-btn-link m-grid-clear-filters" @onclick="ClearFilters"><span>Clear filters</span></button>
-            }
+            @* The toolbar's Clear resets them. *@
         </div>
     }
 
@@ -166,11 +187,11 @@
                     </select>
                 }
                 @BatchActions?.Invoke(_selected.ToList())
-                <button type="button" class="ant-btn ant-btn-default ant-btn-sm" @onclick="() => ExportAsync(_selected)"><Ti Name="download" /><span>Export selected</span></button>
+                <button type="button" class="ant-btn ant-btn-default ant-btn-sm" @onclick="() => ExportAsync(_selected)"><Icon Type="download" /><span>Export selected</span></button>
                 @if (AllowDeleteRow)
                 {
                     <Popconfirm Title="@($"Delete {_selected.Count} {(_selected.Count == 1 ? "row" : "rows")}?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="DeleteSelectedAsync">
-                        <button type="button" class="ant-btn ant-btn-default ant-btn-dangerous ant-btn-sm"><Icon Type="delete" /><span>Delete</span></button>
+                        <button type="button" class="ant-btn ant-btn-default ant-btn-dangerous ant-btn-sm" data-m-grid-delete-selected><Icon Type="delete" /><span>Delete</span></button>
                     </Popconfirm>
                 }
             </MessageTemplate>
@@ -182,21 +203,40 @@
         <Alert Type="@AlertType.Error" Class="m-table-alert" ShowIcon="true" Message="@($"{_errors.Count} {(_errors.Count == 1 ? "cell needs" : "cells need")} attention before saving.")" />
     }
 
+    @* Rows drag by their handle (modulus-plugins.js reports the move through the hidden input; the grid reorders Rows). *@
+    <div class="m-sort-rows" data-m-sort-rows="@(RowDraggable ? _gridId : null)" data-m-sort-root="@RowDraggable" data-m-sort-mode="@(RowDraggable ? "event" : null)"
+         data-m-sort-disabled="@(RowDraggable && DragLocked)" data-m-sort-title="@(RowDraggable ? HeaderTitle : null)">
+    @if (RowDraggable)
+    {
+        <input type="hidden" data-m-sort-result @onchange="RowMovedAsync" />
+        @((MarkupString)SortableHtml.RowsHelp(HelpId))
+    }
     <CascadingValue Value="HeaderScope">
     <Table @key="_schemaVersion"
            TItem="GridRecord"
            DataSource="_view"
            RowKey="r => r.Id"
            Size="_size"
-           ScrollX="@GridSchema.ScrollWidth(Columns, (RowDetail is null ? 0 : 48) + (Selectable ? 48 : 0) + (AllowDeleteRow ? 64 : 0)).ToString(CultureInfo.InvariantCulture)"
-           HidePagination="_view.Length <= PageSize"
-           PageSize="PageSize"
+           ScrollX="@GridSchema.ScrollWidth(Columns, (RowDetail is null ? 0 : 48) + (Selectable ? 48 : 0) + (AllowDeleteRow ? 64 : 0) + (RowDraggable ? SortableHtml.RowHandleWidth : 0)).ToString(CultureInfo.InvariantCulture)"
+           HidePagination="!Paged"
+           PageSize="@(Paged ? _pageSize : Math.Max(1, _view.Length))"
+           PageIndex="_pageIndex"
+           PageIndexChanged="i => _pageIndex = i"
+           PageSizeChanged="s => _pageSize = s"
+           PaginationTemplate="Pager"
            ExpandTemplate="ExpandFragment"
            RowExpandable="RowExpandableFor"
            SelectedRows="_selected"
            SelectedRowsChanged="rows => _selected = rows.ToList()"
-           RowClassName="@(r => r.Data.Id == _newRowId ? "m-grid-row-new" : "")">
+           RowClassName="@(r => r.Data.Id == _newRowId ? "m-grid-row-new" : _changedRows.Contains(r.Data.Id) ? "m-grid-row-dirty" : "")">
         <ChildContent>
+            @if (RowDraggable)
+            {
+                <ActionColumn Title="" Width="@SortableHtml.RowHandleWidth.ToString(CultureInfo.InvariantCulture)" Align="ColumnAlign.Center" Class="m-row-drag-cell"
+                              Fixed="@(Columns.Any(c => !c.Hidden && c.Fixed == GridFixed.Left) ? ColumnFixPlacement.Left : null)">
+                    @((MarkupString)SortableHtml.RowHandle(context.Id, RowLabel(context), HelpId, DragLocked))
+                </ActionColumn>
+            }
             @if (Selectable)
             {
                 <Selection Width="48" Fixed="@(Columns.Any(c => !c.Hidden && c.Fixed == GridFixed.Left) ? ColumnFixPlacement.Left : null)" />
@@ -205,9 +245,9 @@
             {
                 var c = column;
                 <ActionColumn Title="@c.Title" Width="@((c.Width ?? 150).ToString(CultureInfo.InvariantCulture))"
-                              Fixed="@Fix(c.Fixed)" Align="@(c.AlignRight ? ColumnAlign.Right : ColumnAlign.Left)" Class="@(SortOf(c.Key) == Modulus.Ui.Abstractions.SortDirection.None ? "m-grid-td" : "m-grid-td ant-table-column-sort")">
+                              Fixed="@Fix(c.Fixed)" Align="@(c.AlignRight ? ColumnAlign.Right : ColumnAlign.Left)" Class="@TdClass(c)">
                     <TitleTemplate>
-                        <ColumnHeader Key="@c.Key" Title="@c.Title" Kind="GridSchema.Kind(c)" Required="c.Required" Sortable="Sortable" Searchable="ColumnSearchable">
+                        <ColumnHeader Key="@c.Key" Title="@c.Title" Kind="GridSchema.Kind(c)" Required="c.Required" Sortable="Sortable" Searchable="ColumnSearchable" Choices="GridSchema.SearchChoices(c)">
                             @if (AllowColumnEdit)
                             {
                                 <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight">
@@ -240,13 +280,14 @@
             {
                 <ActionColumn Title="" Width="64" Fixed="ColumnFixPlacement.Right" Align="ColumnAlign.Center" Class="m-grid-actions">
                     <Popconfirm Title="@("Delete this row?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => DeleteRow(context)">
-                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only ant-btn-dangerous" aria-label="Delete row"><Icon Type="delete" /></button>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only ant-btn-dangerous" aria-label="Delete row" title="Delete row"><Icon Type="delete" /></button>
                     </Popconfirm>
                 </ActionColumn>
             }
         </ChildContent>
     </Table>
     </CascadingValue>
+    </div>
 
     @if (Summary is not null)
     {
@@ -320,12 +361,28 @@
 
     [Parameter] public bool AllowAddRow { get; set; } = true;
 
+    /// <summary>Tooltip of the add-row button ("Add style", say).</summary>
+    [Parameter] public string AddRowText { get; set; } = "Add row";
+
+    /// <summary>Disables the column searches (the nested grid, while a level has unsaved edits and searches on the server).</summary>
+    [Parameter] public bool FiltersLocked { get; set; }
+
+    /// <summary>Starts with the filter row (a box or select under each column header) shown; the toolbar's filter button still toggles it.</summary>
+    [Parameter] public bool FilterRowOpen { get; set; }
+
     [Parameter] public bool AllowDeleteRow { get; set; } = true;
 
     /// <summary>Column menus, the column settings popover and "Add column".</summary>
     [Parameter] public bool AllowColumnEdit { get; set; } = true;
 
-    [Parameter] public int PageSize { get; set; } = 50;
+    /// <summary>Rows per page to start with; the pager also offers <see cref="Paging.Sizes"/>.</summary>
+    [Parameter] public int PageSize { get; set; } = 10;
+
+    /// <summary>
+    /// A pager under the grid ("1–10 of 42", pages, rows per page), paging the rows after search and filters. Off for
+    /// a grid whose rows are one page of a server list (the nested grid's levels page on the server).
+    /// </summary>
+    [Parameter] public bool Paged { get; set; } = true;
 
     [Parameter] public TableSize Size { get; set; } = TableSize.Middle;
 
@@ -373,6 +430,15 @@
     /// <summary>Column headers sort the rows: ascending, descending, then unsorted (in the browser, or with <see cref="OnSort"/>).</summary>
     [Parameter] public bool Sortable { get; set; } = true;
 
+    /// <summary>
+    /// A drag handle on each row: drag it (or focus it and press Up, Down, Home, End) to reorder the rows. The move
+    /// changes the order of <see cref="Rows"/> and counts as an unsaved change. Locked while a column sort is on.
+    /// </summary>
+    [Parameter] public bool RowDraggable { get; set; } = true;
+
+    /// <summary>Raised after a row has been dragged to a new place (Rows are already in the new order).</summary>
+    [Parameter] public EventCallback<RowMove> OnRowMove { get; set; }
+
     /// <summary>A search icon in each column header for a search of that column (see <see cref="ColumnSearch"/>).</summary>
     [Parameter] public bool ColumnSearchable { get; set; } = true;
 
@@ -403,11 +469,11 @@
         get
         {
             var searches = OnColumnSearch.HasDelegate ? Searches ?? new Dictionary<string, string?>() : _searches;
-            var state = $"{(OnSort.HasDelegate ? SortField : _sortKey)}|{(OnSort.HasDelegate ? SortDescending : _sortDesc)}|{string.Join('|', searches.Select(s => $"{s.Key}={s.Value}"))}";
+            var state = $"{_filterRow}|{FiltersLocked}|{(OnSort.HasDelegate ? SortField : _sortKey)}|{(OnSort.HasDelegate ? SortDescending : _sortDesc)}|{string.Join('|', searches.Select(s => $"{s.Key}={s.Value}"))}";
             if (_headerScope is null || state != _headerState)
             {
                 _headerState = state;
-                _headerScope = new ColumnHeaderScope(this, ++_headerVersion);
+                _headerScope = new ColumnHeaderScope(this, ++_headerVersion, _filterRow, FiltersLocked);
             }
             return _headerScope;
         }
@@ -433,6 +499,7 @@
             Modulus.Ui.Abstractions.SortDirection.Descending => (key, true),
             _ => ((string?)null, false),
         };
+        FirstPage();
         await RowsChangedAsync();
     }
 
@@ -444,18 +511,26 @@
             return;
         }
         _searches[key] = value;
+        FirstPage();
         await RowsChangedAsync();
     }
 
     private string? _keyword;
+    private bool _searchOpen, _filterRow;
+    // Rows changed since the last save (marked in the grid) and rows deleted, for the "3 unsaved changes" count.
+    private readonly HashSet<string> _changedRows = new(StringComparer.Ordinal);
+    private int _deletedRows;
     private readonly Dictionary<string, string?> _filters = new(StringComparer.Ordinal);
     private readonly HashSet<string> _addedIds = new(StringComparer.Ordinal);
     private List<GridRecord> _selected = [];
     private int _batchVersion;
     private DotNetObjectReference<EditableGrid>? _self;
-    private static readonly RenderFragment SearchIcon = @<Ti Name="search" />;
+    private static readonly RenderFragment SearchIcon = @<Icon Type="search" />;
 
     private bool Filtered => _filters.Values.Any(v => !string.IsNullOrEmpty(v)) || _searches.Values.Any(v => !string.IsNullOrWhiteSpace(v));
+
+    // The toolbar's Clear: anything the grid filters by in the browser, the keyword included.
+    private bool AnyFilter => Filtered || !string.IsNullOrWhiteSpace(_keyword);
 
     // Rows added here stay visible (and on top) whatever the search and sort, so a new row never vanishes while it is filled in.
     private GridRecord[] Shown()
@@ -468,15 +543,59 @@
         return [.. list.Where(r => _addedIds.Contains(r.Id)), .. GridSchema.Sort(list.Where(r => !_addedIds.Contains(r.Id)), column, _sortDesc)];
     }
 
+    private bool SearchShown => _searchOpen || !string.IsNullOrEmpty(_keyword);
+
+    // An empty search box folds back into its icon.
+    private void SearchBlur()
+    {
+        if (string.IsNullOrEmpty(_keyword)) _searchOpen = false;
+    }
+
+    /// <summary>Rows edited, added or deleted since the last save (not column layout: hiding, pinning or moving one).</summary>
+    public bool HasRowChanges => _changedRows.Count + _deletedRows > 0;
+
+    private string ChangesText => (_changedRows.Count + _deletedRows) switch
+    {
+        0 => "Unsaved changes",
+        1 => "1 unsaved change",
+        var n => $"{n} unsaved changes",
+    };
+
+    private static readonly (TableSize Size, string Label)[] Densities =
+        [(TableSize.Default, "Comfortable"), (TableSize.Middle, "Standard"), (TableSize.Small, "Compact")];
+
+    private void OnMore(MenuItem item)
+    {
+        switch (item.Key)
+        {
+            case "add-column":
+                _newTitleError = null;
+                _addColumnOpen = true;
+                break;
+            default:
+                if (item.Key.StartsWith("density-", StringComparison.Ordinal) && Enum.TryParse<TableSize>(item.Key["density-".Length..], out var size)) _size = size;
+                break;
+        }
+    }
+
+    // A deleted row that was added here leaves no change behind; a stored row counts as one.
+    private void Forget(string id)
+    {
+        if (!_addedIds.Remove(id)) _deletedRows++;
+        _changedRows.Remove(id);
+    }
+
     private async Task SearchChanged(string? keyword)
     {
         _keyword = keyword;
+        FirstPage();
         await RowsChangedAsync();
     }
 
     private async Task FilterChanged(string key, string? value)
     {
         _filters[key] = value;
+        FirstPage();
         await RowsChangedAsync();
     }
 
@@ -484,6 +603,9 @@
     {
         _filters.Clear();
         _searches.Clear();
+        _keyword = null;
+        _searchOpen = false;
+        FirstPage();
         await RowsChangedAsync();
     }
 
@@ -506,6 +628,7 @@
     {
         var ids = _selected.Select(r => r.Id).ToHashSet(StringComparer.Ordinal);
         Rows.RemoveAll(r => ids.Contains(r.Id));
+        foreach (var id in ids) Forget(id);
         foreach (var key in _errors.Keys.Where(k => ids.Contains(k.Row)).ToList()) _errors.Remove(key);
         _selected = [];
         await ChangedAsync();
@@ -548,10 +671,24 @@
     private List<GridRecord>? _viewOf;
     private int _viewCount;
 
+    private int _pageIndex = 1, _pageSize = 10;
+
+    // The data table's pager: the range, the page window with ••• jumps, and rows per page.
+    private RenderFragment<(int PageSize, int PageIndex, int Total, string PaginationClass, EventCallback<PaginationEventArgs> HandlePageChange)> Pager => p =>
+        @<Pagination Class="@($"{p.PaginationClass} m-grid-pager")" Total="p.Total" PageSize="p.PageSize" Current="p.PageIndex" Size="PaginationSize.Small"
+                     ShowSizeChanger="true" PageSizeOptions="@Paging.SizesWith(PageSize).ToArray()" OnChange="p.HandlePageChange" ShowTotal="PagerTotal" />;
+
+    private static readonly Func<PaginationTotalContext, string> PagerTotal = ctx =>
+        $"{ctx.Range.Item1.ToString("N0", CultureInfo.CurrentCulture)}–{ctx.Range.Item2.ToString("N0", CultureInfo.CurrentCulture)} of {ctx.Total.ToString("N0", CultureInfo.CurrentCulture)}";
+
+    // Search, filters, sorting and a new row (added on top) start again from the first page.
+    private void FirstPage() => _pageIndex = 1;
+
     // While a row is expanded, Table shows the new DataSource only on the render after the one that hands it over.
     private async Task RowsChangedAsync()
     {
         _view = Shown();
+        _pageIndex = Paging.Clamp(_pageIndex, _view.Length, _pageSize);
         _viewCount = Rows.Count;
         await Task.Yield();
         StateHasChanged();
@@ -564,6 +701,7 @@
             if (!ReferenceEquals(_viewOf, Rows)) _selected = [];
             _view = Shown();
             _viewOf = Rows;
+            _pageIndex = Paging.Clamp(_pageIndex, _view.Length, _pageSize);
         }
         _viewCount = Rows.Count;
     }
@@ -586,7 +724,12 @@
 
     private static readonly GridCellType[] CellTypes = Enum.GetValues<GridCellType>();
 
-    protected override void OnInitialized() => _size = Size;
+    protected override void OnInitialized()
+    {
+        _size = Size;
+        _pageSize = Math.Max(1, PageSize);
+        _filterRow = FilterRowOpen && ColumnSearchable;
+    }
 
     /// <summary>Marks the grid clean (after the parent saved or reloaded) and clears errors.</summary>
     public void MarkSaved()
@@ -596,6 +739,8 @@
         _editing = null;
         _newRowId = null;
         _addedIds.Clear();
+        _changedRows.Clear();
+        _deletedRows = 0;
         _selected = [];
         _schemaVersion++;
         _view = Shown();
@@ -612,6 +757,11 @@
         GridFixed.Right => ColumnFixPlacement.Right,
         _ => null,
     };
+
+    // Yes/no columns read best centred; the sorted column keeps Ant Design's tint.
+    private string TdClass(GridColumn c) =>
+        "m-grid-td" + (c.Type == GridCellType.Switch ? " m-grid-td-center" : "") +
+        (SortOf(c.Key) == Modulus.Ui.Abstractions.SortDirection.None ? "" : " ant-table-column-sort");
 
     private static string TypeLabel(GridCellType t) => t switch
     {
@@ -740,12 +890,12 @@
             case GridCellType.Select or GridCellType.Tag:
                 @* AppCreatableSelect ends its dropdown with an "Add option" row; a new option joins the column's schema. *@
                 <AppCreatableSelect Options="c.Options" OptionsChanged="o => OptionsChangedAsync(c, o)" Value="@value" AllowClear="!c.Required"
-                                    DefaultOpen Style="width: 100%" AriaLabel="@c.Title" AddPlaceholder="New option"
+                                    DefaultOpen Style="width: 100%" AriaLabel="@c.Title" AddPlaceholder="New option" CreateText="@($"Create new {c.Title.ToLowerInvariant()}")"
                                     ValueChanged="v => SetValue(row, c, v)" OpenChanged="OnCreatableOpenChange" />
                 break;
             case GridCellType.MultiSelect:
                 <AppCreatableSelect Options="c.Options" OptionsChanged="o => OptionsChangedAsync(c, o)" Multiple Values="GridSchema.Many(value)"
-                                    DefaultOpen Style="width: 100%" AriaLabel="@c.Title" AddPlaceholder="New option"
+                                    DefaultOpen Style="width: 100%" AriaLabel="@c.Title" AddPlaceholder="New option" CreateText="@($"Create new {c.Title.ToLowerInvariant()}")"
                                     ValuesChanged="v => SetValue(row, c, GridSchema.FromMany(v))" OpenChanged="OnCreatableOpenChange" />
                 break;
             default:
@@ -858,6 +1008,7 @@
         var normalized = GridSchema.Normalize(c, value);
         if (normalized == row[c.Key]) return;
         row[c.Key] = normalized;
+        _changedRows.Add(row.Id);
         // Re-validate the cell once it has been flagged, so the message clears as soon as it is fixed.
         if (_errors.ContainsKey((row.Id, c.Key)))
         {
@@ -869,12 +1020,39 @@
 
     // ---- Rows ----
 
+    private string HelpId => $"{_gridId}-drag-help";
+
+    // A column sort decides the order then, so a drop would not stay where it was put.
+    private bool DragLocked => OnSort.HasDelegate ? SortField is not null : _sortKey is not null;
+
+    // Read out when a row moves: its first column.
+    private string RowLabel(GridRecord row) =>
+        GridSchema.Visible(Columns).FirstOrDefault() is { } first && GridSchema.Format(first, row[first.Key]) is { Length: > 0 } text ? text : "row";
+
+    // The rows on the page shown, in their order: the drop's index counts these.
+    private IEnumerable<GridRecord> PageRows() =>
+        Paged ? _view.Skip(Math.Max(0, _pageIndex - 1) * _pageSize).Take(_pageSize) : _view;
+
+    private async Task RowMovedAsync(ChangeEventArgs e)
+    {
+        if (DragLocked || !SortMove.TryParse(e.Value?.ToString(), out var move)) return;
+        // Only the page's rows swap places: rows on other pages or filtered out keep theirs.
+        var order = move.Within(PageRows().Select(r => r.Id));
+        GridSchema.Reorder(Rows, order, r => r.Id);
+        _changedRows.Add(move.Id);
+        await ChangedAsync();
+        await OnRowMove.InvokeAsync(new RowMove(move.Id, move.Index, order));
+        await RowsChangedAsync();
+    }
+
     private async Task AddRow()
     {
         var row = GridSchema.NewRow(Columns, Rows);
         Rows.Insert(0, row);
+        FirstPage(); // the new row is on top
         _newRowId = row.Id;
         _addedIds.Add(row.Id);
+        _changedRows.Add(row.Id);
         if (GridSchema.Visible(Columns).FirstOrDefault(c => c.Editable && c.Type is not (GridCellType.Switch or GridCellType.Rating)) is { } first)
             BeginEdit(row, first);
         await ChangedAsync();
@@ -885,6 +1063,7 @@
     {
         Rows.Remove(row);
         _selected.Remove(row);
+        Forget(row.Id);
         foreach (var key in _errors.Keys.Where(k => k.Row == row.Id).ToList()) _errors.Remove(key);
         await ChangedAsync();
         await RowsChangedAsync();
@@ -947,6 +1126,9 @@
             await OnSave.InvokeAsync();
             _dirty = false;
             _newRowId = null;
+            _addedIds.Clear();
+            _changedRows.Clear();
+            _deletedRows = 0;
         }
         finally
         {
@@ -960,5 +1142,4 @@
         MarkSaved();
     }
 
-    private void OnDensity(MenuItem item) => _size = Enum.Parse<TableSize>(item.Key);
 }

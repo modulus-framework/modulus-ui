@@ -613,6 +613,65 @@
         "status": "modulus",
         "note": "AppRichText: formatting toolbar over an editable area; HTML cleaned by RichText.Sanitize",
         "mvc": "app-rich-text"
+      },
+      "CreatableSelect": {
+        "status": "modulus",
+        "note": "AppCreatableSelect (Components/Extras): select with an \"Add item\" row or an \"Add new\" create form",
+        "mvc": "app-creatable-select"
+      }
+    },
+    "Grids": {
+      "EditableGrid": {
+        "status": "modulus",
+        "note": "EditableGrid (Components/Pro): schema-driven columns (GridColumn), in-place editors, pinned columns, row drag; GridSchema shared",
+        "mvc": "app-editable-grid"
+      },
+      "NestedGrid": {
+        "status": "modulus",
+        "note": "NestedGrid (Components/Pro): any depth from NestedGridSettings, lazily loaded child levels, per-level save",
+        "mvc": "app-nested-grid"
+      },
+      "LoadMore": {
+        "status": "modulus",
+        "note": "Infinite scroll over TableQuery; Blazor uses Virtualize",
+        "mvc": "app-load-more"
+      },
+      "VirtualTable": {
+        "status": "modulus",
+        "note": "Virtual scrolling (modulus-virtual.js) over TableQuery; Blazor uses Virtualize",
+        "mvc": "app-virtual-table"
+      }
+    },
+    "Plugins": {
+      "Lightbox": {
+        "status": "modulus",
+        "note": "AppLightbox (Components/Extras): image grid with a full-screen preview; also drives app-image and app-image-group",
+        "mvc": "app-lightbox"
+      },
+      "Editor": {
+        "status": "modulus",
+        "note": "AppEditor (Components/Extras): WYSIWYG on Quill (EditorHtml); HTML cleaned by RichText.Sanitize(images: true)",
+        "mvc": "app-editor"
+      },
+      "Map": {
+        "status": "modulus",
+        "note": "AppMap (Components/Extras): Leaflet tile map with markers and popups (MapHtml.Tile)",
+        "mvc": "app-map"
+      },
+      "VectorMap": {
+        "status": "modulus",
+        "note": "AppVectorMap (Components/Extras): jsVectorMap choropleth (MapHtml.Vector)",
+        "mvc": "app-vector-map"
+      },
+      "MediaPlayer": {
+        "status": "modulus",
+        "note": "AppMediaPlayer (Components/Extras): video and audio with custom controls, poster and captions (MediaPlayerHtml)",
+        "mvc": "app-media-player"
+      },
+      "Sortable": {
+        "status": "modulus",
+        "note": "AppSortable (Components/Extras): reorder and move between lists, handles, keyboard (SortableHtml)",
+        "mvc": "app-sortable, app-sortable-item"
       }
     }
   },

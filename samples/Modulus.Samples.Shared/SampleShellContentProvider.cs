@@ -12,7 +12,10 @@ public sealed class SampleShellContentProvider : IShellContentProvider
     public Task<ShellContent> GetContentAsync(ClaimsPrincipal user, CancellationToken cancellationToken = default) =>
         Task.FromResult(new ShellContent
         {
-            User = new ShellUser(CurrentUser.Name, CurrentUser.Role),
+            // The signed-in user (SampleAuth); the demo user while nobody is signed in.
+            User = user.Identity?.IsAuthenticated == true
+                ? new ShellUser(user.Identity.Name ?? CurrentUser.Name, user.FindFirst(ClaimTypes.Role)?.Value)
+                : new ShellUser(CurrentUser.Name, CurrentUser.Role),
             SearchPlaceholder = "Search pages…",
             Notices =
             [
@@ -30,7 +33,7 @@ public sealed class SampleShellContentProvider : IShellContentProvider
                 new("Pricing", "pages/pricing", "currency-dollar") { DividerBefore = true },
                 new("Help center", "pages/help-center", "lifebuoy"),
             ],
-            SignOutHref = "auth/login",
+            SignOutHref = "auth/logout",
             // Each app owns a menu item (AdminMenuContributor keys); with the "Current app" menu the navbar shows
             // only that app's entries, as in Odoo.
             AppLauncher = AppLauncherStyle.Overlay,
@@ -46,6 +49,9 @@ public sealed class SampleShellContentProvider : IShellContentProvider
                 new("Settings", "apps/users/list", "settings", "gray", "Users, roles, companies and preferences") { MenuKey = "settings", Group = "Administration" },
                 new("Website", "pages/pricing", "world", "pink", "Pages, sign-in and error screens") { MenuKey = "pages", Group = "Administration" },
                 new("Developer", "ui/components", "code", "indigo", "Components, forms, tables and charts") { MenuKey = "developer", Group = "Administration" },
+                // Listed after Developer and Calendar: Plugins also links to some of their pages, which stay in those apps.
+                new("Plugins", "plugins/charts-advanced", "ant:api", "cyan", "Charts, inputs, media and maps") { MenuKey = "plugins", Group = "Templates" },
+                new("Extra", "extra/billing", "sparkles", "yellow", "Billing, apps, media and page blocks") { MenuKey = "extra", Group = "Templates" },
             ],
             Activities =
             [

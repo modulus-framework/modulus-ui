@@ -1,0 +1,30 @@
+@* Tile map (Leaflet, OpenStreetMap tiles) with markers and popups; the same markup as the MVC <app-map> (MapHtml).
+   modulus-plugins.js loads Leaflet on first use and owns the map's inside; new markers draw a new map. Buttons made with
+   MapHtml.GoAttributes(Id, index) fly the map to a marker. *@
+@using Modulus.Ui.Abstractions.Plugins
+
+@((MarkupString)MapHtml.Tile(Id, Markers, Center, Zoom, ScrollZoom, Height, Label, CssClass))
+
+@code {
+    /// <summary>Element id, named by the buttons that fly to a marker.</summary>
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+
+    [Parameter] public IReadOnlyList<MapMarker> Markers { get; set; } = [];
+
+    /// <summary>Centre of the view; without it the map fits the markers.</summary>
+    [Parameter] public (double Lat, double Lng)? Center { get; set; }
+
+    /// <summary>Zoom level with <see cref="Center"/>; the most it zooms in when fitting the markers.</summary>
+    [Parameter] public int Zoom { get; set; } = 4;
+
+    /// <summary>Zoom with the mouse wheel (off by default, so the page scrolls past the map).</summary>
+    [Parameter] public bool ScrollZoom { get; set; }
+
+    /// <summary>CSS height, e.g. "360px" or "100%".</summary>
+    [Parameter] public string Height { get; set; } = "360px";
+
+    /// <summary>Accessible name of the map region.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    [Parameter] public string? CssClass { get; set; }
+}

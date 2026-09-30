@@ -23,10 +23,9 @@
         </div>
     </div>
 
-    <ProTable TItem="Product" @ref="_table" HeaderTitle="All products" Request="LoadAsync" RowKey="p => p.Id" Selectable ScrollX="1000">
+    <ProTable TItem="Product" @ref="_table" HeaderTitle="All products" Request="LoadAsync" RowKey="p => p.Id" Selectable ScrollX="1000" FiltersActive="@FiltersActive" OnClearFilters="ClearFilters">
         <ToolBar>
             <Input @bind-Value="_keyword" Placeholder="Search products…" AllowClear Class="m-table-toolbar-search" OnPressEnter="SearchAsync" OnClear="SearchAsync" Prefix="@_searchIcon" />
-            <Button Icon="download">Export</Button>
         </ToolBar>
         <Filters>
             <Select TItemValue="string" TItem="string" Value="_category" ValueChanged="v => FilterAsync(() => _category = v)" DataSource="ProductInput.Categories" Placeholder="Category" AllowClear />
@@ -121,7 +120,7 @@
         ("Products", _stats.Total.ToString("N0"), "package"),
         ("Published", _stats.Published.ToString("N0"), "world"),
         ("Low stock", _stats.LowStock.ToString("N0"), "alert-triangle"),
-        ("Inventory value", Fmt.Money0(_stats.InventoryValue), "building-warehouse"),
+        ("Inventory value", Fmt.Money0(_stats.InventoryValue), "ant:shop"),
     ];
 
     protected override void OnInitialized() => _stats = Store.ProductStats();
@@ -130,6 +129,17 @@
         Task.FromResult(Store.QueryProducts(new ProductQuery(_keyword, _category, _stock, _status), request));
 
     private Task SearchAsync() => _table!.ReloadAsync(resetPage: true);
+
+    // The table's Clear button: the search box and every filter.
+    private bool FiltersActive => !string.IsNullOrWhiteSpace(_keyword) || _category is not null || _stock is not null || _status is not null;
+
+    private void ClearFilters()
+    {
+        _keyword = null;
+        _category = null;
+        _stock = null;
+        _status = null;
+    }
 
     private async Task FilterAsync(Action set)
     {

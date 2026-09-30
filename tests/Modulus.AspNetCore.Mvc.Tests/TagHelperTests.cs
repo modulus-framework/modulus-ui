@@ -301,6 +301,19 @@ public class CoverageTagHelperTests
         Assert.Contains(">Comfortable<", html);
         Assert.Contains(">Standard<", html);
         Assert.Contains(">Compact<", html);
+        // Columns and Export CSV sit before the settings group (modulus-shell.js runs them on the rendered table).
+        var before = output.PreElement.GetContent();
+        Assert.Contains("""class="ant-btn ant-btn-default m-table-columns" data-m-table-columns aria-haspopup="dialog" aria-expanded="false" """, before);
+        Assert.Contains("""data-m-table-export="" title="Export the rows shown to a CSV file">""", before);
+        Assert.Contains("<span>Export CSV</span>", before);
+    }
+
+    [Fact]
+    public async Task TableSettings_ColumnsAndExportCanBeTurnedOff()
+    {
+        var output = await RunAsync(new TableSettingsTagHelper { Columns = false, Export = false }, "app-table-settings");
+
+        Assert.Equal("", output.PreElement.GetContent());
     }
 
     [Fact]
@@ -328,8 +341,10 @@ public class CoverageTagHelperTests
         // Office is shown: its link hides it (with salary). Salary is hidden: its link shows everything.
         Assert.Contains("href=\"/t?hide=office,salary\"", html);
         Assert.Contains("href=\"/t?hide=\"", html);
-        Assert.Contains("#ti-square-check\"></use></svg>Office", html);
-        Assert.Contains("#ti-square\"></use></svg>Salary", html);
+        // Ant Design icons: a filled check box for a shown column, an empty box for a hidden one.
+        Assert.Matches("anticon-check-square\">.*?</span>Office", html);
+        Assert.Matches("anticon-border\">.*?</span>Salary", html);
+        Assert.DoesNotContain("#ti-", html);
     }
 
     [Fact]

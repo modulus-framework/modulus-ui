@@ -13,8 +13,10 @@
  *                          header, sidebar, menu, direction)
  *   [data-m-fold-toggle]   folds or unfolds the vertical sidebar; a folded sidebar shows groups and names as flyouts
  *   [data-m-launcher]      full-screen app launcher (Odoo home menu, Oracle navigator): [data-m-launcher-open] opens it,
- *                          typing filters the apps and lists matching menu entries, arrow keys move between cards;
- *                          [data-m-recent] lists the menu pages opened lately (localStorage modulus-recent)
+ *                          typing shows the search box, filters the apps and lists matching menu entries, arrow keys
+ *                          move between the icons
+ *   [data-m-app-menu]      header app grid and module switcher: [data-m-app-filter] filters the apps (name, description,
+ *                          group), Enter opens the first match, arrow keys move between them
  *   [data-m-mark-read]     marks header notifications as read
  *   [data-m-tenant]        tenant switcher: writes the modulus-tenant cookie and reloads (cancel modulus:tenant-change to
  *                          handle it yourself); [data-m-tenant-filter] filters the tenant list. Multi-company:
@@ -75,7 +77,8 @@
         if (t.closest('[data-m-nav-open]')) { root.classList.add('m-nav-open'); return; }
         if (t.closest('[data-m-nav-close]')) { closeNav(); return; }
         if (t.closest('[data-m-fold-toggle]')) { toggleFold(); return; }
-        if (folded() && t.closest('.m-sidebar .m-snav-group > summary')) { e.preventDefault(); return; }
+        // A folded sidebar's groups open as flyouts; branches inside a flyout still fold open on click.
+        if (folded() && t.closest('.m-sidebar .m-snav > .m-snav-item > .m-snav-group > summary')) { e.preventDefault(); return; }
         if (t.closest('[data-m-theme-toggle]')) { window.modulusTheme && window.modulusTheme.toggle(); syncCustomizer(); return; }
         if (t.closest('[data-m-customizer-open]')) { openCustomizer(); return; }
         if (t.closest('[data-m-customizer-close]')) { closeCustomizer(); return; }
@@ -205,6 +208,74 @@
         else { var current = d.querySelector('.m-tenant-item.active'); if (current) current.focus(); }
     }, true);
 
+    // App switchers (header grid, module switcher) ---------------------------------------
+
+    var appItems = '.m-app-tile, .m-module-item';
+
+    function filterApps(input) {
+        var menu = input.closest('[data-m-app-menu]');
+        var q = input.value.trim().toLowerCase();
+        var any = false;
+        menu.querySelectorAll('[data-m-app-group]').forEach(function (group) {
+            var inGroup = q && (group.getAttribute('data-m-app-group') || '').toLowerCase().indexOf(q) >= 0;
+            var shown = 0;
+            group.querySelectorAll(appItems).forEach(function (a) {
+                var match = !q || inGroup || (a.textContent + ' ' + (a.title || '')).toLowerCase().indexOf(q) >= 0;
+                a.hidden = !match;
+                if (match) shown++;
+            });
+            group.hidden = shown === 0;
+            if (shown) any = true;
+        });
+        var empty = menu.querySelector('.m-app-menu-empty');
+        if (empty) empty.hidden = any;
+    }
+
+    function visibleApps(menu) {
+        return Array.prototype.filter.call(menu.querySelectorAll(appItems), function (a) { return !a.hidden && !a.closest('[hidden]'); });
+    }
+
+    document.addEventListener('input', function (e) {
+        if (e.target.matches && e.target.matches('[data-m-app-filter]')) filterApps(e.target);
+    });
+
+    // Enter opens the first match; the arrow keys move from the filter through the apps, in reading order.
+    document.addEventListener('keydown', function (e) {
+        var t = e.target;
+        var menu = t instanceof Element && t.closest('[data-m-app-menu]');
+        if (!menu) return;
+        var filter = menu.querySelector('[data-m-app-filter]');
+        var apps = visibleApps(menu);
+        if (t === filter && e.key === 'Enter') {
+            e.preventDefault();
+            if (apps[0]) apps[0].click();
+            return;
+        }
+        var step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key];
+        if (!step || (t === filter && step < 0) || (t === filter && e.key === 'ArrowRight')) return;
+        if (document.documentElement.dir === 'rtl' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) step = -step;
+        var i = apps.indexOf(t);
+        var next = t === filter ? apps[0] : apps[i + step];
+        if (!next && step < 0 && filter) next = filter;
+        if (next) { e.preventDefault(); next.focus(); }
+    });
+
+    // Opening a switcher clears its filter and focuses it (or the current app).
+    document.addEventListener('toggle', function (e) {
+        var d = e.target;
+        if (!d.open || !d.querySelector) return;
+        var menu = d.querySelector(':scope > [data-m-app-menu]');
+        if (!menu) return;
+        var filter = menu.querySelector('[data-m-app-filter]');
+        if (filter) { filter.value = ''; filterApps(filter); }
+        var body = menu.querySelector('.m-app-menu-body');
+        if (body) body.scrollTop = 0;
+        var current = menu.querySelector('.m-module-item.active');
+        if (current && body) current.scrollIntoView({ block: 'nearest' });
+        if (filter && window.matchMedia('(hover: hover)').matches) filter.focus({ preventScroll: true });
+        else if (current) current.focus({ preventScroll: true });
+    }, true);
+
     // Search: every navigation link, deduplicated by URL ---------------------------------------
 
     var activeIndex = -1;
@@ -236,16 +307,16 @@
         document.querySelectorAll('.m-sidebar a[href], .m-navbar a[href]').forEach(function (a) {
             var href = a.getAttribute('href');
             if (!href) return;
-            var icon = a.querySelector('svg use');
+            var icon = iconRef(a);
             // Sidebar links under a group have no icon; the navbar's copy of the same entry usually does.
-            if (seen[href]) { if (!seen[href].icon && icon) seen[href].icon = icon.getAttribute('href'); return; }
+            if (seen[href]) { if (!seen[href].icon && icon) seen[href].icon = icon; return; }
             var group = a.closest('.m-snav-sub');
             var section = a.getAttribute('data-m-trail') || '';
             if (!section && group) {
                 var summary = group.parentElement && group.parentElement.querySelector(':scope > summary .m-snav-title');
                 section = summary ? summary.textContent.trim() : '';
             }
-            var item = { href: href, label: a.textContent.trim(), section: section, icon: icon ? icon.getAttribute('href') : null };
+            var item = { href: href, label: a.textContent.trim(), section: section, icon: icon };
             seen[href] = item;
             items.push(item);
         });
@@ -290,7 +361,25 @@
         input.setAttribute('aria-expanded', 'true');
     }
 
+    // A link's icon as a string that survives localStorage: the sprite href of a Tabler icon, or "ant:name" for an
+    // Ant Design icon drawn inline (ShellRenderer marks those with data-m-icon).
+    function iconRef(a) {
+        var inline = a.querySelector('svg.m-ai[data-m-icon]');
+        if (inline) return inline.getAttribute('data-m-icon');
+        var use = a.querySelector('svg use');
+        return use ? use.getAttribute('href') : null;
+    }
+
     function iconSvg(href) {
+        if (href && href.indexOf('ant:') === 0) {
+            var source = document.querySelector('svg.m-ai[data-m-icon="' + CSS.escape(href) + '"]');
+            if (source) {
+                var copy = source.cloneNode(true);
+                copy.setAttribute('class', 'm-ti m-ai');
+                return copy;
+            }
+            href = null;
+        }
         var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('class', 'm-ti');
         svg.setAttribute('aria-hidden', 'true');
@@ -348,8 +437,6 @@
         launcherFocus = document.activeElement;
         var input = l.querySelector('[data-m-launcher-search]');
         input.value = '';
-        greet(l);
-        renderRecent(l);
         filterLauncher(l, '');
         l.hidden = false;
         root.classList.add('m-launcher-open');
@@ -368,81 +455,6 @@
         launcherFocus = null;
     }
 
-    function greet(l) {
-        var title = l.querySelector('[data-m-greeting]');
-        var now = new Date(), hour = now.getHours();
-        if (title) {
-            var name = title.getAttribute('data-m-greeting');
-            title.textContent = (hour < 5 ? 'Good evening' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening') + (name ? ', ' + name : '');
-        }
-        var today = l.querySelector('[data-m-today]');
-        if (today) today.textContent = now.toLocaleDateString(root.lang || undefined, { weekday: 'long', month: 'long', day: 'numeric' });
-    }
-
-    // Recent pages: menu entries the user opened, newest first, in this browser only.
-    var recentKey = 'modulus-recent', recentMax = 6;
-
-    function readRecent() {
-        try { var list = JSON.parse(localStorage.getItem(recentKey) || '[]'); return Array.isArray(list) ? list : []; }
-        catch (err) { return []; }
-    }
-
-    function remember(href) {
-        if (!href) return;
-        var item = index().filter(function (i) { return i.href === href; })[0];
-        if (!item) return;
-        var list = readRecent().filter(function (r) { return r && r.href !== href; });
-        list.unshift({ href: item.href, label: item.label, section: item.section, icon: item.icon });
-        try { localStorage.setItem(recentKey, JSON.stringify(list.slice(0, recentMax + 1))); } catch (err) { /* storage blocked */ }
-    }
-
-    // The menu entry of the page on screen (its link carries aria-current), for direct loads and full reloads.
-    function rememberCurrent() {
-        var link = document.querySelector('.m-sidebar a[aria-current="page"], .m-navbar a[aria-current="page"]');
-        if (link) remember(link.getAttribute('href'));
-    }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', rememberCurrent); else rememberCurrent();
-    window.addEventListener('load', function () {
-        if (window.Blazor && window.Blazor.addEventListener) window.Blazor.addEventListener('enhancedload', rememberCurrent);
-    });
-    // Blazor's interactive router changes pages without a load event, so links remember themselves when clicked.
-    document.addEventListener('click', function (e) {
-        var link = e.target instanceof Element && e.target.closest('a[href]');
-        if (link && !e.defaultPrevented && link.origin === location.origin) remember(link.getAttribute('href'));
-    });
-
-    function renderRecent(l) {
-        var rail = l.querySelector('[data-m-recent]');
-        if (!rail) return;
-        var box = rail.querySelector('.m-launcher-recent');
-        box.textContent = '';
-        var here = document.querySelector('.m-sidebar a[aria-current="page"], .m-navbar a[aria-current="page"]');
-        var current = here ? here.getAttribute('href') : null;
-        var list = readRecent().filter(function (r) { return r && r.href && r.href !== current; }).slice(0, recentMax);
-        list.forEach(function (r) {
-            var a = document.createElement('a');
-            a.className = 'm-launcher-recent-item';
-            a.href = r.href;
-            a.appendChild(iconSvg(r.icon));
-            var text = document.createElement('span');
-            text.className = 'm-launcher-recent-text';
-            var label = document.createElement('span');
-            label.className = 'm-launcher-recent-label';
-            label.textContent = r.label;
-            text.appendChild(label);
-            if (r.section) {
-                var trail = document.createElement('span');
-                trail.className = 'm-launcher-recent-trail';
-                trail.textContent = r.section;
-                text.appendChild(trail);
-            }
-            a.appendChild(text);
-            box.appendChild(a);
-        });
-        rail.hidden = list.length === 0;
-        l.classList.toggle('m-launcher-has-recent', list.length > 0);
-    }
-
     function filterLauncher(l, query) {
         var q = query.trim().toLowerCase();
         var shown = 0;
@@ -450,9 +462,6 @@
             var match = !q || (a.getAttribute('data-m-launcher-name') || '').toLowerCase().indexOf(q) >= 0;
             a.hidden = !match;
             if (match) shown++;
-        });
-        l.querySelectorAll('.m-launcher-group').forEach(function (g) {
-            g.hidden = !g.querySelector('.m-launcher-app:not([hidden])');
         });
         l.classList.toggle('m-launcher-searching', !!q);
         var results = l.querySelector('.m-launcher-results');
@@ -482,11 +491,11 @@
     }
 
     function launcherItems(l) {
-        return Array.prototype.filter.call(l.querySelectorAll('.m-launcher-app, .m-launcher-result, .m-launcher-recent-item'),
+        return Array.prototype.filter.call(l.querySelectorAll('.m-launcher-app, .m-launcher-result'),
             function (el) { return el.offsetParent !== null; });
     }
 
-    // The nearest item on screen in the arrow's direction, so keys follow the card grid, groups and the recent rail.
+    // The nearest item on screen in the arrow's direction, so keys follow the icon grid and the menu results.
     function launcherNeighbour(items, from, key) {
         var a = from.getBoundingClientRect(), ax = a.left + a.width / 2, ay = a.top + a.height / 2;
         var best = null, bestScore = Infinity;
@@ -565,7 +574,7 @@
         if (!panel || !theme) return;
         var mode = document.cookie.match(/(?:^|; )modulus-theme=(light|dark)/) ? theme.current() : 'system';
         check(panel, 'mode', mode);
-        LAYOUT_PREFS.concat(['nav', 'menu', 'font', 'base']).forEach(function (n) { check(panel, n, theme.getPref(n)); });
+        LAYOUT_PREFS.concat(['nav', 'menu', 'font', 'base', 'density']).forEach(function (n) { check(panel, n, theme.getPref(n)); });
         syncPresets(panel);
         var primary = theme.getPref('primary');
         if (primary) check(panel, 'primary', primary);
@@ -617,6 +626,14 @@
     document.addEventListener('change', function (e) {
         var input = e.target;
         if (!input.closest || !input.closest('[data-m-customizer-form]')) return;
+        if (input.hasAttribute('data-m-culture')) {
+            // ASP.NET Core's culture cookie (CookieRequestCultureProvider), then reload in the new request culture.
+            var c = input.value;
+            document.cookie = input.getAttribute('data-cookie') + '=' + encodeURIComponent('c=' + c + '|uic=' + c) +
+                '; path=/; max-age=31536000; samesite=lax' + (location.protocol === 'https:' ? '; secure' : '');
+            location.reload();
+            return;
+        }
         var theme = window.modulusTheme;
         if (!theme) return;
         if (input.name === 'mode') {
@@ -696,6 +713,9 @@
     var wide = window.matchMedia('(min-width: 992px)');
     if (wide.addEventListener) wide.addEventListener('change', function (e) { if (e.matches) closeNav(); });
     window.modulusShell = window.modulusShell || {};
+    // SPA navigation (modulus-spa.js) closes the navigation drawer and the app launcher once the next page is in.
+    window.modulusShell.closeNav = closeNav;
+    window.modulusShell.closeLauncher = closeLauncher;
     window.modulusShell.openPopup = function (gridId) {
         // The component wires up its overlay in its own first after-render, and the table may render a new row a
         // cycle later, so look for the grid's editing cell for a few frames.
@@ -757,7 +777,22 @@
     });
     window.modulusShell.syncBackTops = syncBackTops;
 
-    // Tour: window.modulusShell.tour(root, focus) spotlights the step's data-target and places the .ant-tour card
+    // Chart legend toggle (ChartOptions.LegendToggle): [data-m-legend] buttons hide and show the chart's
+    // [data-s="<series>"] marks and tooltip rows. The last visible series can't be hidden.
+    document.addEventListener('click', function (e) {
+        var btn = e.target instanceof Element && e.target.closest('[data-m-legend] [data-series]');
+        if (!btn) return;
+        var legend = btn.closest('[data-m-legend]');
+        var chart = btn.closest('.m-chart');
+        var on = btn.getAttribute('aria-pressed') !== 'false';
+        if (on && legend.querySelectorAll('[aria-pressed="true"]').length < 2) return;
+        btn.setAttribute('aria-pressed', on ? 'false' : 'true');
+        chart.querySelectorAll('[data-s="' + btn.getAttribute('data-series') + '"]').forEach(function (el) {
+            el.classList.toggle('m-series-hidden', on);
+        });
+    });
+
+    // Tour:window.modulusShell.tour(root, focus) spotlights the step's data-target and places the .ant-tour card
     // beside it (data-placement top | bottom | left | right), clamped to the viewport. Re-runs on resize and scroll.
     var activeTour = null;
 
@@ -843,7 +878,38 @@
         popup.style.left = Math.round(Math.max(edge, Math.min(r.left, vw - w - edge))) + 'px';
         popup.style.top = Math.round(up ? Math.max(edge, r.top - gap - h) : r.bottom + gap) + 'px';
     }
-    function placeSelects() { document.querySelectorAll('.m-cselect.ant-select-open, .m-lookup.m-lookup-open').forEach(placeSelect); }
+    // <app-dropdown> panels are absolutely positioned inside the dropdown. When an ancestor scrolls or clips
+    // (overflow other than visible), the panel would be cut off, so it switches to position: fixed next to its
+    // trigger (m-dropdown-float), opening upwards when there is no room below.
+    function clipsOverflow(el) {
+        for (var p = el.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement) {
+            var s = getComputedStyle(p);
+            if (s.overflowX !== 'visible' || s.overflowY !== 'visible') return true;
+        }
+        return false;
+    }
+    function placeDropdown(root) {
+        var panel = root && root.querySelector(':scope > .m-dropdown-panel');
+        if (!panel || getComputedStyle(panel).display === 'none') return;
+        if (!root.classList.contains('m-dropdown-float')) {
+            if (!clipsOverflow(root)) return;
+            root.classList.add('m-dropdown-float');
+        }
+        var trigger = root.querySelector(':scope > .m-dropdown-trigger') || root;
+        var r = trigger.getBoundingClientRect(), gap = 4, edge = 8;
+        var vw = document.documentElement.clientWidth, vh = window.innerHeight;
+        var h = panel.offsetHeight, w = panel.offsetWidth;
+        var up = h > vh - r.bottom - gap - edge && r.top > vh - r.bottom;
+        var left = panel.classList.contains('m-dropdown-left') ? r.left : r.right - w;
+        panel.style.left = Math.round(Math.max(edge, Math.min(left, vw - w - edge))) + 'px';
+        panel.style.top = Math.round(up ? Math.max(edge, r.top - gap - h) : r.bottom + gap) + 'px';
+    }
+    window.modulusShell.placeDropdown = placeDropdown;
+
+    function placeSelects() {
+        document.querySelectorAll('.m-cselect.ant-select-open, .m-lookup.m-lookup-open').forEach(placeSelect);
+        document.querySelectorAll('.m-dropdown.m-dropdown-float').forEach(placeDropdown);
+    }
 
     window.modulusShell.placeSelect = function (root) {
         placeSelect(root);
@@ -853,6 +919,357 @@
         var selector = root && root.querySelector('.ant-select-selector');
         if (selector && !root.contains(document.activeElement)) selector.focus({ preventScroll: true });
     };
+
+
+    // ---- Data tables and grids (Blazor and MVC share the DOM) ------------------------------------------------
+    //  [data-m-filter-row]        MVC: shows / hides the table's filter row (the header searches as boxes under
+    //                             the titles). Kept per table for the tab, and open while a column is searched.
+    //  [data-m-search-reveal]     MVC: an empty toolbar search folds into its icon; a click opens it.
+    //  Keys inside a grid:        Ctrl+S saves ([data-m-grid-save]), Insert adds a row ([data-m-grid-add]), Ctrl+F
+    //                             searches, Delete removes the selected rows ([data-m-grid-delete-selected]), and the
+    //                             arrow keys move between cells.
+
+    function tableCard(el) { return el && el.closest ? el.closest('.m-table-card') : null; }
+    // A table's own header row group (a nested grid's headers sit further down, inside a detail row).
+    function ownHead(card) {
+        var heads = card.querySelectorAll('thead');
+        for (var i = 0; i < heads.length; i++) if (tableCard(heads[i]) === card) return heads[i];
+        return null;
+    }
+    function filterRowKey(card) { return card.id ? 'modulus-filter-row:' + location.pathname + ':' + card.id : null; }
+    function setFilterRow(card, on, remember) {
+        var head = ownHead(card);
+        if (head) head.classList.toggle('m-filter-row-on', on);
+        card.querySelectorAll('[data-m-filter-row]').forEach(function (b) {
+            if (tableCard(b) !== card) return;
+            b.classList.toggle('active', on);
+            b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            b.title = on ? 'Hide the filter row' : 'Show the filter row';
+        });
+        var key = filterRowKey(card);
+        if (remember && key) { try { sessionStorage.setItem(key, on ? '1' : '0'); } catch (e) { /* storage blocked */ } }
+    }
+    // On when the user turned it on (this session), when a column search is set, or by default for a table marked
+    // data-m-filter-row-open (the nested grid's levels) unless the user turned it off.
+    function syncFilterRow(card) {
+        if (!card || !card.querySelector('[data-m-filter-row]')) return;
+        var head = ownHead(card), key = filterRowKey(card), stored = null;
+        try { stored = key ? sessionStorage.getItem(key) : null; } catch (e) { /* storage blocked */ }
+        var searched = !!head && Array.prototype.some.call(head.querySelectorAll('.m-th-filter'), function (i) { return i.value.trim() !== ''; });
+        var fallback = card.hasAttribute('data-m-filter-row-open');
+        setFilterRow(card, searched || (stored === null ? fallback : stored === '1'), false);
+    }
+    window.modulusShell.syncFilterRow = function (el) { syncFilterRow(tableCard(el) || el); };
+    function syncFilterRows(root) {
+        (root && root.querySelectorAll ? root : document).querySelectorAll('.m-table-card').forEach(syncFilterRow);
+        if (root && root.classList && root.classList.contains('m-table-card')) syncFilterRow(root);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { syncFilterRows(document); }); else syncFilterRows(document);
+    document.addEventListener('htmx:load', function (e) { syncFilterRows(e.detail && e.detail.elt); });
+
+    document.addEventListener('click', function (e) {
+        var t = e.target instanceof Element ? e.target : null;
+        var toggle = t && t.closest('[data-m-filter-row]');
+        if (toggle) {
+            var card = tableCard(toggle), head = card && ownHead(card);
+            if (!head) return;
+            var on = !head.classList.contains('m-filter-row-on');
+            setFilterRow(card, on, true);
+            if (on) {
+                var first = head.querySelector('.m-th-filter');
+                if (first) first.focus();
+            }
+            return;
+        }
+        var reveal = t && t.closest('[data-m-search-reveal]');
+        if (reveal) {
+            var box = reveal.nextElementSibling;
+            if (!box) return;
+            reveal.hidden = true;
+            box.hidden = false;
+            var input = box.querySelector('input');
+            if (input) input.focus();
+        }
+    });
+    // Leaving an empty revealed search folds it back into its icon.
+    document.addEventListener('focusout', function (e) {
+        var input = e.target;
+        if (!(input instanceof HTMLInputElement) || input.value) return;
+        var box = input.closest('.m-table-toolbar-search'), reveal = box && box.previousElementSibling;
+        if (!reveal || !reveal.hasAttribute('data-m-search-reveal')) return;
+        setTimeout(function () {
+            if (box.contains(document.activeElement) || input.value) return;
+            box.hidden = true;
+            reveal.hidden = false;
+        }, 150);
+    });
+
+    // ---- Data tables: a Columns picker ([data-m-table-columns]) and Export CSV ([data-m-table-export]) --------------
+    // Both work from the rendered table, so the same toolbar buttons serve Blazor's ProTable and the MVC tables.
+    // Hidden columns are remembered per page and table (localStorage), by header text, and hidden with a style rule
+    // scoped to the card, so a Blazor re-render or an htmx swap keeps them hidden. The export writes the rows shown
+    // (this page, after filters) in the visible columns.
+    var tableSeq = 0;
+    function tableKey(card) { if (!card.id) card.id = 'm-table-' + (++tableSeq); return card.id; }
+    function colsStore(card) { return 'modulus-table-cols:' + location.pathname + ':' + tableKey(card); }
+    function utilityCell(th) {
+        return th.classList.contains('ant-table-selection-column') || th.classList.contains('ant-table-row-expand-icon-cell') ||
+            th.classList.contains('m-grid-actions') || th.classList.contains('ant-table-cell-scrollbar');
+    }
+    // The card's own header cells: { index (1-based, as nth-child), label, th }, without the checkbox, expand and actions cells.
+    function tableColumns(card) {
+        var head = ownHead(card), row = head && head.querySelector('tr');
+        if (!row) return [];
+        var cols = [];
+        Array.prototype.forEach.call(row.children, function (th, i) {
+            if (utilityCell(th)) return;
+            var title = th.querySelector('.ant-table-column-title') || th;
+            var label = title.textContent.replace(/\s+/g, ' ').replace(/\s*\*$/, '').trim();
+            if (label) cols.push({ index: i + 1, label: label, th: th });
+        });
+        return cols;
+    }
+    function readHiddenCols(card) {
+        try { var v = JSON.parse(localStorage.getItem(colsStore(card)) || '[]'); return Array.isArray(v) ? v : []; } catch (e) { return []; }
+    }
+    function writeHiddenCols(card, list) {
+        try { if (list.length) localStorage.setItem(colsStore(card), JSON.stringify(list)); else localStorage.removeItem(colsStore(card)); } catch (e) { /* storage blocked */ }
+    }
+    function applyHiddenCols(card) {
+        var key = tableKey(card), hidden = readHiddenCols(card), id = '#' + CSS.escape(key);
+        var rules = tableColumns(card).filter(function (c) { return hidden.indexOf(c.label) >= 0; }).map(function (c) {
+            var n = ':nth-child(' + c.index + ')';
+            return id + ' :is(thead, tbody, tfoot) > tr:not(.ant-table-expanded-row):not(.ant-table-placeholder) > ' + n + ':not(.ant-table-expanded-row *), ' +
+                id + ' colgroup > col' + n + ':not(.ant-table-expanded-row *) { display: none; }';
+        }).join('\n');
+        var style = document.getElementById(key + '-cols');
+        if (!rules) { if (style) style.remove(); return; }
+        if (!style) { style = document.createElement('style'); style.id = key + '-cols'; document.head.appendChild(style); }
+        if (style.textContent !== rules) style.textContent = rules;
+    }
+    function applyAllHiddenCols() {
+        document.querySelectorAll('[data-m-table-columns]').forEach(function (b) { var card = tableCard(b); if (card) applyHiddenCols(card); });
+    }
+    window.modulusShell.applyHiddenColumns = applyAllHiddenCols;
+
+    function escHtml(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    var colsPanel = null;
+    function closeColsPanel() {
+        if (!colsPanel) return;
+        if (colsPanel._button) { colsPanel._button.setAttribute('aria-expanded', 'false'); colsPanel._button.focus({ preventScroll: true }); }
+        colsPanel.remove();
+        colsPanel = null;
+    }
+    function renderColsPanel(panel, card) {
+        var hidden = readHiddenCols(card), cols = tableColumns(card);
+        var shown = cols.filter(function (c) { return hidden.indexOf(c.label) < 0; }).length;
+        var items = cols.map(function (c) {
+            var on = hidden.indexOf(c.label) < 0, last = on && shown === 1;
+            return '<li class="m-grid-columns-item"><label class="ant-checkbox-wrapper' + (on ? ' ant-checkbox-wrapper-checked' : '') + (last ? ' ant-checkbox-wrapper-disabled' : '') + '">' +
+                '<span class="ant-checkbox' + (on ? ' ant-checkbox-checked' : '') + (last ? ' ant-checkbox-disabled' : '') + '"><input type="checkbox" class="ant-checkbox-input" data-col="' + escHtml(c.label) + '"' + (on ? ' checked' : '') + (last ? ' disabled title="At least one column stays visible"' : '') + ' /><span class="ant-checkbox-inner"></span></span>' +
+                '<span>' + escHtml(c.label) + '</span></label></li>';
+        }).join('');
+        panel.innerHTML = '<div class="ant-popover-content"><div class="ant-popover-inner" role="dialog" aria-label="Columns">' +
+            '<div class="ant-popover-title"><div class="m-grid-columns-head"><span>Columns</span><span class="m-muted">' + shown + ' of ' + cols.length + ' shown</span></div></div>' +
+            '<div class="ant-popover-inner-content"><ul class="m-grid-columns" role="list">' + items + '</ul>' +
+            '<div class="m-table-cols-foot"><button type="button" class="ant-btn ant-btn-link ant-btn-sm" data-cols-reset' + (hidden.length ? '' : ' disabled') + '><span>Show all</span></button></div></div></div></div>';
+    }
+    function openColsPanel(button) {
+        var card = tableCard(button);
+        if (!card) return;
+        closeColsPanel();
+        var panel = document.createElement('div');
+        panel.className = 'ant-popover ant-popover-placement-bottomRight m-grid-columns-popover m-table-cols-pop';
+        panel._card = card;
+        panel._button = button;
+        renderColsPanel(panel, card);
+        document.body.appendChild(panel);
+        var r = button.getBoundingClientRect(), vw = document.documentElement.clientWidth;
+        panel.style.position = 'fixed';
+        panel.style.top = Math.round(r.bottom + 4) + 'px';
+        panel.style.left = Math.round(Math.max(8, Math.min(r.right - panel.offsetWidth, vw - panel.offsetWidth - 8))) + 'px';
+        button.setAttribute('aria-expanded', 'true');
+        colsPanel = panel;
+        var first = panel.querySelector('input:not(:disabled)');
+        if (first) first.focus({ preventScroll: true });
+    }
+    document.addEventListener('change', function (e) {
+        var box = e.target;
+        if (!colsPanel || !(box instanceof HTMLInputElement) || !colsPanel.contains(box) || !box.hasAttribute('data-col')) return;
+        var card = colsPanel._card, label = box.getAttribute('data-col');
+        var hidden = readHiddenCols(card).filter(function (l) { return l !== label; });
+        if (!box.checked) hidden.push(label);
+        writeHiddenCols(card, hidden);
+        applyHiddenCols(card);
+        renderColsPanel(colsPanel, card);
+        var again = colsPanel.querySelector('input[data-col="' + CSS.escape(label) + '"]');
+        if (again) again.focus({ preventScroll: true });
+    });
+
+    function csvCell(v) {
+        var s = String(v == null ? '' : v);
+        if (/^[=+@\t\r]/.test(s)) s = "'" + s; // no formulas when opened in a spreadsheet
+        return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    }
+    function cellText(td) {
+        var field = td.querySelector('input:not([type=hidden]):not([type=checkbox]), select, textarea');
+        if (field && field.offsetParent !== null) return field.value;
+        return (td.innerText || td.textContent || '').replace(/\s+/g, ' ').trim();
+    }
+    function exportTable(card, name) {
+        var hidden = readHiddenCols(card);
+        var cols = tableColumns(card).filter(function (c) { return hidden.indexOf(c.label) < 0; });
+        var rows = Array.prototype.filter.call(card.querySelectorAll('tbody > tr.ant-table-row'), function (tr) {
+            return tableCard(tr) === card && !tr.parentElement.closest('.ant-table-expanded-row');
+        });
+        var lines = [cols.map(function (c) { return csvCell(c.label); }).join(',')];
+        rows.forEach(function (tr) {
+            lines.push(cols.map(function (c) { var td = tr.children[c.index - 1]; return csvCell(td ? cellText(td) : ''); }).join(','));
+        });
+        var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = (name || 'export').replace(/[\\/:*?"<>|]+/g, '-') + '.csv';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    }
+
+    document.addEventListener('click', function (e) {
+        var t = e.target instanceof Element ? e.target : null;
+        // A checkbox click re-renders the panel, so its label is detached by the time the click reaches here.
+        if (!t || !t.isConnected) return;
+        var colsButton = t.closest('[data-m-table-columns]');
+        if (colsButton) {
+            e.preventDefault();
+            if (colsPanel && colsPanel._button === colsButton) closeColsPanel(); else openColsPanel(colsButton);
+            return;
+        }
+        if (colsPanel && t.closest('[data-cols-reset]') && colsPanel.contains(t)) {
+            writeHiddenCols(colsPanel._card, []);
+            applyHiddenCols(colsPanel._card);
+            renderColsPanel(colsPanel, colsPanel._card);
+            return;
+        }
+        if (colsPanel && !colsPanel.contains(t)) closeColsPanel();
+        var exportButton = t.closest('[data-m-table-export]');
+        if (exportButton) {
+            var card = tableCard(exportButton);
+            if (!card) return;
+            e.preventDefault();
+            var title = card.querySelector('.m-table-toolbar-title');
+            exportTable(card, exportButton.getAttribute('data-m-table-export') || (title && title.firstChild && title.firstChild.textContent.trim()) || 'export');
+        }
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && colsPanel) { e.preventDefault(); closeColsPanel(); } });
+    window.addEventListener('resize', closeColsPanel);
+    document.addEventListener('scroll', function (e) { if (colsPanel && !(e.target instanceof Node && colsPanel.contains(e.target))) closeColsPanel(); }, { capture: true, passive: true });
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyAllHiddenCols); else applyAllHiddenCols();
+    document.addEventListener('htmx:load', applyAllHiddenCols);
+
+    function visible(el) { return !!el && !el.disabled && el.offsetParent !== null && getComputedStyle(el).visibility !== 'hidden'; }
+    // The grid a key press belongs to: the one holding the focus, or the only grid on the page.
+    function keyGrid(target) {
+        var card = tableCard(target);
+        if (card) return card;
+        var grids = document.querySelectorAll('.m-grid');
+        return grids.length === 1 ? grids[0] : null;
+    }
+    function own(card, selector) {
+        var found = card.querySelectorAll(selector);
+        for (var i = 0; i < found.length; i++) if (tableCard(found[i]) === card && visible(found[i])) return found[i];
+        return null;
+    }
+    function editing(target) {
+        return target instanceof Element && !!target.closest('input, textarea, select, [contenteditable="true"], .m-grid-cell-editing, .ant-select, .ant-picker');
+    }
+    // The cell in the same column of the next shown row (dy), or the next cell in the row (dx).
+    function neighbourCell(td, dx, dy) {
+        var tr = td.parentElement;
+        if (dx) {
+            var sib = dx > 0 ? td.nextElementSibling : td.previousElementSibling;
+            while (sib && !sib.querySelector('.m-grid-cell')) sib = dx > 0 ? sib.nextElementSibling : sib.previousElementSibling;
+            return sib;
+        }
+        var key = td.getAttribute('data-key'), index = Array.prototype.indexOf.call(tr.children, td);
+        var row = dy > 0 ? tr.nextElementSibling : tr.previousElementSibling;
+        while (row && (row.hidden || !row.classList.contains('ant-table-row'))) row = dy > 0 ? row.nextElementSibling : row.previousElementSibling;
+        if (!row) return null;
+        return (key && row.querySelector(':scope > td[data-key="' + CSS.escape(key) + '"]')) || row.children[index] || null;
+    }
+    function focusCell(td) {
+        var cell = td && td.querySelector('.m-grid-cell:not([hidden])');
+        if (!cell) return false;
+        if (!cell.hasAttribute('tabindex')) cell.setAttribute('tabindex', '-1');
+        cell.focus();
+        return true;
+    }
+
+    document.addEventListener('keydown', function (e) {
+        var t = e.target instanceof Element ? e.target : null;
+        var mod = e.ctrlKey || e.metaKey;
+        if (mod && !e.altKey && !e.shiftKey && (e.key === 's' || e.key === 'S')) {
+            var grid = keyGrid(t), save = grid && own(grid, '[data-m-grid-save]');
+            if (!save) return;
+            e.preventDefault();
+            // Leave the cell first, so its value is committed before the save.
+            if (document.activeElement && grid.contains(document.activeElement)) document.activeElement.blur();
+            setTimeout(function () { save.click(); }, 0);
+            return;
+        }
+        if (mod && !e.altKey && !e.shiftKey && (e.key === 'f' || e.key === 'F')) {
+            var card = tableCard(t);
+            if (!card) return;
+            var box = own(card, '.m-table-toolbar-search input');
+            var open = box || own(card, '[data-m-search-toggle]');
+            if (!open) return;
+            e.preventDefault();
+            if (box) { box.focus(); box.select(); } else open.click();
+            return;
+        }
+        if (!t || mod || e.altKey || editing(t)) return;
+        var cardHere = tableCard(t);
+        if (!cardHere || !cardHere.classList.contains('m-grid')) return;
+        if (e.key === 'Insert') {
+            var add = own(cardHere, '[data-m-grid-add]');
+            if (add) { e.preventDefault(); add.click(); }
+            return;
+        }
+        if (e.key === 'Delete') {
+            var del = own(cardHere, '[data-m-grid-delete-selected]');
+            if (del) { e.preventDefault(); del.click(); }
+            return;
+        }
+        var move = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[e.key];
+        var td = move && t.closest('td');
+        if (!td || !td.querySelector('.m-grid-cell') || tableCard(td) !== cardHere) return;
+        var next = neighbourCell(td, move[0], move[1]);
+        if (next && focusCell(next)) e.preventDefault();
+    });
+
+    // Grid scrollers publish their visible width as --m-grid-view, so a detail row's content stays in view while
+    // the table scrolls sideways (the CSS can't use a container query there; see modulus.css).
+    var gridViews = 'ResizeObserver' in window ? new ResizeObserver(function (entries) {
+        entries.forEach(function (e) { e.target.style.setProperty('--m-grid-view', e.target.clientWidth + 'px'); });
+    }) : null;
+    var watchedViews = typeof WeakSet === 'function' ? new WeakSet() : null;
+    function watchGridViews() {
+        if (!gridViews || !watchedViews) return;
+        document.querySelectorAll('.m-grid .ant-table-content').forEach(function (el) {
+            if (watchedViews.has(el)) return;
+            watchedViews.add(el);
+            gridViews.observe(el);
+        });
+    }
+    var gridViewsQueued = false;
+    if ('MutationObserver' in window) new MutationObserver(function () {
+        if (gridViewsQueued) return;
+        gridViewsQueued = true;
+        // Also re-applies hidden data-table columns after a Blazor render or navigation (a no-op when nothing changed).
+        requestAnimationFrame(function () { gridViewsQueued = false; watchGridViews(); applyAllHiddenCols(); });
+    }).observe(document.documentElement, { childList: true, subtree: true });
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchGridViews); else watchGridViews();
 
     window.addEventListener('resize', placeSelects);
     document.addEventListener('scroll', function (e) {
@@ -985,6 +1402,12 @@
         a.click();
         a.remove();
         setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    };
+
+    // Posts a native form as a full page request. Blazor Server calls it once its own form has validated, for work a
+    // circuit can't do, such as setting the sign-in cookie.
+    window.modulusShell.submit = function (form) {
+        if (form instanceof HTMLFormElement) form.submit();
     };
     // ---- Business fields (Modulus.Ui.Abstractions.Forms, mirrored for the browser) ----------------------------
     // The same rules as NumberText, DurationText and InputMask, so a value formatted in the browser matches one

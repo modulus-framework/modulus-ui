@@ -10,7 +10,7 @@
         ("Products", s.Total.ToString("N0"), "package"),
         ("Published", s.Published.ToString("N0"), "world"),
         ("Low stock", s.LowStock.ToString("N0"), "alert-triangle"),
-        ("Inventory value", Fmt.Money0(s.InventoryValue), "building-warehouse"),
+        ("Inventory value", Fmt.Money0(s.InventoryValue), "ant:shop"),
     ];
 }
 <app-page-header pretitle="eCommerce" title="Products">
@@ -41,8 +41,7 @@
                         <span class="ant-input-prefix"><app-ti name="search" /></span>
                         <input class="ant-input" type="search" name="keyword" value="@q.Keyword" placeholder="Search products…" aria-label="Search products" form="products-filter" />
                     </span>
-                    <app-button icon="download">Export</app-button>
-                    <app-table-settings reload-href="@grid.Current" />
+                    <app-table-settings reload-href="@grid.Current" clear-href="@grid.ClearLink("keyword", "category", "stock", "status")" />
                 </div>
             </div>
 

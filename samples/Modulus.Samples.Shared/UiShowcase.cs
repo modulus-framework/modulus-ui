@@ -23,7 +23,7 @@ public static class UiShowcase
         new("Revenue", "$48,250", "currency-dollar", "green", 12.4, "vs. $42,930 last month"),
         new("New customers", "1,284", "users", "blue", 8.1, "vs. 1,188 last month"),
         new("Orders", "3,642", "shopping-cart", "orange", -2.6, "vs. 3,739 last month"),
-        new("Refund rate", "1.8%", "receipt-refund", "red", -0.4, "vs. 2.2% last month"),
+        new("Refund rate", "1.8%", "ant:rollback", "red", -0.4, "vs. 2.2% last month"),
     ];
 
     public static readonly (string Label, string Value, string Icon, string Tone, double Share)[] Usage =

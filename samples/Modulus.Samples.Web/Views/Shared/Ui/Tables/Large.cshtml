@@ -1,0 +1,139 @@
+@model LargeTablePage
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Microsoft.AspNetCore.WebUtilities
+@{
+    const string Base = "/tables/large";
+    var grid = new Grid(Context.Request, Model.Request);
+    var page = Model.Page;
+    var filter = Model.Filter;
+    var total = page.Total ?? 0;
+    // The rows endpoint gets the table's filters and sort; paging (current, pageSize, cursor) is added per request.
+    var rowsQuery = Context.Request.Query
+        .Where(q => q.Key is not ("current" or "pageSize" or "cursor") && !string.IsNullOrEmpty(q.Value))
+        .Select(q => new KeyValuePair<string, string?>(q.Key, q.Value.ToString()));
+    var rowsUrl = QueryHelpers.AddQueryString($"{Base}/rows", rowsQuery.Append(new("mode", Model.Mode)).DistinctBy(q => q.Key));
+    ViewData["RowsUrl"] = rowsUrl;
+    var modeNote = Model.Mode switch
+    {
+        "infinite" => $"{LargeTablePage.InfiniteSize} rows at a time as you scroll; each next page continues after the last row's date and id (keyset), so it costs the same however far down you are.",
+        "virtual" => $"One scroll area for every matching row. Only the rows in view are in the page; blocks of {LargeTablePage.VirtualBlock} load as you scroll and the ones scrolled past are dropped.",
+        _ => "Numbered pages: the server reads one page and counts the matches.",
+    };
+}
+<app-page-header pretitle="Tables" title="Large data" subtitle="100,000 shipments, queried through TableQuery: filtering, sorting and paging happen in the query, never in the browser." />
+
+<div id="large-page" class="m-row-cards"
+     hx-boost="true" hx-target="#large-page" hx-select="#large-page" hx-swap="outerHTML" hx-push-url="true" hx-sync="#large-page:replace">
+    <div class="ant-card m-table-card">
+        <div class="ant-card-body">
+            <div class="m-table-toolbar">
+                <div class="m-table-toolbar-title">
+                    Shipments
+                    <span class="m-small m-muted">@total.ToString("N0") matching · query @Model.QueryMs.ToString("0.0") ms</span>
+                </div>
+                <div class="m-table-toolbar-actions">
+                    @* Type-ahead: the form submits 300 ms after the last key; hx-sync on #large-page aborts the request
+                       still running, and the id keeps focus and caret in the input across the swap. *@
+                    <span class="m-table-toolbar-search ant-input-affix-wrapper">
+                        <span class="ant-input-prefix"><app-ti name="search" /></span>
+                        <input id="large-keyword" class="ant-input" type="search" name="keyword" value="@filter.Keyword" maxlength="200" autocomplete="off"
+                               placeholder="Reference or customer…" aria-label="Search shipments" form="large-filter"
+                               @@input.debounce.300ms="$el.form.requestSubmit()" />
+                    </span>
+                    <div class="ant-segmented" role="group" aria-label="Mode">
+                        <div class="ant-segmented-group">
+                            @foreach (var (key, label) in LargeTablePage.Modes)
+                            {
+                                var selected = key == Model.Mode;
+                                <a class="ant-segmented-item@(selected ? " ant-segmented-item-selected" : "")" href="@grid.Href(("mode", key == "paged" ? null : key), ("current", null), ("cursor", null))" aria-current="@(selected ? "page" : null)"><div class="ant-segmented-item-label">@label</div></a>
+                            }
+                        </div>
+                    </div>
+                    <app-table-settings reload-href="@grid.Current" clear-href="@grid.ClearLink("keyword", "status", "city")" />
+                </div>
+            </div>
+
+            <form id="large-filter" class="m-table-filters" method="get" action="@Base" @@change="$el.requestSubmit()">
+                <app-select name="status" items="Enum.GetValues<ShipmentStatus>().Select(v => new SelectListItem(v.ToString(), v.ToString(), v == filter.Status))" placeholder="Status" aria-label="Status" />
+                <app-select name="city" items="Shipments.Cities.Select(c => new SelectListItem(c, c, c == filter.City))" placeholder="City" aria-label="City" />
+                @if (Model.Mode != "paged")
+                {
+                    <input type="hidden" name="mode" value="@Model.Mode" />
+                }
+                else
+                {
+                    <input type="hidden" name="pageSize" value="@Model.Request.PageSize" />
+                }
+                @if (Model.Request.SortField is { } sortField)
+                {
+                    <input type="hidden" name="sortField" value="@sortField" />
+                    <input type="hidden" name="sortOrder" value="@Model.Request.SortOrder" />
+                }
+                @foreach (var (field, text) in grid.Searches)
+                {
+                    <input type="hidden" name="@(ColumnSearch.Prefix + field)" value="@text" />
+                }
+            </form>
+            <div class="m-table-note"><app-ti name="info-circle" /> @modeNote</div>
+
+            @{
+                var head = grid.SortTh("reference", "Reference", searchable: true);
+            }
+            @if (Model.Mode == "virtual")
+            {
+                <app-virtual-table src="@rowsUrl" total="@total" row-height="40" height="560" block="@LargeTablePage.VirtualBlock" scroll-x="960" label="Shipments">
+                    <colgroup><col style="width:140px" /><col /><col style="width:130px" /><col style="width:120px" /><col style="width:130px" /><col style="width:120px" /></colgroup>
+                    <thead class="ant-table-thead">
+                        <tr>
+                            @head
+                            @grid.SortTh("customer", "Customer", searchable: true)
+                            @grid.SortTh("city", "City", searchable: true)
+                            <th class="ant-table-cell">Status</th>
+                            @grid.SortTh("amount", "Amount", "text-align: right", kind: ColumnKind.Number)
+                            @grid.SortTh("date", "Date", kind: ColumnKind.Date)
+                        </tr>
+                    </thead>
+                    <template data-m-virtual-seed><partial name="Ui/Tables/_LargeRows" model="Model" /></template>
+                </app-virtual-table>
+            }
+            else
+            {
+                <div class="ant-table-wrapper" id="large-table">
+                    <div class="ant-table ant-table-middle ant-table-scroll-horizontal">
+                        <div class="ant-table-container">
+                            <div class="ant-table-content" style="overflow: auto hidden;">
+                                <table style="width: 960px; min-width: 100%; table-layout: fixed;">
+                                    <colgroup><col style="width:140px" /><col /><col style="width:130px" /><col style="width:120px" /><col style="width:130px" /><col style="width:120px" /></colgroup>
+                                    <thead class="ant-table-thead">
+                                        <tr>
+                                            @head
+                                            @grid.SortTh("customer", "Customer", searchable: true)
+                                            @grid.SortTh("city", "City", searchable: true)
+                                            <th class="ant-table-cell">Status</th>
+                                            @grid.SortTh("amount", "Amount", "text-align: right", kind: ColumnKind.Number)
+                                            @grid.SortTh("date", "Date", kind: ColumnKind.Date)
+                                        </tr>
+                                    </thead>
+                                    <tbody class="ant-table-tbody">
+                                        @if (page.Items.Count == 0)
+                                        {
+                                            <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="6"><div class="m-table-empty">No shipments match these filters</div></td></tr>
+                                        }
+                                        else
+                                        {
+                                            <partial name="Ui/Tables/_LargeRows" model="Model" />
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    @if (Model.Mode == "paged")
+                    {
+                        @grid.Pager(total)
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

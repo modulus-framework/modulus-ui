@@ -4,11 +4,13 @@
 
 <PageTitle>Data table · Modulus</PageTitle>
 
-@* Data table: search, filters, sorting, paging, column picker, density, selection and CSV export (/tables/advanced/export,
+@* Data table: search, filters, sorting, row drag and drop, paging, column picker, density, selection and CSV export (/tables/advanced/export,
    mapped in Program.cs). MVC and Razor Pages render the same page from Samples.Web Views/Shared/Ui/Tables/Advanced.cshtml. *@
 <PageHeading Pretitle="Tables" Title="Data table" Subtitle="Search, filter, sort, page, pick columns and export to CSV." />
 
-<ProTable TItem="Employee" @ref="_table" HeaderTitle="Employees" Request="LoadAsync" RowKey="e => e.Id" Selectable ScrollX="1100">
+@* Rows drag by their handle to a new place (not while a column sort is on); EmployeeDirectory keeps the order. *@
+<ProTable TItem="Employee" @ref="_table" HeaderTitle="Employees" Request="LoadAsync" RowKey="e => e.Id" Selectable ScrollX="1140" FilterRow ColumnSettings="false" Exportable="false"
+          OnRowMove="MoveRow" RowLabel="e => e.Name">
     <TitleExtra>
         <span class="m-badge m-badge-gray-lt">@_summary.Count</span>
         <span class="m-small m-muted m-medium" style="font-weight:400">avg. salary @Fmt.Money0(_summary.AverageSalary)</span>
@@ -21,16 +23,16 @@
                     @foreach (var (key, title) in EmployeeDirectory.OptionalColumns)
                     {
                         <MenuItem Key="@key" OnClick="() => ToggleColumn(key)">
-                            <span class="m-column-toggle"><Ti Name="@(Shows(key) ? "square-check" : "square")" />@title</span>
+                            <span class="m-column-toggle"><Icon Type="@(Shows(key) ? "check-square" : "border")" Theme="@(Shows(key) ? IconThemeType.Fill : IconThemeType.Outline)" />@title</span>
                         </MenuItem>
                     }
                 </Menu>
             </Overlay>
             <ChildContent>
-                <button type="button" class="ant-btn ant-btn-default"><Ti Name="columns" /><span>Columns</span></button>
+                <button type="button" class="ant-btn ant-btn-default m-table-columns-toggle" title="Show or hide columns"><Icon Type="setting" /><span>Columns</span></button>
             </ChildContent>
         </Dropdown>
-        <a class="ant-btn ant-btn-default" href="@ExportUrl()" download><Ti Name="download" /><span>Export CSV</span></a>
+        <a class="ant-btn ant-btn-default m-table-export" href="@ExportUrl()" title="Export the rows (after search and filters) to a CSV file" download><Icon Type="download" /><span>Export CSV</span></a>
     </ToolBar>
     <Filters>
         <Select TItemValue="string" TItem="string" Value="_department" ValueChanged="v => FilterAsync(() => _department = v)" DataSource="EmployeeDirectory.Departments" Placeholder="All departments" AllowClear />
@@ -44,7 +46,7 @@
             </SelectOptions>
         </Select>
         <AppCreatableSelect Options="EmployeeLabels.Options" Value="@_label" ValueChanged="v => FilterAsync(() => _label = v)" OnAdd="AddLabelAsync"
-                            Placeholder="Any label" AddPlaceholder="New label" AllowClear AriaLabel="Label" />
+                            Placeholder="Any label" AddPlaceholder="Label name" CreateText="Create new label" AllowClear AriaLabel="Label" />
         @if (Filtered)
         {
             <button type="button" class="ant-btn ant-btn-link" @onclick="ClearFiltersAsync"><span>Clear filters</span></button>
@@ -52,7 +54,7 @@
     </Filters>
     <BatchActions Context="rows">
         <AppCreatableSelect Options="EmployeeLabels.Options" ValueChanged="v => ApplyLabelAsync(rows, v)" OnAdd="AddLabelAsync" Size="small"
-                            Placeholder="Add label…" AddPlaceholder="New label" AriaLabel="Add a label to the selected employees" Style="width: 160px" />
+                            Placeholder="Add label…" AddPlaceholder="Label name" CreateText="Create new label" AriaLabel="Add a label to the selected employees" Style="width: 160px" />
         <a class="ant-btn ant-btn-primary ant-btn-sm" href="@ExportUrl(rows.Select(r => r.Id))" download><span>Export selected</span></a>
     </BatchActions>
     <RowDetail Context="e">
@@ -91,7 +93,7 @@
         </PropertyColumn>
         <PropertyColumn Hidden="@(!Shows("office"))" Property="e => e.Office" Width="150" Class="@SortClass(nameof(Employee.Office))">
             <TitleTemplate><ColumnHeader Key="@nameof(Employee.Office)" Title="Office" /></TitleTemplate>
-            <ChildContent><span class="m-flex m-gap-6"><Ti Name="@(row.Office == "Remote" ? "home" : "map-pin")" />@row.Office</span></ChildContent>
+            <ChildContent><span class="m-flex m-gap-6"><Icon Type="@(row.Office == "Remote" ? "home" : "environment")" />@row.Office</span></ChildContent>
         </PropertyColumn>
         <PropertyColumn Hidden="@(!Shows("start"))" Property="e => e.StartDate" Width="130" Class="@($"m-muted{SortClass(nameof(Employee.StartDate))}")">
             <TitleTemplate><ColumnHeader Key="@nameof(Employee.StartDate)" Title="Start date" Kind="ColumnKind.Date" /></TitleTemplate>
@@ -114,7 +116,7 @@
     private EmployeeStatus? _status;
     private HashSet<string> _hidden = [];
     private (int Count, decimal AverageSalary) _summary = EmployeeDirectory.Summary(new());
-    private readonly RenderFragment _searchIcon = @<Ti Name="search" />;
+    private readonly RenderFragment _searchIcon = @<Icon Type="search" />;
     private static readonly Dictionary<string, int> DetailColumns = new() { ["xxl"] = 4, ["xl"] = 4, ["lg"] = 2, ["md"] = 2, ["sm"] = 1, ["xs"] = 1 };
 
     private EmployeeQuery Query => new(_keyword, _department, _office, _status, _label);
@@ -132,6 +134,8 @@
         _summary = EmployeeDirectory.Summary(query);
         return Task.FromResult(EmployeeDirectory.Query(query, request));
     }
+
+    private static void MoveRow(Modulus.Ui.Abstractions.Plugins.RowMove move) => EmployeeDirectory.Reorder(move.Order);
 
     private void ToggleColumn(string key) => _hidden = EmployeeDirectory.ParseHidden(EmployeeDirectory.ToggleHidden(_hidden, key));
 

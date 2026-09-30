@@ -1,0 +1,60 @@
+@* Every Ant Design icon, drawn from the AntDesign package (no sprite). A click copies the tag helper markup. The Blazor
+   sample renders the same page, where a click copies the <Icon> component. *@
+@{
+    int.TryParse(Context.Request.Query["current"], out var current);
+    var m = UiContent.Icons(Context.Request.Query["q"], Context.Request.Query["theme"], current);
+}
+<app-page-header pretitle="User interface" title="Icons" subtitle="Every Ant Design icon in the three themes. Click an icon to copy its markup."></app-page-header>
+
+<div class="m-card" data-m-copy-scope>
+    <div class="m-card-header m-filter-bar">
+        <div class="ant-segmented" role="group" aria-label="Icon theme">
+            <div class="ant-segmented-group">
+                @foreach (var t in UiContent.IconThemes)
+                {
+                    var qs = m.QueryString(t.Key);
+                    <a class="ant-segmented-item @(t.Key == m.Theme.Key ? "ant-segmented-item-selected" : "")" href="/ui/icons@(qs == "" ? "" : "?" + qs)" aria-current="@(t.Key == m.Theme.Key ? "true" : null)">
+                        <div class="ant-segmented-item-label">@t.Label</div>
+                    </a>
+                }
+            </div>
+        </div>
+        <form class="m-icon-search" method="get" action="/ui/icons" role="search">
+            @if (m.Theme.Key != "outline")
+            {
+                <input type="hidden" name="theme" value="@m.Theme.Key" />
+            }
+            <span class="ant-input-affix-wrapper">
+                <span class="ant-input-prefix"><app-icon type="search" /></span>
+                <input class="ant-input" type="search" name="q" value="@m.Query" placeholder="Search icons…" aria-label="Search icons" />
+            </span>
+        </form>
+        <span class="m-muted m-small">@m.Total.ToString("N0") @(m.Total == 1 ? "icon" : "icons")</span>
+    </div>
+    <div class="m-card-body">
+        @if (m.Total == 0)
+        {
+            <div class="m-empty"><span class="m-empty-icon"><app-icon type="search" /></span><p class="m-empty-title">No icons match “@m.Query”</p><p class="m-empty-subtitle">Try a shorter name, such as “arrow” or “file”.</p></div>
+        }
+        else
+        {
+            <ul class="m-icon-grid">
+                @foreach (var name in m.Names)
+                {
+                    var snippet = m.MvcSnippet(name);
+                    <li>
+                        <button type="button" class="m-icon-tile-btn" data-m-copy="@snippet" title="Copy @snippet">
+                            <span class="anticon" role="img" aria-hidden="true">@Html.Raw(AntIconSvg.Svg(name, m.Theme.Value) ?? "")</span>
+                            <span class="m-icon-name">@name</span>
+                        </button>
+                    </li>
+                }
+            </ul>
+            if (m.Pages > 1)
+            {
+                <app-pagination url="/ui/icons" current="m.Page" page-size="m.PageSize" total="m.Total" table="false" query="@m.QueryString()" style="margin-top: 16px" />
+            }
+        }
+        <span class="m-sr-only" role="status" aria-live="polite" data-m-copy-live></span>
+    </div>
+</div>

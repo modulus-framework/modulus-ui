@@ -438,8 +438,8 @@
         <Card Bordered="false" Title="Select with Add item">
             <p class="m-demo-desc">The dropdown ends with a name, a tag colour and Add. The new option joins the list and is selected.</p>
             <div class="m-demo-row">
-                <AppCreatableSelect @bind-Options="_productColors" @bind-Value="_productColor" Placeholder="Colour" AddPlaceholder="New colour" AllowClear AriaLabel="Colour" Style="width: 200px" />
-                <AppCreatableSelect @bind-Options="_productTags" Multiple @bind-Values="_productTagValues" Placeholder="Tags" AddPlaceholder="New tag" AriaLabel="Tags" Style="width: 280px" />
+                <AppCreatableSelect @bind-Options="_productColors" @bind-Value="_productColor" Placeholder="Colour" AddPlaceholder="Colour name" CreateText="Create new colour" AllowClear AriaLabel="Colour" Style="width: 200px" />
+                <AppCreatableSelect @bind-Options="_productTags" Multiple @bind-Values="_productTagValues" Placeholder="Tags" AddPlaceholder="Tag name" CreateText="Create new tag" AriaLabel="Tags" Style="width: 280px" />
             </div>
             <p class="m-muted">Value: <code>@(_productColor ?? "none")</code> · <code>@string.Join(", ", _productTagValues)</code></p>
         </Card>

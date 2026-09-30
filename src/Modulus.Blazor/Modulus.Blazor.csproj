@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <Description>Modulus UI for Blazor: an Ant Design Blazor admin shell, Pro components (ProTable, editable and nested grids), charts, business fields and extras.</Description>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 

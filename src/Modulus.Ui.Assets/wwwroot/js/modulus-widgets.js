@@ -1,6 +1,7 @@
 /*
  * Alpine components behind the MVC widgets in AdvancedEntryTagHelpers.cs:
  * app-tree, app-tree-select, app-cascader, app-transfer, app-calendar, app-carousel, app-anchor,
+ * app-date-picker and app-range-picker (DataEntryTagHelpers.cs),
  * app-editable-grid (EditableGridTagHelper.cs), app-menu (MenuTagHelpers.cs), app-splitter, app-affix,
  * app-back-top (FrameTagHelpers.cs), app-auto-complete, app-mentions and app-countdown
  * (ExtraTagHelpers.cs), app-color-picker and app-tour (ModernTagHelpers.cs), and the business fields
@@ -204,6 +205,501 @@
             };
         });
 
+        // <app-date-picker> and <app-range-picker>: Ant Design's picker popup (the DOM and classes AntD Blazor
+        // renders), so MVC and Razor Pages pickers look and behave like Blazor's. The text input shows the value the
+        // way AntD formats it; hidden inputs post the canonical value (yyyy-MM-dd, yyyy-MM-ddTHH:mm:ss, HH:mm[:ss],
+        // yyyy-Www, yyyy-MM, yyyy-Qn, yyyy). cfg: picker, showTime, range, values, format (time columns), min, max,
+        // days (disabled weekdays, getDay numbers), presets [{ label, from, to }], message, texts (locale strings).
+        Alpine.data('modulusPicker', function (cfg) {
+            var T = cfg.texts || {};
+            var MONTHS = T.months || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            var DAYS = T.days || ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+            var PICKER = cfg.picker || 'date';
+            var TIME = PICKER === 'time';
+            var DT = !!cfg.showTime && !TIME;
+            var RANGE = !!cfg.range;
+            var COLS = TIME || DT ? (cfg.format || 'HH:mm:ss').split(':').slice(0, 3) : [];
+            var MIN = cfg.min ? parseAny(cfg.min) : null;
+            var MAX = cfg.max ? parseAny(cfg.max) : null;
+            var OFF = cfg.days || [];
+            var DAY = 864e5;
+
+            function pad(n) { return (n < 10 ? '0' : '') + n; }
+            function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+            function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+            function hms(d) {
+                return COLS.map(function (c) { return pad(c[0] === 'H' ? d.getHours() : c[0] === 'm' ? d.getMinutes() : d.getSeconds()); }).join(':');
+            }
+            function dayOnly(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+            function sameDay(a, b) { return !!a && !!b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+            // Week of the year as .NET's GregorianCalendar counts it for en-US (CalendarWeekRule.FirstDay, Sunday).
+            function weekOf(d) {
+                var jan1 = new Date(d.getFullYear(), 0, 1);
+                var days = Math.round((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(d.getFullYear(), 0, 1)) / DAY);
+                return Math.floor((days + jan1.getDay()) / 7) + 1;
+            }
+            function weekStart(d) { var s = dayOnly(d); s.setDate(s.getDate() - s.getDay()); return s; }
+            function parseAny(s) {
+                s = String(s || '').trim();
+                var m;
+                if ((m = /^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/.exec(s))) {
+                    var d = new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+                    return d.getMonth() === +m[2] - 1 ? d : null;
+                }
+                if ((m = /^(\d{4})-?[Qq]([1-4])$/.exec(s))) return new Date(+m[1], (+m[2] - 1) * 3, 1);
+                if ((m = /^(\d{4})-[Ww]?(\d{1,2})(?:Week)?$/i.exec(s)) && (PICKER === 'week' || /[Ww]/.test(s))) {
+                    var first = new Date(+m[1], 0, 1);
+                    var start = new Date(+m[1], 0, 1 - first.getDay() + (+m[2] - 1) * 7);
+                    return start.getFullYear() < +m[1] ? first : start;
+                }
+                if ((m = /^(\d{4})-(\d{1,2})$/.exec(s)) && +m[2] >= 1 && +m[2] <= 12) return new Date(+m[1], +m[2] - 1, 1);
+                if ((m = /^(\d{4})$/.exec(s))) return new Date(+m[1], 0, 1);
+                if ((m = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(s)) && +m[1] < 24 && +m[2] < 60) {
+                    var t = new Date(); t.setHours(+m[1], +m[2], +(m[3] || 0), 0); return t;
+                }
+                return null;
+            }
+            // What the input shows (AntD Blazor's formats) and what the hidden input posts.
+            function display(d) {
+                if (!d) return '';
+                if (TIME) return hms(d);
+                if (DT) return ymd(d) + ' ' + hms(d);
+                switch (PICKER) {
+                    case 'week': return d.getFullYear() + '-' + weekOf(d) + (T.week || 'Week');
+                    case 'month': return d.getFullYear() + '-' + pad(d.getMonth() + 1);
+                    case 'quarter': return d.getFullYear() + '-Q' + (Math.floor(d.getMonth() / 3) + 1);
+                    case 'year': return String(d.getFullYear());
+                    default: return ymd(d);
+                }
+            }
+            function canonical(d) {
+                if (!d) return '';
+                if (DT) return ymd(d) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+                if (PICKER === 'week') return d.getFullYear() + '-W' + pad(weekOf(d));
+                return display(d);
+            }
+            // Snaps a picked day to the picker's unit.
+            function snap(d) {
+                if (!d) return null;
+                if (TIME || DT) return d;
+                if (PICKER === 'month') return new Date(d.getFullYear(), d.getMonth(), 1);
+                if (PICKER === 'quarter') return new Date(d.getFullYear(), Math.floor(d.getMonth() / 3) * 3, 1);
+                if (PICKER === 'year') return new Date(d.getFullYear(), 0, 1);
+                return dayOnly(d);
+            }
+            function dayOff(d) {
+                var x = dayOnly(d);
+                return (MIN && x < dayOnly(MIN)) || (MAX && x > dayOnly(MAX)) || OFF.indexOf(x.getDay()) >= 0;
+            }
+            // A month, quarter or year is disabled when none of its days can be picked by min / max.
+            function spanOff(from, to) { return (MIN && to < dayOnly(MIN)) || (MAX && from > dayOnly(MAX)); }
+
+            var values = (cfg.values || []).map(function (v) { var d = parseAny(v); return d ? snap(d) : null; });
+            if (!RANGE) values = [values[0] || null];
+            else while (values.length < 2) values.push(null);
+            var anchor = values[0] || values[1] || new Date();
+
+            return {
+                open: false,
+                active: 0,
+                values: values,
+                pending: null,
+                mode: TIME ? 'time' : PICKER === 'date' ? 'date' : PICKER,
+                year: anchor.getFullYear(),
+                month: anchor.getMonth(),
+                hover: null,
+                placement: 'bottomLeft',
+                texts: values.map(display),
+                invalid: [false, false],
+                pendingTouched: false,
+                bar: '',
+                arrow: '',
+
+                init: function () {
+                    var self = this;
+                    this.$watch('open', function (on) {
+                        self.$el.classList.toggle('ant-picker-focused', on);
+                        if (on) self.$nextTick(function () { self.place(); self.scrollTime(); });
+                    });
+                    window.addEventListener('resize', function () { if (self.open) self.place(); });
+                    document.addEventListener('scroll', function (e) {
+                        if (self.open && !(e.target instanceof Element && self.$refs.drop && self.$refs.drop.contains(e.target))) self.place();
+                    }, { capture: true, passive: true });
+                    this.moveBar();
+                },
+                input: function (i) { return this.$root.querySelectorAll('[data-m-picker-text]')[i]; },
+                // A press on the picker's frame, icon or separator focuses the input being edited, as in AntD.
+                rootDown: function (e) {
+                    if (cfg.disabled || !(e.target instanceof Element)) return;
+                    if (e.target.closest('input, .ant-picker-clear') || (this.$refs.drop && this.$refs.drop.contains(e.target))) return;
+                    e.preventDefault();
+                    var i = this.open ? this.active : 0, input = this.input(i);
+                    if (input) { input.focus(); this.show(i); }
+                },
+                show: function (i) {
+                    if (cfg.disabled) return;
+                    if (i !== undefined) this.active = i;
+                    var v = this.values[this.active] || this.values[0] || this.values[1];
+                    if (!this.open && v) { this.year = v.getFullYear(); this.month = v.getMonth(); }
+                    if (!this.open && RANGE && this.active === 1 && this.values[1]) {
+                        // The end month shows on the right-hand panel.
+                        var left = new Date(this.values[1].getFullYear(), this.values[1].getMonth() - 1, 1);
+                        if (!this.values[0] || this.values[0] < left) { this.year = left.getFullYear(); this.month = left.getMonth(); }
+                    }
+                    if (!this.open) this.pending = TIME || DT ? new Date((this.values[this.active] || new Date(new Date().setHours(0, 0, 0, 0))).getTime()) : null;
+                    this.open = true;
+                    this.moveBar();
+                },
+                close: function (commitTime) {
+                    if (!this.open) return;
+                    if (commitTime && this.pending && (TIME || DT) && this.pendingTouched) this.commit(this.pending, true);
+                    this.open = false;
+                    this.hover = null;
+                    this.pendingTouched = false;
+                    this.mode = TIME ? 'time' : PICKER === 'date' ? 'date' : PICKER;
+                    this.texts = this.values.map(display);
+                },
+                clear: function () {
+                    var self = this;
+                    this.values = this.values.map(function () { return null; });
+                    this.texts = this.values.map(display);
+                    this.invalid = [false, false];
+                    this.$nextTick(function () { self.raise(0); if (RANGE) self.raise(1); self.validate(); });
+                },
+                // Hidden inputs raise change, so forms, htmx triggers and Alpine listeners see every new value.
+                raise: function (i) {
+                    var hidden = this.$root.querySelectorAll('[data-m-picker-value]')[i];
+                    if (!hidden) return;
+                    hidden.value = canonical(this.values[i]);
+                    hidden.dispatchEvent(new Event('change', { bubbles: true }));
+                },
+                commit: function (d, keepOpen) {
+                    var i = this.active, self = this;
+                    this.values[i] = d ? snap(d) : null;
+                    if (RANGE && this.values[0] && this.values[1] && this.values[0] > this.values[1]) {
+                        var t = this.values[0]; this.values[0] = this.values[1]; this.values[1] = t;
+                    }
+                    this.texts = this.values.map(display);
+                    this.invalid[i] = false;
+                    this.$nextTick(function () { self.raise(0); if (RANGE) self.raise(1); self.validate(); });
+                    if (keepOpen) return;
+                    if (RANGE && i === 0 && !this.values[1] || RANGE && i === 1 && !this.values[0]) {
+                        this.active = 1 - i;
+                        this.pending = DT ? new Date((this.values[this.active] || this.values[i]).getTime()) : null;
+                        this.pendingTouched = false;
+                        var next = this.input(this.active);
+                        if (next) next.focus();
+                        this.moveBar();
+                        return;
+                    }
+                    this.close(false);
+                    // The editable grid ends a Date cell's edit on a pick, as the Blazor grid's DatePicker does.
+                    this.$root.dispatchEvent(new CustomEvent('m-picker-pick', { bubbles: true }));
+                },
+                // Typed text: a value in any accepted form moves the panel there; Enter keeps it, Escape leaves.
+                typed: function (i, e) {
+                    this.texts[i] = e.target.value;
+                    var d = parseAny(e.target.value);
+                    this.invalid[i] = !!e.target.value && (!d || dayOff(d));
+                    if (d && !this.invalid[i]) {
+                        this.year = d.getFullYear(); this.month = d.getMonth();
+                        if (TIME || DT) this.pending = d;
+                    }
+                },
+                keydown: function (i, e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        var d = parseAny(this.texts[i]);
+                        if (!this.texts[i]) { this.values[i] = null; this.texts = this.values.map(display); this.raise(i); this.close(false); return; }
+                        if (d && !dayOff(d)) { this.active = i; this.commit(d); }
+                    } else if (e.key === 'Escape') { this.close(false); }
+                    else if (e.key === 'Tab') { this.close(true); }
+                    else if (!this.open && e.key !== 'Shift') this.show(i);
+                },
+                validate: function () {
+                    var self = this;
+                    this.$root.querySelectorAll('[data-m-picker-text]').forEach(function (input, i) {
+                        var bad = self.invalid[i];
+                        input.setCustomValidity(bad ? cfg.message || 'This date can’t be picked.' : '');
+                    });
+                },
+
+                // Positions ---------------------------------------------------------------------------------
+                moveBar: function () {
+                    if (!RANGE) return;
+                    var self = this;
+                    this.$nextTick(function () {
+                        var input = self.input(self.active);
+                        var box = input && input.parentElement;
+                        if (!box) return;
+                        var left = box.offsetLeft - parseFloat(getComputedStyle(self.$root).paddingLeft || 0);
+                        self.bar = 'position: absolute; left: ' + left + 'px; width: ' + box.offsetWidth + 'px;';
+                        self.arrow = 'left: ' + left + 'px;';
+                    });
+                },
+                place: function () {
+                    var drop = this.$refs.drop;
+                    if (!drop) return;
+                    var r = this.$root.getBoundingClientRect(), gap = RANGE ? 0 : 4, edge = 8;
+                    var vw = document.documentElement.clientWidth, vh = window.innerHeight;
+                    var h = drop.offsetHeight, w = drop.offsetWidth;
+                    var up = h > vh - r.bottom - gap - edge && r.top - gap - edge > vh - r.bottom - gap - edge;
+                    this.placement = up ? 'topLeft' : 'bottomLeft';
+                    drop.style.left = Math.round(Math.max(edge, Math.min(r.left, vw - w - edge))) + 'px';
+                    drop.style.top = Math.round(up ? r.top - gap - h : r.bottom + gap) + 'px';
+                },
+                scrollTime: function () {
+                    var drop = this.$refs.drop;
+                    if (!drop) return;
+                    drop.querySelectorAll('.ant-picker-time-panel-column').forEach(function (col) {
+                        var sel = col.querySelector('.ant-picker-time-panel-cell-selected');
+                        if (sel) col.scrollTop = sel.offsetTop;
+                    });
+                },
+
+                // Panels ------------------------------------------------------------------------------------
+                header: function (view, hidePrev, hideNext) {
+                    var hide = ' style="visibility: hidden"';
+                    var sprev = '<button type="button" tabindex="-1" class="ant-picker-header-super-prev-btn" data-nav="-12" aria-label="' + esc(T.prevYear || 'Last year') + '"' + (hidePrev ? hide : '') + '><span class="ant-picker-super-prev-icon"></span></button>';
+                    var snext = '<button type="button" tabindex="-1" class="ant-picker-header-super-next-btn" data-nav="12" aria-label="' + esc(T.nextYear || 'Next year') + '"' + (hideNext ? hide : '') + '><span class="ant-picker-super-next-icon"></span></button>';
+                    if (this.mode === 'year') {
+                        var decade = Math.floor(this.year / 10) * 10;
+                        return '<div class="ant-picker-header">' + sprev.replace('data-nav="-12"', 'data-nav="-120"') +
+                            '<div class="ant-picker-header-view"><button type="button" tabindex="-1" class="ant-picker-decade-btn">' + decade + '-' + (decade + 9) + '</button></div>' +
+                            snext.replace('data-nav="12"', 'data-nav="120"') + '</div>';
+                    }
+                    if (this.mode === 'month' || this.mode === 'quarter') {
+                        return '<div class="ant-picker-header">' + sprev +
+                            '<div class="ant-picker-header-view"><button type="button" tabindex="-1" class="ant-picker-year-btn" data-mode="year">' + view.getFullYear() + '</button></div>' +
+                            snext + '</div>';
+                    }
+                    return '<div class="ant-picker-header">' + sprev +
+                        '<button type="button" tabindex="-1" class="ant-picker-header-prev-btn" data-nav="-1" aria-label="' + esc(T.prevMonth || 'Previous month') + '"' + (hidePrev ? hide : '') + '><span class="ant-picker-prev-icon"></span></button>' +
+                        '<div class="ant-picker-header-view"><button type="button" tabindex="-1" class="ant-picker-month-btn" data-mode="month">' + MONTHS[view.getMonth()] + '</button>' +
+                        '<button type="button" tabindex="-1" class="ant-picker-year-btn" data-mode="year">' + view.getFullYear() + '</button></div>' +
+                        '<button type="button" tabindex="-1" class="ant-picker-header-next-btn" data-nav="1" aria-label="' + esc(T.nextMonth || 'Next month') + '"' + (hideNext ? hide : '') + '><span class="ant-picker-next-icon"></span></button>' +
+                        snext + '</div>';
+                },
+                dateCellClass: function (d, view) {
+                    var c = 'ant-picker-cell';
+                    if (d.getMonth() === view.getMonth()) c += ' ant-picker-cell-in-view';
+                    if (sameDay(d, new Date())) c += ' ant-picker-cell-today';
+                    var off = dayOff(d);
+                    if (RANGE && !off) {
+                        // Picking the end: days before the start can't be picked, and the other way round.
+                        var other = this.values[1 - this.active];
+                        if (other && !DT) off = this.active === 1 ? dayOnly(d) < dayOnly(other) : dayOnly(d) > dayOnly(other);
+                    }
+                    if (off) c += ' ant-picker-cell-disabled';
+                    if (RANGE) {
+                        var a = this.values[0], b = this.values[1];
+                        if (sameDay(d, a)) c += ' ant-picker-cell-selected ant-picker-cell-range-start' + (b ? '' : ' ant-picker-cell-range-start-single');
+                        if (sameDay(d, b)) c += ' ant-picker-cell-selected ant-picker-cell-range-end' + (a ? '' : ' ant-picker-cell-range-end-single');
+                        if (a && b && d > dayOnly(a) && d < dayOnly(b)) c += ' ant-picker-cell-in-range';
+                        var h = this.hover, other2 = this.values[1 - this.active];
+                        if (h && other2) {
+                            var from = this.active === 1 ? dayOnly(other2) : h, to = this.active === 1 ? h : dayOnly(other2);
+                            if (from <= to) {
+                                if (sameDay(d, from) && !sameDay(d, other2)) c += ' ant-picker-cell-range-hover-start';
+                                else if (sameDay(d, to) && !sameDay(d, other2)) c += ' ant-picker-cell-range-hover-end';
+                                else if (d > from && d < to) c += ' ant-picker-cell-range-hover';
+                            }
+                        }
+                    } else {
+                        var v = TIME || DT ? this.pending : this.values[0];
+                        if (PICKER !== 'week' && sameDay(d, v)) c += ' ant-picker-cell-selected';
+                    }
+                    return c;
+                },
+                datePanel: function (view, hidePrev, hideNext) {
+                    var week = PICKER === 'week' && !RANGE;
+                    var first = new Date(view.getFullYear(), view.getMonth(), 1);
+                    var day = new Date(first); day.setDate(1 - first.getDay());
+                    var html = '<div class="ant-picker-' + (week ? 'week' : 'date') + '-panel">' + this.header(view, hidePrev, hideNext) +
+                        '<div class="ant-picker-body"><table class="ant-picker-content"><thead><tr>' + (week ? '<th aria-label="empty cell"></th>' : '');
+                    DAYS.forEach(function (d) { html += '<th>' + esc(d) + '</th>'; });
+                    html += '</tr></thead><tbody>';
+                    var selWeek = week && this.values[0] ? weekStart(this.values[0]).getTime() : null;
+                    for (var w = 0; w < 6; w++) {
+                        var rowStart = new Date(day);
+                        if (week) {
+                            var inView = new Date(rowStart); while (inView.getMonth() !== view.getMonth() && inView - rowStart < 6 * DAY) inView.setDate(inView.getDate() + 1);
+                            html += '<tr class="ant-picker-week-panel-row' + (selWeek === rowStart.getTime() ? ' ant-picker-week-panel-row-selected' : '') + '">' +
+                                '<td class="ant-picker-cell ant-picker-cell-week"><div class="ant-picker-cell-inner">' + weekOf(inView) + '</div></td>';
+                        } else html += '<tr>';
+                        for (var i = 0; i < 7; i++) {
+                            html += '<td title="' + ymd(day) + '" data-v="' + ymd(day) + '" class="' + this.dateCellClass(day, view) + '"><div class="ant-picker-cell-inner">' + day.getDate() + '</div></td>';
+                            day.setDate(day.getDate() + 1);
+                        }
+                        html += '</tr>';
+                    }
+                    return html + '</tbody></table></div></div>';
+                },
+                gridPanel: function (kind) {
+                    var year = this.year, html = '<div class="ant-picker-' + kind + '-panel">' + this.header(new Date(year, 0, 1)) + '<div class="ant-picker-body"><table class="ant-picker-content"><tbody>';
+                    var v = this.values[0], today = new Date(), self = this;
+                    function cell(d, text, cls, from, to) {
+                        return '<td title="' + esc(text) + '" data-v="' + ymd(d) + '" class="ant-picker-cell' + cls + (spanOff(from, to) ? ' ant-picker-cell-disabled' : '') + '"><div class="ant-picker-cell-inner">' + esc(text) + '</div></td>';
+                    }
+                    if (kind === 'quarter') {
+                        html += '<tr>';
+                        for (var q = 0; q < 4; q++) {
+                            var qd = new Date(year, q * 3, 1);
+                            var qsel = PICKER === 'quarter' && v && v.getFullYear() === year && Math.floor(v.getMonth() / 3) === q;
+                            html += cell(qd, 'Q' + (q + 1), ' ant-picker-cell-in-view' + (qsel ? ' ant-picker-cell-selected' : '') +
+                                (today.getFullYear() === year && Math.floor(today.getMonth() / 3) === q ? ' ant-picker-cell-today' : ''), qd, new Date(year, q * 3 + 3, 0));
+                        }
+                        return html + '</tr></tbody></table></div></div>';
+                    }
+                    for (var r = 0; r < 4; r++) {
+                        html += '<tr>';
+                        for (var c = 0; c < 3; c++) {
+                            if (kind === 'month') {
+                                var m = r * 3 + c, md = new Date(year, m, 1);
+                                var msel = (PICKER === 'month' ? v : self.values[self.active] || v);
+                                html += cell(md, MONTHS[m], ' ant-picker-cell-in-view' +
+                                    (msel && msel.getFullYear() === year && msel.getMonth() === m ? ' ant-picker-cell-selected' : '') +
+                                    (today.getFullYear() === year && today.getMonth() === m ? ' ant-picker-cell-today' : ''), md, new Date(year, m + 1, 0));
+                            } else {
+                                var start = Math.floor(year / 10) * 10 - 1, y = start + r * 3 + c, yd = new Date(y, 0, 1);
+                                var ysel = self.values[self.active] || v;
+                                html += cell(yd, String(y), (y > start && y < start + 11 ? ' ant-picker-cell-in-view' : '') +
+                                    (ysel && ysel.getFullYear() === y ? ' ant-picker-cell-selected' : '') +
+                                    (today.getFullYear() === y ? ' ant-picker-cell-today' : ''), yd, new Date(y, 11, 31));
+                            }
+                        }
+                        html += '</tr>';
+                    }
+                    return html + '</tbody></table></div></div>';
+                },
+                timePanel: function () {
+                    var p = this.pending || new Date(new Date().setHours(0, 0, 0, 0));
+                    var html = '<div class="ant-picker-time-panel">' + (DT ? '<div class="ant-picker-header"><div class="ant-picker-header-view">' + hms(p) + '</div></div>' : '') + '<div class="ant-picker-content">';
+                    COLS.forEach(function (col) {
+                        var unit = col[0] === 'H' ? 'h' : col[0] === 'm' ? 'm' : 's', max = unit === 'h' ? 24 : 60;
+                        var cur = unit === 'h' ? p.getHours() : unit === 'm' ? p.getMinutes() : p.getSeconds();
+                        html += '<ul class="ant-picker-time-panel-column" style="position: relative;">';
+                        for (var n = 0; n < max; n++) {
+                            html += '<li class="ant-picker-time-panel-cell' + (n === cur ? ' ant-picker-time-panel-cell-selected' : '') + '" data-time="' + unit + n + '"><div class="ant-picker-time-panel-cell-inner">' + pad(n) + '</div></li>';
+                        }
+                        html += '</ul>';
+                    });
+                    return html + '</div></div>';
+                },
+                footer: function () {
+                    if (TIME || DT) {
+                        return '<div class="ant-picker-footer"><ul class="ant-picker-ranges"><li class="ant-picker-now"><a class="ant-picker-now-btn" data-now>' + esc(T.now || 'Now') + '</a></li>' +
+                            '<li class="ant-picker-ok"><button type="button" class="ant-btn ant-btn-primary ant-btn-sm" data-ok><span>' + esc(T.ok || 'Ok') + '</span></button></li></ul></div>';
+                    }
+                    if (RANGE) {
+                        if (!(cfg.presets || []).length) return '';
+                        return '<div class="ant-picker-footer"><ul class="ant-picker-ranges">' + cfg.presets.map(function (p, i) {
+                            return '<li class="ant-picker-preset"><span class="ant-tag ant-tag-blue" data-preset="' + i + '">' + esc(p.label) + '</span></li>';
+                        }).join('') + '</ul></div>';
+                    }
+                    if (PICKER === 'date' && this.mode === 'date') {
+                        var off = dayOff(new Date());
+                        return '<div class="ant-picker-footer"><a class="ant-picker-today-btn' + (off ? ' ant-picker-today-btn-disabled' : '') + '"' + (off ? '' : ' data-today') + '>' + esc(T.today || 'Today') + '</a></div>';
+                    }
+                    return '';
+                },
+                body: function () {
+                    if (this.mode === 'time') return this.timePanel();
+                    if (this.mode === 'month' || this.mode === 'quarter' || this.mode === 'year') return this.gridPanel(this.mode);
+                    var view = new Date(this.year, this.month, 1);
+                    if (DT) return '<div class="ant-picker-datetime-panel">' + this.datePanel(view) + this.timePanel() + '</div>';
+                    return this.datePanel(view);
+                },
+                dropClass: function () {
+                    return 'ant-picker-dropdown m-picker-dropdown' + (RANGE ? ' ant-picker-dropdown-range' : '') + ' ant-picker-dropdown-placement-' + this.placement;
+                },
+                panel: function () {
+                    if (RANGE && !DT && this.mode === 'date') {
+                        var left = new Date(this.year, this.month, 1), right = new Date(this.year, this.month + 1, 1);
+                        return '<div class="ant-picker-range-wrapper ant-picker-date-range-wrapper"><div class="ant-picker-range-arrow" style="' + this.arrow + '"></div>' +
+                            '<div class="ant-picker-panel-container"><div class="ant-picker-panels">' +
+                            '<div class="ant-picker-panel">' + this.datePanel(left, false, true) + '</div>' +
+                            '<div class="ant-picker-panel">' + this.datePanel(right, true, false) + '</div></div>' + this.footer() + '</div></div>';
+                    }
+                    var inner = '<div class="ant-picker-panel' + (this.open ? ' ant-picker-panel-focused' : '') + '">' + this.body() + this.footer() + '</div>';
+                    if (RANGE) return '<div class="ant-picker-range-wrapper ant-picker-date-range-wrapper"><div class="ant-picker-range-arrow" style="' + this.arrow + '"></div><div class="ant-picker-panel-container">' + inner + '</div></div>';
+                    return '<div class="ant-picker-panel-container">' + inner + '</div>';
+                },
+
+                // Clicks inside the popup -------------------------------------------------------------------
+                pick: function (e) {
+                    var t = e.target instanceof Element ? e.target : null;
+                    if (!t) return;
+                    var nav = t.closest('[data-nav]');
+                    if (nav) {
+                        // Months in the date and week panels (±1, ±12); years elsewhere (±12 is a year, ±120 a decade).
+                        var step = +nav.getAttribute('data-nav');
+                        var d = this.mode === 'date' || this.mode === 'week'
+                            ? new Date(this.year, this.month + step, 1)
+                            : new Date(this.year + step / 12, this.month, 1);
+                        this.year = d.getFullYear(); this.month = d.getMonth();
+                        return;
+                    }
+                    var mode = t.closest('[data-mode]');
+                    if (mode) { this.mode = mode.getAttribute('data-mode'); return; }
+                    var preset = t.closest('[data-preset]');
+                    if (preset) {
+                        var p = cfg.presets[+preset.getAttribute('data-preset')];
+                        this.values = [parseAny(p.from), parseAny(p.to)];
+                        var self = this;
+                        this.texts = this.values.map(display);
+                        this.invalid = [false, false];
+                        this.$nextTick(function () { self.raise(0); self.raise(1); self.validate(); });
+                        this.close(false);
+                        return;
+                    }
+                    if (t.closest('[data-today]')) { this.commit(new Date()); return; }
+                    if (t.closest('[data-now]')) { this.commit(new Date()); return; }
+                    if (t.closest('[data-ok]')) { this.commit(this.pending || new Date()); return; }
+                    var time = t.closest('[data-time]');
+                    if (time) {
+                        var v = time.getAttribute('data-time'), n = +v.slice(1), pd = new Date((this.pending || new Date(new Date().setHours(0, 0, 0, 0))).getTime());
+                        if (v[0] === 'h') pd.setHours(n); else if (v[0] === 'm') pd.setMinutes(n); else pd.setSeconds(n);
+                        this.pending = pd;
+                        this.pendingTouched = true;
+                        this.texts[this.active] = display(pd);
+                        // The panel is drawn again, so each column is scrolled back to its selected cell.
+                        var self2 = this;
+                        this.$nextTick(function () { self2.scrollTime(); });
+                        return;
+                    }
+                    var cell = t.closest('td[data-v]');
+                    if (!cell || cell.classList.contains('ant-picker-cell-disabled')) return;
+                    var day = parseAny(cell.getAttribute('data-v'));
+                    if (this.mode === 'year') {
+                        this.year = day.getFullYear();
+                        if (PICKER === 'year') { this.commit(day); return; }
+                        this.mode = PICKER === 'quarter' ? 'quarter' : 'month';
+                        return;
+                    }
+                    if (this.mode === 'month' && PICKER !== 'month') {
+                        this.year = day.getFullYear(); this.month = day.getMonth();
+                        this.mode = PICKER === 'week' ? 'week' : 'date';
+                        return;
+                    }
+                    if (DT) {
+                        var cur = this.pending || new Date(new Date().setHours(0, 0, 0, 0));
+                        this.pending = new Date(day.getFullYear(), day.getMonth(), day.getDate(), cur.getHours(), cur.getMinutes(), cur.getSeconds());
+                        this.pendingTouched = true;
+                        this.texts[this.active] = display(this.pending);
+                        return;
+                    }
+                    this.commit(day);
+                },
+                hoverCell: function (e) {
+                    if (!RANGE) return;
+                    var cell = e.target instanceof Element && e.target.closest('td[data-v]');
+                    var h = cell && !cell.classList.contains('ant-picker-cell-disabled') ? parseAny(cell.getAttribute('data-v')) : null;
+                    if ((h && h.getTime()) !== (this.hover && this.hover.getTime())) this.hover = h;
+                }
+            };
+        });
+
         // <app-calendar>: re-renders the panel (same markup as CalendarTagHelper) when the month, year or mode changes.
         Alpine.data('modulusCalendar', function (cfg) {
             function pad(n) { return (n < 10 ? '0' : '') + n; }
@@ -298,9 +794,24 @@
                 destroy: function () { this.close(); },
                 apply: function () { this.submit(this.$refs.input.value.trim()); },
                 reset: function () { this.$refs.input.value = ''; this.submit(''); },
+                // The box in the filter row (Enter, or leaving it): the same search as the popup's.
+                applyInline: function () {
+                    var value = this.$refs.inline.value.trim();
+                    if (value === (this.$refs.trigger.classList.contains('active') ? this.$refs.input.value.trim() : '')) return;
+                    this.$refs.input.value = value;
+                    this.submit(value);
+                },
                 submit: function (value) {
                     var host = this.$root, key = host.getAttribute('data-key'), href = host.getAttribute('data-search-href');
                     this.close();
+                    if (this.$refs.inline) {
+                        var inline = this.$refs.inline;
+                        // A select (option columns) shows a query typed in the popup as an extra choice.
+                        if (inline.tagName === 'SELECT' && value && !Array.prototype.some.call(inline.options, function (o) { return o.value === value; }))
+                            inline.add(new Option(value, value));
+                        inline.value = value;
+                        this.$refs.inline.classList.toggle('m-th-filter-active', !!value);
+                    }
                     if (href) {
                         var url = value ? href + (href.indexOf('?') < 0 ? '?' : '&') + 's.' + encodeURIComponent(key) + '=' + encodeURIComponent(value) : href;
                         if (window.htmx) window.htmx.ajax('GET', url, { source: host }); else window.location.href = url;
@@ -460,7 +971,21 @@
                     default: return null;
                 }
             }
+            // Select, Tag and Multi-select cells edit with a creatable select (modulusCreatableSelect); its state is Alpine's.
+            function picker(editor) {
+                var el = editor.querySelector('.m-cselect');
+                return el && window.Alpine ? window.Alpine.$data(el) : null;
+            }
+            // Date cells edit with Ant Design's picker (modulusPicker); for a date its text is the posted yyyy-MM-dd.
+            function datePicker(editor) {
+                var el = editor.querySelector('.m-picker');
+                return el && window.Alpine ? window.Alpine.$data(el) : null;
+            }
             function read(editor, col) {
+                var p = picker(editor);
+                if (p) return col.type === 'MultiSelect' ? p.values.join(',') : String(p.value || '').trim();
+                var d = datePicker(editor);
+                if (d) return String(d.texts[0] || '').trim();
                 if (col.type === 'MultiSelect') {
                     return Array.prototype.filter.call(editor.querySelectorAll('input[type=checkbox]'), function (i) { return i.checked; })
                         .map(function (i) { return i.value; }).join(',');
@@ -469,6 +994,10 @@
                 return control ? control.value.trim() : '';
             }
             function snapshot(editor) {
+                var p = picker(editor);
+                if (p) return [p.value, p.values.slice()];
+                var d = datePicker(editor);
+                if (d) return [d.values[0] ? d.values[0].getTime() : null, d.texts[0] || ''];
                 return Array.prototype.map.call(editor.querySelectorAll('input, select'), function (i) { return i.type === 'checkbox' ? i.checked : i.value; });
             }
             function syncCheckbox(input) {
@@ -478,6 +1007,17 @@
                 wrapper.querySelector('.ant-checkbox').classList.toggle('ant-checkbox-checked', input.checked);
             }
             function restore(editor, values) {
+                var p = picker(editor);
+                if (p) { p.value = values[0]; p.values = values[1].slice(); p.open = false; p.creating = false; return; }
+                var d = datePicker(editor);
+                if (d) {
+                    d.open = false;
+                    d.values = [values[0] === null ? null : new Date(values[0])];
+                    d.texts = [values[1]];
+                    var hidden = editor.querySelector('[data-m-picker-value]');
+                    if (hidden) hidden.value = values[1];
+                    return;
+                }
                 Array.prototype.forEach.call(editor.querySelectorAll('input, select'), function (i, k) {
                     if (i.type === 'checkbox') { i.checked = values[k]; syncCheckbox(i); } else i.value = values[k];
                 });
@@ -500,6 +1040,14 @@
                 sortKey: '',
                 sortDesc: false,
                 selected: 0,
+                searchOpen: false,
+                // Paging (Paging in Ui.Abstractions): the rows after search and filters, a page of them at a time.
+                page: 1,
+                pageSize: cfg.pageSize || 10,
+                matched: 0,
+                // Rows changed since the page loaded (by id, marked in the grid) and stored rows deleted: "3 unsaved changes".
+                changed: {},
+                deleted: 0,
                 _editor: null,
                 _original: null,
 
@@ -509,6 +1057,17 @@
                     this.$refs.table.classList.remove('ant-table-middle');
                     // The order the rows came in, for "unsorted".
                     this.rows().forEach(function (tr, i) { tr.setAttribute('data-order', i); });
+                    // A row dragged to a new place (modulus-plugins.js moved it): that order is the new "unsorted" one,
+                    // and the row counts as changed. A nested grid's own moves bubble past and are ignored.
+                    this.$root.addEventListener('modulus:sort', function (e) {
+                        if (e.target !== self.$refs.body) return;
+                        var moved = null;
+                        self.rows().forEach(function (tr, i) {
+                            tr.setAttribute('data-order', i);
+                            if (tr.getAttribute('data-row-key') === e.detail.id) moved = tr;
+                        });
+                        if (moved) self.touch(moved);
+                    });
                     // Search, filters, column searches and the sort survive the grid being rendered again after a post
                     // (kept per grid for the tab).
                     try {
@@ -519,16 +1078,21 @@
                             this.searches = saved.searches || {};
                             this.sortKey = saved.sortKey || '';
                             this.sortDesc = !!saved.sortDesc;
+                            if (saved.pageSize > 0) this.pageSize = saved.pageSize;
                             this.$root.querySelectorAll('select[data-filter]').forEach(function (s) { s.value = self.filters[s.getAttribute('data-filter')] || ''; });
                             this.heads().forEach(function (th) {
                                 var value = self.searches[th.getAttribute('data-key')] || '';
-                                var input = th.querySelector('.m-col-search input'), trigger = th.querySelector('.m-th-search');
+                                var input = th.querySelector('.m-col-search input'), trigger = th.querySelector('.m-th-search'), inline = th.querySelector('.m-th-filter');
                                 if (input) input.value = value;
                                 if (trigger) trigger.classList.toggle('active', !!value);
+                                if (inline) { inline.value = value; inline.classList.toggle('m-th-filter-active', !!value); }
                             });
+                            if (window.modulusShell && window.modulusShell.syncFilterRow) window.modulusShell.syncFilterRow(this.$root);
                             this.$nextTick(function () { self.applySort(); self.applyFilter(); });
                         }
                     } catch (e) { /* storage blocked */ }
+                    // The first page (the server renders every row; the browser pages them).
+                    this.$nextTick(function () { self.applyPage(); });
                     this._resize = function () { self.onScroll(); };
                     this._close = function () { self.closeMenu(); self.placeAdd(self._editor); };
                     window.addEventListener('resize', this._resize);
@@ -538,6 +1102,32 @@
                 destroy: function () {
                     window.removeEventListener('resize', this._resize);
                     window.removeEventListener('scroll', this._close);
+                },
+                // ---- Toolbar: the search box folds into its icon when empty; the unsaved-changes count ----
+                searchShown: function () { return this.searchOpen || !!this.keyword; },
+                openSearch: function () {
+                    var self = this;
+                    this.searchOpen = true;
+                    this.$nextTick(function () { if (self.$refs.search) self.$refs.search.focus(); });
+                },
+                changesText: function () {
+                    var n = Object.keys(this.changed).length + this.deleted;
+                    return n === 0 ? 'Unsaved changes' : n === 1 ? '1 unsaved change' : n + ' unsaved changes';
+                },
+                // A change inside this grid (a nested grid's own changes bubble past it and are ignored).
+                touch: function (el) {
+                    if (!el || el.closest('.m-grid') !== this.$root) return;
+                    this.dirty = true;
+                    var tr = el.closest('tr[data-row-key]');
+                    if (!tr || tr.parentElement !== this.$refs.body) return;
+                    this.changed[tr.getAttribute('data-row-key')] = true;
+                    if (!tr.classList.contains('m-grid-row-new')) tr.classList.add('m-grid-row-dirty');
+                },
+                forget: function (tr) {
+                    var id = tr.getAttribute('data-row-key');
+                    delete this.changed[id];
+                    if (!tr.classList.contains('m-grid-row-new')) this.deleted++;
+                    this.dirty = true;
                 },
                 tableClass: function () {
                     return [this.density, this.pingLeft ? 'ant-table-ping-left' : '', this.pingRight ? 'ant-table-ping-right' : ''].join(' ').trim();
@@ -575,6 +1165,13 @@
                     cell.hidden = true;
                     editor.hidden = false;
                     this.placeAdd(editor);
+                    var p = picker(editor);
+                    if (p) {
+                        // Opens at once, as the Blazor grid's AppCreatableSelect (DefaultOpen).
+                        editor.querySelector('.ant-select-selector').focus({ preventScroll: true });
+                        p.show();
+                        return;
+                    }
                     var control = editor.querySelector('input, select');
                     if (control) {
                         control.focus();
@@ -585,6 +1182,9 @@
                 leave: function (e) {
                     var editor = e.currentTarget;
                     if (e.relatedTarget && editor.contains(e.relatedTarget)) return;
+                    // A click in an open select's list moves focus nowhere; the select ends the edit when it closes.
+                    var p = picker(editor);
+                    if (p && p.open) return;
                     this.commit(editor, false);
                 },
                 commit: function (editor, focusCell) {
@@ -600,7 +1200,7 @@
                     editor.hidden = true;
                     cell.hidden = false;
                     if (this._editor === editor) { this._editor = null; this._original = null; }
-                    if (changed) this.dirty = true;
+                    if (changed) this.touch(editor);
                     if (focusCell !== false) cell.focus();
                 },
                 cancel: function (editor) {
@@ -634,8 +1234,11 @@
                     var html = this.$refs.rowTemplate.innerHTML.split('__id__').join('n' + n);
                     if (this.$refs.empty) this.$refs.empty.remove();
                     this.$refs.body.insertAdjacentHTML('afterbegin', html);
-                    this.dirty = true;
                     var row = this.$refs.body.firstElementChild, self = this;
+                    this.touch(row);
+                    // The new row is on top: show the first page.
+                    this.page = 1;
+                    this.applyPage();
                     this.$nextTick(function () {
                         var first = row.querySelector('.m-grid-cell-editable');
                         if (first) self.edit(first);
@@ -655,8 +1258,9 @@
                     var id = row.getAttribute('data-row-key');
                     var detail = this.$refs.body.querySelector('tr[data-detail-for="' + CSS.escape(id) + '"]');
                     if (detail) detail.remove();
+                    this.forget(row);
                     row.remove();
-                    this.dirty = true;
+                    this.applyPage();
                 },
                 // Only this grid's own rows: a nested grid's child levels sit inside its detail rows.
                 rows: function () { return Array.prototype.filter.call(this.$refs.body.children, function (tr) { return tr.hasAttribute('data-row-key'); }); },
@@ -665,7 +1269,7 @@
                 storeKey: function () { return 'modulus-grid:' + location.pathname + ':' + this.$root.id; },
                 store: function () {
                     try {
-                        sessionStorage.setItem(this.storeKey(), JSON.stringify({ keyword: this.keyword, filters: this.filters, searches: this.searches, sortKey: this.sortKey, sortDesc: this.sortDesc }));
+                        sessionStorage.setItem(this.storeKey(), JSON.stringify({ keyword: this.keyword, filters: this.filters, searches: this.searches, sortKey: this.sortKey, sortDesc: this.sortDesc, pageSize: this.pageSize }));
                     } catch (e) { /* storage blocked */ }
                 },
                 // This grid's header cells (a nested grid's own headers sit further down, inside detail rows).
@@ -681,14 +1285,19 @@
                     this.searches[detail.key] = detail.value || '';
                     this.applyFilter();
                 },
+                // The toolbar's Clear: the keyword, the filters and the column searches.
+                anyFilter: function () { return this.filtered() || !!String(this.keyword || '').trim(); },
                 clearFilters: function () {
                     this.filters = {};
                     this.searches = {};
+                    this.keyword = '';
+                    this.searchOpen = false;
                     this.$root.querySelectorAll('select[data-filter]').forEach(function (s) { s.value = ''; });
                     this.heads().forEach(function (th) {
-                        var input = th.querySelector('.m-col-search input'), trigger = th.querySelector('.m-th-search');
+                        var input = th.querySelector('.m-col-search input'), trigger = th.querySelector('.m-th-search'), inline = th.querySelector('.m-th-filter');
                         if (input) input.value = '';
                         if (trigger) trigger.classList.remove('active');
+                        if (inline) { inline.value = ''; inline.classList.remove('m-th-filter-active'); }
                     });
                     this.applyFilter();
                 },
@@ -703,9 +1312,13 @@
                     for (var sk in s) {
                         // A hidden column's search is ignored, as on the server.
                         if (!s[sk] || !cfg.columns[sk] || !tr.querySelector(':scope > td[data-key="' + CSS.escape(sk) + '"]')) continue;
-                        var sc = cfg.columns[sk], value = rowValue(tr, sk), text = format(sc, value);
-                        if (sc.sub) text += ' ' + (rowValue(tr, sc.sub) || '');
-                        if (!columnMatch(s[sk], text, kind(sc), value)) return false;
+                        var sc = cfg.columns[sk], value = rowValue(tr, sk), text = format(sc, value), sub = sc.sub ? rowValue(tr, sc.sub) : '';
+                        // With a subtitle, as GridSchema.ColumnMatches: contains and =exact match the cell or the cell
+                        // with its subtitle; !exclude needs neither to contain it.
+                        var ok = !sub ? columnMatch(s[sk], text, kind(sc), value)
+                            : /^\s*!/.test(s[sk]) ? columnMatch(s[sk], text + ' ' + sub, kind(sc), value)
+                            : columnMatch(s[sk], text, kind(sc), value) || columnMatch(s[sk], text + ' ' + sub, kind(sc), value);
+                        if (!ok) return false;
                     }
                     if (!k) return true;
                     return Array.prototype.some.call(tr.querySelectorAll('td[data-key]'), function (td) {
@@ -720,11 +1333,12 @@
                     this.rows().forEach(function (tr) {
                         // Rows added in the browser stay visible, so a new row never vanishes while it is filled in.
                         var show = tr.classList.contains('m-grid-row-new') || self.matches(tr, k);
-                        tr.hidden = !show;
+                        tr._mMatch = show;
                         if (show) shown++;
-                        var detail = tr.nextElementSibling;
-                        if (detail && detail.getAttribute('data-detail-for') === tr.getAttribute('data-row-key')) detail.hidden = !show;
                     });
+                    // A new search or filter starts again from the first page.
+                    this.page = 1;
+                    this.applyPage();
                     var none = this.$refs.body.querySelector(':scope > tr.m-grid-no-match');
                     if (!shown && this.rows().length) {
                         if (!none) {
@@ -742,7 +1356,70 @@
                     else if (!this.sortDesc) this.sortDesc = true;
                     else { this.sortKey = ''; this.sortDesc = false; }
                     this.applySort();
+                    this.applyPage();
                     this.store();
+                },
+
+                // ---- Paging: the matching rows (in their current order), one page shown; rows off the page are hidden, not removed ----
+                pages: function () { return cfg.paged === false ? 1 : Math.max(1, Math.ceil(this.matched / this.pageSize)); },
+                applyPage: function () {
+                    var size = cfg.paged === false ? Infinity : this.pageSize;
+                    var list = this.rows().filter(function (tr) { return tr._mMatch !== false; });
+                    this.matched = list.length;
+                    this.page = Math.min(Math.max(1, this.page), this.pages());
+                    var from = (this.page - 1) * (size === Infinity ? 0 : size);
+                    var onPage = new Set(list.slice(from, from + size));
+                    this.rows().forEach(function (tr) {
+                        var show = onPage.has(tr);
+                        tr.hidden = !show;
+                        var detail = tr.nextElementSibling;
+                        if (detail && detail.getAttribute('data-detail-for') === tr.getAttribute('data-row-key')) detail.hidden = !show;
+                    });
+                    this.syncSelection();
+                },
+                goPage: function (n) {
+                    var target = Math.min(Math.max(1, n), this.pages());
+                    if (target === this.page) return;
+                    this.page = target;
+                    this.applyPage();
+                },
+                setPageSize: function (value) {
+                    var size = parseInt(value, 10);
+                    if (!(size > 0)) return;
+                    // Keep the first row of the current page in view.
+                    var first = (this.page - 1) * this.pageSize;
+                    this.pageSize = size;
+                    this.page = Math.floor(first / size) + 1;
+                    this.applyPage();
+                    this.store();
+                },
+                // "1–10 of 42", as Paging.Range writes it.
+                rangeText: function () {
+                    var total = this.matched, lang = cfg.lang || undefined;
+                    if (!total) return '0 of 0';
+                    var size = cfg.paged === false ? total : this.pageSize;
+                    var from = (this.page - 1) * size + 1, to = Math.min(total, this.page * size);
+                    function n(v) { return v.toLocaleString(lang); }
+                    return n(from) + '\u2013' + n(to) + ' of ' + n(total);
+                },
+                // The page buttons, as Paging.Window picks them: every page up to 7, else the first and last pages, two
+                // either side of the current one (five at the ends) and ••• jumps of five pages.
+                pageItems: function () {
+                    var pages = this.pages(), cur = this.page, nums = [];
+                    if (pages <= 7) { for (var i = 1; i <= pages; i++) nums.push(i); }
+                    else {
+                        var left = Math.max(1, cur - 2), right = Math.min(pages, cur + 2);
+                        if (cur - 1 <= 2) right = 5;
+                        if (pages - cur <= 2) left = pages - 4;
+                        if (left !== 1) { nums.push(1); if (left > 2) nums.push(-1); }
+                        for (var j = left; j <= right; j++) nums.push(j);
+                        if (right !== pages) { if (right < pages - 1) nums.push(-2); nums.push(pages); }
+                    }
+                    return nums.map(function (p) {
+                        if (p === -1) return { key: 'jump-prev', page: 0, to: Math.max(1, cur - 5), active: false, title: 'Previous 5 pages', cls: 'ant-pagination-jump-prev ant-pagination-jump-prev-custom-icon' };
+                        if (p === -2) return { key: 'jump-next', page: 0, to: Math.min(pages, cur + 5), active: false, title: 'Next 5 pages', cls: 'ant-pagination-jump-next ant-pagination-jump-next-custom-icon' };
+                        return { key: 'p' + p, page: p, to: p, active: p === cur, title: 'Page ' + p, cls: 'ant-pagination-item ant-pagination-item-' + p + (p === cur ? ' ant-pagination-item-active' : '') };
+                    });
                 },
                 applySort: function () {
                     var self = this, body = this.$refs.body, key = this.sortKey, col = key ? cfg.columns[key] : null;
@@ -771,9 +1448,16 @@
                         var title = th.querySelector('.ant-table-column-title').textContent.replace('*', '');
                         sorters.setAttribute('aria-label', 'Sort by ' + title + (on ? (self.sortDesc ? ' (descending)' : ' (ascending)') : ''));
                     });
+                    // A column sort decides the order, so the drag handles rest until it is cleared.
+                    var locked = !!key || !!cfg.dragLocked;
+                    if (this.$root.hasAttribute('data-m-sort-rows')) this.$root.toggleAttribute('data-m-sort-disabled', locked);
                     this.rows().forEach(function (tr) {
                         Array.prototype.forEach.call(tr.children, function (td) {
                             if (td.hasAttribute('data-key')) td.classList.toggle('ant-table-column-sort', td.getAttribute('data-key') === key);
+                            var handle = td.classList.contains('m-row-drag-cell') && td.querySelector('[data-m-sort-row]');
+                            if (!handle) return;
+                            if (locked) { handle.setAttribute('aria-disabled', 'true'); handle.tabIndex = -1; handle.title = 'Clear the column sort to drag rows'; }
+                            else { handle.removeAttribute('aria-disabled'); handle.tabIndex = 0; handle.title = 'Drag to reorder'; }
                         });
                     });
                 },
@@ -845,6 +1529,7 @@
                             cell.setAttribute('aria-label', 'Edit ' + col.t + ': ' + format(col, value));
                             self.setError(td, cell, validate(col, value));
                         }
+                        self.touch(tr);
                     });
                     this.dirty = true;
                 },
@@ -1221,6 +1906,7 @@
                 values: (cfg.values || []).slice(),
                 colors: cfg.colors || [],
                 showColors: cfg.showColors !== false,
+                creating: false,
                 newLabel: '',
                 picked: null,
                 error: '',
@@ -1238,6 +1924,27 @@
                 sel: function (v) { return cfg.multiple ? this.values.indexOf(v) >= 0 : this.value === v; },
                 has: function () { return cfg.multiple ? this.values.length > 0 : !!this.value; },
                 color: function () { return this.picked || this.colors[this.options.length % this.colors.length]; },
+                colorName: function (c) { return (cfg.colorNames && cfg.colorNames[c]) || c; },
+                place: function () {
+                    var root = this.$root;
+                    this.$nextTick(function () { if (window.modulusShell && window.modulusShell.placeSelect) window.modulusShell.placeSelect(root); });
+                },
+                // The create form takes the list's place; Cancel (or Escape) goes back to the list.
+                startCreate: function () {
+                    var self = this;
+                    this.creating = true;
+                    this.error = '';
+                    this.place();
+                    this.$nextTick(function () { if (self.$refs.add) self.$refs.add.focus(); });
+                },
+                cancelCreate: function () {
+                    this.creating = false;
+                    this.newLabel = '';
+                    this.picked = null;
+                    this.error = '';
+                    this.place();
+                    this.$root.querySelector('.ant-select-selector').focus({ preventScroll: true });
+                },
                 dot: function (o) {
                     return this.showColors && o && o.color && o.color !== 'default' ? '<span class="m-cselect-dot ant-tag-' + esc(o.color) + '" aria-hidden="true"></span>' : '';
                 },
@@ -1285,10 +1992,13 @@
                 close: function () {
                     if (!this.open) return;
                     this.open = false;
+                    this.creating = false;
                     this.newLabel = '';
                     this.picked = null;
                     this.error = '';
                     this.$root.querySelector('.ant-select-selector').focus({ preventScroll: true });
+                    // The editable grid ends the cell's edit when its select closes (a pick, Escape, Tab or a click away).
+                    this.$root.dispatchEvent(new CustomEvent('m-cselect-close', { bubbles: true }));
                 },
                 onSelector: function (e) {
                     var remove = e.target.closest('[data-remove]');
@@ -1316,13 +2026,14 @@
                 },
                 key: function (e) {
                     var n = this.options.length;
+                    // Keys the select handles stop here, so a form (or a grid cell's editor) doesn't act on them too.
                     if (!this.open) {
-                        if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.show(); }
+                        if (e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); this.show(); }
                         return;
                     }
                     if (e.key === 'ArrowDown' && n) { e.preventDefault(); this.active = (this.active + 1) % n; }
                     else if (e.key === 'ArrowUp' && n) { e.preventDefault(); this.active = (this.active - 1 + n) % n; }
-                    else if ((e.key === 'Enter' || e.key === ' ') && this.active >= 0 && this.active < n) { e.preventDefault(); this.pick(this.options[this.active].value); }
+                    else if ((e.key === 'Enter' || e.key === ' ') && this.active >= 0 && this.active < n) { e.preventDefault(); e.stopPropagation(); this.pick(this.options[this.active].value); }
                     else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this.close(); return; }
                     else if (e.key === 'Tab') { this.close(); return; }
                     var el = this.$root.querySelectorAll('.ant-select-item-option')[this.active];
@@ -1348,6 +2059,8 @@
                     this.options.push(o);
                     this.newLabel = '';
                     this.picked = null;
+                    this.creating = false;
+                    this.place();
                     if (cfg.multiple) { this.values.push(o.value); this.active = this.options.length - 1; this.changed(); }
                     else this.pick(o.value);
                 },
@@ -1358,6 +2071,12 @@
                     if (this.options.some(function (o) { return o.label.toLowerCase() === label.toLowerCase(); })) { this.error = '“' + label + '” is already in the list.'; return; }
                     if (this.options.length >= cfg.maxOptions) { this.error = 'A list holds up to ' + cfg.maxOptions + ' options.'; return; }
                     var color = this.color();
+                    // In an editable grid the name and colour post with the grid (add-option:{key}:{row}), so the
+                    // option joins the column's schema; the grid's editor hears m-cselect-add and submits the operation.
+                    if (cfg.gridOp) {
+                        this.$root.dispatchEvent(new CustomEvent('m-cselect-add', { bubbles: true, detail: cfg.gridOp }));
+                        return;
+                    }
                     if (!cfg.addHref) {
                         this.accept({ value: uniqueKey(label, this.options.map(function (o) { return o.value; })), label: label, color: color });
                         return;

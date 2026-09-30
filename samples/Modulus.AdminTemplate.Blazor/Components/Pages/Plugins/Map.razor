@@ -1,0 +1,42 @@
+@page "/plugins/map"
+
+<PageTitle>Map · Modulus</PageTitle>
+
+<PageHeading Pretitle="Plugins" Title="Map" Subtitle="Leaflet with OpenStreetMap tiles: markers, popups, and buttons that fly to a place." />
+
+<div class="m-row-cards">
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Offices</h3><p class="m-card-subtitle">Pick an office to fly to it; the markers open a popup</p></div></div>
+        <div class="m-card-body">
+            <div class="m-map-layout">
+                <AppMap Id="offices" Markers="PluginsContent.Offices" Zoom="10" Height="420px" Label="Office locations" />
+                <ul class="m-map-list" data-m-map-list aria-label="Offices">
+                    @for (var i = 0; i < PluginsContent.Offices.Count; i++)
+                    {
+                        var m = PluginsContent.Offices[i];
+                        <li><button type="button" class="m-map-go" data-m-map-go="@i" data-m-map-target="offices" data-zoom="10" aria-current="false"><span class="m-map-key m-map-pin-@m.Tone"></span><span class="m-map-go-text"><span class="m-map-go-title">@m.Title</span><span class="m-map-go-sub">@m.Text</span></span></button></li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Stores in London</h3><p class="m-card-subtitle">Zoomed in; the mouse wheel zooms this map</p></div></div>
+            <div class="m-card-body"><AppMap Id="stores" Markers="PluginsContent.Stores" Zoom="13" ScrollZoom Height="320px" Label="London stores" /></div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Marker colours</h3><p class="m-card-subtitle">Each marker takes a tone</p></div></div>
+            <div class="m-card-body">
+                <ul class="m-plain-list">
+                    <li><span class="m-map-key m-map-pin-primary"></span><span><code>primary</code>: offices</span></li>
+                    <li><span class="m-map-key m-map-pin-success"></span><span><code>success</code>: open stores and hubs</span></li>
+                    <li><span class="m-map-key m-map-pin-warning"></span><span><code>warning</code>: opening soon</span></li>
+                    <li><span class="m-map-key m-map-pin-error"></span><span><code>error</code>: closed</span></li>
+                    <li><span class="m-map-key m-map-pin-purple"></span><span><code>purple</code>: partners</span></li>
+                </ul>
+                <p class="m-muted">Tiles &copy; OpenStreetMap contributors. In dark mode the tiles are inverted to match.</p>
+            </div>
+        </div>
+    </div>
+</div>

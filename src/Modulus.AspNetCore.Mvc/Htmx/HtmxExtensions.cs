@@ -16,9 +16,40 @@ public static class HtmxExtensions
 {
     public const string AntiforgeryHeader = "RequestVerificationToken";
 
-    /// <summary>True when the request was issued by htmx (and is not a history restore).</summary>
+    /// <summary>
+    /// True when the request was issued by an htmx element (<c>hx-get</c>, <c>hx-post</c> …) and wants a partial answer.
+    /// False for a history restore and for boosted navigation (<see cref="IsBoosted"/>), which stand in for an ordinary
+    /// page load: answer those as you would a browser (a redirect, a page), and the layout sends only the page body.
+    /// </summary>
     public static bool IsHtmx(this HttpRequest request) =>
-        request.Headers["HX-Request"] == "true" && request.Headers["HX-History-Restore-Request"] != "true";
+        request.Headers["HX-Request"] == "true" && request.Headers["HX-History-Restore-Request"] != "true" && !request.IsBoosted();
+
+    /// <summary>
+    /// True for SPA navigation: a link or form inside an <c>hx-boost</c> element (<see cref="Modulus.Ui.Abstractions.Theming.ModulusThemeOptions.SpaNavigation"/>).
+    /// </summary>
+    public static bool IsBoosted(this HttpRequest request) =>
+        request.Headers["HX-Boosted"] == "true" && request.Headers["HX-History-Restore-Request"] != "true";
+
+    /// <summary>Swaps the response into another element than the one the request came from (a CSS selector).</summary>
+    public static HttpResponse HxRetarget(this HttpResponse response, string selector)
+    {
+        response.Headers["HX-Retarget"] = selector;
+        return response;
+    }
+
+    /// <summary>Uses only the part of the response that matches the selector.</summary>
+    public static HttpResponse HxReselect(this HttpResponse response, string selector)
+    {
+        response.Headers["HX-Reselect"] = selector;
+        return response;
+    }
+
+    /// <summary>Overrides how the response is swapped (<c>outerHTML show:window:top</c> …).</summary>
+    public static HttpResponse HxReswap(this HttpResponse response, string swap)
+    {
+        response.Headers["HX-Reswap"] = swap;
+        return response;
+    }
 
     /// <summary>
     /// Queues a client event in the <c>HX-Trigger</c> header. Multiple calls merge into one JSON object,

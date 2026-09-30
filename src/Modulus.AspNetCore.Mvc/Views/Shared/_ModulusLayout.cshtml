@@ -6,8 +6,13 @@
     Sections:  Head (optional), Scripts (optional)
     Content:   register an IShellContentProvider for the user menu, notifications and footer links.
     Page:      ViewData["Title"] sets the document title.
+    SPA:       with ModulusThemeOptions.SpaNavigation, links and forms load through htmx (hx-boost). A boosted request gets
+               only the title, the navigation (out of band) and <main>, with the page's Head and Scripts sections inside it,
+               and modulus-spa.js swaps them in. The .m-page element is htmx's history element: back and forward reload
+               it from the server, never the scripts after it.
 *@
 @using Microsoft.AspNetCore.Authorization
+@using Modulus.AspNetCore.Mvc.Htmx
 @using Modulus.Ui.Abstractions.Shell
 @inject IOptions<ModulusThemeOptions> ThemeOptions
 @inject IMenuProvider MenuProvider
@@ -22,26 +27,66 @@
         await ShellContentProvider.GetContentAsync(User, Context.RequestAborted),
         ThemeCss.ResolveMode(cookies[ThemeCss.ModeCookie], ThemeMode.System), cookies[ShellRenderer.TenantCookie], cookies[ShellRenderer.TenantsCookie]);
     var title = ViewData["Title"] as string;
+    var documentTitle = title is null ? theme.Title : $"{title} · {theme.Title}";
+    var spa = theme.SpaNavigation;
+    var app = ShellRenderer.CurrentApp(shell)?.MenuKey ?? "";
+    if (spa) SpaNavigation.AddVary(Context.Response);
+    // Back and forward reload .m-page from a full page; the page's own assets go inside it, where htmx runs them.
+    var restore = spa && Context.Request.Headers["HX-History-Restore-Request"] == "true";
+}
+@if (spa && Context.Request.IsBoosted())
+{
+    SpaNavigation.PrepareFragment(Context.Response);
+    // The navigation shows where the page sits (active items, the app's menu and breadcrumb), so it comes along; the
+    // app launcher only when the app changes, as it marks the current app.
+    <title>@documentTitle</title>
+    @Html.Raw(SpaNavigation.Oob(ShellRenderer.Sidebar(shell), "m-sidebar"))
+    @Html.Raw(SpaNavigation.Oob(ShellRenderer.Header(shell), "m-header"))
+    if (SpaNavigation.AppChanged(Context.Request, app))
+    {
+        @Html.Raw(SpaNavigation.Oob(ShellRenderer.AppLauncher(shell), "m-launcher"))
+    }
+    <main class="m-page-body" id="main" x-data tabindex="-1" data-m-app="@app">
+        <div class="m-container">
+            @RenderBody()
+        </div>
+        @* The page's own assets run once they're in the page; modulus-spa.js skips files the page already has. *@
+        <div hidden data-m-page-assets>
+            @await RenderSectionAsync("Head", required: false)
+            @await RenderSectionAsync("Scripts", required: false)
+        </div>
+    </main>
+    return;
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@(title is null ? theme.Title : $"{title} · {theme.Title}")</title>
+    <title>@documentTitle</title>
     <modulus-head />
-    @await RenderSectionAsync("Head", required: false)
+    @if (!restore)
+    {
+        @await RenderSectionAsync("Head", required: false)
+    }
 </head>
-<body modulus-antiforgery>
-    <div class="m-page">
+<body modulus-antiforgery hx-boost="@(spa ? "true" : null)" data-m-spa="@(spa ? "" : null)" data-m-prefetch="@(spa && theme.SpaPrefetch ? "" : null)">
+    <div class="m-page" hx-history-elt="@(spa ? "" : null)">
         @Html.Raw(ShellRenderer.Sidebar(shell))
         @Html.Raw(ShellRenderer.Header(shell))
         <div class="m-page-wrapper">
             @* x-data: every page can use Alpine directives (@click="$store.drawer.load(…)") without its own scope. *@
-            <main class="m-page-body" id="main" x-data>
+            <main class="m-page-body" id="main" x-data tabindex="-1" data-m-app="@app">
                 <div class="m-container">
                     @RenderBody()
                 </div>
+                @if (restore)
+                {
+                    <div hidden data-m-page-assets>
+                        @await RenderSectionAsync("Head", required: false)
+                        @await RenderSectionAsync("Scripts", required: false)
+                    </div>
+                }
             </main>
             @Html.Raw(ShellRenderer.Footer(shell))
         </div>
@@ -107,6 +152,9 @@
     <template id="modulus-icon-close"><app-icon type="close" /></template>
 
     <modulus-scripts />
-    @await RenderSectionAsync("Scripts", required: false)
+    @if (!restore)
+    {
+        @await RenderSectionAsync("Scripts", required: false)
+    }
 </body>
 </html>

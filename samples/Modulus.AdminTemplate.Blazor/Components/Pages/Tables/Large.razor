@@ -1,0 +1,128 @@
+@page "/tables/large"
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Modulus.Ui.Abstractions.Data
+
+<PageTitle>Large data · Modulus</PageTitle>
+
+@* 100,000 shipments through TableQuery, as in MVC and Razor Pages (Samples.Web Views/Shared/Ui/Tables/Large.cshtml).
+   Blazor uses ProTable for pages and its own Virtualize for scrolling (only the rows in view are rendered), which also
+   covers MVC's infinite scroll mode. *@
+<PageHeading Pretitle="Tables" Title="Large data" Subtitle="100,000 shipments, queried through TableQuery: filtering, sorting and paging happen in the query, never in the browser." />
+
+<div class="m-nested-settings">
+    <span class="m-muted">Mode</span>
+    <Segmented TValue="string" Labels="_modes" @bind-Value="_mode" />
+    <Select TItemValue="ShipmentStatus?" TItem="string" Value="_status" ValueChanged="StatusChanged" Placeholder="Status" AllowClear Style="width: 160px">
+        <SelectOptions>
+            @foreach (var s in Enum.GetValues<ShipmentStatus>())
+            {
+                <SelectOption TItemValue="ShipmentStatus?" TItem="string" Value="s" Label="@s.ToString()" />
+            }
+        </SelectOptions>
+    </Select>
+    <span class="m-small m-muted">@_total.ToString("N0") matching · query @_ms.ToString("0.0") ms</span>
+</div>
+
+@if (_mode == "Pages")
+{
+    <ProTable TItem="Shipment" @ref="_table" HeaderTitle="Shipments" Request="LoadAsync" RowKey="s => s.Id" ScrollX="960" PageSize="20">
+        <Columns Context="row">
+            <PropertyColumn Property="s => s.Reference" Title="Reference" Sortable Width="140"><span class="m-num m-heading">@row.Reference</span></PropertyColumn>
+            <PropertyColumn Property="s => s.Customer" Title="Customer" Sortable>@row.Customer</PropertyColumn>
+            <PropertyColumn Property="s => s.City" Title="City" Sortable Width="130"><span class="m-muted">@row.City</span></PropertyColumn>
+            <PropertyColumn Property="s => s.Status" Title="Status" Width="120"><span class="m-badge m-badge-@Tone(row.Status)-lt">@row.Status</span></PropertyColumn>
+            <PropertyColumn Property="s => s.Amount" Title="Amount" Sortable Align="ColumnAlign.Right" Width="130"><span class="m-num">@Fmt.Money(row.Amount)</span></PropertyColumn>
+            <PropertyColumn Property="s => s.Date" Title="Date" Sortable Width="120"><span class="m-num m-muted">@row.Date.ToString("yyyy-MM-dd")</span></PropertyColumn>
+        </Columns>
+    </ProTable>
+}
+else
+{
+    <div class="ant-card m-table-card">
+        <div class="ant-card-body">
+            <div class="ant-table-wrapper m-virtual" style="--m-row-h: 40px">
+                <div class="ant-table ant-table-middle ant-table-scroll-horizontal">
+                    <div class="ant-table-container">
+                        <div class="ant-table-content m-virtual-scroll" style="height: 560px" tabindex="0" role="region" aria-label="Shipments">
+                            <table style="width: 960px; min-width: 100%; table-layout: fixed;">
+                                <colgroup><col style="width:140px" /><col /><col style="width:130px" /><col style="width:120px" /><col style="width:130px" /><col style="width:120px" /></colgroup>
+                                <thead class="ant-table-thead">
+                                    <tr>
+                                        <th class="ant-table-cell">Reference</th><th class="ant-table-cell">Customer</th><th class="ant-table-cell">City</th>
+                                        <th class="ant-table-cell">Status</th><th class="ant-table-cell" style="text-align:right">Amount</th><th class="ant-table-cell">Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="ant-table-tbody">
+                                    <Virtualize @key="_status" TItem="Shipment" ItemsProvider="ProvideAsync" ItemSize="40" OverscanCount="8" SpacerElement="tr">
+                                        <ItemContent Context="s">
+                                            <tr class="ant-table-row ant-table-row-level-0" @key="s.Id">
+                                                <td class="ant-table-cell"><span class="m-num m-heading">@s.Reference</span></td>
+                                                <td class="ant-table-cell">@s.Customer</td>
+                                                <td class="ant-table-cell"><span class="m-muted">@s.City</span></td>
+                                                <td class="ant-table-cell"><span class="m-badge m-badge-@Tone(s.Status)-lt">@s.Status</span></td>
+                                                <td class="ant-table-cell" style="text-align:right"><span class="m-num">@Fmt.Money(s.Amount)</span></td>
+                                                <td class="ant-table-cell"><span class="m-num m-muted">@s.Date.ToString("yyyy-MM-dd")</span></td>
+                                            </tr>
+                                        </ItemContent>
+                                        <Placeholder>
+                                            <tr class="ant-table-row m-virtual-skeleton"><td class="ant-table-cell" colspan="6"><span class="m-virtual-bar"></span></td></tr>
+                                        </Placeholder>
+                                    </Virtualize>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly string[] _modes = ["Pages", "Virtual"];
+    private string _mode = "Pages";
+    private ShipmentStatus? _status;
+    private ProTable<Shipment>? _table;
+    private int _total;
+    private double _ms;
+
+    private static string Tone(ShipmentStatus s) => s switch
+    {
+        ShipmentStatus.Pending => "yellow",
+        ShipmentStatus.Packed => "azure",
+        ShipmentStatus.Shipped => "blue",
+        ShipmentStatus.Delivered => "green",
+        _ => "red",
+    };
+
+    private async Task StatusChanged(ShipmentStatus? status)
+    {
+        _status = status;
+        if (_table is not null) await _table.ReloadAsync(resetPage: true);
+    }
+
+    private Task<ProTableResponse<Shipment>> LoadAsync(ProTableRequest request)
+    {
+        var page = Run(request, CountMode.Exact);
+        return Task.FromResult(new ProTableResponse<Shipment> { Data = page.Items, Total = page.Total ?? 0 });
+    }
+
+    // Virtualize asks for any window of rows (start, count): the same filtered, ordered query, cut to that window.
+    private ValueTask<ItemsProviderResult<Shipment>> ProvideAsync(ItemsProviderRequest request)
+    {
+        var count = Math.Clamp(request.Count, 1, 200);
+        var rows = Shipments.Table.Apply(Shipments.Where(_status), new ProTableRequest()).Skip(request.StartIndex).Take(count).ToList();
+        var total = Shipments.Table.Filter(Shipments.Where(_status), new ProTableRequest()).Count();
+        _total = total;
+        return ValueTask.FromResult(new ItemsProviderResult<Shipment>(rows, total));
+    }
+
+    private TablePage<Shipment> Run(ProTableRequest request, CountMode count)
+    {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        var page = Shipments.Page(_status, request, count);
+        _ms = watch.Elapsed.TotalMilliseconds;
+        _total = page.Total ?? _total;
+        return page;
+    }
+}

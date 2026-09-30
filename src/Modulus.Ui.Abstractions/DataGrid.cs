@@ -170,6 +170,21 @@ public static class GridSchema
         (columns[i], columns[j]) = (columns[j], columns[i]);
     }
 
+    /// <summary>
+    /// Puts the items named in <paramref name="order"/> (a page of rows as the user dragged them) back into the slots
+    /// those items held in <paramref name="all"/>, so items on other pages or filtered out keep their places. Ids that
+    /// are not in the list are skipped.
+    /// </summary>
+    public static void Reorder<T>(IList<T> all, IEnumerable<string> order, Func<T, string> idOf)
+    {
+        var byId = new Dictionary<string, T>(StringComparer.Ordinal);
+        foreach (var item in all) byId.TryAdd(idOf(item), item);
+        var wanted = order.Where(byId.ContainsKey).Distinct(StringComparer.Ordinal).ToList();
+        var set = wanted.ToHashSet(StringComparer.Ordinal);
+        var slots = Enumerable.Range(0, all.Count).Where(i => set.Contains(idOf(all[i]))).ToList();
+        for (var k = 0; k < slots.Count && k < wanted.Count; k++) all[slots[k]] = byId[wanted[k]];
+    }
+
     public static void Remove(IList<GridColumn> columns, IEnumerable<GridRecord> rows, string key)
     {
         if (columns.Count <= 1) return;
@@ -218,8 +233,35 @@ public static class GridSchema
 
     private static readonly string[] TagColors = ["blue", "green", "orange", "purple", "cyan", "magenta", "gold", "red"];
 
-    /// <summary>Ant Design preset tag colours offered when adding an option.</summary>
+    /// <summary>Ant Design preset tag colours an option may have (stored options keep theirs).</summary>
     public static readonly IReadOnlyList<string> OptionColors = [.. TagColors, "volcano", "geekblue", "lime"];
+
+    /// <summary>
+    /// The colours offered when creating an option: eight clearly different presets, each with a name
+    /// (<see cref="ColorName"/>) shown next to the swatches. New options take them in turn.
+    /// </summary>
+    public static readonly IReadOnlyList<string> PickerColors = TagColors;
+
+    /// <summary>The name of a tag colour for people ("magenta" → "Pink").</summary>
+    public static string ColorName(string? color) => color switch
+    {
+        null or "" or "default" => "Grey",
+        "magenta" => "Pink",
+        "geekblue" => "Indigo",
+        "volcano" => "Coral",
+        _ => char.ToUpperInvariant(color[0]) + color[1..],
+    };
+
+    /// <summary>The colour a new option takes when none is picked: the next picker colour in turn.</summary>
+    public static string NextColor(int optionCount) => PickerColors[Math.Abs(optionCount) % PickerColors.Count];
+
+    /// <summary>A lower-case singular of a plural title for labels ("Styles" → "style", "Deliveries" → "delivery").</summary>
+    public static string Singular(string title)
+    {
+        var t = title.Trim().ToLowerInvariant();
+        if (t.EndsWith("ies", StringComparison.Ordinal) && t.Length > 3) return t[..^3] + "y";
+        return t.EndsWith('s') && !t.EndsWith("ss", StringComparison.Ordinal) && t.Length > 1 ? t[..^1] : t;
+    }
 
     public const int MaxOptions = 50;
     public const int MaxOptionLabel = 60;
@@ -235,7 +277,7 @@ public static class GridSchema
         if (label.Length > MaxOptionLabel) return (options, null, $"Use {MaxOptionLabel} characters or fewer.");
         if (options.Any(o => string.Equals(o.Label, label, StringComparison.OrdinalIgnoreCase))) return (options, null, $"“{label}” is already in the list.");
         if (options.Count >= MaxOptions) return (options, null, $"A list holds up to {MaxOptions} options.");
-        var tint = color is not null && OptionColors.Contains(color) ? color : OptionColors[options.Count % OptionColors.Count];
+        var tint = color is not null && OptionColors.Contains(color) ? color : NextColor(options.Count);
         var added = new GridOption(UniqueKey(label, options.Select(o => o.Value)), label, tint);
         return ([.. options, added], added, null);
     }
@@ -372,6 +414,22 @@ public static class GridSchema
             (c.SubtitleKey is { } sub && (row[sub] ?? "").Contains(k, StringComparison.CurrentCultureIgnoreCase)));
     }
 
+    /// <summary>
+    /// The choices of a column's box in a table's filter row, for Select, Tag, Switch and Multi-select columns (a
+    /// select instead of a text box). Each is a column search on the displayed text: exact for a single value
+    /// (<c>=Approved</c>), "contains" for a multi-select. Null for other columns, or when there are no options.
+    /// </summary>
+    public static IReadOnlyList<ColumnChoice>? SearchChoices(GridColumn column)
+    {
+        IReadOnlyList<ColumnChoice> choices = column.Type switch
+        {
+            GridCellType.Select or GridCellType.Tag or GridCellType.Switch => [.. FilterOptions(column).Select(o => new ColumnChoice(o.Label, "=" + o.Label))],
+            GridCellType.MultiSelect => [.. column.Options.Select(o => new ColumnChoice(o.Label, o.Label))],
+            _ => [],
+        };
+        return choices.Count == 0 ? null : choices;
+    }
+
     /// <summary>How a column search compares the column: numbers and dates by value, everything else as text.</summary>
     public static ColumnKind Kind(GridColumn column) => column.Type switch
     {
@@ -385,8 +443,15 @@ public static class GridSchema
     {
         var value = row[column.Key];
         var text = Format(column, value, culture);
-        if (column.SubtitleKey is { } sub && !string.IsNullOrEmpty(row[sub])) text += " " + row[sub];
-        return ColumnSearch.Matches(query, text, Kind(column), Number(value), Date(value));
+        var kind = Kind(column);
+        if (column.SubtitleKey is not { } sub || string.IsNullOrEmpty(row[sub]))
+            return ColumnSearch.Matches(query, text, kind, Number(value), Date(value));
+        // With a subtitle: "contains" and "=exact" match the cell or the cell with its subtitle (so a filter-row
+        // choice, =Label, still matches), and "!exclude" needs neither to contain it.
+        var withSub = text + " " + row[sub];
+        return (query ?? "").TrimStart().StartsWith('!')
+            ? ColumnSearch.Matches(query, withSub, kind, Number(value), Date(value))
+            : ColumnSearch.Matches(query, text, kind, Number(value), Date(value)) || ColumnSearch.Matches(query, withSub, kind, Number(value), Date(value));
     }
 
     /// <summary>Rows sorted by a column: numbers and dates by value, the rest by displayed text; empty cells last.</summary>

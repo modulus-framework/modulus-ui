@@ -1,0 +1,66 @@
+@* Date picker: date, time, week / month / quarter / year, ranges with presets, disabled dates, sizes and states.
+   MVC and Razor Pages render Ant Design's picker popup (modulusPicker in modulus-widgets.js), as Blazor's DatePicker does. *@
+@{
+    var from = Context.Request.Query["from"].ToString();
+    var to = Context.Request.Query["to"].ToString();
+    var today = DateTime.Today;
+    // The current week, as the picker posts it (yyyy-Www, weeks starting on Sunday like AntD's en-US locale).
+    var week = $"{today.Year}-W{CultureInfo.InvariantCulture.Calendar.GetWeekOfYear(today, CalendarWeekRule.FirstDay, DayOfWeek.Sunday):00}";
+}
+<app-page-header pretitle="Plugins" title="Date picker" subtitle="Dates, times, weeks, months, quarters and years; ranges with presets; disabled dates."></app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Date and time</h3><p class="m-card-subtitle">A date, a date with a time, or a time of day</p></div></div>
+            <div class="m-card-body ant-form ant-form-vertical">
+                <app-form-item label="Invoice date"><app-date-picker name="date" value="@PluginsContent.Iso(DateOnly.FromDateTime(today))" /></app-form-item>
+                <app-form-item label="Meeting starts"><app-date-picker name="meeting" show-time value="@today.AddDays(2).AddHours(10).ToString("yyyy-MM-dd'T'HH:mm")" /></app-form-item>
+                <app-form-item label="Daily report at"><app-date-picker name="report" picker="time" format="HH:mm" value="08:30" /></app-form-item>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Week, month, quarter and year</h3><p class="m-card-subtitle">Pick a whole period instead of a day</p></div></div>
+            <div class="m-card-body ant-form ant-form-vertical">
+                <app-form-item label="Sprint week"><app-date-picker name="week" picker="week" value="@week" /></app-form-item>
+                <app-form-item label="Billing month"><app-date-picker name="month" picker="month" value="@today.ToString("yyyy-MM")" /></app-form-item>
+                <app-form-item label="Reporting quarter"><app-date-picker name="quarter" picker="quarter" value="@DatePeriods.Quarter(DateOnly.FromDateTime(today))" /></app-form-item>
+                <app-form-item label="Fiscal year"><app-date-picker name="year" picker="year" value="@today.Year" /></app-form-item>
+            </div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Range with presets</h3><p class="m-card-subtitle">One click fills both ends; Show orders submits the range</p></div></div>
+            <div class="m-card-body">
+                <form class="ant-form ant-form-vertical" method="get" action="/plugins/date-picker">
+                    <app-form-item label="Order date">
+                        <app-range-picker name-from="from" name-to="to" value-from="@from" value-to="@to" presets="PluginsContent.RangePresets" />
+                    </app-form-item>
+                    <button type="submit" class="ant-btn ant-btn-primary"><app-icon type="search" /><span>Show orders</span></button>
+                </form>
+                <p class="m-muted m-mt-12">@(from.Length > 0 && to.Length > 0 ? $"Orders from {from} to {to}." : "No range submitted yet.")</p>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Disabled dates</h3><p class="m-card-subtitle">Delivery on weekdays, from tomorrow up to 60 days ahead</p></div></div>
+            <div class="m-card-body ant-form ant-form-vertical">
+                <app-form-item label="Delivery date"><app-date-picker name="delivery" disabled-days="sat,sun" disabled-days-message="We don't deliver at weekends." min="@PluginsContent.Iso(PluginsContent.DeliveryFrom)" max="@PluginsContent.Iso(PluginsContent.DeliveryTo)" /></app-form-item>
+                <app-form-item label="Delivery window"><app-range-picker name-from="deliveryFrom" name-to="deliveryTo" disabled-days="sat,sun" disabled-days-message="We don't deliver at weekends." min="@PluginsContent.Iso(PluginsContent.DeliveryFrom)" max="@PluginsContent.Iso(PluginsContent.DeliveryTo)" /></app-form-item>
+                <p class="m-muted">Days outside the window and weekends can't be picked.</p>
+            </div>
+        </div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Sizes and states</h3><p class="m-card-subtitle">Small, middle and large; read-only and disabled</p></div></div>
+        <div class="m-card-body">
+            <div class="m-demo-row">
+                <app-date-picker name="small" size="small" aria-label="Small date picker" />
+                <app-date-picker name="middle" aria-label="Middle date picker" />
+                <app-date-picker name="large" size="large" aria-label="Large date picker" />
+                <app-date-picker name="readonly" value="@PluginsContent.Iso(DateOnly.FromDateTime(today))" readonly aria-label="Read-only date picker" />
+                <app-date-picker name="disabled" value="@PluginsContent.Iso(DateOnly.FromDateTime(today))" disabled aria-label="Disabled date picker" />
+            </div>
+        </div>
+    </div>
+</div>

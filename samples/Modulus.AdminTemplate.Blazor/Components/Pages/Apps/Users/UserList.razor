@@ -4,7 +4,11 @@
 
 <PageTitle>Users · Modulus</PageTitle>
 
-<PageHeading Pretitle="Users & access" Title="Users" Subtitle="Everyone with access to the workspace, their role and plan." />
+<PageHeading Pretitle="Users & access" Title="Users" Subtitle="Everyone with access to the workspace, their role and plan.">
+    <Actions>
+        <a class="ant-btn ant-btn-default" href="/apps/users/grid"><Icon Type="appstore" /><span>Grid view</span></a>
+    </Actions>
+</PageHeading>
 
 <div class="m-row-cards">
     <div class="m-row-cards m-cols-4">
@@ -23,10 +27,9 @@
         }
     </div>
 
-    <ProTable TItem="AppUser" @ref="_table" HeaderTitle="All users" Request="LoadAsync" RowKey="u => u.Id" Selectable RowSelectable="u => u.Id != CurrentUser.Id" ScrollX="980">
+    <ProTable TItem="AppUser" @ref="_table" HeaderTitle="All users" Request="LoadAsync" RowKey="u => u.Id" Selectable RowSelectable="u => u.Id != CurrentUser.Id" ScrollX="980" FiltersActive="@FiltersActive" OnClearFilters="ClearFilters">
         <ToolBar>
             <Input @bind-Value="_keyword" Placeholder="Search users…" AllowClear Class="m-table-toolbar-search" OnPressEnter="SearchAsync" OnClear="SearchAsync" Prefix="@_searchIcon" />
-            <Button Icon="download">Export</Button>
             <Button Type="@ButtonType.Primary" Icon="plus" OnClick="Create">Add user</Button>
         </ToolBar>
         <Filters>
@@ -102,6 +105,17 @@
         Task.FromResult(Store.QueryUsers(new UserQuery(_keyword, _role, _plan, _status), request));
 
     private Task SearchAsync() => _table!.ReloadAsync(resetPage: true);
+
+    // The table's Clear button: the search box and every filter.
+    private bool FiltersActive => !string.IsNullOrWhiteSpace(_keyword) || _role is not null || _plan is not null || _status is not null;
+
+    private void ClearFilters()
+    {
+        _keyword = null;
+        _role = null;
+        _plan = null;
+        _status = null;
+    }
 
     private async Task FilterAsync(Action set)
     {

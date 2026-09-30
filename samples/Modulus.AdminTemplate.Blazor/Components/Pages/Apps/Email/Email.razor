@@ -48,7 +48,7 @@
                 <h2 class="m-h3 m-truncate" style="margin:0;flex:1">@m.Subject</h2>
                 <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="@(m.Starred ? "Unstar" : "Star")" title="@(m.Starred ? "Unstar" : "Star")" @onclick="() => Star(m.Id)"><Ti Name="star" Class="@(m.Starred ? "m-text-warning" : null)" /></button>
                 <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Mark as unread" title="Mark as unread" @onclick="() => MarkRead([m.Id], false)"><Ti Name="mail" /></button>
-                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")" title="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")" @onclick="() => MoveOpen(m.Folder == MailFolder.Spam ? MailFolder.Inbox : MailFolder.Spam)"><Ti Name="alert-octagon" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")" title="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")" @onclick="() => MoveOpen(m.Folder == MailFolder.Spam ? MailFolder.Inbox : MailFolder.Spam)"><Ti Name="ant:stop" /></button>
                 <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-danger-hover" aria-label="@(m.Folder == MailFolder.Trash ? "Delete forever" : "Move to trash")" title="@(m.Folder == MailFolder.Trash ? "Delete forever" : "Move to trash")" @onclick="() => MoveOpen(MailFolder.Trash)"><Ti Name="trash" /></button>
             </div>
             <div class="m-app-scroll">

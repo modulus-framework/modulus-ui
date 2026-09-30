@@ -216,7 +216,7 @@ public static class SampleContent
         return
         [
             new(user.Name, "completed 4 tasks in", projects[0].Name, DateTime.Now.AddMinutes(-(user.Id * 7 % 50 + 5)), "checks"),
-            new(user.Name, "uploaded", "brand-guidelines.pdf", DateTime.Now.AddHours(-(user.Id % 5 + 2)), "file-upload"),
+            new(user.Name, "uploaded", "brand-guidelines.pdf", DateTime.Now.AddHours(-(user.Id % 5 + 2)), "ant:upload"),
             new(user.Name, "commented on", projects[1].Name, DateTime.Now.AddHours(-(user.Id % 9 + 9)), "message"),
             new(user.Name, "was added to", projects[2].Name, DateTime.Now.AddDays(-(user.Id % 4 + 1)), "user-plus"),
             new(user.Name, "signed in from", "a new device", DateTime.Now.AddDays(-(user.Id % 6 + 5)), "device-laptop"),

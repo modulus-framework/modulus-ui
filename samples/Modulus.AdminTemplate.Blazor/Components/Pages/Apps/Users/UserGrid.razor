@@ -1,0 +1,90 @@
+@page "/apps/users/grid"
+@inject SampleStore Store
+@inject NavigationManager Nav
+
+<PageTitle>Users · Modulus</PageTitle>
+
+@* The users as cards, filtered by role and searched by name, email or company. MVC and Razor Pages render the same page
+   from Samples.Web Views/Shared/Ui/Apps/Users/UserGrid.cshtml. *@
+<PageHeading Pretitle="Users & access" Title="Users" Subtitle="Everyone with access to the workspace, as cards.">
+    <Actions>
+        <a class="ant-btn ant-btn-default" href="/apps/users/list"><Icon Type="unordered-list" /><span>List view</span></a>
+    </Actions>
+</PageHeading>
+
+<div class="m-filter-bar m-mb-16">
+    <div class="ant-segmented" role="group" aria-label="Role">
+        <div class="ant-segmented-group">
+            <a class="ant-segmented-item @(m.Role is null ? "ant-segmented-item-selected" : "")" href="/apps/users/grid@(m.QueryString(null) == "" ? "" : "?" + m.QueryString(null))" aria-current="@(m.Role is null ? "true" : null)">
+                <div class="ant-segmented-item-label">All <span class="m-muted">@(m.Roles.Sum(r => r.Count))</span></div>
+            </a>
+            @foreach (var (role, count) in m.Roles)
+            {
+                <a class="ant-segmented-item @(role == m.Role ? "ant-segmented-item-selected" : "")" href="/apps/users/grid?@m.QueryString(role)" aria-current="@(role == m.Role ? "true" : null)">
+                    <div class="ant-segmented-item-label">@role <span class="m-muted">@count</span></div>
+                </a>
+            }
+        </div>
+    </div>
+    <form class="m-icon-search" method="get" action="/apps/users/grid" role="search">
+        @if (m.Role is not null)
+        {
+            <input type="hidden" name="role" value="@m.Role" />
+        }
+        <span class="ant-input-affix-wrapper">
+            <span class="ant-input-prefix"><Icon Type="search" /></span>
+            <input class="ant-input" type="search" name="q" value="@m.Query" placeholder="Search users…" aria-label="Search users" />
+        </span>
+    </form>
+</div>
+
+@if (m.Total == 0)
+{
+    <div class="m-card"><div class="m-empty"><span class="m-empty-icon"><Icon Type="team" /></span><p class="m-empty-title">No users found</p><p class="m-empty-subtitle">Try another name or role.</p><a class="ant-btn ant-btn-default" href="/apps/users/grid"><span>Clear filters</span></a></div></div>
+}
+else
+{
+    <ul class="m-user-grid">
+        @foreach (var u in m.Users)
+        {
+            <li class="m-card m-user-grid-card">
+                <div class="m-card-body">
+                    <div class="m-user-card">
+                        <span class="m-avatar m-avatar-xl m-av-@u.Tint">@Fmt.Initials(u.Name)</span>
+                        <h2 class="m-user-card-name"><a href="/apps/users/view/@u.Id">@u.Name</a></h2>
+                        <div class="m-muted m-small m-truncate m-user-grid-sub">@(u.Company is { Length: > 0 } ? u.Company : u.Email)</div>
+                        <div class="m-flex m-mt-8">
+                            <span class="m-badge m-badge-@SampleUi.RoleTone(u.Role)-lt">@u.Role</span>
+                            <span class="m-badge @SampleUi.UserBadge(u.Status)">@u.Status</span>
+                        </div>
+                        <div class="m-user-stats">
+                            <div><div class="m-h3 m-num">@u.TasksDone.ToString("N0")</div><div class="m-xsmall m-muted">Tasks</div></div>
+                            <div><div class="m-h3 m-num">@u.Projects</div><div class="m-xsmall m-muted">Projects</div></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="m-user-grid-actions">
+                    <a href="mailto:@u.Email"><Icon Type="mail" /><span>Email</span></a>
+                    <a href="/apps/users/view/@u.Id"><Icon Type="user" /><span>Profile</span></a>
+                </div>
+            </li>
+        }
+    </ul>
+    if (m.Pages > 1)
+    {
+        <Pagination Current="m.Page" Total="m.Total" PageSize="m.PageSize" ShowSizeChanger="false" OnChange="Go" Style="margin-top: 16px; text-align: center" />
+    }
+}
+
+@code {
+    [SupplyParameterFromQuery] public string? Q { get; set; }
+    [SupplyParameterFromQuery] public string? Role { get; set; }
+    [SupplyParameterFromQuery] public int? Current { get; set; }
+
+    private UserGridPage m = default!;
+
+    protected override void OnParametersSet() => m = UserGridPage.Load(Store, Q, Role, Current ?? 1);
+
+    private void Go(PaginationEventArgs e) =>
+        Nav.NavigateTo($"/apps/users/grid?current={e.Page}{(m.Filters == "" ? "" : "&" + m.Filters)}");
+}

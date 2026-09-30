@@ -66,6 +66,32 @@ public class NestedGridTests : BunitContext
     }
 
     [Fact]
+    public void RowOrder_MovesWithinThePage_AndKeepsOtherRowsInPlace()
+    {
+        var move = new Modulus.Ui.Abstractions.Plugins.SortMove("c", "rows", "rows", 0);
+        Assert.Equal(["c", "a", "b"], move.Within(["a", "b", "c"]));
+        Assert.Equal(["a", "b"], move.Within(["a", "b"])); // not on the page: unchanged
+
+        // a, c and e are the page (b and d filtered out): the page's new order takes their slots.
+        var all = new List<string> { "a", "b", "c", "d", "e" };
+        GridSchema.Reorder(all, ["e", "a", "c"], id => id);
+        Assert.Equal(["e", "b", "a", "d", "c"], all);
+
+        GridSchema.Reorder(all, ["zz", "c", "e"], id => id); // unknown ids are skipped
+        Assert.Equal(["c", "b", "a", "d", "e"], all);
+    }
+
+    [Fact]
+    public void StoreOrder_PlacesAddedRowsWhereTheyWereDropped()
+    {
+        static GridRecord R(string id) => new(id);
+        // Page 1 is a, b; c is on page 2; n was added on page 1 and stored at the end.
+        var all = new List<GridRecord> { R("a"), R("b"), R("c"), R("n") };
+        NestedGridQuery.StoreOrder(all, ["b", "n", "a"], new HashSet<string> { "n" });
+        Assert.Equal(["b", "n", "a", "c"], all.Select(r => r.Id));
+    }
+
+    [Fact]
     public void Query_SearchesSortsAndPages_EmptyCellsLast()
     {
         GridColumn[] columns = [Name, Qty];
@@ -106,9 +132,15 @@ public class NestedGridTests : BunitContext
         var cut = Render<NestedGrid>(p => p.Add(g => g.Settings, settings)
             .Add(g => g.Load, _ => Task.FromResult(new NestedGridPage([], 0))));
 
-        // The level's own filter row replaces the grid's in-browser one, and there is no second search box.
-        Assert.Single(cut.FindAll(".m-table-filters .ant-select"));
+        // The filters sit under the column headers from the start (a select for the option column, a box for the text
+        // one), searching on the server; there is no filter bar above the table and no second search box.
+        Assert.Empty(cut.FindAll(".m-table-filters"));
+        Assert.Equal(["Any kind", "A"], cut.FindAll("select.m-th-filter option").Select(o => o.TextContent));
+        Assert.Equal("=A", cut.FindAll("select.m-th-filter option")[1].GetAttribute("value"));
+        Assert.Single(cut.FindAll("input.m-th-filter"));
         Assert.Empty(cut.FindAll(".m-grid-search"));
+        // The level's own search folds into one icon while it is empty; a click opens the box.
+        cut.Find(".m-table-search-toggle").Click();
         Assert.Single(cut.FindAll(".m-nested-search"));
     }
 
@@ -128,7 +160,7 @@ public class NestedGridTests : BunitContext
         Assert.Equal(new NestedGridRequest(0, null, null, null, false, 1, 5), Assert.Single(requests));
         Assert.Contains("All groups", cut.Find(".m-table-toolbar-title").TextContent);
         Assert.Equal("7", cut.Find(".m-table-toolbar-title .m-badge").TextContent);
-        Assert.NotNull(cut.Find(".m-nested-level-0 .m-nested-search"));
+        Assert.NotNull(cut.Find(".m-nested-level-0 .m-table-search-toggle"));
         Assert.Single(cut.FindAll("thead .m-th-sort")); // the Name header sorts the level
         Assert.Contains("First", cut.Markup);
         Assert.NotEmpty(cut.FindAll(".ant-pagination")); // 7 rows, 5 per page

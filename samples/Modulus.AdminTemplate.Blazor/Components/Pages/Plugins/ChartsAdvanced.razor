@@ -1,0 +1,117 @@
+@page "/plugins/charts-advanced"
+
+<PageTitle>Charts advanced · Modulus</PageTitle>
+
+<PageHeading Pretitle="Plugins" Title="Charts advanced" Subtitle="Legend toggle, zoom and drill-down on the server-rendered charts, plus the business chart types.">
+    <Actions>
+    <a class="ant-btn ant-btn-default" href="/ui/charts"><Icon Type="bar-chart" /><span>All chart types</span></a>
+    </Actions>
+</PageHeading>
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Legend toggle</h3><p class="m-card-subtitle">Click a legend entry to hide or show its series</p></div>
+            </div>
+            <div class="m-card-body">
+                <LineChart Labels="UiShowcase.Months" Series="UiShowcase.Traffic" LegendToggle Title="Visitors per month by source" Height="260" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Legend toggle on a combo chart</h3><p class="m-card-subtitle">Hide the budget line to compare the columns alone</p></div>
+            </div>
+            <div class="m-card-body">
+                <ComboChart Labels="ErpShowcase.Months" Columns="ErpShowcase.RevenueActual" Lines="ErpShowcase.RevenueBudget" LegendToggle Prefix="$" Title="Revenue against budget per month" Height="260" />
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card" id="zoom">
+        <div class="m-card-header">
+            <div><h3 class="m-card-title">Zoom</h3><p class="m-card-subtitle">@Fmt.Number(zoom.Total) visitors, @zoom.Period</p></div>
+            <div class="m-card-actions">
+                <div class="ant-segmented" role="group" aria-label="Zoom">
+                    <div class="ant-segmented-group">
+                        @foreach (var (d, label) in PluginsContent.ZoomLevels)
+                        {
+                            var active = d == zoom.Days;
+                            <a class="ant-segmented-item @(active ? "ant-segmented-item-selected" : "")" href="@PluginsContent.ChartsUrl(d, drill.Quarter, "zoom")" aria-current="@(active ? "true" : null)"><div class="ant-segmented-item-label">@label</div></a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="m-card-body">
+            <LineChart Labels="zoom.Labels" Series="zoom.Series" Area LegendToggle Title="Visitors and sign-ups per day" Height="260" MaxXLabels="10" />
+        </div>
+    </div>
+
+    <div class="m-card" id="drill">
+        <div class="m-card-header">
+            <div>
+                <h3 class="m-card-title">Drill-down</h3>
+                <p class="m-card-subtitle">@drill.Title</p>
+            </div>
+            @if (drill.Quarter > 0)
+            {
+                <div class="m-card-actions"><a class="ant-btn ant-btn-default ant-btn-sm" href="@PluginsContent.ChartsUrl(zoom.Days, 0, "drill")"><Icon Type="arrow-left" /><span>Back to the year</span></a></div>
+            }
+        </div>
+        <div class="m-card-body">
+            <p class="m-muted m-mb-12">@(drill.Quarter == 0 ? "Click a quarter (its column or label) to open its months." : "Thousands of dollars per month.")</p>
+            <ColumnChart Labels="drill.Labels" Series="drill.Series" Stacked LegendToggle Links="drill.Links" Prefix="$" Suffix="k" Title="@drill.Title" Height="260" />
+        </div>
+    </div>
+
+    <h2 class="m-section-title">Advanced types</h2>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Heatmap</h3><p class="m-card-subtitle">Orders by weekday and time of day</p></div></div>
+            <div class="m-card-body"><HeatmapChart Rows="UiShowcase.Weekdays" Columns="UiShowcase.HourBlocks" Values="UiShowcase.Activity" Title="Orders by weekday and two-hour block" /></div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Treemap</h3><p class="m-card-subtitle">Inventory value by category</p></div></div>
+            <div class="m-card-body"><TreemapChart Items="ErpShowcase.InventoryValue" Prefix="$" Title="Inventory value by category" Height="240" Aspect="2" /></div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Pareto</h3><p class="m-card-subtitle">Revenue share and cumulative share by SKU</p></div></div>
+            <div class="m-card-body"><ParetoChart Items="ErpShowcase.SkuRevenue" Prefix="$" ValueName="Revenue share" Title="ABC analysis of revenue by SKU" Height="240" MaxXLabels="10" /></div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Waterfall</h3><p class="m-card-subtitle">Profit bridge from revenue to net profit</p></div></div>
+            <div class="m-card-body"><WaterfallChart Steps="ErpShowcase.ProfitBridge" Prefix="$" Title="Profit bridge" Height="240" /></div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Variance</h3><p class="m-card-subtitle">Spend minus budget by department</p></div></div>
+            <div class="m-card-body"><VarianceChart Items="ErpShowcase.BudgetVariance" PositiveIsFavorable="false" Prefix="$" Title="Budget variance by department" /></div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Bullet</h3><p class="m-card-subtitle">Key results against target</p></div></div>
+            <div class="m-card-body"><BulletChart Items="ErpShowcase.Targets" ValueFormat="#,0.#" Title="Key results against targets" /></div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Gauge</h3><p class="m-card-subtitle">On time in full, with its target</p></div></div>
+            <div class="m-card-body"><GaugeChart Value="ErpShowcase.OnTimeInFull" Max="100" Target="ErpShowcase.OnTimeTarget" ValueFormat="N1" Suffix="%" Caption="On time in full" Title="On time in full" /></div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Funnel</h3><p class="m-card-subtitle">Order to cash, with conversion per stage</p></div></div>
+            <div class="m-card-body"><FunnelChart Stages="ErpShowcase.OrderToCash" Title="Order-to-cash funnel" /></div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? Days { get; set; }
+    [SupplyParameterFromQuery] public string? Quarter { get; set; }
+
+    private ZoomView zoom => PluginsContent.ZoomChart(Days);
+    private DrillView drill => PluginsContent.Drill(Quarter, zoom.Days);
+}

@@ -1,0 +1,77 @@
+@* Sortable list: drag items (pointer, touch) or move them with the arrow keys on their handle, within the list or to
+   another AppSortable of the same Group. The DOM is left to Blazor: modulus-plugins.js only reports the move
+   ({ id, from, to, index }) through a hidden input, OnSort updates the collections, and the lists render the new order.
+   The same engine drives the MVC <app-sortable>. *@
+@typeparam TItem
+@using Modulus.Ui.Abstractions.Plugins
+
+<div class="m-sortable-root" data-m-sort-root>
+    <ul class="@ListClass" data-m-sortable="@Name" data-m-sort-mode="event"
+        data-m-sort-group="@Group" data-m-sort-layout="@SortableHtml.LayoutAttribute(Layout)"
+        data-m-sort-handle-only="@HandleOnly" data-m-sort-disabled="@Disabled" data-m-sort-title="@Title" data-empty="@EmptyText"
+        aria-label="@Title" style="@Style">
+        @foreach (var item in Items)
+        {
+            var id = IdOf(item);
+            <li @key="id" class="m-sort-item" data-m-sort-id="@id" data-m-sort-label="@LabelOf?.Invoke(item)">
+                @if (Handle)
+                {
+                    @((MarkupString)SortableHtml.Handle(LabelOf?.Invoke(item) ?? id, HelpId, Disabled))
+                }
+                <div class="m-sort-item-body">@ItemTemplate(item)</div>
+            </li>
+        }
+    </ul>
+    <input type="hidden" data-m-sort-result @onchange="Changed" />
+    <span class="m-sort-live" data-m-sort-live aria-live="assertive"></span>
+    <span class="m-sort-live" id="@HelpId">@SortableHtml.KeyboardHelp</span>
+</div>
+
+@code {
+    /// <summary>The list's name, reported as <c>from</c> / <c>to</c>.</summary>
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+
+    [Parameter, EditorRequired] public IReadOnlyList<TItem> Items { get; set; } = [];
+
+    /// <summary>A stable id per item.</summary>
+    [Parameter, EditorRequired] public Func<TItem, string> IdOf { get; set; } = default!;
+
+    [Parameter, EditorRequired] public RenderFragment<TItem> ItemTemplate { get; set; } = default!;
+
+    /// <summary>Name read out when an item moves (defaults to its text).</summary>
+    [Parameter] public Func<TItem, string>? LabelOf { get; set; }
+
+    /// <summary>Lists with the same group take each other's items.</summary>
+    [Parameter] public string? Group { get; set; }
+
+    /// <summary>Shows a drag handle (needed for keyboard moves).</summary>
+    [Parameter] public bool Handle { get; set; } = true;
+
+    /// <summary>Only the handle starts a drag (for items with their own controls).</summary>
+    [Parameter] public bool HandleOnly { get; set; }
+
+    [Parameter] public SortableLayout Layout { get; set; } = SortableLayout.Vertical;
+
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Accessible name of the list, also read out after a move ("… in Doing").</summary>
+    [Parameter] public string? Title { get; set; }
+
+    [Parameter] public string EmptyText { get; set; } = "Drop items here";
+
+    /// <summary>A move within this list or into it from another list of the group.</summary>
+    [Parameter] public EventCallback<SortMove> OnSort { get; set; }
+
+    [Parameter] public string? CssClass { get; set; }
+
+    [Parameter] public string? Style { get; set; }
+
+    private string HelpId => $"m-sort-help-{Name}";
+
+    private string ListClass => "m-sortable" + SortableHtml.LayoutClass(Layout) + (string.IsNullOrEmpty(CssClass) ? "" : " " + CssClass);
+
+    private async Task Changed(ChangeEventArgs e)
+    {
+        if (SortMove.TryParse(e.Value?.ToString(), out var move)) await OnSort.InvokeAsync(move);
+    }
+}

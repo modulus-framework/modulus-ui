@@ -215,7 +215,11 @@ public class EditableGridTagHelperTests
         Assert.Contains("name=\"projects.index\" value=\"p2\"", html);
         Assert.Contains("name=\"projects[p1].name\" value=\"&lt;Portal&gt;\"", html);
         Assert.Contains("name=\"projects[p1].budget\"", html);
-        Assert.Contains("<option value=\"a\" selected", html);
+        // Option cells edit with the creatable select (as Blazor's AppCreatableSelect): a hidden input posts the value.
+        Assert.Contains("""<span class="m-cselect-inputs" x-html="inputs()"><input type="hidden" name="projects[p1].status" value="a" /></span>""", html);
+        Assert.Contains("""<span class="ant-select-selection-item" title="Active"><span class="m-cselect-dot ant-tag-blue" aria-hidden="true"></span>Active</span>""", html);
+        Assert.Contains("""@m-cselect-close="commit($el)" @m-cselect-add="submitOp($event.detail)">""", html);
+        Assert.DoesNotContain("<select class=\"m-select\" name=\"projects[", html);
         Assert.Contains("Edit Status: Active", html);
         Assert.DoesNotContain("<Portal>", html);
     }
@@ -228,10 +232,23 @@ public class EditableGridTagHelperTests
         var html = await RenderAsync(grid);
 
         // Search, filters and selection stay in the browser: none of their inputs has a name.
-        Assert.Contains("""<input class="ant-input" type="text" placeholder="Search projects…" aria-label="Search Projects" autocomplete="off" x-model="keyword" @input.debounce.150ms="applyFilter()" @keydown.enter.prevent />""", html);
+        Assert.Contains("""<input class="ant-input" type="text" placeholder="Search projects…" aria-label="Search Projects" autocomplete="off" x-ref="search" x-model="keyword" @input.debounce.150ms="applyFilter()" @keydown.enter.prevent """, html);
+        // The toolbar is icons with tooltips: the search folds into its icon, then the filter row, columns and add row.
+        Assert.Contains("""title="Search (Ctrl+F)" data-m-search-toggle x-show="!searchShown()" @click="openSearch()">""", html);
+        Assert.Contains("""aria-label="Filter row" title="Show the filter row" aria-pressed="false" data-m-filter-row>""", html);
+        Assert.Contains("""aria-label="Add row" title="Add row (Insert)" data-m-grid-add @click.prevent="addRow()">""", html);
+        Assert.Contains("""x-text="changesText()">Unsaved changes</span>""", html);
+        Assert.Contains("""title="Save (Ctrl+S)" data-m-grid-save>""", html);
+        // Each searchable header also has its box for the filter row (shown while the row is on).
+        Assert.Contains("""class="ant-input ant-input-sm m-th-filter" type="text" value="" placeholder="Filter…" aria-label="Filter Name" """.TrimEnd(), html);
+        Assert.Contains("""placeholder="e.g. &gt;100 or 10..50" aria-label="Filter Budget" """.TrimEnd(), html);
         Assert.Contains("""<select class="m-select" aria-label="Status" data-filter="status" @change="setFilter('status', $el.value)"><option value="">Any status</option><option value="a">Active</option><option value="d">Done</option></select>""", html);
-        Assert.Contains("<span>Columns</span>", html);
-        Assert.Contains("""@click="exportCsv(false)">""", html);
+        // Columns and Export CSV are labelled buttons in the toolbar.
+        Assert.Contains("""class="ant-btn ant-btn-default m-table-columns-toggle" aria-label="Columns" title="Show, hide, pin and order columns">""", html);
+        Assert.Contains("<span>Columns</span></button>", html);
+        Assert.Contains("""class="ant-btn ant-btn-default m-grid-export" title="Export the rows (after search and filters) to a CSV file" @click="exportCsv(false)">""", html);
+        // An option column's box in the filter row is a select.
+        Assert.Contains("""<select class="m-select m-th-filter" aria-label="Filter Status" x-ref="inline" @click.stop @change="applyInline()"><option value="">Any status</option><option value="=Active">Active</option><option value="=Done">Done</option></select>""", html);
         Assert.Contains("\"file\":\"Projects.csv\"", html.Replace("&quot;", "\""));
         Assert.Contains("""@m-col-resize="resized($event.detail)" """.TrimEnd(), html);
         Assert.Contains("x-ref=\"schema\"", html);
@@ -242,14 +259,42 @@ public class EditableGridTagHelperTests
     {
         var html = await RenderAsync(Grid());
 
-        Assert.Contains("""<th class="ant-table-cell ant-table-selection-column ant-table-cell-fix-left" style="position: sticky; left: 0px;"><label class="ant-checkbox-wrapper"><span class="ant-checkbox"><input type="checkbox" class="ant-checkbox-input" aria-label="Select all rows" data-select-all @change="selectAll($el.checked)" />""", html);
+        // The selection column follows the drag handle column (40px).
+        Assert.Contains("""<th class="ant-table-cell ant-table-selection-column ant-table-cell-fix-left" style="position: sticky; left: 40px;"><label class="ant-checkbox-wrapper"><span class="ant-checkbox"><input type="checkbox" class="ant-checkbox-input" aria-label="Select all rows" data-select-all @change="selectAll($el.checked)" />""", html);
         Assert.Contains("""aria-label="Select row" data-select-row @change="selectRow($el)" />""", html);
-        // The first pinned column starts after the selection column.
-        Assert.Contains("position: sticky; left: 48px;", html);
+        // The first pinned column starts after the handle and selection columns.
+        Assert.Contains("position: sticky; left: 88px;", html);
         Assert.Contains("""<div class="ant-alert ant-alert-info ant-alert-no-icon m-table-alert m-grid-batch" role="status" x-show="selected > 0" style="display: none;">""", html);
         Assert.Contains("""<option value="status=a">Active</option>""", html);
         Assert.Contains("""@click="deleteSelected()">""", html);
         Assert.Contains("""@click="exportCsv(true)">""", html);
+    }
+
+    [Fact]
+    public async Task Renders_ADragHandlePerRow_AndLocksItWhileTheServerSorts()
+    {
+        var html = await RenderAsync(Grid());
+
+        Assert.Contains("""data-m-sort-rows="grid-g" data-m-sort-root="" data-m-sort-title="Projects" """.TrimEnd(), html);
+        Assert.Contains("""<span class="m-sort-live" id="grid-g-drag-help">""", html);
+        Assert.Contains("""<col style="width: 40px;">""", html);
+        // The row's first cell holds its index input and the handle, named after the first column.
+        Assert.Contains("""<td class="ant-table-cell m-row-drag-cell ant-table-cell-fix-left" style="position: sticky; left: 0px;"><input type="hidden" name="projects.index" value="p1" />""", html);
+        Assert.Contains("""data-m-sort-row="p1" data-m-sort-label="&lt;Portal&gt;" tabindex="0" title="Drag to reorder" role="button" aria-label="Move &lt;Portal&gt;" """.TrimEnd(), html);
+        Assert.Contains("\"dragLocked\":false", html.Replace("&quot;", "\""));
+
+        var sorted = Grid();
+        sorted.SortHref = key => $"/level?sort={key}";
+        sorted.SortField = "budget";
+        var locked = await RenderAsync(sorted);
+        Assert.Contains("data-m-sort-disabled", locked);
+        Assert.Contains("""data-m-sort-row="p1" data-m-sort-label="&lt;Portal&gt;" tabindex="-1" aria-disabled="true" """.TrimEnd(), locked);
+
+        var off = Grid();
+        off.RowDraggable = false;
+        var plain = await RenderAsync(off);
+        Assert.DoesNotContain("data-m-sort-row", plain);
+        Assert.DoesNotContain("m-row-drag-cell", plain);
     }
 
     [Fact]
@@ -273,7 +318,7 @@ public class EditableGridTagHelperTests
         Assert.DoesNotContain("m-grid-batch", plain);
         Assert.DoesNotContain("exportCsv", plain);
         Assert.DoesNotContain("m-resizable", plain);
-        Assert.DoesNotContain("<span>Columns</span>", plain);
+        Assert.DoesNotContain("""aria-label="Columns" """.TrimEnd(), plain);
     }
 
     [Fact]
@@ -281,11 +326,26 @@ public class EditableGridTagHelperTests
     {
         var html = await RenderAsync(Grid());
 
-        Assert.Contains("""<input type="text" class="ant-input ant-input-sm" name="projects.option[p1].status" maxlength="60" placeholder="New option" aria-label="New status option" @keydown.enter.stop.prevent="submitOp('add-option:status:p1')" />""", html);
-        Assert.Contains("""@mousedown.prevent @click="submitOp('add-option:status:p2')">""", html);
-        // The next colour in turn is picked: two options, so the third colour.
-        Assert.Contains("""<input type="radio" class="m-sr-only" name="projects.color[p1].status" value="orange" checked />""", html);
+        // "Create new status" posts the name and colour with add-option:{key}:{row}, so the option joins the schema.
+        Assert.Contains("<span>Create new status</span>", html);
+        Assert.Contains("""type="text" name="projects.option[p1].status" x-ref="add" x-model="newLabel" placeholder="New option" """.TrimEnd(), html);
+        Assert.Contains("""<input type="hidden" name="projects.color[p1].status" :value="color()" />""", html);
+        Assert.Contains("gridOp\":\"add-option:status:p2\"", html.Replace("&quot;", "\""));
         Assert.DoesNotContain("projects.option[p1].budget", html);
+    }
+
+    [Fact]
+    public async Task Renders_DateCells_WithTheAntDesignPicker()
+    {
+        var grid = Grid();
+        grid.Columns[2] = new() { Key = "due", Title = "Due", Type = GridCellType.Date };
+        grid.Rows[0]["due"] = "2026-09-28";
+        var html = await RenderAsync(grid);
+
+        Assert.Contains("""<div class="ant-picker m-picker" style="width: 100%;" x-data="modulusPicker(""", html);
+        Assert.Contains("""<input type="hidden" name="projects[p1].due" value="2026-09-28" data-m-picker-value="0" />""", html);
+        Assert.Contains("""@m-picker-pick="commit($el)">""", html);
+        Assert.DoesNotContain("type=\"date\"", html);
     }
 
     [Fact]

@@ -55,8 +55,27 @@
         Alpine.data('dropdown', function () {
             return {
                 open: false,
-                toggle: function () { this.open = !this.open; },
-                close: function () { this.open = false; }
+                toggle: function () {
+                    this.open = !this.open;
+                    // Inside a scrolling or clipping box (a Kanban board, a table) the panel floats above the page,
+                    // as Ant Design's portal-rendered dropdown does in Blazor.
+                    if (this.open && window.modulusShell && window.modulusShell.placeDropdown) {
+                        var root = this.$root;
+                        this.$nextTick(function () { window.modulusShell.placeDropdown(root); });
+                    }
+                },
+                close: function () { clearTimeout(this.hoverTimer); this.open = false; },
+                // trigger="hover" (the dropdown button, as in Ant Design): opens on pointer enter, closes shortly after leave.
+                hoverOpen: function () {
+                    var self = this;
+                    clearTimeout(this.hoverTimer);
+                    if (!this.open) this.hoverTimer = setTimeout(function () { if (!self.open) self.toggle(); }, 150);
+                },
+                hoverClose: function () {
+                    var self = this;
+                    clearTimeout(this.hoverTimer);
+                    if (this.open) this.hoverTimer = setTimeout(function () { self.open = false; }, 150);
+                }
             };
         });
 
@@ -152,24 +171,104 @@
         });
 
         // <app-upload>: file list with remove, and drag-and-drop into the real <input type="file">.
-        Alpine.data('modulusUpload', function () {
+        // <app-upload>: the list mirrors the input's files. Options: maxSize (bytes), maxCount, accept, picture
+        // (thumbnails) and action (post each file there at once, with progress; the input is then emptied).
+        Alpine.data('modulusUpload', function (options) {
+            var o = options || {};
+            var seq = 0;
+            var xhrs = {}; // by entry key; kept out of Alpine's proxies
+            function size(bytes) {
+                return bytes < 1024 ? bytes + ' B' : bytes < 1048576 ? Math.round(bytes / 1024) + ' KB' : (bytes / 1048576).toFixed(1) + ' MB';
+            }
+            function accepts(file) {
+                if (!o.accept) return true;
+                var name = file.name.toLowerCase(), type = (file.type || '').toLowerCase();
+                return o.accept.split(',').some(function (a) {
+                    a = a.trim().toLowerCase();
+                    if (!a) return false;
+                    if (a.charAt(0) === '.') return name.slice(-a.length) === a;
+                    if (a.slice(-2) === '/*') return type.indexOf(a.slice(0, -1)) === 0;
+                    return type === a;
+                });
+            }
             return {
                 files: [],
                 over: false,
-                sync: function () { this.files = Array.prototype.slice.call(this.$refs.input.files || []); },
-                set: function (list) {
+                entry: function (file) {
+                    var e = { key: ++seq, file: file, name: file.name, size: size(file.size), url: null, percent: 0, status: 'done', error: null };
+                    if (!accepts(file)) { e.status = 'error'; e.error = 'This file type is not allowed.'; }
+                    else if (o.maxSize && file.size > o.maxSize) { e.status = 'error'; e.error = 'Larger than ' + size(o.maxSize) + '.'; }
+                    if (o.picture && /^image\//.test(file.type) && !e.error) e.url = URL.createObjectURL(file);
+                    return e;
+                },
+                add: function (list) {
+                    var self = this;
+                    var added = list.map(function (f) { return self.entry(f); });
+                    var keep = this.$refs.input.multiple ? this.files.filter(function (f) { return o.action || f.status !== 'error'; }) : [];
+                    if (!this.$refs.input.multiple) { this.files.forEach(function (f) { if (f.url) URL.revokeObjectURL(f.url); }); added = added.slice(0, 1); }
+                    var room = o.maxCount ? Math.max(0, o.maxCount - keep.filter(function (f) { return f.status !== 'error'; }).length) : Infinity;
+                    added.forEach(function (e) {
+                        if (e.status === 'error') return;
+                        if (room <= 0) { e.status = 'error'; e.error = 'At most ' + o.maxCount + ' files.'; } else room--;
+                    });
+                    this.files = keep.concat(added);
+                    if (o.action) {
+                        added.forEach(function (e) { if (e.status !== 'error') self.upload(e); });
+                        this.$refs.input.value = '';
+                    } else {
+                        this.write();
+                    }
+                },
+                // Only accepted files stay in the input, so the form never posts a rejected one.
+                write: function () {
                     var dt = new DataTransfer();
-                    list.forEach(function (f) { dt.items.add(f); });
+                    this.files.forEach(function (f) { if (f.status !== 'error') dt.items.add(f.file); });
                     this.$refs.input.files = dt.files;
-                    this.sync();
                     this.$refs.input.dispatchEvent(new Event('change', { bubbles: true }));
+                },
+                upload: function (e) {
+                    var self = this;
+                    var item = function () { return self.files.find(function (f) { return f.key === e.key; }); };
+                    var body = new FormData();
+                    body.append(this.$refs.input.name, e.file);
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', o.action);
+                    var headers = {};
+                    try { headers = JSON.parse(document.body.getAttribute('hx-headers') || '{}'); } catch (err) { /* no token */ }
+                    Object.keys(headers).forEach(function (k) { xhr.setRequestHeader(k, headers[k]); });
+                    item().status = 'uploading';
+                    xhr.upload.onprogress = function (p) { var f = item(); if (f && p.lengthComputable) f.percent = Math.round(p.loaded / p.total * 100); };
+                    xhr.onload = function () {
+                        var f = item(); if (!f) return;
+                        f.percent = 100;
+                        if (xhr.status >= 200 && xhr.status < 300) { f.status = 'done'; return; }
+                        f.status = 'error';
+                        f.error = xhr.responseText && xhr.responseText.length < 200 ? xhr.responseText : 'Upload failed (' + xhr.status + ').';
+                    };
+                    xhr.onerror = function () { var f = item(); if (f) { f.status = 'error'; f.error = 'Upload failed: no connection.'; } };
+                    xhrs[e.key] = xhr;
+                    xhr.send(body);
+                },
+                sync: function () {
+                    if (this._writing) return;
+                    this._writing = true;
+                    this.add(Array.prototype.slice.call(this.$refs.input.files || []).filter(function (f) { return !this.files.some(function (e) { return e.file === f; }); }, this));
+                    this._writing = false;
                 },
                 drop: function (e) {
                     this.over = false;
-                    var dropped = Array.prototype.slice.call(e.dataTransfer.files || []);
-                    this.set(this.$refs.input.multiple ? this.files.concat(dropped) : dropped.slice(0, 1));
+                    this._writing = true;
+                    this.add(Array.prototype.slice.call(e.dataTransfer.files || []));
+                    this._writing = false;
                 },
-                remove: function (i) { this.set(this.files.filter(function (_, j) { return j !== i; })); }
+                remove: function (i) {
+                    var f = this.files[i];
+                    if (xhrs[f.key] && f.status === 'uploading') xhrs[f.key].abort();
+                    delete xhrs[f.key];
+                    if (f.url) URL.revokeObjectURL(f.url);
+                    this.files = this.files.filter(function (_, j) { return j !== i; });
+                    if (!o.action) { this._writing = true; this.write(); this._writing = false; }
+                }
             };
         });
 
@@ -295,6 +394,8 @@
 
     // Surface failed requests instead of failing silently.
     document.body.addEventListener('htmx:responseError', function (e) {
+        // SPA navigation (modulus-spa.js) shows a failed link's error page instead.
+        if (e.detail.boosted && e.detail.requestConfig && e.detail.requestConfig.verb === 'get') return;
         var status = e.detail.xhr.status;
         message('error', status === 403 ? "You don't have permission to do that." : 'Something went wrong (' + status + '). Please try again.');
     });
@@ -359,11 +460,6 @@
     }
 
     window.modulusNotify = notify;
-
-    // <app-date-picker>: open the native picker on click, not only from the browser's own icon.
-    window.modulusShowPicker = function (input) {
-        try { input.showPicker(); } catch (e) { /* unsupported or not user-activated */ }
-    };
 
     // Native inputs styled as Ant Design controls -------------------------------
     // antd's CSS keys off wrapper classes (ant-checkbox-checked, ant-radio-button-wrapper-checked …);

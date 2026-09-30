@@ -7,10 +7,10 @@
     var s = Model.Stats;
     (string Label, string Value, string Icon)[] strip =
     [
-        ("Pending payment", s.PendingPayment.ToString("N0"), "calendar-time"),
+        ("Pending payment", s.PendingPayment.ToString("N0"), "ant:field-time"),
         ("Completed", s.Completed.ToString("N0"), "checks"),
         ("Refunded", s.Refunded.ToString("N0"), "arrow-back-up"),
-        ("Failed", s.Failed.ToString("N0"), "alert-octagon"),
+        ("Failed", s.Failed.ToString("N0"), "ant:stop"),
     ];
 }
 <app-page-header pretitle="eCommerce" title="Orders">
@@ -50,8 +50,7 @@
                         }
                         <input type="hidden" name="pageSize" value="@Model.Request.PageSize" />
                     </form>
-                    <app-button icon="download">Export</app-button>
-                    <app-table-settings reload-href="@grid.Current" />
+                    <app-table-settings reload-href="@grid.Current" clear-href="@grid.ClearLink("keyword", "status", "payment")" />
                 </div>
             </div>
 

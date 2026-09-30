@@ -4,6 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Description>Shared core of Modulus UI: theme options and tokens, the menu pipeline, the application shell renderer, charts, forms rules and data grid schemas used by the Blazor and MVC flavours.</Description>
   </PropertyGroup>
 
 </Project>

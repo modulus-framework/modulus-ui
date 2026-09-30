@@ -13,7 +13,7 @@
  *
  * <script src=".../modulus-theme.js" data-default="light|dark"
  *         data-layout="horizontal" data-width="boxed" data-nav="light"
- *         data-menu="all" data-font="sans" data-base="gray" data-side="left"
+ *         data-menu="all" data-font="sans" data-base="gray" data-density="compact" data-side="left"
  *         data-sidebar="default" data-fold="full" data-header="fixed" data-topbar="light"
  *         data-dir="ltr"></script>
  * Omit data-default to follow the OS until the user picks a theme.
@@ -39,6 +39,7 @@
         menu: { cookie: 'modulus-menu', values: ['all', 'app'] },
         font: { cookie: 'modulus-font', values: ['sans', 'system', 'serif', 'mono'] },
         base: { cookie: 'modulus-base', values: ['gray', 'slate', 'zinc', 'neutral', 'stone'] },
+        density: { cookie: 'modulus-density', values: ['compact', 'comfortable'] },
         side: { cookie: 'modulus-side', values: ['left', 'right'] },
         sidebar: { cookie: 'modulus-sidebar', values: ['default', 'transparent', 'floating'] },
         fold: { cookie: 'modulus-fold', values: ['full', 'folded', 'hover'] },
@@ -112,7 +113,7 @@
         toggle: function () { return api.set(api.current() === 'dark' ? 'light' : 'dark'); },
         /** Forget the explicit choice and follow the operating system (or the configured default). */
         useSystem: function () { deleteCookie(THEME_COOKIE); return apply(preferred()); },
-        /** Theme settings: layout | width | nav | menu | font | base | side | sidebar | fold | header | topbar | dir | radius | primary. */
+        /** Theme settings: layout | width | nav | menu | font | base | density | side | sidebar | fold | header | topbar | dir | radius | primary. */
         setPref: function (name, value, css) {
             if (PREFS[name]) {
                 if (PREFS[name].values.indexOf(value) < 0) return;

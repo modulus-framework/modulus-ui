@@ -24,8 +24,9 @@ public sealed record ShellApp(string Name, string Href, string Icon, string Tone
     public string? MenuKey { get; init; }
 
     /// <summary>
-    /// Heading the full-screen launcher files this app under ("Sales &amp; finance", "Productivity"), like the spaces of
-    /// SAP Fiori or Oracle's navigator. Apps keep their order within a group; groups appear in order of first use.
+    /// Group of the app ("Sales &amp; finance", "Productivity"). The app switchers file apps under it; the full-screen
+    /// launcher keeps a group's apps together in its one grid and finds them by it. Apps keep their order within a
+    /// group; groups appear in order of first use.
     /// </summary>
     public string? Group { get; init; }
 }

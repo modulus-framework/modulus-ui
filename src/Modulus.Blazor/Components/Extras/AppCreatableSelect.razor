@@ -1,7 +1,8 @@
-@* Select whose dropdown ends with an "Add item" row: a name, a tag colour and an Add button (Ant Design's custom
-   dropdown demo, as a ready-made component). Single or multiple values. Options are GridOption (value, label, Ant
-   Design tag colour), so the editable grid's Select / Multi-select / Tag columns use it as they are; the MVC
-   <app-creatable-select> renders the same DOM with modulusCreatableSelect in modulus-widgets.js.
+@* Select whose dropdown ends with a "Create new …" row. Picking and creating are kept apart: the row opens a small
+   form in place of the list (a name, a named tag colour, Cancel and Add), and Cancel or Escape goes back to the list.
+   Single or multiple values. Options are GridOption (value, label, Ant Design tag colour), so the editable grid's
+   Select / Multi-select / Tag columns use it as they are; the MVC <app-creatable-select> renders the same DOM with
+   modulusCreatableSelect in modulus-widgets.js.
 
    Adding runs GridSchema.AddOption (trimmed, unique, 50 at most) and raises OptionsChanged, unless OnAdd handles it
    (for example to save the option first). The new option is then selected.
@@ -60,50 +61,59 @@
     @if (_open)
     {
         <div class="m-cselect-backdrop" @onclick="Close"></div>
-        <div class="ant-select-dropdown ant-select-dropdown-placement-bottomLeft m-cselect-dropdown">
-            <div class="m-cselect-list" id="@ListId" role="listbox" aria-multiselectable="@(Multiple ? "true" : null)" aria-label="@(AriaLabel ?? "Options")">
-                @if (Options.Count == 0)
-                {
-                    <div class="m-cselect-empty">No options yet</div>
-                }
-                @for (var i = 0; i < Options.Count; i++)
-                {
-                    var o = Options[i];
-                    var index = i;
-                    var on = IsSelected(o.Value);
-                    <div class="@($"ant-select-item ant-select-item-option{(on ? " ant-select-item-option-selected" : "")}{(index == _active ? " ant-select-item-option-active" : "")}")"
-                         id="@($"{ListId}-{index}")" role="option" aria-selected="@(on ? "true" : "false")"
-                         @onclick="() => Pick(o.Value)" @onmouseenter="() => _active = index">
-                        <div class="ant-select-item-option-content">@Dot(o)@o.Label</div>
-                        @if (on)
-                        {
-                            <span class="ant-select-item-option-state" aria-hidden="true"><Icon Type="check" /></span>
-                        }
-                    </div>
-                }
-            </div>
+        <div class="@($"ant-select-dropdown ant-select-dropdown-placement-bottomLeft m-cselect-dropdown{(_creating ? " m-cselect-creating" : "")}")">
+            @if (!_creating)
+            {
+                <div class="m-cselect-list" id="@ListId" role="listbox" aria-multiselectable="@(Multiple ? "true" : null)" aria-label="@(AriaLabel ?? "Options")">
+                    @if (Options.Count == 0)
+                    {
+                        <div class="m-cselect-empty">No options yet</div>
+                    }
+                    @for (var i = 0; i < Options.Count; i++)
+                    {
+                        var o = Options[i];
+                        var index = i;
+                        var on = IsSelected(o.Value);
+                        <div class="@($"ant-select-item ant-select-item-option{(on ? " ant-select-item-option-selected" : "")}{(index == _active ? " ant-select-item-option-active" : "")}")"
+                             id="@($"{ListId}-{index}")" role="option" aria-selected="@(on ? "true" : "false")"
+                             @onclick="() => Pick(o.Value)" @onmouseenter="() => _active = index">
+                            <div class="ant-select-item-option-content">@Dot(o)@o.Label</div>
+                            @if (on)
+                            {
+                                <span class="ant-select-item-option-state" aria-hidden="true"><Icon Type="check" /></span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
             @if (OnAddNew.HasDelegate)
             {
                 <div class="m-cselect-footer">
                     <button type="button" class="ant-btn ant-btn-text ant-btn-block m-cselect-add-new" @onclick="AddNewAsync"><Icon Type="plus" /><span>@AddNewText</span></button>
                 </div>
             }
-            else if (AllowAdd)
+            else if (AllowAdd && !_creating)
             {
                 <div class="m-cselect-footer">
-                    <div class="m-cselect-add">
-                        <input class="ant-input ant-input-sm" type="text" placeholder="@AddPlaceholder" aria-label="@AddPlaceholder" maxlength="@GridSchema.MaxOptionLabel"
-                               value="@_newLabel" @oninput="e => { _newLabel = e.Value?.ToString(); _error = null; }" @onkeydown="AddKey" @onkeydown:stopPropagation />
-                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm m-cselect-add-btn" @onclick="AddAsync"><Icon Type="plus" /><span>@AddText</span></button>
-                    </div>
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-block m-cselect-create" @onclick="StartCreate"><Icon Type="plus" /><span>@CreateText</span></button>
+                </div>
+            }
+            else if (AllowAdd)
+            {
+                <div class="m-cselect-footer m-cselect-add" role="group" aria-label="@CreateText" @onkeydown:stopPropagation>
+                    <div class="m-cselect-add-title">@CreateText</div>
+                    <label class="m-cselect-field-label" for="@($"{ListId}-name")">Name</label>
+                    <input @ref="_addInput" id="@($"{ListId}-name")" class="ant-input ant-input-sm" type="text" placeholder="@AddPlaceholder" maxlength="@GridSchema.MaxOptionLabel"
+                           autocomplete="off" value="@_newLabel" @oninput="e => { _newLabel = e.Value?.ToString(); _error = null; }" @onkeydown="CreateKey" />
                     @if (ShowColors)
                     {
-                        <div class="m-cselect-colors" role="radiogroup" aria-label="Colour">
-                            @foreach (var color in GridSchema.OptionColors)
+                        <div class="m-cselect-field-label" id="@($"{ListId}-colour")">Colour <span class="m-cselect-color-name">@GridSchema.ColorName(NewColor)</span></div>
+                        <div class="m-cselect-colors" role="radiogroup" aria-labelledby="@($"{ListId}-colour")">
+                            @foreach (var color in GridSchema.PickerColors)
                             {
                                 var c = color;
                                 <button type="button" class="@($"m-cselect-swatch ant-tag-{c}")" role="radio" aria-checked="@(c == NewColor ? "true" : "false")"
-                                        aria-label="@c" title="@c" @onclick="() => _color = c" @onkeydown="SwatchKey"></button>
+                                        aria-label="@GridSchema.ColorName(c)" title="@GridSchema.ColorName(c)" @onclick="() => _color = c" @onkeydown="SwatchKey"></button>
                             }
                         </div>
                     }
@@ -111,6 +121,10 @@
                     {
                         <div class="m-cselect-error" role="alert">@_error</div>
                     }
+                    <div class="m-cselect-add-actions">
+                        <button type="button" class="ant-btn ant-btn-default ant-btn-sm m-cselect-cancel" @onclick="CancelCreate"><span>Cancel</span></button>
+                        <button type="button" class="ant-btn ant-btn-primary ant-btn-sm m-cselect-add-btn" @onclick="AddAsync"><Icon Type="plus" /><span>@AddText</span></button>
+                    </div>
                 </div>
             }
         </div>
@@ -141,8 +155,12 @@
     /// <summary>Tag colour swatches in the "Add item" row, and colour dots on the options.</summary>
     [Parameter] public bool ShowColors { get; set; } = true;
 
+    /// <summary>Placeholder of the name box in the create form.</summary>
     [Parameter] public string AddPlaceholder { get; set; } = "New item";
     [Parameter] public string AddText { get; set; } = "Add";
+
+    /// <summary>The row under the list that opens the create form, and the form's title ("Create new priority").</summary>
+    [Parameter] public string CreateText { get; set; } = "Create new item";
 
     /// <summary>
     /// Adds the option instead of the component (label, colour): return the new option, or an error to show.
@@ -170,14 +188,14 @@
     [Parameter] public string? Style { get; set; }
 
     private readonly string _uid = Guid.NewGuid().ToString("N")[..8];
-    private ElementReference _root;
-    private bool _open, _place;
+    private ElementReference _root, _addInput;
+    private bool _open, _place, _creating, _focusAdd;
     private int _active = -1;
     private string? _value, _newLabel, _error, _color;
     private List<string> _values = [];
 
     private string ListId => $"m-cselect-{_uid}";
-    private string NewColor => _color ?? GridSchema.OptionColors[Options.Count % GridSchema.OptionColors.Count];
+    private string NewColor => _color ?? GridSchema.NextColor(Options.Count);
     private bool HasValue => Multiple ? _values.Count > 0 : !string.IsNullOrEmpty(_value);
 
     private string RootClass => string.Join(' ', new[]
@@ -202,6 +220,11 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (_focusAdd)
+        {
+            _focusAdd = false;
+            try { await _addInput.FocusAsync(); } catch { /* not rendered (tests, prerender) */ }
+        }
         if (!_place) return;
         _place = false;
         try { await JS.InvokeVoidAsync("modulusShell.placeSelect", _root); }
@@ -246,6 +269,7 @@
     {
         if (!_open) return;
         _open = false;
+        _creating = false;
         _newLabel = _error = null;
         _color = null;
         await OpenChanged.InvokeAsync(false);
@@ -277,6 +301,35 @@
         else { _value = null; await ValueChanged.InvokeAsync(null); }
     }
 
+    // The create form takes the list's place; the popup is placed again for its new height.
+    private void StartCreate()
+    {
+        _creating = true;
+        _error = null;
+        _focusAdd = _place = true;
+    }
+
+    private async Task CancelCreate()
+    {
+        _creating = false;
+        _newLabel = _error = null;
+        _color = null;
+        _place = true;
+        try { await _root.FocusAsync(); } catch { /* removed */ }
+    }
+
+    private async Task CreateKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await AddAsync();
+        else if (e.Key == "Escape") await CancelCreate();
+    }
+
+    // Enter on a swatch picks it (a click); Escape leaves the form.
+    private async Task SwatchKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") await CancelCreate();
+    }
+
     private async Task AddAsync()
     {
         var label = _newLabel?.Trim() ?? "";
@@ -297,6 +350,8 @@
         if (added is null) return;
         _newLabel = null;
         _color = null;
+        _creating = false;
+        _place = true;
         if (Multiple)
         {
             _values.Add(added.Value);
@@ -315,17 +370,6 @@
     {
         await Close();
         await OnAddNew.InvokeAsync();
-    }
-
-    private async Task AddKey(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter") await AddAsync();
-        else if (e.Key == "Escape") await Close();
-    }
-
-    private async Task SwatchKey(KeyboardEventArgs e)
-    {
-        if (e.Key == "Escape") await Close();
     }
 
     private async Task SelectorKey(KeyboardEventArgs e)

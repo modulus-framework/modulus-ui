@@ -1,5 +1,6 @@
 @model EmployeeTablePage
 @using Microsoft.AspNetCore.Mvc.Rendering
+@using Modulus.Ui.Abstractions.Plugins
 @* Tabler datagrid: search, filters, sorting, paging, column picker, density, selection and CSV export.
    All state is in the URL; the card is boosted with htmx so each change swaps just the grid. The Blazor sample renders the same page. *@
 @{
@@ -9,7 +10,11 @@
     static IEnumerable<SelectListItem> Items(IEnumerable<string> values, string? selected) => values.Select(v => new SelectListItem(v, v, v == selected));
     var statuses = Enum.GetValues<EmployeeStatus>().Select(s => new SelectListItem(EmployeeDirectory.StatusLabel(s), s.ToString(), s == q.Status));
     var exportQuery = Context.Request.QueryString.Value ?? "";
-    var visible = 2 + EmployeeDirectory.OptionalColumns.Count(c => Model.Shows(c.Key));
+    var visible = 3 + EmployeeDirectory.OptionalColumns.Count(c => Model.Shows(c.Key));
+    // Rows drag by their handle (modulus-plugins.js moves the row, then the hidden "move" input posts it); a column sort locks them.
+    // (data-m-sort-disabled is written with Html.Raw: Razor keeps a data-* attribute even when its value is null.)
+    var dragLocked = Model.Request.SortField is not null;
+    const string DragHelp = "employees-drag-help";
     // Same colgroup as the Blazor ProTable renders.
     string ColStyle(string width) => $"width: {width}; min-width: {width};";
     // Label tags after the name, in the colours picked when the labels were added.
@@ -19,7 +24,11 @@
 <app-page-header pretitle="Tables" title="Data table" subtitle="Search, filter, sort, page, pick columns and export to CSV."></app-page-header>
 
 <div id="employees" class="ant-card m-table-card m-resizable" x-data="tableSelection" @@change="sync()"
-     hx-boost="true" hx-target="#employees" hx-select="#employees" hx-swap="outerHTML" hx-push-url="true">
+     hx-boost="true" hx-target="#employees" hx-select="#employees" hx-swap="outerHTML" hx-push-url="true"
+     data-m-sort-rows="employees" data-m-sort-root data-m-sort-title="Employees" @Html.Raw(dragLocked ? "data-m-sort-disabled" : "")>
+    @* A dropped row posts its move here (the query keeps the page, filters and searches); the grid comes back in the new order. *@
+    <input type="hidden" name="move" data-m-sort-result hx-post="@Base/move@(exportQuery)" hx-trigger="change" hx-push-url="false" />
+    @Html.Raw(SortableHtml.RowsHelp(DragHelp))
     <div class="ant-card-body">
         <div class="m-table-toolbar">
             <div class="m-table-toolbar-title">
@@ -29,7 +38,7 @@
             </div>
             <div class="m-table-toolbar-actions">
                 <span class="m-table-toolbar-search ant-input-affix-wrapper" x-data="{ value: @(string.IsNullOrEmpty(q.Keyword) ? "''" : "true") }">
-                    <span class="ant-input-prefix"><app-ti name="search" /></span>
+                    <span class="ant-input-prefix"><app-icon type="search" /></span>
                     <input class="ant-input" type="text" name="keyword" value="@q.Keyword" placeholder="Search name, email, position…" aria-label="Search employees" form="employees-filter" x-ref="input" @@input="value = $el.value" />
                     <span class="ant-input-suffix">
                         <button type="button" class="ant-input-clear-icon m-input-clear" :class="value ? '' : 'ant-input-clear-icon-hidden'" aria-label="Clear search" tabindex="-1"
@@ -37,8 +46,8 @@
                     </span>
                 </span>
                 <app-table-columns columns="EmployeeDirectory.OptionalColumns" hidden="Model.Hidden" href="@(hide => grid.Href(("hide", hide), ("current", Model.Request.Current.ToString())))" />
-                <a class="ant-btn ant-btn-default" href="@Base/export@(exportQuery)" hx-boost="false" download><app-ti name="download" /><span>Export CSV</span></a>
-                <app-table-settings reload-href="@grid.Current" />
+                <a class="ant-btn ant-btn-default m-table-export" href="@Base/export@(exportQuery)" hx-boost="false" title="Export the rows (after search and filters) to a CSV file" download><app-icon type="download" /><span>Export CSV</span></a>
+                <app-table-settings reload-href="@grid.Current" filter-row columns="false" export="false" />
             </div>
         </div>
 
@@ -46,7 +55,7 @@
             <app-select name="department" items="Items(EmployeeDirectory.Departments, q.Department)" placeholder="All departments" aria-label="Department" />
             <app-select name="office" items="Items(EmployeeDirectory.Offices, q.Office)" placeholder="All offices" aria-label="Office" />
             <app-select name="status" items="statuses" placeholder="Any status" aria-label="Status" />
-            <app-creatable-select name="label" options="EmployeeLabels.Options" value="@q.Label" placeholder="Any label" add-placeholder="New label" add-href="@Base/labels" allow-clear aria-label="Label" />
+            <app-creatable-select name="label" options="EmployeeLabels.Options" value="@q.Label" placeholder="Any label" add-placeholder="Label name" create-text="Create new label" add-href="@Base/labels" allow-clear aria-label="Label" />
             @if (Model.Request.SortField is { } sortField)
             {
                 <input type="hidden" name="sortField" value="@sortField" />
@@ -74,7 +83,7 @@
                     <button type="button" class="ant-btn ant-btn-link ant-btn-sm" @@click="clear()"><span>Clear</span></button>
                     <span class="m-spacer"></span>
                     @* Picking (or adding) a label gives it to the selected rows; the grid comes back with the toast. *@
-                    <app-creatable-select name="applyLabel" options="EmployeeLabels.Options" size="small" placeholder="Add label…" add-placeholder="New label" add-href="@Base/labels"
+                    <app-creatable-select name="applyLabel" options="EmployeeLabels.Options" size="small" placeholder="Add label…" add-placeholder="Label name" create-text="Create new label" add-href="@Base/labels"
                                           aria-label="Add a label to the selected employees" style="width: 160px"
                                           @@change.stop="htmx.ajax('POST', '@Base/tag' + location.search, { source: $el, target: '#employees', select: '#employees', swap: 'outerHTML', values: { label: $el.querySelector('input[name=applyLabel]').value, ids: [...document.querySelectorAll('#employees input[name=ids]:checked')].map(b => b.value) } })" />
                     <button type="button" class="ant-btn ant-btn-primary ant-btn-sm"
@@ -83,9 +92,9 @@
             </div>
         </div>
 
-        <app-table density="true" scroll-x="1158" layout="fixed" hidden-columns="Model.Hidden">
+        <app-table density="true" scroll-x="1198" layout="fixed" hidden-columns="Model.Hidden">
             <colgroup>
-                <col style="@ColStyle("48px")" /><col class="ant-table-expand-icon-col" style="@ColStyle("48px")" /><col style="@ColStyle("260px")" />
+                <col style="@ColStyle($"{SortableHtml.RowHandleWidth}px")" /><col style="@ColStyle("48px")" /><col class="ant-table-expand-icon-col" style="@ColStyle("48px")" /><col style="@ColStyle("260px")" />
                 <col data-col="position" style="@ColStyle("190px")" />
                 <col data-col="department" style="@ColStyle("150px")" />
                 <col data-col="office" style="@ColStyle("150px")" />
@@ -95,6 +104,7 @@
             </colgroup>
             <thead class="ant-table-thead">
                 <tr>
+                    <th class="ant-table-cell m-row-drag-cell"><span class="m-sr-only">Reorder</span></th>
                     <th class="ant-table-cell ant-table-selection-column">
                         <app-checkbox aria-label="Select all rows" data-select-all @@change="toggleAll($event.target.checked)" />
                     </th>
@@ -116,6 +126,7 @@
                 @foreach (var e in Model.Page.Data)
                 {
                     <tr class="ant-table-row ant-table-row-level-0" data-row-key="@e.Id">
+                        <td class="ant-table-cell m-row-drag-cell">@Html.Raw(SortableHtml.RowHandle(e.Id.ToString(), e.Name, DragHelp, dragLocked))</td>
                         <td class="ant-table-cell ant-table-selection-column"><app-checkbox name="ids" value="@e.Id.ToString()" aria-label="@($"Select {e.Name}")" /></td>
                         <td class="ant-table-cell ant-table-row-expand-icon-cell"><button type="button" class="ant-table-row-expand-icon ant-table-row-expand-icon-collapsed" aria-label="Expand row" aria-expanded="false" data-toggle-detail></button></td>
                         <td class="ant-table-cell@(grid.SortClass(nameof(Employee.Name)))">
@@ -126,7 +137,7 @@
                         </td>
                         <td data-col="position" class="ant-table-cell@(grid.SortClass(nameof(Employee.Position)))">@e.Position</td>
                         <td data-col="department" class="ant-table-cell@(grid.SortClass(nameof(Employee.Department)))">@e.Department</td>
-                        <td data-col="office" class="ant-table-cell@(grid.SortClass(nameof(Employee.Office)))"><span class="m-flex m-gap-6"><app-ti name="@(e.Office == "Remote" ? "home" : "map-pin")" />@e.Office</span></td>
+                        <td data-col="office" class="ant-table-cell@(grid.SortClass(nameof(Employee.Office)))"><span class="m-flex m-gap-6"><app-icon type="@(e.Office == "Remote" ? "home" : "environment")" />@e.Office</span></td>
                         <td data-col="start" class="ant-table-cell m-muted@(grid.SortClass(nameof(Employee.StartDate)))">@Fmt.Date(e.StartDate)</td>
                         <td data-col="salary" class="ant-table-cell@(grid.SortClass(nameof(Employee.Salary)))" style="text-align:right"><span class="m-num m-heading">@Fmt.Money0(e.Salary)</span></td>
                         <td class="ant-table-cell@(grid.SortClass(nameof(Employee.Status)))"><span class="m-badge @EmployeeDirectory.StatusBadge(e.Status)">@EmployeeDirectory.StatusLabel(e.Status)</span></td>

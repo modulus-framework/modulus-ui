@@ -1,0 +1,56 @@
+@page "/plugins/editor"
+
+<PageTitle>WYSIWYG editor · Modulus</PageTitle>
+
+<PageHeading Pretitle="Plugins" Title="WYSIWYG editor" Subtitle="Headings, lists, quotes, code, links and images, with undo and redo. Posts clean HTML." />
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Announcement</h3><p class="m-card-subtitle">Select text to format it; Ctrl+K adds a link</p></div></div>
+            <div class="m-card-body">
+                <div class="m-editor-form">
+                    <AppEditor @bind-Value="_html" Label="Announcement" Placeholder="Write the announcement…" />
+                    <div class="m-demo-row">
+                        <button type="button" class="ant-btn ant-btn-primary" @onclick="Save"><Icon Type="save" /><span>Save</span></button>
+                        <button type="button" class="ant-btn ant-btn-default" @onclick="Reset"><span>Reset</span></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">@(_saved ? "Saved HTML" : "Stored HTML")</h3><p class="m-card-subtitle">@_result.Words words, @_result.Characters characters, after RichText.Sanitize on the server</p></div></div>
+            <div class="m-card-body m-editor-output">
+                <div class="m-editor-preview">@((MarkupString)_result.Html)</div>
+                <pre class="m-html-source"><code>@_result.Html</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Read-only</h3><p class="m-card-subtitle">The same content, shown without editing</p></div></div>
+        <div class="m-card-body">
+            <AppEditor Value="@PluginsContent.EditorSample" Label="Read-only announcement" ReadOnly MinHeight="120" />
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? _html = PluginsContent.EditorSample;
+    private EditorResult _result = PluginsContent.Clean(PluginsContent.EditorSample);
+    private bool _saved;
+
+    // As in MVC, the output shows what was saved, not every keystroke.
+    private void Save()
+    {
+        _result = PluginsContent.Clean(_html);
+        _saved = true;
+    }
+
+    private void Reset()
+    {
+        _html = PluginsContent.EditorSample;
+        _result = PluginsContent.Clean(_html);
+        _saved = false;
+    }
+}

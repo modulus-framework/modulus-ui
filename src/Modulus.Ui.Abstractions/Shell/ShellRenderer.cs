@@ -20,7 +20,8 @@ public sealed record ShellView(ModulusThemeOptions Options, IReadOnlyList<MenuIt
 /// shell DOM is identical in every flavor. Behaviour lives in <c>modulus-shell.js</c>.
 /// <para>
 /// Menu depth: a top-level item with children becomes a dropdown (horizontal) or a collapsible group
-/// (vertical). A child that has children of its own is a section: a header followed by its links.
+/// (vertical). Menus nest to any depth: below that, a child with children is a branch that folds open in place,
+/// in the dropdown and in the sidebar alike (a collapsible tree).
 /// </para>
 /// <para>
 /// Apps: a <see cref="ShellApp"/> with a <see cref="ShellApp.MenuKey"/> owns that menu item. While one of its pages
@@ -38,9 +39,25 @@ public static class ShellRenderer
     /// <summary>Cookie holding the active tenants in multi-company mode, as comma-separated ids.</summary>
     public const string TenantsCookie = "modulus-tenants";
 
-    /// <summary>Tabler outline icon: <c>&lt;svg class="m-ti"&gt;&lt;use href="…#ti-name"/&gt;&lt;/svg&gt;</c>.</summary>
-    public static string Icon(string name, string? cssClass = null) =>
-        $"""<svg class="m-ti{(cssClass is null ? "" : " " + cssClass)}" aria-hidden="true" focusable="false"><use href="{IconSprite}#ti-{E(name)}"></use></svg>""";
+    /// <summary>Prefix that names an Ant Design icon instead of a Tabler one, as in <c>"ant:api"</c> (menu items, apps, links).</summary>
+    public const string AntPrefix = "ant:";
+
+    /// <summary>
+    /// Tabler outline icon: <c>&lt;svg class="m-ti"&gt;&lt;use href="…#ti-name"/&gt;&lt;/svg&gt;</c>. A name with the
+    /// <see cref="AntPrefix"/> renders that Ant Design icon inline instead (<c>class="m-ti m-ai"</c>, same size rules).
+    /// </summary>
+    public static string Icon(string name, string? cssClass = null)
+    {
+        var css = "m-ti" + (cssClass is null ? "" : " " + cssClass);
+        if (name.StartsWith(AntPrefix, StringComparison.Ordinal))
+        {
+            var svg = AntIconSvg.Svg(name[AntPrefix.Length..]);
+            return svg is null
+                ? $"""<svg class="{css} m-ai" data-m-icon="{E(name)}" aria-hidden="true" focusable="false"></svg>"""
+                : svg.Replace("<svg ", $"""<svg class="{css} m-ai" data-m-icon="{E(name)}" """, StringComparison.Ordinal);
+        }
+        return $"""<svg class="{css}" aria-hidden="true" focusable="false"><use href="{IconSprite}#ti-{E(name)}"></use></svg>""";
+    }
 
     // Sidebar (vertical layout, and the navigation drawer on small screens) ------------------------
 
@@ -102,18 +119,28 @@ public static class ShellRenderer
           .Append(SnavIcon(item))
           .Append($"""<span class="m-snav-title">{E(item.Label)}</span>""").Append(Icon("chevron-down", "m-snav-chevron"))
           .Append($"""</summary><ul class="m-snav-sub"><li class="m-snav-flyout-title" aria-hidden="true">{E(item.Label)}</li>""");
-        var groupTrail = Join(trail, item.Label);
-        foreach (var child in item.Children)
+        SidebarChildren(sb, item, path, Join(trail, item.Label), 0);
+        sb.Append("</ul></details></li>");
+    }
+
+    // A group's entries in the sidebar tree. A child with children is a branch that folds open in place, to any
+    // depth (Odoo's and SAP's navigation trees); depth indents it (--m-depth on its list).
+    private static void SidebarChildren(StringBuilder sb, MenuItemDefinition group, string path, string trail, int depth)
+    {
+        foreach (var child in group.Children)
         {
             if (child.Children.Count == 0)
             {
-                SidebarLeaf(sb, child, path, groupTrail);
+                SidebarLeaf(sb, child, path, trail);
                 continue;
             }
-            sb.Append($"""<li class="m-snav-header">{E(child.Label)}</li>""");
-            foreach (var leaf in child.Children) SidebarLeaf(sb, leaf, path, Join(groupTrail, child.Label));
+            var open = IsActive(child, path);
+            sb.Append($"""<li class="m-snav-item m-snav-branch{(open ? " m-in-path" : "")}"><details class="m-snav-group"{(open ? " open" : "")}><summary class="m-snav-link">""")
+              .Append($"""<span class="m-snav-title">{E(child.Label)}</span>""").Append(Icon("chevron-down", "m-snav-chevron"))
+              .Append($"""</summary><ul class="m-snav-sub" style="--m-depth:{depth + 1}">""");
+            SidebarChildren(sb, child, path, Join(trail, child.Label), depth + 1);
+            sb.Append("</ul></details></li>");
         }
-        sb.Append("</ul></details></li>");
     }
 
     // A folded sidebar shows only this: the item's icon, or its initial when it has none.
@@ -136,7 +163,7 @@ public static class ShellRenderer
     /// The header row and the horizontal navbar in one wrapper, which the theme settings' header modes (sticky,
     /// floating) and the condensed layout (menu inside the header row) style as a unit. Render it once, after the sidebar.
     /// </summary>
-    public static string Header(ShellView view) => """<div class="m-header">""" + Topbar(view) + Navbar(view) + "</div>";
+    public static string Header(ShellView view) => """<div class="m-header" id="m-header">""" + Topbar(view) + Navbar(view) + "</div>";
 
     public static string Topbar(ShellView view)
     {
@@ -343,19 +370,47 @@ public static class ShellRenderer
     private static void AppSwitcher(StringBuilder sb, ShellContent c)
     {
         if (c.Apps is not { Count: > 0 } apps) return;
+        var many = apps.Count > AppFilterThreshold;
         sb.Append("""<details class="m-dropdown m-apps"><summary class="m-icon-btn" aria-label="Apps">""").Append(Icon("grid-dots"))
-          .Append("""</summary><div class="m-dropdown-menu m-dropdown-end m-dropdown-card m-apps-menu">""")
-          .Append("""<div class="m-dropdown-card-header"><span class="m-dropdown-card-title">Apps</span></div><div class="m-apps-grid">""");
-        foreach (var app in apps)
+          .Append($"""</summary><div class="m-dropdown-menu m-dropdown-end m-dropdown-card m-apps-menu{(many ? " m-apps-menu-wide" : "")}" data-m-app-menu>""")
+          .Append($"""<div class="m-dropdown-card-header"><span class="m-dropdown-card-title">Apps</span>{AppCount(apps)}</div>""");
+        if (many) AppFilter(sb);
+        sb.Append("""<div class="m-app-menu-body">""");
+        foreach (var group in apps.GroupBy(a => a.Group))
         {
-            sb.Append($"""<a class="m-app-tile" href="{Url(app.Href)}"{(app.Description is null ? "" : $" title=\"{E(app.Description)}\"")}>""")
-              .Append($"""<span class="m-icon-tile m-tile-{E(app.Tone)}-lt">{Icon(app.Icon)}</span>""")
-              .Append($"""<span class="m-app-name">{E(app.Name)}</span></a>""");
+            AppGroupStart(sb, group.Key, apps);
+            sb.Append("""<div class="m-apps-grid">""");
+            foreach (var app in group)
+            {
+                sb.Append($"""<a class="m-app-tile" href="{Url(app.Href)}"{(app.Description is null ? "" : $" title=\"{E(app.Description)}\"")}>""")
+                  .Append($"""<span class="m-icon-tile m-tile-{E(app.Tone)}-lt">{Icon(app.Icon)}</span>""")
+                  .Append($"""<span class="m-app-name">{E(app.Name)}</span></a>""");
+            }
+            sb.Append("</div></section>");
         }
-        sb.Append("</div>");
+        sb.Append("""</div><div class="m-app-menu-empty" hidden>No apps match.</div>""");
         if (c.AppsHref is { } all)
             sb.Append($"""<a class="m-dropdown-card-footer" href="{Url(all)}">View all apps</a>""");
         sb.Append("</div></details>");
+    }
+
+    /// <summary>Apps listed before the app switchers show a filter box and lay the apps out wider.</summary>
+    public const int AppFilterThreshold = 6;
+
+    private static string AppCount(IReadOnlyList<ShellApp> apps) =>
+        $"""<span class="m-app-menu-count">{apps.Count.ToString(System.Globalization.CultureInfo.InvariantCulture)} {(apps.Count == 1 ? "app" : "apps")}</span>""";
+
+    private static void AppFilter(StringBuilder sb) =>
+        sb.Append("""<div class="m-app-filter">""").Append(Icon("search"))
+          .Append("""<input type="search" class="m-app-filter-input" data-m-app-filter placeholder="Find an app…" aria-label="Find an app" autocomplete="off" spellcheck="false" /></div>""");
+
+    // A group of apps in a switcher, headed by its name when any app has a group; the filter hides a group that has
+    // no match left. The caller closes the section.
+    private static void AppGroupStart(StringBuilder sb, string? heading, IReadOnlyList<ShellApp> apps)
+    {
+        sb.Append($"""<section class="m-app-menu-group" data-m-app-group="{E(heading ?? "")}">""");
+        if (apps.Any(a => !string.IsNullOrEmpty(a.Group)))
+            sb.Append($"""<div class="m-dropdown-header">{E(string.IsNullOrEmpty(heading) ? "Other" : heading)}</div>""");
     }
 
     private static void Activities(StringBuilder sb, ShellContent c)
@@ -399,53 +454,37 @@ public static class ShellRenderer
     private static bool HasLauncher(ShellContent c) => c.AppLauncher == AppLauncherStyle.Overlay && c.Apps is { Count: > 0 };
 
     /// <summary>
-    /// Full-screen home menu for <see cref="AppLauncherStyle.Overlay"/>, after Odoo's home menu and Oracle's navigator:
-    /// a greeting, a search box that filters the apps and finds menu entries, the apps as cards filed under their
-    /// <see cref="ShellApp.Group"/>, and the pages the user opened recently (kept in the browser by modulus-shell.js).
-    /// Empty for the dropdown launcher. Render it once, after the page.
+    /// Full-screen home menu for <see cref="AppLauncherStyle.Overlay"/>, as Odoo's: the apps as large icons in one
+    /// centred grid, a group's apps kept together (<see cref="ShellApp.Group"/>). Typing shows a search box that
+    /// filters the apps and lists matching menu entries. Empty for the dropdown launcher. Render it once, after the page.
     /// </summary>
     public static string AppLauncher(ShellView view)
     {
         var c = view.Content;
         if (!HasLauncher(c)) return "";
         var current = FindApp(view)?.App;
-        var firstName = c.User.Name.Trim().Split(' ', 2)[0];
         var sb = new StringBuilder();
         sb.Append("""<div class="m-launcher" id="m-launcher" data-m-launcher hidden>""")
-          .Append("""<div class="m-launcher-panel" role="dialog" aria-modal="true" aria-labelledby="m-launcher-title"><div class="m-launcher-inner">""")
-          // The script swaps the greeting for one that fits the time of day and fills in today's date.
-          .Append($"""<div class="m-launcher-top"><div class="m-launcher-hello"><h2 class="m-launcher-title" id="m-launcher-title" data-m-greeting="{E(firstName)}">Welcome back{(firstName.Length == 0 ? "" : ", " + E(firstName))}</h2>""")
-          .Append("""<span class="m-launcher-date" data-m-today></span></div>""")
-          .Append("""<button type="button" class="m-icon-btn m-launcher-close" data-m-launcher-close aria-label="Close">""").Append(Icon("x")).Append("</button></div>")
+          .Append("""<div class="m-launcher-panel" role="dialog" aria-modal="true" aria-label="Apps"><div class="m-launcher-inner">""")
+          .Append(Brand(view.Options, "m-launcher-brand"))
+          .Append("""<button type="button" class="m-icon-btn m-launcher-close" data-m-launcher-close aria-label="Close">""").Append(Icon("x")).Append("</button>")
+          // Hidden until the user types, as in Odoo; it still takes focus so typing lands in it.
           .Append("""<div class="m-launcher-search">""").Append(Icon("search"))
           .Append("""<input type="search" class="m-launcher-input" data-m-launcher-search placeholder="Search apps and menus…" aria-label="Search apps and menus" autocomplete="off" spellcheck="false" />""")
           .Append("""<kbd class="m-launcher-esc" aria-hidden="true">Esc</kbd></div>""")
-          .Append("""<div class="m-launcher-body"><div class="m-launcher-main">""");
-        foreach (var group in c.Apps!.GroupBy(a => a.Group))
+          .Append("""<div class="m-launcher-grid">""");
+        var index = 0;
+        foreach (var app in c.Apps!.GroupBy(a => a.Group).SelectMany(g => g))
         {
-            sb.Append("""<section class="m-launcher-group">""");
-            if (group.Key is { Length: > 0 } heading) sb.Append($"""<h3 class="m-launcher-heading">{E(heading)}</h3>""");
-            sb.Append("""<div class="m-launcher-grid">""");
-            foreach (var app in group)
-            {
-                var active = app == current;
-                sb.Append($"""<a class="m-launcher-app{(active ? " active" : "")}" href="{Url(app.Href)}" data-m-launcher-name="{E((app.Name + " " + app.Description + " " + app.Group).Trim())}"{(active ? " aria-current=\"true\"" : "")}>""")
-                  .Append(AppMark(app, "lg"))
-                  .Append($"""<span class="m-launcher-app-text"><span class="m-launcher-name">{E(app.Name)}</span>""")
-                  .Append(string.IsNullOrEmpty(app.Description) ? "" : $"""<span class="m-launcher-desc">{E(app.Description)}</span>""")
-                  .Append("</span>")
-                  .Append(active ? """<span class="m-launcher-open-tag">Open</span>""" : "")
-                  .Append("</a>");
-            }
-            sb.Append("</div></section>");
+            // An icon with the name under it; the description is the tooltip. --m-i staggers the icons' entrance.
+            var active = app == current;
+            sb.Append($"""<a class="m-launcher-app{(active ? " active" : "")}" href="{Url(app.Href)}" style="--m-app-tone: var(--m-{E(app.Tone)}); --m-i: {index++}" data-m-launcher-name="{E((app.Name + " " + app.Description + " " + app.Group).Trim())}"{(string.IsNullOrEmpty(app.Description) ? "" : $" title=\"{E(app.Description)}\"")}{(active ? " aria-current=\"true\"" : "")}>""")
+              .Append(AppMark(app, "lg"))
+              .Append($"""<span class="m-launcher-name">{E(app.Name)}</span></a>""");
         }
-        sb.Append("""<div class="m-launcher-empty" hidden>No apps match.</div>""")
-          .Append("""<div class="m-launcher-menus" hidden><h3 class="m-launcher-heading">Menus</h3><div class="m-launcher-results"></div></div>""");
-        if (c.AppsHref is { } all)
-            sb.Append($"""<a class="m-launcher-all" href="{Url(all)}">View all apps{Icon("arrow-right")}</a>""");
-        sb.Append("</div>")
-          .Append("""<aside class="m-launcher-rail" data-m-recent hidden><h3 class="m-launcher-heading">""").Append(Icon("history")).Append("""Recent</h3><div class="m-launcher-recent"></div></aside>""")
-          .Append("</div></div></div></div>");
+        sb.Append("""</div><div class="m-launcher-empty" hidden>No apps match.</div>""")
+          .Append("""<div class="m-launcher-menus" hidden><div class="m-launcher-results"></div></div>""")
+          .Append("</div></div></div>");
         return sb.ToString();
     }
 
@@ -519,20 +558,42 @@ public static class ShellRenderer
         sb.Append("</details></li>");
     }
 
+    // Every app to jump to, filed under its group: two columns and a filter box once there are more than a few,
+    // the body scrolling under a fixed head and foot, then the full launcher and the "View all apps" page.
     private static void ModuleMenu(StringBuilder sb, ShellView view, ShellApp current)
     {
-        sb.Append("""<div class="m-dropdown-menu m-module-menu"><div class="m-dropdown-header">Switch module</div>""");
-        foreach (var app in view.Content.Apps!)
+        var apps = view.Content.Apps!;
+        var many = apps.Count > AppFilterThreshold;
+        sb.Append($"""<div class="m-dropdown-menu m-module-menu{(many ? " m-module-menu-wide" : "")}" data-m-app-menu>""")
+          .Append($"""<div class="m-app-menu-head"><span class="m-app-menu-title">Switch app</span>{AppCount(apps)}</div>""");
+        if (many) AppFilter(sb);
+        sb.Append("""<div class="m-app-menu-body">""");
+        foreach (var group in apps.GroupBy(a => a.Group))
         {
-            var active = app == current;
-            sb.Append($"""<a class="m-module-item{(active ? " active" : "")}" href="{Url(app.Href)}"{(active ? " aria-current=\"true\"" : "")}>""")
-              .Append(AppMark(app))
-              .Append($"""<span class="m-module-text"><span class="m-module-name">{E(app.Name)}</span>""")
-              .Append(string.IsNullOrEmpty(app.Description) ? "" : $"""<span class="m-module-desc">{E(app.Description)}</span>""")
-              .Append("</span>").Append(active ? Icon("check", "m-module-check") : "").Append("</a>");
+            AppGroupStart(sb, group.Key, apps);
+            sb.Append("""<div class="m-module-grid">""");
+            foreach (var app in group)
+            {
+                var active = app == current;
+                sb.Append($"""<a class="m-module-item{(active ? " active" : "")}" href="{Url(app.Href)}" style="--m-app-tone: var(--m-{E(app.Tone)})"{(active ? " aria-current=\"true\"" : "")}>""")
+                  .Append(AppMark(app))
+                  .Append($"""<span class="m-module-text"><span class="m-module-name">{E(app.Name)}</span>""")
+                  .Append(string.IsNullOrEmpty(app.Description) ? "" : $"""<span class="m-module-desc">{E(app.Description)}</span>""")
+                  .Append("</span>").Append(active ? Icon("check", "m-module-check") : "").Append("</a>");
+            }
+            sb.Append("</div></section>");
         }
-        if (HasLauncher(view.Content))
-            sb.Append("""<div class="m-dropdown-divider"></div><button type="button" class="m-dropdown-item" data-m-launcher-open aria-controls="m-launcher">""").Append(Icon("grid-dots")).Append("All apps</button>");
+        sb.Append("""</div><div class="m-app-menu-empty" hidden>No apps match.</div>""");
+        var launcher = HasLauncher(view.Content);
+        if (launcher || view.Content.AppsHref is not null)
+        {
+            sb.Append("""<div class="m-app-menu-foot">""");
+            if (launcher)
+                sb.Append("""<button type="button" class="m-dropdown-item" data-m-launcher-open aria-controls="m-launcher">""").Append(Icon("layout-grid")).Append("All apps</button>");
+            if (view.Content.AppsHref is { } all)
+                sb.Append($"""<a class="m-dropdown-item" href="{Url(all)}">""").Append(Icon("apps")).Append("View all apps</a>");
+            sb.Append("</div>");
+        }
         sb.Append("</div>");
     }
 
@@ -564,28 +625,42 @@ public static class ShellRenderer
             return;
         }
 
-        {
+        sb.Append($"""<li class="m-hnav-item{(active ? " active" : "")}"><details class="m-dropdown"><summary class="m-hnav-link">""")
+          .Append(icon)
+          .Append($"""<span>{E(item.Label)}</span>""").Append(Icon("chevron-down", "m-hnav-chevron"))
+          .Append("""</summary><div class="m-dropdown-menu m-tree">""");
+        DropdownItems(sb, item, path);
+        sb.Append("</div></details></li>");
+    }
 
-            var sections = item.Children.Where(c => c.Children.Count > 0).ToList();
-            var loose = item.Children.Where(c => c.Children.Count == 0).ToList();
-            var columns = sections.Count + (loose.Count > 0 ? 1 : 0);
-            sb.Append($"""<li class="m-hnav-item{(active ? " active" : "")}"><details class="m-dropdown"><summary class="m-hnav-link">""")
-              .Append(icon)
-              .Append($"""<span>{E(item.Label)}</span>""").Append(Icon("chevron-down", "m-hnav-chevron"))
-              .Append($"""</summary><div class="m-dropdown-menu{(columns > 1 ? $" m-dropdown-columns m-dropdown-columns-{Math.Min(columns, 4)}" : "")}">""");
-            if (loose.Count > 0)
+    // One narrow column, as in Odoo: a group directly in the dropdown is a section (its name in bold, its entries
+    // indented under it); a group below that folds open in place, to any depth, opened already when it holds the
+    // page on screen.
+    private static void DropdownItems(StringBuilder sb, MenuItemDefinition group, string path, int depth = 0)
+    {
+        foreach (var child in group.Children)
+        {
+            if (child.Children.Count == 0)
             {
-                if (columns > 1) sb.Append("""<div class="m-dropdown-col">""");
-                foreach (var leaf in loose) DropdownItem(sb, leaf, path);
-                if (columns > 1) sb.Append("</div>");
+                DropdownItem(sb, child, path);
+                continue;
             }
-            foreach (var section in sections)
+            if (depth == 0)
             {
-                sb.Append($"""<div class="m-dropdown-col"><div class="m-dropdown-header">{E(section.Label)}</div>""");
-                foreach (var leaf in section.Children) DropdownItem(sb, leaf, path);
+                sb.Append($"""<div class="m-menu-section{(IsActive(child, path) ? " m-in-path" : "")}" role="group" aria-label="{E(child.Label)}"><div class="m-menu-section-title" aria-hidden="true">""")
+                  .Append(child.Icon is null ? "" : Icon(child.Icon))
+                  .Append($"""{E(child.Label)}</div>""");
+                DropdownItems(sb, child, path, 1);
                 sb.Append("</div>");
+                continue;
             }
-            sb.Append("</div></details></li>");
+            var open = IsActive(child, path);
+            sb.Append($"""<details class="m-tree-group{(open ? " m-in-path" : "")}"{(open ? " open" : "")}><summary class="m-dropdown-item">""")
+              .Append(child.Icon is null ? "" : Icon(child.Icon))
+              .Append($"""<span class="m-tree-label">{E(child.Label)}</span>""").Append(Icon("chevron-down", "m-tree-chevron"))
+              .Append($"""</summary><div class="m-tree-sub" style="--m-depth:{depth + 1}">""");
+            DropdownItems(sb, child, path, depth + 1);
+            sb.Append("</div></details>");
         }
     }
 
@@ -666,6 +741,7 @@ public static class ShellRenderer
         }
         sb.Append("</div></fieldset>");
 
+        Choice(sb, "Density", "density", Lower(o.Density), [("compact", "Compact", Icon("list")), ("comfortable", "Comfortable", Icon("layout-list"))]);
         Choice(sb, "Font family", "font", Lower(o.Font),
         [
             ("sans", "Inter", """<span class="m-font-preview m-font-sans">Aa</span>"""),
@@ -676,6 +752,7 @@ public static class ShellRenderer
         Choice(sb, "Corner radius", "radius", o.BorderRadius.ToString(System.Globalization.CultureInfo.InvariantCulture),
             new[] { 0, 4, 6, 8, 12 }.Select(r => (r.ToString(System.Globalization.CultureInfo.InvariantCulture), r.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 (string?)$"""<span class="m-radius-preview" style="border-start-start-radius:{r * 1.5}px"></span>""")).ToArray(), "m-choices-radius");
+        Languages(sb, o);
         sb.Append("""</div><div class="m-setting-pane" id="m-setting-pane-layout" role="tabpanel" aria-labelledby="m-setting-tab-layout" hidden>""");
 
         var pick = LayoutPick.From(o);
@@ -712,6 +789,20 @@ public static class ShellRenderer
           .Append("""<button type="button" class="ant-btn ant-btn-primary" data-m-customizer-close><span>Done</span></button></div>""")
           .Append("</aside></div>");
         return sb.ToString();
+    }
+
+    // The language picker: a native select, since the list can be long. Changing it writes the culture cookie and reloads
+    // (modulus-shell.js); the page comes back in the request culture.
+    private static void Languages(StringBuilder sb, ModulusThemeOptions o)
+    {
+        var cultures = ModulusCulture.Supported(o.Cultures);
+        if (cultures.Count < 2) return;
+        var current = ModulusCulture.Match(cultures, System.Globalization.CultureInfo.CurrentUICulture)!;
+        sb.Append("""<div class="m-setting"><label class="m-setting-label" for="m-setting-culture">Language</label>""")
+          .Append($"""<select class="ant-input m-setting-select" id="m-setting-culture" name="culture" data-m-culture data-cookie="{E(ModulusCulture.CookieName)}">""");
+        foreach (var c in cultures)
+            sb.Append($"""<option value="{E(c.Name)}" lang="{E(c.Name)}"{(c.Name == current.Name ? " selected" : "")}>{E(ModulusCulture.NativeName(c))}</option>""");
+        sb.Append("""</select><p class="m-setting-hint">Dates, numbers and component texts. The page reloads.</p></div>""");
     }
 
     // visual: markup above the label (an icon, a preview); trusted, built by this class.

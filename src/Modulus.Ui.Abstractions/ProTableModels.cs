@@ -30,6 +30,12 @@ public class ProTableRequest
     /// <summary>Column searches from the headers (field → query, see <see cref="ColumnSearch"/>); null when none.</summary>
     public IReadOnlyDictionary<string, string?>? Searches { get; set; }
 
+    /// <summary>
+    /// Where the next rows start, from the previous page (<c>TablePage.NextCursor</c>): infinite and virtual scrolling pass it
+    /// back instead of a page number. Opaque; an invalid or stale one starts at the numbered page.
+    /// </summary>
+    public string? Cursor { get; set; }
+
     public int Skip => (Current - 1) * PageSize;
 }
 

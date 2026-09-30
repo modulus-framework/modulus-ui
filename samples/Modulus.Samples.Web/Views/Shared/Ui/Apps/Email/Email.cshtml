@@ -53,7 +53,7 @@
                 <form method="post" action="@Base/move@(Model.Scope)" asp-antiforgery="true" hx-boost="false" class="m-flex">
                     <input type="hidden" name="ids" value="@m.Id" />
                     <input type="hidden" name="to" value="@(m.Folder == MailFolder.Spam ? "Inbox" : "Spam")" />
-                    <button type="submit" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")" title="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")"><app-ti name="alert-octagon" /></button>
+                    <button type="submit" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")" title="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")"><app-ti name="ant:stop" /></button>
                 </form>
                 <form method="post" action="@Base/move@(Model.Scope)" asp-antiforgery="true" hx-boost="false" class="m-flex">
                     <input type="hidden" name="ids" value="@m.Id" />

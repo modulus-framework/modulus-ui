@@ -112,6 +112,18 @@ public class ExtraTagHelperTests
     }
 
     [Fact]
+    public async Task DropdownButton_OpensOnHoverByDefault_AndOnClickWhenAsked()
+    {
+        var hover = await RenderAsync(new Node(new DropdownButtonTagHelper { Text = "Save" }, "app-dropdown-button", ""));
+        Assert.Contains("@mouseenter=\"hoverOpen()\" @click=\"open || toggle()\"", hover);
+        Assert.Contains("@mouseleave=\"hoverClose()\"", hover);
+
+        var click = await RenderAsync(new Node(new DropdownButtonTagHelper { Text = "Save", Trigger = "click" }, "app-dropdown-button", ""));
+        Assert.Contains("@click=\"toggle()\"", click);
+        Assert.DoesNotContain("hoverOpen", click);
+    }
+
+    [Fact]
     public async Task AffixAndBackTop_UseTheirAlpineComponents()
     {
         Assert.Contains("x-data=\"modulusAffix(120)\"", await RenderAsync(new Node(new AffixTagHelper { OffsetTop = 120 }, "app-affix", "x")));

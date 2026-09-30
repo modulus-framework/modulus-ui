@@ -23,9 +23,16 @@ public abstract class ChartBase : ComponentBase
 
     [Parameter] public int MaxXLabels { get; set; } = 12;
 
+    /// <summary>Legend entries hide and show their series (line, column and combo charts).</summary>
+    [Parameter] public bool LegendToggle { get; set; }
+
+    /// <summary>Drill-down: one link per x-axis label, null for none (line, column and combo charts).</summary>
+    [Parameter] public IReadOnlyList<string?>? Links { get; set; }
+
     protected ChartOptions Options(bool area = false, bool stacked = false, string? centerLabel = null) => new()
     {
         Height = Height, ValueFormat = ValueFormat, Prefix = Prefix, Suffix = Suffix, Title = Title,
         FirstSlot = FirstSlot, MaxXLabels = MaxXLabels, Area = area, Stacked = stacked, CenterLabel = centerLabel,
+        LegendToggle = LegendToggle, Links = Links,
     };
 }

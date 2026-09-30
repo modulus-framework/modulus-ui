@@ -1,0 +1,36 @@
+@page "/plugins/lightbox"
+
+<PageTitle>Lightbox · Modulus</PageTitle>
+
+<PageHeading Pretitle="Plugins" Title="Lightbox" Subtitle="Click an image for the full-screen preview: captions, thumbnails, zoom, rotate and download." />
+
+<div class="m-row-cards">
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Captioned grid</h3><p class="m-card-subtitle">@PluginsContent.Photos.Count photos; the grid fits as many columns as the width allows</p></div></div>
+        <div class="m-card-body"><AppLightbox Items="PluginsContent.Photos" MinWidth="200" /></div>
+    </div>
+
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Square tiles, no captions</h3><p class="m-card-subtitle">Captions still show in the preview</p></div></div>
+            <div class="m-card-body"><AppLightbox Items="PluginsContent.Strip" MinWidth="110" Aspect="1" Captions="false" /></div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">A single image</h3><p class="m-card-subtitle">A wide cover that opens on its own</p></div></div>
+            <div class="m-card-body"><AppLightbox Items="PluginsContent.Cover" MinWidth="240" Aspect="16 / 9" /></div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Keyboard and pointer</h3><p class="m-card-subtitle">In the preview</p></div></div>
+        <div class="m-card-body">
+            <ul class="m-plain-list m-keys-list">
+                <li><kbd>←</kbd><kbd>→</kbd><span>Previous and next image</span></li>
+                <li><kbd>Home</kbd><kbd>End</kbd><span>First and last image</span></li>
+                <li><kbd>+</kbd><kbd>-</kbd><kbd>0</kbd><span>Zoom in, zoom out, reset (or the mouse wheel, or a double click)</span></li>
+                <li><kbd>Esc</kbd><span>Close and return to the image you opened</span></li>
+                <li><Icon Type="drag" /><span>Drag pans a zoomed image; a swipe pages at 100%</span></li>
+            </ul>
+        </div>
+    </div>
+</div>

@@ -26,6 +26,7 @@ public static class ThemeCss
     public const string MenuCookie = "modulus-menu";
     public const string FontCookie = "modulus-font";
     public const string BaseCookie = "modulus-base";
+    public const string DensityCookie = "modulus-density";
     public const string SideCookie = "modulus-side";
     public const string SidebarCookie = "modulus-sidebar";
     public const string FoldCookie = "modulus-fold";
@@ -48,6 +49,7 @@ public static class ThemeCss
         if (Enum.TryParse<MenuScope>(cookie(MenuCookie), true, out var menu)) o.MenuScope = menu;
         if (Enum.TryParse<ThemeFont>(cookie(FontCookie), true, out var font)) o.Font = font;
         if (Enum.TryParse<ThemeBase>(cookie(BaseCookie), true, out var @base)) o.Base = @base;
+        if (Enum.TryParse<ThemeDensity>(cookie(DensityCookie), true, out var density)) o.Density = density;
         if (Enum.TryParse<SidebarPosition>(cookie(SideCookie), true, out var side)) o.SidebarPosition = side;
         if (Enum.TryParse<SidebarStyle>(cookie(SidebarCookie), true, out var sidebar)) o.SidebarStyle = sidebar;
         if (Enum.TryParse<SidebarFold>(cookie(FoldCookie), true, out var fold)) o.SidebarFold = fold;
@@ -63,7 +65,7 @@ public static class ThemeCss
     /// on <c>&lt;html&gt;</c> before first paint.
     /// </summary>
     public static string ScriptAttributes(ModulusThemeOptions o) =>
-        $"""data-layout="{Lower(o.Layout)}" data-width="{Lower(o.ContentWidth)}" data-nav="{Lower(o.NavTheme)}" data-menu="{Lower(o.MenuScope)}" data-font="{Lower(o.Font)}" data-base="{Lower(o.Base)}" """
+        $"""data-layout="{Lower(o.Layout)}" data-width="{Lower(o.ContentWidth)}" data-nav="{Lower(o.NavTheme)}" data-menu="{Lower(o.MenuScope)}" data-font="{Lower(o.Font)}" data-base="{Lower(o.Base)}" data-density="{Lower(o.Density)}" """
         + $"""data-side="{Lower(o.SidebarPosition)}" data-sidebar="{Lower(o.SidebarStyle)}" data-fold="{Lower(o.SidebarFold)}" data-header="{Lower(o.Header)}" data-topbar="{Lower(o.HeaderTheme)}" data-dir="{Lower(o.Direction)}" """.TrimEnd();
 
     private static string Lower<T>(T value) where T : struct, Enum => value.ToString().ToLowerInvariant();
@@ -96,6 +98,7 @@ public static class ThemeCss
         vars.Add(("--ant-primary-color-deprecated-f-12", primary.WithAlpha(0.12).ToString()));
         vars.Add(("--ant-primary-color-active-deprecated-f-30", palette[0].WithAlpha(0.3).ToString()));
         vars.Add(("--ant-primary-color-active-deprecated-d-02", palette[0].Darken(2).ToString()));
+        vars.AddRange(AntDarkBrand.Variables(primary));
 
         FillColor(vars, "success", ParseOr(options.SuccessColor, "#52c41a"));
         FillColor(vars, "warning", ParseOr(options.WarningColor, "#faad14"));

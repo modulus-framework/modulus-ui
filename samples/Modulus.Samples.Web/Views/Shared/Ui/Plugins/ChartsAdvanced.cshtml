@@ -1,0 +1,109 @@
+@* Chart interactions (legend toggle, zoom, drill-down) and the advanced chart types. Zoom and drill-down are links that
+   re-render the chart on the server, so they read the same query string in MVC, Razor Pages and Blazor. *@
+@{
+    var zoom = PluginsContent.ZoomChart(Context.Request.Query["days"]);
+    var drill = PluginsContent.Drill(Context.Request.Query["quarter"], zoom.Days);
+}
+<app-page-header pretitle="Plugins" title="Charts advanced" subtitle="Legend toggle, zoom and drill-down on the server-rendered charts, plus the business chart types.">
+    <a class="ant-btn ant-btn-default" href="/ui/charts"><app-icon type="bar-chart" /><span>All chart types</span></a>
+</app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Legend toggle</h3><p class="m-card-subtitle">Click a legend entry to hide or show its series</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-line-chart labels="UiShowcase.Months" series="UiShowcase.Traffic" legend-toggle title="Visitors per month by source" height="260" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Legend toggle on a combo chart</h3><p class="m-card-subtitle">Hide the budget line to compare the columns alone</p></div>
+            </div>
+            <div class="m-card-body">
+                <app-combo-chart labels="ErpShowcase.Months" columns="ErpShowcase.RevenueActual" lines="ErpShowcase.RevenueBudget" legend-toggle prefix="$" title="Revenue against budget per month" height="260" />
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card" id="zoom">
+        <div class="m-card-header">
+            <div><h3 class="m-card-title">Zoom</h3><p class="m-card-subtitle">@Fmt.Number(zoom.Total) visitors, @zoom.Period</p></div>
+            <div class="m-card-actions">
+                <div class="ant-segmented" role="group" aria-label="Zoom">
+                    <div class="ant-segmented-group">
+                        @foreach (var (d, label) in PluginsContent.ZoomLevels)
+                        {
+                            var active = d == zoom.Days;
+                            <a class="ant-segmented-item @(active ? "ant-segmented-item-selected" : "")" href="@PluginsContent.ChartsUrl(d, drill.Quarter, "zoom")" aria-current="@(active ? "true" : null)"><div class="ant-segmented-item-label">@label</div></a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="m-card-body">
+            <app-line-chart labels="zoom.Labels" series="zoom.Series" area legend-toggle title="Visitors and sign-ups per day" height="260" max-x-labels="10" />
+        </div>
+    </div>
+
+    <div class="m-card" id="drill">
+        <div class="m-card-header">
+            <div>
+                <h3 class="m-card-title">Drill-down</h3>
+                <p class="m-card-subtitle">@drill.Title</p>
+            </div>
+            @if (drill.Quarter > 0)
+            {
+                <div class="m-card-actions"><a class="ant-btn ant-btn-default ant-btn-sm" href="@PluginsContent.ChartsUrl(zoom.Days, 0, "drill")"><app-icon type="arrow-left" /><span>Back to the year</span></a></div>
+            }
+        </div>
+        <div class="m-card-body">
+            <p class="m-muted m-mb-12">@(drill.Quarter == 0 ? "Click a quarter (its column or label) to open its months." : "Thousands of dollars per month.")</p>
+            <app-column-chart labels="drill.Labels" series="drill.Series" stacked legend-toggle links="drill.Links" prefix="$" suffix="k" title="@drill.Title" height="260" />
+        </div>
+    </div>
+
+    <h2 class="m-section-title">Advanced types</h2>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Heatmap</h3><p class="m-card-subtitle">Orders by weekday and time of day</p></div></div>
+            <div class="m-card-body"><app-heatmap rows="UiShowcase.Weekdays" columns="UiShowcase.HourBlocks" values="UiShowcase.Activity" title="Orders by weekday and two-hour block" /></div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Treemap</h3><p class="m-card-subtitle">Inventory value by category</p></div></div>
+            <div class="m-card-body"><app-treemap items="ErpShowcase.InventoryValue" prefix="$" title="Inventory value by category" height="240" aspect="2" /></div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Pareto</h3><p class="m-card-subtitle">Revenue share and cumulative share by SKU</p></div></div>
+            <div class="m-card-body"><app-pareto-chart items="ErpShowcase.SkuRevenue" prefix="$" value-name="Revenue share" title="ABC analysis of revenue by SKU" height="240" max-x-labels="10" /></div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Waterfall</h3><p class="m-card-subtitle">Profit bridge from revenue to net profit</p></div></div>
+            <div class="m-card-body"><app-waterfall-chart steps="ErpShowcase.ProfitBridge" prefix="$" title="Profit bridge" height="240" /></div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Variance</h3><p class="m-card-subtitle">Spend minus budget by department</p></div></div>
+            <div class="m-card-body"><app-variance-chart items="ErpShowcase.BudgetVariance" positive-is-favorable="false" prefix="$" title="Budget variance by department" /></div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Bullet</h3><p class="m-card-subtitle">Key results against target</p></div></div>
+            <div class="m-card-body"><app-bullet-chart items="ErpShowcase.Targets" value-format="#,0.#" title="Key results against targets" /></div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Gauge</h3><p class="m-card-subtitle">On time in full, with its target</p></div></div>
+            <div class="m-card-body"><app-gauge value="ErpShowcase.OnTimeInFull" max="100" target="ErpShowcase.OnTimeTarget" value-format="N1" suffix="%" caption="On time in full" title="On time in full" /></div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Funnel</h3><p class="m-card-subtitle">Order to cash, with conversion per stage</p></div></div>
+            <div class="m-card-body"><app-funnel-chart stages="ErpShowcase.OrderToCash" title="Order-to-cash funnel" /></div>
+        </div>
+    </div>
+</div>

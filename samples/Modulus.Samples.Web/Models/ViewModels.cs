@@ -178,3 +178,41 @@ public sealed record ProjectGridPage(List<GridColumn> Columns, List<GridRecord> 
         return new(columns, rows, [], false);
     }
 }
+
+/// <summary>
+/// Large-data table (100,000 shipments) in one of three modes: numbered pages, infinite scrolling (keyset cursor) or a
+/// virtual table (blocks of rows by page number). <see cref="QueryMs"/> is the time the query took on the server.
+/// </summary>
+public sealed record LargeTablePage(string Mode, ShipmentFilter Filter, ProTableRequest Request, Modulus.Ui.Abstractions.Data.TablePage<Shipment> Page, double QueryMs)
+{
+    public static readonly IReadOnlyList<(string Key, string Label)> Modes = [("paged", "Pages"), ("infinite", "Infinite scroll"), ("virtual", "Virtual")];
+
+    /// <summary>Rows per page for infinite scrolling, and per block for the virtual table.</summary>
+    public const int InfiniteSize = 50, VirtualBlock = 100;
+
+    public static string ModeOf(string? mode) => Modes.Any(m => m.Key == mode) ? mode! : "paged";
+
+    /// <summary>The page itself: the first page of the mode, counted (the pager and the virtual table need the total).</summary>
+    public static LargeTablePage Load(string? mode, ShipmentFilter filter, ProTableRequest request)
+    {
+        var m = ModeOf(mode);
+        if (m != "paged")
+        {
+            request.Current = 1;
+            request.Cursor = null;
+            request.PageSize = m == "infinite" ? InfiniteSize : VirtualBlock;
+        }
+        return Run(m, filter, request, Modulus.Ui.Abstractions.Data.CountMode.Exact);
+    }
+
+    /// <summary>More rows (the next infinite page after a cursor, or a virtual block): not counted.</summary>
+    public static LargeTablePage Rows(string? mode, ShipmentFilter filter, ProTableRequest request) =>
+        Run(ModeOf(mode), filter, request, Modulus.Ui.Abstractions.Data.CountMode.None);
+
+    private static LargeTablePage Run(string mode, ShipmentFilter filter, ProTableRequest request, Modulus.Ui.Abstractions.Data.CountMode count)
+    {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        var page = Shipments.Page(filter, request, count);
+        return new(mode, filter, request, page, watch.Elapsed.TotalMilliseconds);
+    }
+}

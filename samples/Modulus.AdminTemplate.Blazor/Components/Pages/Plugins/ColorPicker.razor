@@ -1,0 +1,91 @@
+@page "/plugins/color-picker"
+
+<PageTitle>Color picker · Modulus</PageTitle>
+
+<PageHeading Pretitle="Plugins" Title="Color picker" Subtitle="Palette, hue and alpha sliders, hex or RGB input and preset swatches. Posts the colour as text." />
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Presets</h3><p class="m-card-subtitle">Brand swatches above the recommended palette</p></div></div>
+            <div class="m-card-body">
+                <div class="m-demo-row">
+                    <AppColorPicker @bind-Value="_preset" Presets="GalleryData.ColorPresets" ShowText AriaLabel="Colour with presets" />
+                </div>
+                <p class="m-muted">Value: <code>@(_preset ?? "none")</code></p>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Formats</h3><p class="m-card-subtitle">The trigger shows, and the form posts, hex or RGB</p></div></div>
+            <div class="m-card-body">
+                <div class="m-demo-row">
+                    <AppColorPicker Value="#2fb344" ShowText AriaLabel="Colour in hex" />
+                    <AppColorPicker Value="#ae3ec9" Format="rgb" ShowText AriaLabel="Colour in RGB" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Alpha</h3><p class="m-card-subtitle">With the alpha slider, or opaque colours only</p></div></div>
+            <div class="m-card-body">
+                <div class="m-demo-row">
+                    <AppColorPicker Value="#d6336c80" ShowText AriaLabel="Colour with alpha" />
+                    <AppColorPicker Value="#d6336c" ShowText DisabledAlpha AriaLabel="Opaque colour" />
+                </div>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Sizes and states</h3><p class="m-card-subtitle">Small, middle and large; clearable; disabled</p></div></div>
+            <div class="m-card-body">
+                <div class="m-demo-row">
+                    <AppColorPicker Value="#f76707" Size="small" AriaLabel="Small colour picker" />
+                    <AppColorPicker Value="#f76707" AriaLabel="Middle colour picker" />
+                    <AppColorPicker Value="#f76707" Size="large" AriaLabel="Large colour picker" />
+                    <AppColorPicker Value="#0ca678" AllowClear ShowText AriaLabel="Clearable colour picker" />
+                    <AppColorPicker Value="#722ed1" Disabled AriaLabel="Disabled colour picker" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Inside a form</h3><p class="m-card-subtitle">Pick the brand colours and apply them; the preview shows what was submitted</p></div></div>
+        <div class="m-card-body">
+            <div class="m-row-cards m-cols-2">
+                @* A plain GET form, as in MVC: the picked colours travel in hidden inputs and come back in the query. *@
+                <form class="ant-form ant-form-vertical" method="get" action="/plugins/color-picker">
+                    <FieldItem Label="Primary colour"><AppColorPicker @bind-Value="_primary" Presets="GalleryData.ColorPresets" ShowText DisabledAlpha AriaLabel="Primary colour" /></FieldItem>
+                    <FieldItem Label="Accent colour"><AppColorPicker @bind-Value="_accent" Presets="GalleryData.ColorPresets" ShowText DisabledAlpha AriaLabel="Accent colour" /></FieldItem>
+                    <input type="hidden" name="primary" value="@_primary" />
+                    <input type="hidden" name="accent" value="@_accent" />
+                    <div class="m-demo-row">
+                        <button type="submit" class="ant-btn ant-btn-primary"><Icon Type="check" /><span>Apply colours</span></button>
+                        <a class="ant-btn ant-btn-default" href="/plugins/color-picker"><span>Reset</span></a>
+                    </div>
+                </form>
+                <div class="m-color-preview" style="--m-preview-primary:@brand.Primary;--m-preview-accent:@brand.Accent" aria-label="Brand preview">
+                    <div class="m-color-preview-bar"><strong>Acme Inc</strong><span class="m-color-preview-tag">New</span></div>
+                    <p>@(Primary is null ? "Default colours" : "Applied colours"): <code>@brand.Primary</code> and <code>@brand.Accent</code>.</p>
+                    <span class="m-color-preview-btn">Primary action</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public string? Primary { get; set; }
+    [SupplyParameterFromQuery] public string? Accent { get; set; }
+
+    private string? _preset = "#066fd1";
+    private string? _primary;
+    private string? _accent;
+    private BrandColors brand => PluginsContent.Brand(Primary, Accent);
+
+    protected override void OnParametersSet()
+    {
+        _primary = brand.Primary;
+        _accent = brand.Accent;
+    }
+}

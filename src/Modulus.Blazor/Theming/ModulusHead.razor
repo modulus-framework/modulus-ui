@@ -16,13 +16,15 @@
 <link rel="preload" href="_content/Modulus.Ui.Assets/fonts/inter/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="stylesheet" href="_content/AntDesign/css/ant-design-blazor.variable.min.css" data-theme-css="light" media="@(Dark ? "not all" : "all")" />
 <link rel="stylesheet" href="_content/AntDesign/css/ant-design-blazor.dark.min.css" data-theme-css="dark" media="@(Dark ? "all" : "not all")" />
+<link rel="stylesheet" href="_content/Modulus.Ui.Assets/css/antd-dark-brand.css" data-theme-css="dark" media="@(Dark ? "all" : "not all")" />
 <link rel="stylesheet" href="_content/AntDesign.ProLayout/css/ant-design-pro-layout-blazor.css" />
 <link rel="stylesheet" href="_content/Modulus.Ui.Assets/css/modulus.css" />
 <link rel="stylesheet" href="_content/Modulus.Ui.Assets/css/modulus-shell.css" />
 <link rel="stylesheet" href="_content/Modulus.Ui.Assets/css/modulus-pages.css" />
 <style id="modulus-brand">@((MarkupString)ThemeCss.Build(_options))</style>
-@((MarkupString)ThemeScript) 
+@((MarkupString)ThemeScript)
 <script src="_content/Modulus.Ui.Assets/js/modulus-shell.js" defer></script>
+<script src="_content/Modulus.Ui.Assets/js/modulus-plugins.js" defer></script>
 
 @code {
     /// <summary>Reads a request cookie (theme settings). Null renders the configured options only.</summary>

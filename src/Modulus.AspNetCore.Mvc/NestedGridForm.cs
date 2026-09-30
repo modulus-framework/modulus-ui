@@ -35,7 +35,10 @@ public static partial class NestedGridForm
     [GeneratedRegex("[^A-Za-z0-9_-]")]
     private static partial Regex SafeId();
 
-    /// <summary>Reads level, parent, keyword, sort and page from the query; the page size comes from the settings.</summary>
+    /// <summary>
+    /// Reads level, parent, keyword, sort and page from the query. The page size is the level's (settings), or
+    /// <c>size</c> when it is one the pager offers (<see cref="Paging.SizesWith"/>).
+    /// </summary>
     public static NestedGridRequest ReadRequest(IQueryCollection query, NestedGridSettings settings)
     {
         var level = int.TryParse(query["level"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var l) ? Math.Clamp(l, 0, Math.Max(0, settings.Levels.Count - 1)) : 0;
@@ -48,8 +51,10 @@ public static partial class NestedGridForm
             .Take(20).ToDictionary(kv => kv.Key[FilterPrefix.Length..], kv => (string?)kv.Value.ToString(), StringComparer.Ordinal);
         // Column searches are s.{column key}=query (ColumnSearch.FromQuery keeps the well-formed ones).
         var searches = query.ColumnSearches();
-        return new NestedGridRequest(level, parent, NullIfEmpty(query["q"]), field, sort?.ElementAtOrDefault(1) == "desc", page, settings.Level(level)?.PageSize ?? 5,
-            filters.Count == 0 ? null : filters, searches);
+        var levelSize = Math.Max(1, settings.Level(level)?.PageSize ?? 5);
+        var custom = int.TryParse(query["size"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var sz) && Paging.SizesWith(levelSize).Contains(sz);
+        return new NestedGridRequest(level, parent, NullIfEmpty(query["q"]), field, sort?.ElementAtOrDefault(1) == "desc", page, custom ? sz : levelSize,
+            filters.Count == 0 ? null : filters, searches) { CustomPageSize = custom };
     }
 
     /// <summary>Query prefix of a level's filters (<c>f.status=draft</c>).</summary>
@@ -67,6 +72,7 @@ public static partial class NestedGridForm
         if (request.SortField is not null) values.Add(new("sort", $"{request.SortField}:{(request.Descending ? "desc" : "asc")}"));
         values.AddRange(request.ActiveFilters.OrderBy(f => f.Key, StringComparer.Ordinal).Select(f => new KeyValuePair<string, string?>(FilterPrefix + f.Key, f.Value)));
         values.AddRange(request.ActiveSearches.OrderBy(s => s.Key, StringComparer.Ordinal).Select(s => new KeyValuePair<string, string?>(ColumnSearch.Prefix + s.Key, s.Value)));
+        if (request.CustomPageSize) values.Add(new("size", request.PageSize.ToString(CultureInfo.InvariantCulture)));
         if (request.Page > 1) values.Add(new("page", request.Page.ToString(CultureInfo.InvariantCulture)));
         return QueryHelpers.AddQueryString(baseUrl, values.Where(v => !omit.Contains(v.Key)));
     }
@@ -75,12 +81,15 @@ public static partial class NestedGridForm
     public static IReadOnlyList<string> LoadedIds(IFormCollection form, int level) =>
         form[$"{FieldName(level)}.loaded"].Where(v => !string.IsNullOrEmpty(v)).Select(v => v!).Distinct().ToList();
 
-    /// <summary>The changes a Save hands the app: the posted rows and the loaded rows no longer there.</summary>
+    /// <summary>
+    /// The changes a Save hands the app: the posted rows (in the order they were dragged to, <see cref="NestedGridChanges.Ordered"/>
+    /// unless a column sort was on) and the loaded rows no longer there.
+    /// </summary>
     public static NestedGridChanges Changes(EditableGridPost post, IFormCollection form, NestedGridRequest request)
     {
         var posted = post.Rows.Select(r => r.Id).ToHashSet(StringComparer.Ordinal);
         return new NestedGridChanges(request.Level, request.ParentId, post.Columns, post.Rows,
-            LoadedIds(form, request.Level).Where(id => !posted.Contains(id)).ToList());
+            LoadedIds(form, request.Level).Where(id => !posted.Contains(id)).ToList()) { Ordered = request.SortField is null };
     }
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;

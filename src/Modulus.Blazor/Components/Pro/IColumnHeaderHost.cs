@@ -19,7 +19,9 @@ public interface IColumnHeaderHost
 }
 
 /// <summary>
-/// What a table cascades to its <see cref="ColumnHeader"/>s. The table hands down a new scope whenever its sort or
-/// searches change, which re-renders the headers.
+/// What a table cascades to its <see cref="ColumnHeader"/>s. The table hands down a new scope whenever its sort,
+/// searches or filter row change, which re-renders the headers. With <paramref name="FilterRow"/> each searchable
+/// header shows its search as a box under the title (the table's filter row) instead of the search icon. With
+/// <paramref name="Locked"/> (unsaved edits in a table that searches on the server) the search boxes are disabled.
 /// </summary>
-public sealed record ColumnHeaderScope(IColumnHeaderHost Host, int Version);
+public sealed record ColumnHeaderScope(IColumnHeaderHost Host, int Version, bool FilterRow = false, bool Locked = false);

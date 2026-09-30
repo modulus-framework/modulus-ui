@@ -59,7 +59,7 @@ public static class GarmentGrid
                 PageSize = 4,
                 Columns =
                 [
-                    new() { Key = "style", Title = "Style", Width = 230, Required = true, SubtitleKey = "description" },
+                    new() { Key = "style", Title = "Style", Width = 230, Fixed = GridFixed.Left, Required = true, SubtitleKey = "description" },
                     new() { Key = "description", Title = "Description", Width = 220, Hidden = true },
                     new() { Key = "color", Title = "Colour", Type = GridCellType.Select, Width = 130, Options = Colors, Filterable = true },
                     new() { Key = "qty", Title = "Quantity", Type = GridCellType.Number, Width = 110, Min = 0 },
@@ -70,10 +70,9 @@ public static class GarmentGrid
             {
                 Title = "Materials",
                 PageSize = 5,
-                Sortable = false,
                 Columns =
                 [
-                    new() { Key = "category", Title = "Category", Type = GridCellType.Tag, Width = 140, Options = Categories, Required = true, Filterable = true },
+                    new() { Key = "category", Title = "Category", Type = GridCellType.Tag, Width = 140, Fixed = GridFixed.Left, Options = Categories, Required = true, Filterable = true },
                     new() { Key = "supplier", Title = "Supplier", Type = GridCellType.Select, Width = 190, Options = Suppliers, Avatar = true, Filterable = true },
                     new() { Key = "lead", Title = "Lead time (days)", Type = GridCellType.Number, Width = 150, Min = 0 },
                     new() { Key = "approved", Title = "Approved", Type = GridCellType.Switch, Width = 110, Filterable = true },
@@ -85,12 +84,12 @@ public static class GarmentGrid
                 PageSize = 5,
                 // Each material group's category picks its items' columns.
                 ColumnSetField = "category",
-                Columns = [new() { Key = "item", Title = "Item", Width = 200, Required = true }, new() { Key = "price", Title = "Unit price", Type = GridCellType.Currency, Width = 120 }],
+                Columns = [new() { Key = "item", Title = "Item", Width = 200, Fixed = GridFixed.Left, Required = true }, new() { Key = "price", Title = "Unit price", Type = GridCellType.Currency, Width = 120 }],
                 ColumnSets = new Dictionary<string, IReadOnlyList<GridColumn>>
                 {
                     ["fabric"] =
                     [
-                        new() { Key = "item", Title = "Fabric", Width = 180, Required = true },
+                        new() { Key = "item", Title = "Fabric", Width = 180, Fixed = GridFixed.Left, Required = true },
                         new() { Key = "composition", Title = "Composition", Width = 190 },
                         new() { Key = "gsm", Title = "GSM", Type = GridCellType.Number, Width = 90, Min = 0 },
                         new() { Key = "width", Title = "Width (in)", Type = GridCellType.Number, Width = 110, Min = 0 },
@@ -99,7 +98,7 @@ public static class GarmentGrid
                     ],
                     ["accessory"] =
                     [
-                        new() { Key = "item", Title = "Accessory", Width = 180, Required = true },
+                        new() { Key = "item", Title = "Accessory", Width = 180, Fixed = GridFixed.Left, Required = true },
                         new() { Key = "size", Title = "Size", Type = GridCellType.Select, Width = 110, Options = Sizes },
                         new() { Key = "finish", Title = "Finish", Type = GridCellType.Select, Width = 150, Options = Finishes },
                         new() { Key = "perGarment", Title = "Per garment", Type = GridCellType.Number, Width = 120, Min = 0 },
@@ -107,7 +106,7 @@ public static class GarmentGrid
                     ],
                     ["packing"] =
                     [
-                        new() { Key = "item", Title = "Packing item", Width = 180, Required = true },
+                        new() { Key = "item", Title = "Packing item", Width = 180, Fixed = GridFixed.Left, Required = true },
                         new() { Key = "material", Title = "Material", Type = GridCellType.Select, Width = 150, Options = PackingMaterials },
                         new() { Key = "perCarton", Title = "Per carton", Type = GridCellType.Number, Width = 110, Min = 0 },
                         new() { Key = "price", Title = "Unit price", Type = GridCellType.Currency, Width = 110, Min = 0 },
@@ -154,17 +153,27 @@ public sealed class GarmentStore
             var key = Key(changes.Level, changes.ParentId);
             if (!_children.TryGetValue(key, out var list)) _children[key] = list = [];
             foreach (var id in changes.DeletedIds) Delete(list, id);
+            var order = new List<string>();
+            var added = new HashSet<string>(StringComparer.Ordinal);
             foreach (var row in changes.Rows)
             {
                 var existing = list.Find(r => r.Id == row.Id);
                 if (existing is null)
                 {
-                    var added = new GridRecord($"R{_next++}", row.Values);
-                    list.Add(added);
-                    _byId[added.Id] = (changes.Level, changes.ParentId, added);
+                    var created = new GridRecord($"R{_next++}", row.Values);
+                    list.Add(created);
+                    _byId[created.Id] = (changes.Level, changes.ParentId, created);
+                    added.Add(created.Id);
+                    order.Add(created.Id);
                 }
-                else foreach (var c in changes.Columns) existing[c.Key] = row[c.Key];
+                else
+                {
+                    foreach (var c in changes.Columns) existing[c.Key] = row[c.Key];
+                    order.Add(existing.Id);
+                }
             }
+            // Rows dragged into a new order keep it (a column sort's order is not stored).
+            if (changes.Ordered) NestedGridQuery.StoreOrder(list, order, added);
         }
     }
 

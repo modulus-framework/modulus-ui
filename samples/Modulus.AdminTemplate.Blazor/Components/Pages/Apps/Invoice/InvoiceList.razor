@@ -23,7 +23,7 @@
         </div>
     </div>
 
-    <ProTable TItem="Invoice" @ref="_table" HeaderTitle="All invoices" Request="LoadAsync" RowKey="i => i.Id" Selectable ScrollX="1000">
+    <ProTable TItem="Invoice" @ref="_table" HeaderTitle="All invoices" Request="LoadAsync" RowKey="i => i.Id" Selectable ScrollX="1000" FiltersActive="@FiltersActive" OnClearFilters="ClearFilters">
         <ToolBar>
             <Input @bind-Value="_keyword" Placeholder="Search invoices…" AllowClear Class="m-table-toolbar-search" OnPressEnter="SearchAsync" OnClear="SearchAsync" Prefix="@_searchIcon" />
             <Select TItemValue="InvoiceStatus?" TItem="string" Value="_status" ValueChanged="StatusChangedAsync" Placeholder="Any status" AllowClear Style="width:160px">
@@ -34,7 +34,6 @@
                     }
                 </SelectOptions>
             </Select>
-            <Button Icon="download">Export</Button>
         </ToolBar>
         <BatchActions Context="rows">
             <Popconfirm Title="@($"Delete {rows.Count} invoices?")" OkText="Delete" OnConfirm="() => DeleteAsync(rows.Select(r => r.Id))">
@@ -95,7 +94,7 @@
         ("Clients", _stats.Clients.ToString("N0"), "users"),
         ("Invoices", _stats.Invoices.ToString("N0"), "file-invoice"),
         ("Paid", Fmt.Money0(_stats.Paid), "circle-check"),
-        ("Unpaid", Fmt.Money0(_stats.Unpaid), "clock-dollar"),
+        ("Unpaid", Fmt.Money0(_stats.Unpaid), "ant:clock-circle"),
     ];
 
     protected override void OnInitialized() => _stats = Store.InvoiceStats();
@@ -104,6 +103,15 @@
         Task.FromResult(Store.QueryInvoices(new InvoiceQuery(_keyword, _status), request));
 
     private Task SearchAsync() => _table!.ReloadAsync(resetPage: true);
+
+    // The table's Clear button: the search box and every filter.
+    private bool FiltersActive => !string.IsNullOrWhiteSpace(_keyword) || _status is not null;
+
+    private void ClearFilters()
+    {
+        _keyword = null;
+        _status = null;
+    }
 
     private Task StatusChangedAsync(InvoiceStatus? status)
     {

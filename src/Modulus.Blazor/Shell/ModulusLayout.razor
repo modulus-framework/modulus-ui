@@ -88,7 +88,8 @@
             {
                 Key = item.Key,
                 Name = item.Label,
-                Icon = item.Icon,
+                // ProLayout draws Ant Design icons, so an `ant:` shell icon is passed by its plain name.
+                Icon = item.Icon is { } icon && icon.StartsWith(Modulus.Ui.Abstractions.Shell.ShellRenderer.AntPrefix, StringComparison.Ordinal) ? icon[Modulus.Ui.Abstractions.Shell.ShellRenderer.AntPrefix.Length..] : item.Icon,
                 Path = item.Href is null ? null : "/" + item.Href.TrimStart('/'),
                 Match = item.ExactMatch ? Microsoft.AspNetCore.Components.Routing.NavLinkMatch.All : Microsoft.AspNetCore.Components.Routing.NavLinkMatch.Prefix,
                 Children = children,

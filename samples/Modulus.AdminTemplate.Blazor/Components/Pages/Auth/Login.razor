@@ -1,6 +1,7 @@
 @page "/auth/login"
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
 @layout AuthLayout
-@inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <PageTitle>Sign in · Modulus</PageTitle>
 
@@ -8,9 +9,14 @@
 {
     <Alert Type="@AlertType.Success" ShowIcon="true" Message="Your password has been reset. Sign in with your new password." Class="m-mb-16" />
 }
+@if (Error)
+{
+    <Alert Type="@AlertType.Error" ShowIcon="true" Message="@SampleAuth.WrongCredentials" Class="m-mb-16" />
+}
 <div class="m-auth-card">
     <div class="m-auth-card-body">
         <h1 class="m-auth-title">Login to your account</h1>
+        <p class="m-auth-hint">Sample account: <strong>serena.park@@modulus.dev</strong>, password <strong>modulus</strong>.</p>
         <Form Model="_model" Layout="@FormLayout.Vertical" OnFinish="SignInAsync" RequiredMark="FormRequiredMark.None">
             <FormItem Label="Email address">
                 <Input @bind-Value="context.Email" Placeholder="your@email.com" Prefix="@_mail" />
@@ -26,6 +32,13 @@
                 <Button Type="@ButtonType.Primary" HtmlType="submit" Block Loading="_busy">Sign in</Button>
             </div>
         </Form>
+        @* AntD validates above; this native form then posts the values to /auth/sign-in, which sets the cookie. *@
+        <form @ref="_post" method="post" action="@PostUrl" hidden>
+            <AntiforgeryToken />
+            <input type="hidden" name="Email" value="@_model.Email" />
+            <input type="hidden" name="Password" value="@_model.Password" />
+            <input type="hidden" name="Remember" value="@(_model.Remember ? "true" : "false")" />
+        </form>
     </div>
     <div class="m-hr-text"><span>or</span></div>
     <div class="m-auth-card-body">
@@ -39,16 +52,25 @@
 
 @code {
     [SupplyParameterFromQuery] public bool Reset { get; set; }
+    [SupplyParameterFromQuery] public bool Error { get; set; }
+    [SupplyParameterFromQuery] public string? Email { get; set; }
+    [SupplyParameterFromQuery] public string? ReturnUrl { get; set; }
 
     private readonly LoginInput _model = new();
+    private ElementReference _post;
     private bool _busy;
+
+    private string PostUrl => "/auth/sign-in" + (string.IsNullOrEmpty(ReturnUrl) ? "" : "?returnUrl=" + Uri.EscapeDataString(ReturnUrl));
+
+    protected override void OnInitialized() => _model.Email = Email ?? "";
     private readonly RenderFragment _mail = @<Icon Type="mail" />;
     private readonly RenderFragment _lock = @<Icon Type="lock" />;
 
     private async Task SignInAsync()
     {
         _busy = true;
-        await Task.Delay(400);
-        Navigation.NavigateTo("/auth/two-steps");
+        StateHasChanged(); // the hidden inputs carry the values the form just validated
+        await Task.Yield();
+        await JS.InvokeVoidAsync("modulusShell.submit", _post);
     }
 }

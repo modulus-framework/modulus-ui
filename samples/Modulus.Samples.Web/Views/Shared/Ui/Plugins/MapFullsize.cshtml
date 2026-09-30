@@ -1,0 +1,16 @@
+@* Map fullsize: a map that fills the page, with the store list floating over it. *@
+<app-page-header pretitle="Plugins" title="Map fullsize" subtitle="A map that fills the page, with the store list floating over it."></app-page-header>
+
+<div class="m-map-full">
+    <app-map id="stores-full" markers="PluginsContent.Stores" zoom="14" scroll-zoom height="100%" label="London stores" />
+    <div class="m-map-overlay">
+        <div class="m-map-overlay-title">London stores</div>
+        <ul class="m-map-list" data-m-map-list aria-label="Stores">
+            @for (var i = 0; i < PluginsContent.Stores.Count; i++)
+            {
+                var m = PluginsContent.Stores[i];
+                <li><button type="button" class="m-map-go" data-m-map-go="@i" data-m-map-target="stores-full" data-zoom="15" aria-current="false"><span class="m-map-key m-map-pin-@m.Tone"></span><span class="m-map-go-text"><span class="m-map-go-title">@m.Title</span><span class="m-map-go-sub">@m.Text</span></span></button></li>
+            }
+        </ul>
+    </div>
+</div>

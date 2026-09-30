@@ -40,6 +40,18 @@ public sealed record ChartOptions
 
     /// <summary>Categorical slot for a single-series chart (1–8); series use slots 1, 2, 3 … in order.</summary>
     public int FirstSlot { get; init; } = 1;
+
+    /// <summary>
+    /// The legend's entries become buttons that hide and show their series (line, area, columns, tooltip rows).
+    /// Needs <c>modulus-shell.js</c>; the scale stays fixed, so the remaining series keep their positions.
+    /// </summary>
+    public bool LegendToggle { get; init; }
+
+    /// <summary>
+    /// Drill-down: one link per x-axis label (null for none). The label and its hover column open the link,
+    /// so the next level is a server round trip and works the same in every flavour.
+    /// </summary>
+    public IReadOnlyList<string?>? Links { get; init; }
 }
 
 /// <summary>
@@ -82,22 +94,22 @@ public static partial class ChartHtml
             var color = Slot(o, s);
             // One wash only: stacked translucent areas muddy each other, so later series stay lines.
             if (o.Area && s == 0)
-                sb.Append($"""<path class="m-xy-area" d="{line}L{F(points[^1].X)},1000L{F(points[0].X)},1000Z" style="fill:{color}"/>""");
-            sb.Append($"""<path class="m-xy-line" d="{line}" style="stroke:{color}"/>""");
+                sb.Append($"""<path class="m-xy-area" d="{line}L{F(points[^1].X)},1000L{F(points[0].X)},1000Z" style="fill:{color}"{Ds(o, s)}/>""");
+            sb.Append($"""<path class="m-xy-line" d="{line}" style="stroke:{color}"{Ds(o, s)}/>""");
         }
         sb.Append("</svg>");
         // End markers: the latest value of each series, ringed in the surface colour.
         for (var s = 0; s < series.Count; s++)
-            sb.Append($"""<span class="m-xy-dot" style="left:{F((n - 0.5) / n * 100)}%;bottom:{Pct(Value(series[s], n - 1), top)}%;--c:{Slot(o, s)}"></span>""");
+            sb.Append($"""<span class="m-xy-dot" style="left:{F((n - 0.5) / n * 100)}%;bottom:{Pct(Value(series[s], n - 1), top)}%;--c:{Slot(o, s)}"{Ds(o, s)}></span>""");
         // Hover columns: crosshair, a dot per series, one tooltip listing every series at that x.
         sb.Append("""<div class="m-xy-slots">""");
         for (var i = 0; i < n; i++)
         {
-            sb.Append($"""<div class="m-xy-slot{(i >= n / 2 && n > 3 ? " m-flip" : "")}"><span class="m-xy-cross"></span>""");
+            sb.Append(SlotOpen(o, i, $"m-xy-slot{(i >= n / 2 && n > 3 ? " m-flip" : "")}")).Append("""<span class="m-xy-cross"></span>""");
             for (var s = 0; s < series.Count; s++)
-                sb.Append($"""<span class="m-xy-hover-dot" style="bottom:{Pct(Value(series[s], i), top)}%;--c:{Slot(o, s)}"></span>""");
+                sb.Append($"""<span class="m-xy-hover-dot" style="bottom:{Pct(Value(series[s], i), top)}%;--c:{Slot(o, s)}"{Ds(o, s)}></span>""");
             Tooltip(sb, labels[i], series, i, o, lineFrom: 0);
-            sb.Append("</div>");
+            sb.Append(SlotClose(o, i));
         }
         sb.Append("</div></div>");
         XAxis(sb, labels, o);
@@ -141,7 +153,7 @@ public static partial class ChartHtml
         sb.Append("""<div class="m-xy-slots">""");
         for (var i = 0; i < n; i++)
         {
-            sb.Append($"""<div class="m-xy-slot m-col-slot{(i >= n / 2 && n > 3 ? " m-flip" : "")}">""");
+            sb.Append(SlotOpen(o, i, $"m-xy-slot m-col-slot{(i >= n / 2 && n > 3 ? " m-flip" : "")}"));
             if (o.Stacked)
             {
                 var total = series.Sum(s => Value(s, i));
@@ -150,7 +162,7 @@ public static partial class ChartHtml
                 {
                     var v = Value(series[s], i);
                     if (v <= 0) continue;
-                    sb.Append($"""<span class="m-col-seg" style="flex-grow:{F(v)};--c:{Slot(o, s)}"></span>""");
+                    sb.Append($"""<span class="m-col-seg" style="flex-grow:{F(v)};--c:{Slot(o, s)}"{Ds(o, s)}></span>""");
                 }
                 sb.Append("</div>");
             }
@@ -158,13 +170,13 @@ public static partial class ChartHtml
             {
                 sb.Append("""<div class="m-col-group">""");
                 for (var s = 0; s < series.Count; s++)
-                    sb.Append($"""<span class="m-col-bar" style="height:{Pct(Value(series[s], i), top)}%;--c:{Slot(o, s)}"></span>""");
+                    sb.Append($"""<span class="m-col-bar" style="height:{Pct(Value(series[s], i), top)}%;--c:{Slot(o, s)}"{Ds(o, s)}></span>""");
                 sb.Append("</div>");
             }
             for (var l = 0; l < lines.Count; l++)
-                sb.Append($"""<span class="m-xy-hover-dot" style="bottom:{Pct(Value(lines[l], i), top)}%;--c:{Slot(o, series.Count + l)}"></span>""");
+                sb.Append($"""<span class="m-xy-hover-dot" style="bottom:{Pct(Value(lines[l], i), top)}%;--c:{Slot(o, series.Count + l)}"{Ds(o, series.Count + l)}></span>""");
             Tooltip(sb, labels[i], all, i, o, lineFrom: series.Count, tipExtra?.Invoke(i));
-            sb.Append("</div>");
+            sb.Append(SlotClose(o, i));
         }
         sb.Append("</div>");
         if (lines.Count > 0)
@@ -172,11 +184,11 @@ public static partial class ChartHtml
             // Drawn over the columns; pointer events pass through to the hover slots underneath.
             sb.Append("""<svg class="m-xy-svg m-xy-overlay" viewBox="0 0 1000 1000" preserveAspectRatio="none">""");
             for (var l = 0; l < lines.Count; l++)
-                sb.Append($"""<path class="m-xy-line" d="{Path(lines[l], n, top)}" style="stroke:{Slot(o, series.Count + l)}"/>""");
+                sb.Append($"""<path class="m-xy-line" d="{Path(lines[l], n, top)}" style="stroke:{Slot(o, series.Count + l)}"{Ds(o, series.Count + l)}/>""");
             sb.Append("</svg>");
             for (var l = 0; l < lines.Count; l++)
                 for (var i = 0; i < n; i++)
-                    sb.Append($"""<span class="m-xy-dot m-xy-dot-sm" style="left:{F((i + 0.5) / n * 100)}%;bottom:{Pct(Value(lines[l], i), top)}%;--c:{Slot(o, series.Count + l)}"></span>""");
+                    sb.Append($"""<span class="m-xy-dot m-xy-dot-sm" style="left:{F((i + 0.5) / n * 100)}%;bottom:{Pct(Value(lines[l], i), top)}%;--c:{Slot(o, series.Count + l)}"{Ds(o, series.Count + l)}></span>""");
         }
         sb.Append("</div>");
         XAxis(sb, labels, o);
@@ -277,9 +289,17 @@ public static partial class ChartHtml
     private static void Legend(StringBuilder sb, IReadOnlyList<ChartSeries> series, ChartOptions o, int lineFrom)
     {
         if (series.Count < 2) return;
-        sb.Append("""<ul class="m-legend">""");
+        if (!o.LegendToggle)
+        {
+            sb.Append("""<ul class="m-legend">""");
+            for (var s = 0; s < series.Count; s++)
+                sb.Append($"""<li><span class="m-key {(s >= lineFrom ? "m-key-line" : "m-key-rect")}" style="--c:{Slot(o, s)}"></span>{E(series[s].Name)}</li>""");
+            sb.Append("</ul>");
+            return;
+        }
+        sb.Append("""<ul class="m-legend m-legend-toggle" data-m-legend>""");
         for (var s = 0; s < series.Count; s++)
-            sb.Append($"""<li><span class="m-key {(s >= lineFrom ? "m-key-line" : "m-key-rect")}" style="--c:{Slot(o, s)}"></span>{E(series[s].Name)}</li>""");
+            sb.Append($"""<li><button type="button" class="m-legend-btn" data-series="{s}" aria-pressed="true"><span class="m-key {(s >= lineFrom ? "m-key-line" : "m-key-rect")}" style="--c:{Slot(o, s)}"></span>{E(series[s].Name)}</button></li>""");
         sb.Append("</ul>");
     }
 
@@ -292,9 +312,13 @@ public static partial class ChartHtml
     private static void XAxis(StringBuilder sb, IReadOnlyList<string> labels, ChartOptions o)
     {
         var every = Math.Max(1, (int)Math.Ceiling(labels.Count / (double)Math.Max(1, o.MaxXLabels)));
-        sb.Append("""<div class="m-xy-x" aria-hidden="true">""");
+        // With drill-down links the labels are the keyboard and screen-reader way in, so the axis stays visible to them.
+        sb.Append(o.Links is null ? """<div class="m-xy-x" aria-hidden="true">""" : """<div class="m-xy-x m-xy-x-links">""");
         for (var i = 0; i < labels.Count; i++)
-            sb.Append($"""<span{(i % every == 0 ? "" : " class=\"m-skip\"")}>{E(labels[i])}</span>""");
+        {
+            var skip = i % every == 0 ? "" : " class=\"m-skip\"";
+            sb.Append(Link(o, i) is { } href ? $"""<a href="{E(href)}"{skip}>{E(labels[i])}</a>""" : $"""<span{skip}>{E(labels[i])}</span>""");
+        }
         sb.Append("</div>");
     }
 
@@ -302,7 +326,7 @@ public static partial class ChartHtml
     {
         sb.Append($"""<div class="m-xy-tip"><div class="m-xy-tip-title">{E(label)}</div>""");
         for (var s = 0; s < series.Count; s++)
-            sb.Append($"""<div class="m-xy-tip-row"><span class="m-key m-key-line" style="--c:{Slot(o, s)}"></span><strong>{E(Format(Value(series[s], i), o))}</strong><span>{E(series[s].Name)}</span></div>""");
+            sb.Append($"""<div class="m-xy-tip-row"{Ds(o, s)}><span class="m-key m-key-line" style="--c:{Slot(o, s)}"></span><strong>{E(Format(Value(series[s], i), o))}</strong><span>{E(series[s].Name)}</span></div>""");
         if (o.Stacked && lineFrom > 1)
             sb.Append($"""<div class="m-xy-tip-row m-xy-tip-total"><strong>{E(Format(series.Take(lineFrom).Sum(s => Value(s, i)), o))}</strong><span>Total</span></div>""");
         sb.Append(extraHtml);
@@ -322,6 +346,18 @@ public static partial class ChartHtml
         }
         sb.Append("</tbody></table>");
     }
+
+    /// <summary>Marks a series element so the legend toggle can hide it.</summary>
+    private static string Ds(ChartOptions o, int series) => o.LegendToggle ? $" data-s=\"{series}\"" : "";
+
+    private static string? Link(ChartOptions o, int i) =>
+        o.Links is { } links && i < links.Count && !string.IsNullOrEmpty(links[i]) ? links[i] : null;
+
+    // A linked hover column is an <a> outside the tab order; the x-axis label carries the same link for the keyboard.
+    private static string SlotOpen(ChartOptions o, int i, string css) =>
+        Link(o, i) is { } href ? $"""<a class="{css} m-xy-link" href="{E(href)}" tabindex="-1">""" : $"""<div class="{css}">""";
+
+    private static string SlotClose(ChartOptions o, int i) => Link(o, i) is null ? "</div>" : "</a>";
 
     private static string Empty(ChartOptions o) =>
         $"""<div class="m-chart m-chart-empty" style="height:{o.Height}px">No data</div>""";

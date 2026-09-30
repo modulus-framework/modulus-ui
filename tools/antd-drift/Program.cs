@@ -2,12 +2,14 @@
 //
 //   dotnet run --project tools/antd-drift                     check; exit 1 on actionable drift
 //   dotnet run --project tools/antd-drift -- --update-baseline accept the current AntDesign surface
+//   dotnet run --project tools/antd-drift -- --write-dark-brand regenerate antd-dark-brand.css
 //
 // It compares the referenced AntDesign assembly with manifest/antd-coverage.json:
 //   * components added or removed upstream since the recorded baseline;
 //   * every "alias" entry has an App* type that really derives from that AntDesign component;
 //   * every App* alias in Modulus.Blazor is listed in the manifest;
-//   * every app-* tag named in an "mvc" entry is a real tag helper in Modulus.AspNetCore.Mvc.
+//   * every app-* tag named in an "mvc" entry is a real tag helper in Modulus.AspNetCore.Mvc;
+//   * antd-dark-brand.css still matches the pinned dark stylesheet (the brand colour in dark mode).
 // Components from AntDesign.ProLayout live in another assembly and are not scanned.
 // A markdown report is written to drift-reports/ for CI to attach to a PR or issue.
 
@@ -23,6 +25,7 @@ var root = FindRepoRoot();
 var manifestPath = Path.Combine(root, "manifest", "antd-coverage.json");
 var reportsDir = Path.Combine(root, "drift-reports");
 var updateBaseline = args.Contains("--update-baseline");
+var darkBrandPath = Path.Combine(root, "src", "Modulus.Ui.Assets", "wwwroot", "css", "antd-dark-brand.css");
 
 var antd = typeof(AntDesign.Button).Assembly;
 var modulus = typeof(Modulus.Blazor.ModulusBlazorModule).Assembly;
@@ -38,6 +41,19 @@ var current = antd.GetExportedTypes()
     .ToHashSet(StringComparer.Ordinal);
 
 var manifest = JsonNode.Parse(File.ReadAllText(manifestPath))!.AsObject();
+
+var darkCss = DarkBrandCss.Source(antdVersion);
+if (args.Contains("--write-dark-brand"))
+{
+    if (darkCss is null)
+    {
+        Console.Error.WriteLine($"AntDesign {antdVersion} is not in the NuGet cache; run dotnet restore first.");
+        return 1;
+    }
+    File.WriteAllText(darkBrandPath, DarkBrandCss.Build(darkCss));
+    Console.WriteLine($"Wrote {Path.GetRelativePath(root, darkBrandPath)}.");
+    return 0;
+}
 
 if (updateBaseline)
 {
@@ -91,6 +107,12 @@ var mvcProblems = entries
     .Select(x => $"`{x.Name}` maps to `<{x.Tag}>` but Modulus.AspNetCore.Mvc has no such tag helper.")
     .ToList();
 
+var darkProblems = new List<string>();
+if (darkCss is null)
+    darkProblems.Add($"AntDesign {antdVersion} dark stylesheet not found in the NuGet cache; antd-dark-brand.css was not checked.");
+else if (!File.Exists(darkBrandPath) || File.ReadAllText(darkBrandPath).ReplaceLineEndings("\n") != DarkBrandCss.Build(darkCss))
+    darkProblems.Add("`antd-dark-brand.css` no longer matches the dark stylesheet; run `--write-dark-brand` and check any new blue shades against `AntDarkBrand.Sources`.");
+
 var md = new StringBuilder()
     .AppendLine("# Ant Design drift report").AppendLine()
     .AppendLine($"- AntDesign referenced: **{antdVersion}** (baseline {manifest["antDesignVersion"]})")
@@ -102,7 +124,8 @@ Section("New upstream component types (add an alias or classify them, then `--up
 Section("Component types removed upstream (aliases or samples may break)", removed);
 Section("Alias problems", aliasProblems);
 Section("MVC tag helper problems", mvcProblems);
-if (added.Count + removed.Count + aliasProblems.Count + mvcProblems.Count == 0)
+Section("Dark brand stylesheet", darkProblems);
+if (added.Count + removed.Count + aliasProblems.Count + mvcProblems.Count + darkProblems.Count == 0)
     md.AppendLine("No drift. Modulus matches the pinned Ant Design Blazor surface.");
 
 Directory.CreateDirectory(reportsDir);
@@ -111,7 +134,7 @@ File.WriteAllText(reportPath, md.ToString());
 Console.Write(md);
 Console.WriteLine($"Report: {Path.GetRelativePath(root, reportPath)}");
 
-return added.Count + removed.Count + aliasProblems.Count + mvcProblems.Count == 0 ? 0 : 1;
+return added.Count + removed.Count + aliasProblems.Count + mvcProblems.Count + darkProblems.Count == 0 ? 0 : 1;
 
 void Section(string title, IReadOnlyList<string> items)
 {

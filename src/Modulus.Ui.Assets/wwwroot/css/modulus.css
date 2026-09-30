@@ -434,7 +434,21 @@ a.ant-btn-lg { line-height: 42px; }
 /* Counted textarea (Blazor <TextArea ShowCount>, <app-textarea show-count>): the affix wrapper is structural only, the textarea keeps its own border. */
 /* In any form item the counter hangs into the help row (antd adds -in-form-item only inside its own FormItem). */
 .ant-form-item .ant-input-textarea-show-count::after { margin-bottom: -22px; }
-.ant-input-textarea-show-count > .ant-input-affix-wrapper { display: block; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+/* The wrapper draws nothing, not even when focused (the global focus rule would ring it with !important, a second
+   border around the textarea's own); the textarea draws the one border. antd removes the border of an .ant-input in an
+   affix wrapper (`.ant-input-affix-wrapper > .ant-input { border: none }`), so it is put back on the textarea. */
+.ant-input-textarea-show-count .ant-input-affix-wrapper:has(> textarea) {
+    display: block; padding: 0; border: 0 !important; border-radius: 0; background: none; box-shadow: none !important; outline: 0;
+}
+.ant-input-textarea-show-count .ant-input-affix-wrapper > textarea.ant-input { border: 1px solid var(--m-border); background: var(--m-bg-container, transparent); }
+.ant-input-textarea-show-count .ant-input-affix-wrapper > textarea.ant-input:hover { border-color: var(--m-border-strong); }
+.ant-input-textarea-show-count .ant-input-affix-wrapper > textarea.ant-input:focus {
+    border-color: color-mix(in srgb, var(--m-primary) 60%, var(--m-border));
+    box-shadow: var(--m-focus-ring) !important;
+}
+.ant-input-textarea-show-count .ant-input-affix-wrapper > textarea.ant-input-status-error,
+.ant-input-textarea-status-error .ant-input-affix-wrapper > textarea.ant-input { border-color: var(--m-error); }
+.ant-input-textarea-show-count .ant-input-affix-wrapper > textarea.ant-input[disabled] { border-color: var(--m-border); }
 /* Blazor reserves a 24px help row (antd v4); match it for the server-rendered form items. */
 .ant-form-item-with-help > .ant-row > .ant-form-item-control > .ant-form-item-explain { min-height: 24px; }
 .ant-form-item { margin-bottom: 20px; }
@@ -957,9 +971,11 @@ td[style*="text-align: right"] .m-grid-cell, .m-grid-td.ant-table-cell[style*="r
 .m-grid-summary strong { color: var(--m-text); font-variant-numeric: tabular-nums; }
 .m-grid-dirty { font-weight: 400; font-size: 13px; }
 .m-grid-detail { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 16px 32px; padding: 4px 8px; }
-/* The detail row spans the whole scroll width; keep its content in the visible part (like AntD's expanded-row-fixed). */
-.m-grid .ant-table-content { container-type: inline-size; }
-.m-grid-detail { position: sticky; left: 16px; box-sizing: border-box; max-width: calc(100cqi - 32px); }
+/* The detail row spans the whole scroll width; keep its content in the visible part (like AntD's expanded-row-fixed).
+   modulus-shell.js sets --m-grid-view to the scroller's visible width. No container query on the scroller: a
+   container is the containing block of position: fixed descendants, which would trap the cell editors' dropdowns
+   inside the table (placed off their cell and clipped by the scroller). */
+.m-grid-detail { position: sticky; left: 16px; box-sizing: border-box; max-width: calc(var(--m-grid-view, 100%) - 32px); }
 @media (max-width: 767px) { .m-grid-detail { grid-template-columns: minmax(0, 1fr); } }
 .m-grid-detail h4 { margin: 0 0 4px; font-size: 14px; font-weight: 600; color: var(--m-heading); }
 .m-grid-detail p { margin: 0; color: var(--m-text-secondary); }
@@ -1119,7 +1135,8 @@ select.m-select.m-select-sm { width: auto; height: 28px; padding: 2px 28px 2px 8
 
 /* Header dropdowns */
 .m-dropdown { position: relative; display: inline-flex; }
-.m-dropdown-panel { position: absolute; top: calc(100% + 4px); right: 0; z-index: 1050; min-width: 180px; line-height: 1.5715; }
+/* left: auto undoes antd's off-screen .ant-dropdown { left: -9999px }, which would stretch a right-aligned panel across the page. */
+.m-dropdown-panel { position: absolute; top: calc(100% + 4px); right: 0; left: auto; z-index: 1050; min-width: 180px; line-height: 1.5715; }
 /* MVC select-like widgets (app-cascader, app-tree-select): the Ant Design dropdown opens under the control, in place. */
 .m-select-wrap { position: relative; }
 .m-select-wrap > .ant-select { width: 100%; }
@@ -1206,16 +1223,13 @@ body:has(.m-drawer:not([data-open]) .ant-drawer-mask) { overflow: visible; paddi
 .ant-input-number:focus-within .ant-input-number-handler-wrap { opacity: 1; }
 .ant-input-number-handler { cursor: pointer; user-select: none; }
 
-/* Date pickers over native inputs */
+/* MVC date pickers (app-date-picker, app-range-picker): AntD Blazor's picker DOM and popup, run by modulusPicker. The
+   popup sits inside the picker and floats next to it (position: fixed, placed by the component), so no scroll box
+   clips it. */
 .m-picker { width: 100%; }
-/* Native date/time inputs are 24px tall by default; AntDesign's picker input is 22px. */
-.m-picker .ant-picker-input > input { height: 22px; }
-.m-picker .ant-picker-input > input { font: inherit; color: var(--m-text); background: transparent; border: 0; outline: 0; padding: 0; min-width: 0; width: 100%; cursor: pointer; color-scheme: light; }
-html[data-theme='dark'] .m-picker .ant-picker-input > input { color-scheme: dark; }
-.m-picker .ant-picker-input > input::-webkit-calendar-picker-indicator { display: none; }
-.m-picker .ant-picker-input > input:invalid, .m-picker .ant-picker-input > input:placeholder-shown { color: var(--m-text-quaternary); }
-.m-picker.ant-picker-range .ant-picker-suffix { margin-left: 8px; }
 .m-picker .ant-picker-suffix { pointer-events: none; }
+.m-picker-dropdown { position: fixed; }
+.m-picker-dropdown .ant-picker-cell:not(.ant-picker-cell-disabled), .m-picker-dropdown .ant-picker-preset > .ant-tag { cursor: pointer; }
 
 /* Slider over a native range input (Ant Design 5 metrics: 4px rail, 10px handle with 2px ring) */
 .m-slider { display: flex; align-items: center; gap: 12px; padding: 5px 0; }
@@ -1256,6 +1270,18 @@ html[data-theme='dark'] .m-slider:hover .m-slider-input { background: linear-gra
 .m-upload .ant-upload-select .ant-btn { display: inline-flex; align-items: center; gap: 8px; }
 .m-upload-hint { margin-top: 4px; color: var(--m-text-tertiary); font-size: 12px; }
 .m-upload .ant-upload-list-item-name { flex: 1; }
+.m-upload .ant-upload-span { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.m-upload-size { flex: none; color: var(--m-text-tertiary); font-size: 12px; font-variant-numeric: tabular-nums; }
+.m-upload-error { padding: 0 8px 4px 30px; color: var(--m-error); font-size: 12px; }
+.m-upload .ant-upload-list-item-error .ant-upload-list-item-name { color: var(--m-error); }
+.m-upload .ant-upload-list-item-progress { padding: 0 8px 4px 30px; }
+.m-upload .ant-upload-list-picture .ant-upload-list-item { height: auto; min-height: 66px; padding: 8px; border: 1px solid var(--m-border); border-radius: var(--m-radius); }
+.m-upload .ant-upload-list-picture .ant-upload-list-item-error { border-color: var(--m-error); }
+.m-upload .ant-upload-list-picture-container + .ant-upload-list-picture-container { margin-top: 8px; }
+.m-upload .ant-upload-list-item-thumbnail { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 48px; height: 48px; overflow: hidden; border-radius: var(--m-radius-sm); background: var(--m-fill-secondary); font-size: 22px; color: var(--m-text-tertiary); }
+.m-upload .ant-upload-list-item-image { width: 100%; height: 100%; object-fit: cover; }
+.m-upload .ant-upload-list-picture .m-upload-error, .m-upload .ant-upload-list-picture .ant-upload-list-item-progress { padding-left: 56px; }
+
 
 /* Tag close button, avatar overflow */
 .m-tag-close { padding: 0; border: 0; background: none; margin-left: 3px; color: inherit; opacity: 0.6; cursor: pointer; font-size: 10px; }
@@ -1268,24 +1294,30 @@ html[data-theme='dark'] .m-slider:hover .m-slider-input { background: linear-gra
     position: absolute; z-index: 1070; display: block; width: max-content; max-width: 250px;
     visibility: hidden; opacity: 0; pointer-events: none; transition: opacity 0.15s, visibility 0.15s;
 }
-.m-tooltip-host > .m-popover { max-width: min(320px, calc(100vw - 32px)); }
+.m-tooltip-host > .m-popover { max-width: min(400px, calc(100vw - 32px)); }
 .m-tooltip-host:not(.m-popover-click):hover > .m-tooltip,
 .m-tooltip-host:not(.m-popover-click):focus-within > .m-tooltip,
 .m-tooltip-host.m-open > .m-tooltip { visibility: visible; opacity: 1; pointer-events: auto; transition-delay: 0.1s; }
 .m-tooltip-host > .m-tooltip > * { display: block; }
-.m-pop-top { bottom: 100%; left: 50%; transform: translateX(-50%); }
-.m-pop-bottom { top: 100%; left: 50%; transform: translateX(-50%); }
-.m-pop-left { right: 100%; top: 50%; transform: translateY(-50%); }
-.m-pop-right { left: 100%; top: 50%; transform: translateY(-50%); }
-.m-tooltip .ant-tooltip-arrow, .m-popover .ant-popover-arrow { left: 50%; transform: translateX(-50%); }
-.m-pop-left .ant-tooltip-arrow, .m-pop-right .ant-tooltip-arrow,
-.m-pop-left .ant-popover-arrow, .m-pop-right .ant-popover-arrow { top: 50%; left: auto; transform: translateY(-50%); }
-.m-popover .ant-popover-inner { text-align: left; }
+/* antd's .ant-popover sets top: 0 and left: 0 (Blazor positions it inline), so each side resets the other edges. The
+   arrows keep antd's own placement rules (.ant-popover-placement-top .ant-popover-arrow …), which already centre them. */
+.m-tooltip-host > .m-pop-top { top: auto; right: auto; bottom: 100%; left: 50%; transform: translateX(-50%); }
+.m-tooltip-host > .m-pop-bottom { top: 100%; right: auto; bottom: auto; left: 50%; transform: translateX(-50%); }
+.m-tooltip-host > .m-pop-left { top: 50%; right: 100%; bottom: auto; left: auto; transform: translateY(-50%); }
+.m-tooltip-host > .m-pop-right { top: 50%; right: auto; bottom: auto; left: 100%; transform: translateY(-50%); }
+.m-tooltip-host > .m-popover { z-index: 1030; text-align: left; white-space: normal; }
+
+/* The tag helpers build tooltips and popovers from <span>s (they sit inside buttons and text); Blazor renders <div>s.
+   An inline .ant-popover-inner around block children paints its background on empty line fragments only, so the
+   popover had none: every part is a block, as in Blazor. */
+.m-popover .ant-popover-inner, .m-tooltip .ant-tooltip-inner { display: block; text-align: left; }
 .m-popover .ant-popover-inner > span { display: block; }
 
 /* Dropdown (tag helper): left- or right-aligned panel under the trigger */
 .m-dropdown-trigger { display: inline-flex; }
 .m-dropdown-panel.m-dropdown-left { left: 0; right: auto; }
+/* Inside a scrolling or clipping box the panel floats next to its trigger (placed by modulusShell.placeDropdown). */
+.m-dropdown-float > .m-dropdown-panel { position: fixed; right: auto; }
 .m-dropdown-panel .ant-dropdown-menu-item > button:disabled { cursor: not-allowed; }
 .m-dropdown-panel .ant-dropdown-menu-item-danger > a,
 .m-dropdown-panel .ant-dropdown-menu-item-danger > button { color: var(--m-error); }
@@ -1985,3 +2017,622 @@ html[data-theme='dark'] :is(.ant-color-picker-color-block, .ant-color-picker-pre
 .m-richtext-editor blockquote { margin: 0 0 0.5em; padding: 2px 12px; border-left: 3px solid var(--m-border-strong); color: var(--m-text-secondary); }
 .m-richtext-editor a { color: var(--m-primary); text-decoration: underline; }
 .m-richtext-editor :is(pre, code) { font-family: var(--m-font-mono); font-size: 0.92em; }
+
+/* ---- Plugins: media player, WYSIWYG editor, maps, sortable (driven by modulus-plugins.js) ---- */
+
+/* Media player: a native <video>/<audio> with Ant Design controls. */
+.m-media { position: relative; display: block; width: 100%; color: var(--m-text); outline: 0; }
+.m-media:focus-visible { box-shadow: var(--m-focus-ring); }
+.m-media-video { overflow: hidden; border-radius: var(--m-radius-lg); background: #000; color: #fff; }
+.m-media-stage { position: relative; aspect-ratio: var(--m-media-ratio, 16 / 9); }
+.m-media-video .m-media-media { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000; cursor: pointer; }
+.m-media-caption { position: absolute; left: 50%; bottom: 64px; z-index: 2; max-width: calc(100% - 32px); padding: 4px 10px; transform: translateX(-50%); border-radius: 4px; background: rgba(0, 0, 0, .72); color: #fff; font-size: 15px; line-height: 1.45; text-align: center; pointer-events: none; }
+.m-media-caption[hidden] { display: none; }
+.m-media-big { position: absolute; left: 50%; top: 50%; z-index: 2; display: inline-flex; padding: 0; border: 0; transform: translate(-50%, -50%); border-radius: 50%; background: none; color: #fff; font-size: 64px; line-height: 1; cursor: pointer; opacity: .92; filter: drop-shadow(0 2px 8px rgba(0, 0, 0, .45)); transition: opacity .2s, transform .2s; }
+.m-media-big:hover { opacity: 1; transform: translate(-50%, -50%) scale(1.06); }
+.m-media-started .m-media-big { opacity: 0; pointer-events: none; }
+.m-media-spinner { position: absolute; left: 50%; top: 50%; z-index: 2; display: none; transform: translate(-50%, -50%); font-size: 36px; }
+.m-media-spinner svg { animation: m-spin-ring 1s linear infinite; }
+.m-media-waiting .m-media-spinner { display: block; }
+.m-media-fail { display: none; align-items: center; gap: 8px; color: var(--m-error); }
+.m-media-video .m-media-fail { position: absolute; inset: 0; z-index: 3; justify-content: center; background: rgba(0, 0, 0, .8); color: #fff; }
+.m-media-error .m-media-fail { display: flex; }
+.m-media-error .m-media-big, .m-media-error .m-media-spinner { display: none; }
+
+.m-media-bar { display: flex; align-items: center; gap: 4px; min-width: 0; padding: 6px 10px; }
+.m-media-video .m-media-bar { position: absolute; left: 0; right: 0; bottom: 0; z-index: 3; padding: 24px 10px 8px; background: linear-gradient(transparent, rgba(0, 0, 0, .7)); transition: opacity .2s; }
+.m-media-video.m-media-playing:not(:hover):not(:focus-within) .m-media-bar { opacity: 0; }
+.m-media-btn { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 32px; height: 32px; padding: 0; border: 0; border-radius: var(--m-radius-sm); background: none; color: inherit; font-size: 18px; cursor: pointer; }
+.m-media-btn:hover { background: rgba(127, 127, 127, .18); }
+.m-media-btn:focus-visible { outline: 2px solid var(--m-primary); outline-offset: 1px; }
+.m-media-btn[aria-pressed="true"] { color: var(--m-primary); }
+.m-media-video .m-media-btn[aria-pressed="true"] { color: #fff; background: rgba(255, 255, 255, .22); }
+.m-media-speed { width: auto; min-width: 40px; padding: 0 6px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.m-media-cc { padding: 0 3px; border: 1.5px solid currentColor; border-radius: 3px; font-size: 10px; font-weight: 700; line-height: 13px; }
+.m-media-show-paused, .m-media-show-playing, .m-media-show-sound, .m-media-show-muted, .m-media-show-window, .m-media-show-full { display: inline-flex; align-items: center; }
+.m-media-show-playing, .m-media-show-muted, .m-media-show-full,
+.m-media-playing .m-media-show-paused, .m-media-muted .m-media-show-sound, .m-media-fullscreen .m-media-show-window { display: none; }
+.m-media-playing .m-media-show-playing, .m-media-muted .m-media-show-muted, .m-media-fullscreen .m-media-show-full { display: inline-flex; }
+.m-media-time { flex: none; margin: 0 6px; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; opacity: .85; }
+.m-media-time-sep { margin: 0 3px; opacity: .6; }
+.m-media-seek-wrap { position: relative; display: flex; align-items: center; flex: 1 1 auto; min-width: 60px; margin: 0 6px; }
+.m-media-buffered { position: absolute; left: 0; top: 50%; width: 0; height: 4px; margin-top: -2px; border-radius: 2px; background: rgba(127, 127, 127, .35); pointer-events: none; }
+.m-media-range { --m-progress: 0%; position: relative; -webkit-appearance: none; appearance: none; width: 100%; height: 16px; margin: 0; background: none; cursor: pointer; }
+.m-media-volume { flex: none; width: 72px; }
+.m-media-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(var(--m-primary), var(--m-primary)) 0 / var(--m-progress) 100% no-repeat, rgba(127, 127, 127, .3); }
+.m-media-range::-moz-range-track { height: 4px; border-radius: 2px; background: rgba(127, 127, 127, .3); }
+.m-media-range::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--m-primary); }
+.m-media-range::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; margin-top: -4px; border: 2px solid var(--m-primary); border-radius: 50%; background: #fff; }
+.m-media-range::-moz-range-thumb { width: 8px; height: 8px; border: 2px solid var(--m-primary); border-radius: 50%; background: #fff; }
+.m-media-range:focus-visible { outline: 0; }
+.m-media-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--m-primary-bg); }
+.m-media-range:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(--m-primary-bg); }
+.m-media-fullscreen { border-radius: 0; }
+.m-media-fullscreen .m-media-stage { height: 100vh; aspect-ratio: auto; }
+
+.m-media-audio { border: 1px solid var(--m-border); border-radius: var(--m-radius-lg); background: var(--m-bg-container); box-shadow: var(--m-shadow-card); }
+.m-media-track { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 12px 14px 4px; }
+.m-media-cover { flex: none; width: 48px; height: 48px; border-radius: var(--m-radius); object-fit: cover; }
+.m-media-cover-icon { display: inline-flex; align-items: center; justify-content: center; background: var(--m-primary-bg); color: var(--m-primary); font-size: 22px; }
+.m-media-track-text { min-width: 0; flex: 1; }
+.m-media-title { overflow: hidden; color: var(--m-heading); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.m-media-subtitle { overflow: hidden; color: var(--m-text-tertiary); font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.m-media-audio .m-media-caption { position: static; max-width: none; margin: 4px 14px 0; transform: none; background: var(--m-bg-subtle); color: var(--m-text); text-align: left; }
+.m-media-audio .m-media-btn { color: var(--m-text-secondary); }
+.m-media-audio .m-media-btn:hover { color: var(--m-text); }
+@media (max-width: 575px) {
+    .m-media-volume, .m-media-time-sep, .m-media [data-m-player-duration] { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .m-media-spinner svg { animation-duration: 3s; } }
+
+/* WYSIWYG editor (Quill with an Ant Design toolbar). */
+.m-editor { --m-editor-min-height: 220px; display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--m-border); border-radius: var(--m-radius); background: var(--m-bg-container); transition: border-color .2s, box-shadow .2s; }
+.m-editor:hover { border-color: var(--m-primary-hover); }
+.m-editor.m-editor-focused { border-color: var(--m-primary); box-shadow: var(--m-focus-ring); }
+.m-editor-status-error, .m-editor-status-error:hover, .m-editor-invalid > .m-editor, .m-editor-invalid > .m-editor:hover { border-color: var(--m-error); }
+.m-editor-invalid > .m-editor.m-editor-focused { box-shadow: 0 0 0 2px color-mix(in srgb, var(--m-error) 20%, transparent); }
+.m-editor-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding: 6px 8px; border-bottom: 1px solid var(--m-split); }
+.m-editor-group { display: inline-flex; gap: 2px; }
+.m-editor-sep { width: 1px; height: 18px; margin: 0 4px; background: var(--m-split); }
+.m-editor-heading { height: 28px; padding: 0 24px 0 8px; border: 1px solid var(--m-border); border-radius: var(--m-radius-sm); background: var(--m-bg-container) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='64 64 896 896' fill='%23999'%3E%3Cpath d='M884 256h-75c-5.1 0-9.9 2.5-12.9 6.6L512 654.2 227.9 262.6c-3-4.1-7.8-6.6-12.9-6.6h-75c-6.5 0-10.3 7.4-6.5 12.7l352.6 486.1c12.8 17.6 39 17.6 51.7 0l352.6-486.1c3.9-5.3.1-12.7-6.4-12.7z'/%3E%3C/svg%3E") no-repeat right 8px center / 10px; color: var(--m-text); font: inherit; font-size: 13px; -webkit-appearance: none; appearance: none; cursor: pointer; }
+.m-editor-heading:focus-visible { outline: 0; border-color: var(--m-primary); box-shadow: var(--m-focus-ring); }
+.m-editor-heading option { background: var(--m-bg-elevated); color: var(--m-text); }
+.m-editor-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: var(--m-radius-sm); background: none; color: var(--m-text-secondary); font-size: 15px; cursor: pointer; transition: background .15s, color .15s; }
+.m-editor-btn:hover:not(:disabled) { background: var(--m-fill-secondary); color: var(--m-text); }
+.m-editor-btn:focus-visible { outline: 2px solid var(--m-primary); outline-offset: -2px; }
+.m-editor-btn.m-editor-btn-active { background: var(--m-primary-bg); color: var(--m-primary); }
+.m-editor-btn:disabled, .m-editor-heading:disabled { color: var(--m-text-quaternary); cursor: not-allowed; }
+.m-editor-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; border-bottom: 1px solid var(--m-split); background: var(--m-bg-subtle); }
+.m-editor-bar[hidden] { display: none; }
+.m-editor-bar-title { color: var(--m-text-secondary); font-size: 13px; font-weight: 500; }
+.m-editor-bar .ant-input { flex: 1 1 200px; width: auto; }
+.m-editor-host { min-height: var(--m-editor-min-height); padding: 12px 15px; overflow-wrap: anywhere; }
+.m-editor-ready .m-editor-host { padding: 0; }
+.m-editor .ql-container.ql-snow { border: 0; font: inherit; font-size: 14px; color: var(--m-text); }
+.m-editor .ql-editor { min-height: var(--m-editor-min-height); padding: 12px 15px; line-height: 1.6; }
+.m-editor .ql-editor.ql-blank::before { left: 15px; right: 15px; color: var(--m-text-quaternary); font-style: normal; }
+.m-editor .ql-snow .ql-tooltip { display: none; }
+.m-editor :is(.m-editor-host, .ql-editor) :is(h1, h2, h3) { margin: .6em 0 .3em; color: var(--m-heading); font-weight: 600; }
+.m-editor :is(.m-editor-host, .ql-editor) blockquote { margin: .4em 0; padding: 2px 12px; border-left: 3px solid var(--m-border-strong); color: var(--m-text-secondary); }
+.m-editor :is(.m-editor-host, .ql-editor) a { color: var(--m-primary); text-decoration: underline; }
+.m-editor :is(.m-editor-host, .ql-editor) img { max-width: 100%; height: auto; border-radius: var(--m-radius); }
+.m-editor :is(.m-editor-host, .ql-snow .ql-editor) :is(pre, .ql-code-block-container) { margin: .4em 0; padding: 10px 12px; border-radius: var(--m-radius); background: var(--m-bg-subtle); color: var(--m-text); font-family: var(--m-font-mono); font-size: 13px; }
+.m-editor-footer { display: flex; justify-content: space-between; gap: 12px; padding: 4px 12px; border-top: 1px solid var(--m-split); color: var(--m-text-tertiary); font-size: 12px; }
+.m-editor-failed .m-editor-footer::before { content: "The editor couldn't load; the text is shown as it is."; color: var(--m-error); }
+
+/* Tile maps (Leaflet). */
+.m-map { position: relative; z-index: 0; isolation: isolate; overflow: hidden; border: 1px solid var(--m-split); border-radius: var(--m-radius-lg); background: var(--m-bg-subtle); font: inherit; }
+.m-map-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--m-text-tertiary); font-size: 13px; }
+.m-map.leaflet-container > .m-map-loading { display: none; }
+.m-map-failed > .m-map-loading { font-size: 0; }
+.m-map-failed > .m-map-loading::after { content: "The map couldn't load."; color: var(--m-error); font-size: 13px; }
+html[data-theme='dark'] .m-map .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.95) contrast(.9); }
+.m-map .leaflet-bar { border: 1px solid var(--m-border); border-radius: var(--m-radius); box-shadow: var(--m-shadow-card); }
+.m-map .leaflet-bar a { border-bottom-color: var(--m-split); background: var(--m-bg-elevated); color: var(--m-text); }
+.m-map .leaflet-bar a:hover { background: var(--m-fill-secondary); }
+.m-map .leaflet-control-attribution { background: color-mix(in srgb, var(--m-bg-container) 85%, transparent); color: var(--m-text-tertiary); }
+.m-map .leaflet-control-attribution a { color: var(--m-primary); }
+.m-map .leaflet-popup-content-wrapper, .m-map .leaflet-popup-tip { background: var(--m-bg-elevated); color: var(--m-text); box-shadow: var(--m-shadow-popup); }
+.m-map .leaflet-popup-content-wrapper { border-radius: var(--m-radius-lg); }
+.m-map .leaflet-popup-content { margin: 12px 16px; font-size: 13px; line-height: 1.5; }
+.m-map a.leaflet-popup-close-button { color: var(--m-text-tertiary); }
+.m-map-popup-title { color: var(--m-heading); font-weight: 600; }
+.m-map-popup-text { margin-top: 2px; color: var(--m-text-secondary); }
+.m-map-pin, .m-map-pin-primary { --m-pin: var(--m-primary); }
+.m-map-pin-success { --m-pin: var(--m-success); }
+.m-map-pin-warning { --m-pin: var(--m-warning); }
+.m-map-pin-error { --m-pin: var(--m-error); }
+.m-map-pin-purple { --m-pin: var(--m-purple); }
+.m-map-pin-head { position: absolute; left: 1px; top: 1px; width: 24px; height: 24px; border: 2px solid #fff; border-radius: 50% 50% 50% 0; background: var(--m-pin); box-shadow: 0 2px 6px rgba(0, 0, 0, .35); transform: rotate(-45deg); }
+.m-map-pin-head::after { content: ""; position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%; background: #fff; }
+.m-map-pin:focus-visible { outline: 0; }
+.m-map-pin:focus-visible .m-map-pin-head { box-shadow: 0 0 0 3px var(--m-primary-bg), 0 2px 6px rgba(0, 0, 0, .35); }
+
+/* Vector map (jsVectorMap choropleth). */
+.m-vector-map-wrap { display: grid; gap: 12px; min-width: 0; }
+.m-vector-map-wrap, .m-vector-map { --m-map-land: #e5e7eb; --m-map-border: #ffffff; --m-map-selected: var(--m-warning); }
+html[data-theme='dark'] :is(.m-vector-map-wrap, .m-vector-map) { --m-map-land: #2b3648; --m-map-border: #151d2a; }
+.m-vector-map { position: relative; min-width: 0; }
+.m-vector-map .jvm-zoom-btn { display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 1px solid var(--m-border); border-radius: var(--m-radius-sm); background: var(--m-bg-elevated); color: var(--m-text); font-size: 16px; line-height: 1; }
+.m-vector-map .jvm-zoom-btn.jvm-zoomout { top: 40px; }
+.jvm-tooltip { padding: 4px 8px; border-radius: var(--m-radius-sm); background: rgba(0, 0, 0, .85); font-family: var(--m-font); font-size: 12px; box-shadow: var(--m-shadow-popup); }
+.m-vector-map.m-map-failed::after { content: "The map couldn't load."; display: flex; align-items: center; justify-content: center; height: 100%; color: var(--m-error); font-size: 13px; }
+.m-map-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--m-text-secondary); font-size: 12px; }
+.m-map-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.m-map-legend-swatch { width: 12px; height: 12px; border-radius: 2px; }
+.m-map-legend-none { background: var(--m-map-land); box-shadow: inset 0 0 0 1px var(--m-border); }
+.m-map-selected { margin: 0; color: var(--m-text-secondary); }
+
+/* Sortable lists. */
+[data-m-sortable] { position: relative; }
+[data-m-sort-handle] { cursor: grab; touch-action: none; }
+html.m-sorting, html.m-sorting * { cursor: grabbing !important; user-select: none; }
+.m-sort-source { display: none !important; }
+.m-sort-ghost { position: fixed !important; left: 0; top: 0; z-index: 2000; margin: 0 !important; pointer-events: none; opacity: .92; box-shadow: var(--m-shadow-popup); list-style: none; }
+.m-sort-placeholder { box-sizing: border-box; border: 1px dashed var(--m-primary); border-radius: var(--m-radius); background: var(--m-primary-bg); list-style: none; }
+.m-sortable-over { outline: 1px dashed var(--m-primary); outline-offset: 2px; border-radius: var(--m-radius); }
+.m-sortable { display: grid; align-content: start; gap: 8px; min-height: 48px; margin: 0; padding: 0; list-style: none; }
+.m-sortable-horizontal { display: flex; flex-wrap: wrap; }
+.m-sortable-grid { grid-template-columns: repeat(auto-fill, minmax(var(--m-sort-min, 140px), 1fr)); }
+.m-sortable.m-sortable-empty { border: 1px dashed var(--m-border); border-radius: var(--m-radius); }
+.m-sortable.m-sortable-empty::after { content: attr(data-empty); display: flex; align-items: center; justify-content: center; min-height: 46px; color: var(--m-text-quaternary); font-size: 13px; }
+.m-sort-item { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 10px 12px; border: 1px solid var(--m-split); border-radius: var(--m-radius); background: var(--m-bg-container); }
+.m-sort-item-body { flex: 1; min-width: 0; }
+.m-sort-handle { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 24px; height: 24px; border-radius: var(--m-radius-sm); color: var(--m-text-tertiary); font-size: 16px; }
+.m-sort-handle:hover { background: var(--m-fill-secondary); color: var(--m-text); }
+.m-sort-handle:focus-visible { outline: 2px solid var(--m-primary); outline-offset: 1px; }
+.m-sort-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.m-sortable-root { position: relative; min-width: 0; }
+/* Table rows that drag (data tables and grids): a handle column, a one-row ghost and a dashed gap where the row lands. */
+.m-sort-rows { display: contents; }
+.ant-table-cell.m-row-drag-cell, th.m-row-drag-cell { padding-left: 4px !important; padding-right: 4px !important; text-align: center; }
+.m-row-handle { vertical-align: middle; }
+.m-row-handle[aria-disabled="true"] { cursor: not-allowed; opacity: .35; }
+.m-row-handle[aria-disabled="true"]:hover { background: none; color: var(--m-text-tertiary); }
+.m-sort-ghost-row { overflow: hidden; border-radius: var(--m-radius); background: var(--m-bg-container); }
+.m-sort-ghost-row table { border-collapse: collapse; }
+.m-sort-ghost-row .ant-table-tbody > tr > td { background: var(--m-bg-container); }
+tr.m-sort-placeholder-row { border: 0; background: none; }
+tr.m-sort-placeholder-row > td { padding: 0 !important; border: 1px dashed var(--m-primary) !important; border-radius: var(--m-radius); background: var(--m-primary-bg) !important; }
+
+/* ---- Data grids, ERP style (ProTable, EditableGrid, NestedGrid; MVC twins) ------------------------------------
+   One compact toolbar: title and count, then the unsaved-changes count with Discard and Save, icon buttons with
+   tooltips (search, filter row, columns, add row, reload) and a "More" menu. A filter row under the headers,
+   marked changed rows, a chevron expander, row actions on hover, and lighter chrome for nested levels. */
+.m-table-toolbar { min-height: 48px; padding: 8px 16px 8px 20px; gap: 8px 12px; }
+.m-table-toolbar-actions { gap: 4px; }
+.m-table-toolbar-actions > .ant-btn-text, .m-table-toolbar-actions .m-table-columns-toggle { color: var(--m-text-secondary); }
+.m-table-toolbar-actions > .ant-btn-text:hover, .m-table-toolbar-actions .m-table-columns-toggle:hover { color: var(--m-text); }
+.m-table-toolbar .ant-btn-icon-only.active, .m-table-toolbar .ant-btn-icon-only[aria-pressed='true'] { color: var(--m-primary); background: var(--m-primary-bg); }
+.m-table-toolbar-search { width: 220px; }
+.m-table-toolbar [hidden] { display: none !important; }
+.m-table-toolbar-settings { margin-left: 2px; padding-left: 6px; gap: 2px; }
+.m-grid-dirty { display: inline-flex; align-items: center; margin-right: 4px; white-space: nowrap; }
+.m-grid-dirty .ant-badge-status-text { color: var(--m-text-secondary); font-size: 13px; }
+.m-grid-discard.ant-btn { padding-inline: 8px; color: var(--m-text-secondary); }
+.m-grid-save.ant-btn { margin-right: 4px; }
+.m-grid-save.ant-btn .anticon + span { margin-left: 6px; }
+/* The "More" menu: a group title for the density choices. */
+.m-table-more .ant-dropdown-menu-item-group-title, .m-dropdown-panel .ant-dropdown-menu-item-group-title { padding: 5px 12px 2px; color: var(--m-text-tertiary); font-size: 12px; }
+.m-dropdown-panel .ant-dropdown-menu-item > button { display: flex; align-items: center; gap: 8px; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.m-dropdown-panel .ant-dropdown-menu-title-content { display: inline-flex; align-items: center; gap: 8px; }
+
+/* Filter row: each searchable header shows its column search as a box under the title. Blazor renders the boxes only
+   while the row is on (m-th-filter-on); MVC renders them always and shows them while its thead has m-filter-row-on. */
+.m-th { flex-wrap: wrap; row-gap: 4px; }
+.m-th-search-host { display: contents; }
+.m-th-filter.ant-input { flex: 0 0 100%; order: 10; width: 100%; min-width: 0; height: 26px; padding: 0 7px; font-size: 12px; font-weight: 400; text-transform: none; letter-spacing: normal; }
+.m-th-filter.m-th-filter-active { border-color: var(--m-primary); }
+.ant-table-thead:not(.m-filter-row-on) .m-th-filter:not(.m-th-filter-on) { display: none; }
+.ant-table-thead.m-filter-row-on .m-th-search { display: none !important; }
+.ant-table-thead.m-filter-row-on > tr > th, .ant-table-thead:has(.m-th-filter-on) > tr > th { vertical-align: top; }
+
+/* Changed rows: a thin warning bar at the start of the row until the grid is saved. */
+.m-grid .ant-table-tbody > tr.m-grid-row-dirty > td:first-child { box-shadow: inset 3px 0 0 var(--m-warning); }
+
+/* The expand control as a chevron (▶ collapsed, ▼ expanded) instead of Ant Design's plus box. */
+.m-table-card .ant-table-row-expand-icon { position: relative; width: 22px; height: 22px; border: 0; border-radius: 4px; background: transparent; color: var(--m-text-tertiary); transform: none; }
+.m-table-card .ant-table-row-expand-icon:hover, .m-table-card .ant-table-row-expand-icon:focus-visible { background: var(--m-fill-secondary); color: var(--m-text); }
+.m-table-card .ant-table-row-expand-icon::after { display: none; }
+.m-table-card .ant-table-row-expand-icon::before { content: ""; position: absolute; inset: auto; top: 50%; left: 50%; width: 6px; height: 6px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; background: none; transition: transform .2s; transform: translate(-70%, -50%) rotate(-45deg); }
+.m-table-card .ant-table-row-expand-icon-collapsed::before { transform: translate(-70%, -50%) rotate(-45deg); }
+.m-table-card .ant-table-row-expand-icon-expanded::before, .m-table-card .ant-table-row-expand-icon[aria-expanded='true']::before { transform: translate(-50%, -75%) rotate(45deg); }
+.m-table-card .ant-table-row-expand-icon-spaced { visibility: hidden; }
+
+/* Row actions stay visible on every row (muted, full colour on row hover), so the pinned actions column never
+   looks like an empty panel over the table. */
+.m-grid .ant-table-tbody > tr > td.m-grid-actions .ant-btn { color: var(--m-text-secondary); transition: color .15s; }
+.m-grid .ant-table-tbody > tr:hover > td.m-grid-actions .ant-btn,
+.m-grid .ant-table-tbody > tr:focus-within > td.m-grid-actions .ant-btn { color: var(--m-text); }
+.m-grid .ant-table-tbody > tr > td.m-grid-actions .ant-btn:hover { color: var(--m-error); }
+
+/* Pinned columns and horizontal scroll. The grid scrolls sideways inside its card (header and body are one table,
+   so they always scroll together); a thin, always visible scrollbar shows there is more to the right, and the
+   pinned columns get a soft edge shadow only while content is hidden under them. */
+.m-grid .ant-table-content { scrollbar-width: thin; scrollbar-color: var(--m-border) transparent; }
+.m-grid .ant-table-content::-webkit-scrollbar { height: 8px; }
+.m-grid .ant-table-content::-webkit-scrollbar-thumb { background: var(--m-border); border-radius: 4px; }
+.m-grid .ant-table-content::-webkit-scrollbar-track { background: transparent; }
+.m-grid .ant-table-cell-fix-right-first::after, .m-grid .ant-table-cell-fix-left-last::after { border: 0; box-shadow: none; }
+.m-grid .ant-table-ping-right .ant-table-cell-fix-right-first::after { box-shadow: inset -8px 0 6px -6px rgba(5, 5, 5, .1); }
+.m-grid .ant-table-ping-left .ant-table-cell-fix-left-last::after { box-shadow: inset 8px 0 6px -6px rgba(5, 5, 5, .1); }
+[data-theme='dark'] .m-grid .ant-table-ping-right .ant-table-cell-fix-right-first::after { box-shadow: inset -8px 0 6px -6px rgba(0, 0, 0, .5); }
+[data-theme='dark'] .m-grid .ant-table-ping-left .ant-table-cell-fix-left-last::after { box-shadow: inset 8px 0 6px -6px rgba(0, 0, 0, .5); }
+
+/* Nested levels: one grid system at every level. Only the top level is a card; a child level is the same grid
+   without card chrome, indented under its parent row with a thin guide line, a hairline frame and a slightly
+   tinted header, so the hierarchy reads at a glance and deep levels stay light. */
+.m-nested .ant-table-expanded-row > td.ant-table-cell { position: relative; padding: 6px 12px 10px 40px; background: var(--m-bg-subtle); }
+.m-nested .ant-table-expanded-row > td.ant-table-cell::before { content: ""; position: absolute; top: 0; bottom: 10px; left: 26px; border-left: 1px solid var(--m-border); }
+.m-nested .ant-table-expanded-row:hover > td.ant-table-cell { background: var(--m-bg-subtle); }
+.m-nested .m-nested .m-grid,
+.m-nested .m-nested > form > .m-grid { border: 1px solid var(--m-split); border-radius: var(--m-radius-sm, 4px); background: var(--m-bg-container); box-shadow: none; }
+.m-nested .m-nested .m-grid > .ant-card-body { padding: 0; }
+.m-nested .m-nested .m-table-toolbar { min-height: 36px; padding: 2px 6px 2px 12px; }
+.m-nested .m-nested .m-table-toolbar-title { font-size: 13px; }
+.m-nested .m-nested .m-table-toolbar-search { width: 180px; }
+.m-nested .m-nested .m-table-filters { padding: 6px 12px; }
+.m-nested .m-nested .m-grid-summary { padding: 4px 12px; }
+.m-nested .m-nested .ant-table-thead > tr > th { background: var(--m-fill-secondary, var(--m-bg-subtle)); }
+.m-nested .m-nested .ant-table-expanded-row > td.ant-table-cell { padding-left: 32px; }
+.m-nested .m-nested .ant-table-expanded-row > td.ant-table-cell::before { left: 20px; }
+.m-nested-note, .m-nested-lazy { padding: 6px 4px; color: var(--m-text-tertiary); font-size: 13px; }
+@media (max-width: 575px) {
+    .m-table-toolbar { padding: 6px 12px; }
+    .m-table-toolbar-search { width: 100%; }
+    .m-nested .ant-table-expanded-row > td.ant-table-cell,
+    .m-nested .m-nested .ant-table-expanded-row > td.ant-table-cell { padding: 6px 6px 8px 14px; }
+    .m-nested .ant-table-expanded-row > td.ant-table-cell::before { left: 6px; }
+}
+
+/* ---- Creatable select (AppCreatableSelect, app-creatable-select, the editable grid's option editors) ----------
+   Picking and creating are apart: the list ends with a "Create new …" row that opens a small form in the list's
+   place (a name, eight named colours, Cancel and Add). Options keep Ant Design's 32px height, whatever cell or
+   header the select sits in. */
+.m-cselect-dropdown { max-width: min(320px, calc(100vw - 24px)); font-size: 14px; font-weight: 400; line-height: 1.5715; letter-spacing: normal; text-align: left; text-transform: none; white-space: normal; }
+.m-cselect-dropdown .ant-select-item { min-height: 32px; padding: 5px 12px; line-height: 22px; border-radius: var(--m-radius-sm, 4px); }
+.m-cselect-list .ant-select-item-option-selected:not(.ant-select-item-option-disabled) { font-weight: 600; }
+.m-cselect-list .ant-select-item-option-state { display: inline-flex; align-items: center; color: var(--m-primary); }
+.m-cselect-dropdown.m-cselect-creating { width: 264px; padding-top: 0; }
+.m-cselect-dropdown .m-cselect-footer { margin-top: 4px; padding: 4px; border-top: 1px solid var(--m-split); }
+.m-cselect-dropdown.m-cselect-creating .m-cselect-footer { margin-top: 0; border-top: 0; }
+.m-cselect-create.ant-btn { display: flex; align-items: center; justify-content: flex-start; gap: 8px; height: 32px; padding: 0 8px; color: var(--m-primary); }
+.m-cselect-create.ant-btn:hover { background: var(--m-primary-bg); color: var(--m-primary); }
+.m-cselect-add.m-cselect-footer, .m-cselect-add { display: grid; gap: 6px; padding: 12px; }
+.m-cselect-add .ant-input { width: 100%; }
+.m-cselect-add-title { margin-bottom: 2px; color: var(--m-heading); font-weight: 600; }
+.m-cselect-field-label { display: flex; align-items: baseline; gap: 6px; margin-top: 4px; color: var(--m-text-secondary); font-size: 12px; }
+.m-cselect-color-name { color: var(--m-text); font-weight: 500; }
+.m-cselect-add .m-cselect-colors { gap: 8px; margin: 0; }
+.m-cselect-add .m-cselect-swatch { width: 20px; height: 20px; }
+.m-cselect-add .m-cselect-error { margin: 0; }
+.m-cselect-add-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; }
+.m-cselect-add-actions .m-cselect-add-btn { gap: 4px; }
+.m-cselect-add-actions .ant-btn-primary.m-cselect-add-btn { color: #fff; }
+.m-grid-add-option { width: 264px; padding: 4px; }
+.m-grid-add-option .m-cselect-add { padding: 8px; }
+
+/* Cell editors are an overlay layer: their dropdowns are position: fixed (placed by modulus-shell.js), and the
+   cell that holds an open editor is lifted above the pinned (sticky) cells around it, so a pinned column never
+   paints over the list. */
+/* Only a pinned cell is lifted, and only while its list is open: a sticky cell is its own layer (z-index 2), so its
+   list would sit under the pinned cells after it. A scrolling cell is no layer of its own, so its list (z-index 1050)
+   already floats over the pinned columns; lifting the cell itself would paint its content over them while scrolled. */
+.m-grid .ant-table-tbody > tr > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right):has(.ant-select-open, .ant-picker-focused, .m-dropdown-open) { z-index: 6 !important; }
+/* The option and date editors fill the cell at the row's slim height, as the Blazor grid's AntD controls do. */
+.m-grid .m-grid-cell-editing > .m-cselect, .m-grid .m-grid-cell-editing > .m-picker { width: 100%; }
+.m-grid .m-grid-cell-editing > .m-picker { height: 28px; padding: 0 8px; font-size: 13px; }
+.m-grid .m-grid-cell-editing > .m-cselect.ant-select-multiple .ant-select-selector { min-height: 28px; padding: 1px 4px; }
+
+/* Selected option: a quiet grey fill, bold text and a check, not a tinted fill, so it doesn't fight the focus ring. */
+.m-cselect-list .ant-select-item-option-selected:not(.ant-select-item-option-disabled) { background: var(--m-fill-secondary, var(--m-fill)); color: var(--m-text); }
+.m-cselect-list .ant-select-item-option-active:not(.ant-select-item-option-disabled) { background: var(--m-fill-secondary, var(--m-fill)); }
+.m-cselect-list .ant-select-item-option-selected.ant-select-item-option-active:not(.ant-select-item-option-disabled) { background: var(--m-fill, var(--m-fill-secondary)); }
+
+/* One focus state for every cell editor (text, number, date, select): a 1px primary border and a light ring. */
+.m-grid-cell-editing .ant-input,
+.m-grid-cell-editing .ant-input-number,
+.m-grid-cell-editing .ant-picker,
+.m-grid-cell-editing .ant-select .ant-select-selector { border-radius: var(--m-radius-sm, 4px); }
+.m-grid-cell-editing .ant-input:focus, .m-grid-cell-editing .ant-input-focused,
+.m-grid-cell-editing .ant-input-number-focused, .m-grid-cell-editing .ant-picker-focused,
+.m-grid-cell-editing .ant-select-focused .ant-select-selector,
+.m-grid-cell-editing .ant-select-open .ant-select-selector,
+.m-grid-cell-editing .m-cselect .ant-select-selector:focus,
+.m-grid-cell-editing .m-cselect .ant-select-selector:focus-visible {
+    border-color: var(--m-primary) !important;
+    box-shadow: 0 0 0 2px var(--m-primary-bg, rgba(5, 145, 255, .1)) !important;
+    outline: 0;
+}
+
+/* ---- Slim data tables (ProTable, EditableGrid, NestedGrid and the MVC tables in a .m-table-card) --------------
+   ERP density: more rows on screen without losing the click targets. Standard (Ant Design "middle", the default)
+   gives ~36px rows, Compact ("small") ~30px, Comfortable keeps Ant Design's roomy rows. Headers are 11px uppercase,
+   cells 13px, the toolbar and pager 44px. */
+.m-table-card .ant-table { font-size: 13px; }
+.m-table-card .ant-table-thead > tr > th { padding: 7px 10px; font-size: 11px; line-height: 16px; }
+.m-table-card .ant-table-tbody > tr > td { padding: 8px 10px; line-height: 20px; }
+.m-table-card .ant-table-middle .ant-table-thead > tr > th { padding: 6px 10px; }
+.m-table-card .ant-table-middle .ant-table-tbody > tr > td { padding: 7px 10px; }
+.m-table-card .ant-table-small .ant-table-thead > tr > th { padding: 4px 8px; }
+.m-table-card .ant-table-small .ant-table-tbody > tr > td { padding: 4px 8px; }
+.m-table-card:not(:has(.ant-table-middle, .ant-table-small)) .ant-table-tbody > tr > td { padding: 12px 12px; }
+.m-table-card .ant-table-thead > tr > th:first-child, .m-table-card .ant-table-tbody > tr > td:first-child { padding-left: 14px; }
+.m-table-card .ant-table-thead > tr > th:last-child, .m-table-card .ant-table-tbody > tr > td:last-child { padding-right: 14px; }
+.m-table-card .ant-table-selection-column { padding-left: 8px !important; padding-right: 8px !important; text-align: center; }
+.m-table-card .ant-table-row-expand-icon-cell { padding-left: 6px !important; padding-right: 2px !important; text-align: center; }
+.m-table-card .m-table-toolbar { min-height: 44px; padding: 4px 8px 4px 14px; }
+.m-table-card .m-table-toolbar-title { font-size: 14px; }
+.m-table-card .m-table-toolbar .ant-btn:not(.ant-btn-icon-only) { height: 28px; padding: 0 10px; font-size: 13px; }
+.m-table-card .m-table-toolbar .ant-btn-icon-only { width: 28px; height: 28px; }
+.m-table-card .m-table-toolbar-search.ant-input-affix-wrapper { padding-top: 2px; padding-bottom: 2px; }
+.m-table-card .m-table-filters { gap: 8px 12px; padding: 8px 14px; }
+.m-table-card .ant-table-pagination.ant-pagination, .m-table-card .m-grid-summary { padding: 6px 14px; }
+.m-table-card .ant-tag { margin-inline-end: 0; padding: 0 6px; font-size: 12px; line-height: 18px; }
+.m-table-card .m-avatar.m-avatar-sm, .m-table-card .m-grid-avatar.m-avatar { width: 22px; height: 22px; font-size: 10px; }
+
+/* Editable cells: the cell outline hugs the slimmer rows (padding matches the td's, so text doesn't shift). */
+.m-grid .ant-table-tbody > tr > td.m-grid-td,
+.m-grid .ant-table-middle .ant-table-tbody > tr > td.m-grid-td { padding-top: 3px; padding-bottom: 3px; }
+.m-grid .ant-table-small .ant-table-tbody > tr > td.m-grid-td { padding-top: 1px; padding-bottom: 1px; }
+.m-grid .m-grid-cell { min-height: 28px; margin: 0 -10px; padding: 2px 9px; }
+.m-grid .ant-table-small .m-grid-cell { min-height: 26px; margin: 0 -8px; padding: 1px 7px; }
+.m-grid .m-grid-cell-editing { margin: 0 -10px; padding: 0; }
+.m-grid .ant-table-small .m-grid-cell-editing { margin: 0 -8px; }
+.m-grid .m-grid-cell-editing .ant-input, .m-grid .m-grid-cell-editing select.m-select,
+.m-grid .m-grid-cell-editing .ant-picker, .m-grid .m-grid-cell-editing .ant-input-number,
+.m-grid .m-grid-cell-editing .ant-select:not(.ant-select-multiple) .ant-select-selector { min-height: 28px; height: 28px; font-size: 13px; }
+.m-grid .m-grid-cell-editing .ant-input { padding: 2px 8px; }
+.m-grid .m-grid-cell-message { margin-left: -10px; margin-right: -10px; }
+.m-grid .ant-table-tbody > tr > td.m-grid-actions .ant-btn-sm { width: 24px; height: 24px; }
+.m-grid .m-grid-entity { gap: 8px; }
+
+/* Yes/no columns are centred (header, cell and editor). */
+.m-grid .ant-table-thead > tr > th.m-grid-td-center .m-th { justify-content: center; }
+.m-grid .ant-table-thead > tr > th.m-grid-td-center .m-th > .ant-table-column-sorters, .m-grid .ant-table-thead > tr > th.m-grid-td-center .m-th-title { flex: 0 1 auto; }
+.m-grid td.m-grid-td-center .m-grid-cell, .m-grid td.m-grid-td-center .m-grid-cell-editing { justify-content: center; text-align: center; }
+.m-grid td.m-grid-td-center .m-grid-cell-editing > * { width: auto; }
+
+/* Filter row: the boxes and selects under the headers are 24px, like the rest of the slim header. */
+.m-th-filter.ant-input, select.m-select.m-th-filter { flex: 0 0 100%; order: 10; width: 100%; min-width: 0; height: 24px; margin: 0; padding: 0 6px; font-size: 12px; font-weight: 400; line-height: 22px; text-transform: none; letter-spacing: normal; }
+select.m-select.m-th-filter { padding-right: 22px; background-position: right 6px center; }
+.m-th-filter.m-th-filter-active { border-color: var(--m-primary); color: var(--m-text); }
+.ant-table-thead.m-filter-row-on > tr > th, .ant-table-thead:has(.m-th-filter-on) > tr > th { padding-bottom: 5px; }
+/* antd's sorter spreads a click layer (::after) over the whole header cell; the filter box and the column menu sit
+   above it, so opening them doesn't sort the column. */
+.m-th > .m-th-filter, .m-th-search-host > .m-th-filter, .m-th .m-grid-th-menu { position: relative; z-index: 1; }
+
+/* Data table Columns picker (modulus-shell.js, [data-m-table-columns]): the editable grid's column list, floating
+   under its button. */
+.m-table-cols-pop { position: fixed; z-index: 1060; padding-top: 0; }
+.m-table-cols-pop .ant-popover-inner { box-shadow: var(--m-shadow-popup); }
+.m-table-cols-pop .m-grid-columns-item { padding-right: 16px; }
+.m-table-cols-foot { display: flex; justify-content: flex-end; margin-top: 4px; padding: 4px 8px 0; border-top: 1px solid var(--m-split); }
+.m-table-toolbar .m-table-columns, .m-table-toolbar .m-table-export, .m-table-toolbar .m-grid-export, .m-table-toolbar .m-table-columns-toggle { display: inline-flex; align-items: center; gap: 6px; }
+@media (max-width: 575px) {
+    .m-table-toolbar .m-table-columns > span:not(.anticon), .m-table-toolbar .m-table-export > span:not(.anticon),
+    .m-table-toolbar .m-grid-export > span:not(.anticon), .m-table-toolbar .m-table-columns-toggle > span:not(.anticon) { display: none; }
+}
+
+/* Grid pagers: the editable grid pages in the browser (m-grid-pager), a nested level on the server (m-nested-pager);
+   both show the range, AntD's page window with ••• jumps and rows per page. */
+.m-grid-pager.ant-pagination { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; row-gap: 8px; margin: 0; padding: 10px 16px; border-top: 1px solid var(--m-border-secondary); }
+.m-grid-pager .ant-pagination-total-text { margin-right: auto; color: var(--m-text-secondary); }
+.m-grid-pager .ant-pagination-options, .m-nested-pager .ant-pagination-options { margin-left: 8px; }
+.m-pager-size { cursor: pointer; }
+.ant-pagination-jump-prev a, .ant-pagination-jump-next a { display: block; color: var(--m-text-secondary); }
+/* Clear: the toolbar button that resets the search, filters and column searches while any is set. */
+.m-table-clear { display: inline-flex; align-items: center; gap: 6px; color: var(--m-text-secondary); }
+.m-table-clear:not(:disabled):hover { color: var(--m-danger, #ff4d4f); }
+/* A nested level with unsaved edits locks its search, filters, sort and paging until Save or Discard. */
+.m-grid-locked { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--m-warning, #faad14); }
+@media (max-width: 575px) { .m-table-clear > span:not(.anticon) { display: none; } }
+
+/* Pinned (sticky) columns stay opaque over the columns scrolling under them. Row and column tints (selected, new,
+   sorted, a hovered sortable header, a child level's header) are translucent, so on a pinned cell they are layered
+   over the solid surface instead of replacing it. */
+.ant-table-tbody > tr > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background-color: var(--m-bg-container); }
+.ant-table-tbody > tr.ant-table-row-selected > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right),
+.m-grid .ant-table-tbody > tr.m-grid-row-new > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(var(--m-primary-bg), var(--m-primary-bg)) var(--m-bg-container); }
+.ant-table-tbody > tr > td.ant-table-column-sort:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(var(--m-fill), var(--m-fill)) var(--m-bg-container); }
+.ant-table-tbody > tr.ant-table-row:hover > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: var(--m-bg-subtle); }
+.ant-table-thead > tr > th:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background-color: var(--m-bg-subtle); }
+.m-nested .m-nested .ant-table-thead > tr > th:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(var(--m-fill-secondary), var(--m-fill-secondary)) var(--m-bg-container); }
+.ant-table-thead > tr > th:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right):is(.ant-table-column-has-sorters, :has(.m-th-sort)):hover { background: linear-gradient(var(--m-fill-secondary), var(--m-fill-secondary)) var(--m-bg-subtle); }
+
+/* Header cells keep the title, sorter, search icon and column menu on one line: the title's flex-basis is 0 (not its
+   text width), so a long title ellipsises instead of pushing the icons to a second line. Only the filter row's box
+   (flex-basis 100%, order 10) wraps under them. */
+.m-th > .ant-table-column-sorters, .m-th > .m-th-title { flex: 1 1 0%; }
+.m-th > .ant-table-column-sorters > .ant-table-column-sorter { flex: none; }
+.m-grid .ant-table-thead > tr > th.m-grid-td-center .m-th > .ant-table-column-sorters,
+.m-grid .ant-table-thead > tr > th.m-grid-td-center .m-th > .m-th-title { flex: 0 1 auto; max-width: calc(100% - 48px); }
+.m-th > .m-grid-th-menu, .m-th .m-th-search { flex: none; }
+
+/* Table toolbars: every button, a link or a dropdown trigger alike, centres its AntD icon and text with one gap
+   (antd's own .anticon + span margin would add to it). */
+.m-table-toolbar .ant-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; line-height: 1; }
+.m-table-toolbar .ant-btn > .anticon + span, .m-table-toolbar .ant-btn > span + .anticon { margin-left: 0; margin-inline-start: 0; }
+.m-table-toolbar a.ant-btn { padding-top: 0; padding-bottom: 0; }
+
+/* Filter bars (data table, editable grid): slim controls the height of the toolbar's, in equal columns. */
+.m-table-card .m-table-filters, .m-grid .m-table-filters { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); align-items: center; }
+.m-table-card .m-table-filters select.m-select { height: 30px; padding: 3px 28px 3px 10px; font-size: 13px; background-position: right 10px center; }
+.m-table-card .m-table-filters .ant-select-single:not(.ant-select-customize-input) .ant-select-selector { height: 30px; padding: 0 10px; font-size: 13px; }
+.m-table-card .m-table-filters .ant-select-single:not(.ant-select-customize-input) .ant-select-selector .ant-select-selection-search-input { height: 28px; }
+.m-table-card .m-table-filters .ant-select-single .ant-select-selector .ant-select-selection-item,
+.m-table-card .m-table-filters .ant-select-single .ant-select-selector .ant-select-selection-placeholder { line-height: 28px; }
+.m-table-card .m-table-filters .ant-select-multiple .ant-select-selector { min-height: 30px; font-size: 13px; }
+.m-table-card .m-table-filters .ant-input, .m-table-card .m-table-filters .ant-picker { height: 30px; font-size: 13px; }
+.m-table-card .m-table-filters > .ant-btn-link { justify-self: start; height: 30px; padding: 0 4px; }
+
+/* 7. Density ====================================================================
+ * data-density = compact | comfortable (theme settings; compact is the default).
+ * Compact is the data-dense ERP look (SAP Fiori "compact"): 13 px text, 30 px controls (24 px small), 32 px table
+ * rows, 16 px card padding and gutters. It stays readable: body text never drops below 13 px and small print below
+ * 11 px uppercase labels / 12 px text, colours and contrast are untouched, and every control stays above the 24 px
+ * WCAG 2.2 target size. Comfortable keeps the Tabler sizes above. The shell and the page patterns have their own
+ * density blocks at the end of modulus-shell.css and modulus-pages.css. */
+
+html[data-density='compact'] body { font-size: 13px; line-height: 1.4615; }
+
+/* Ant Design sets 14 px on each component root; bring them to the body size. :where() keeps the specificity at
+   html[data-density] alone, so antd's large sizes and Typography headings (h1.ant-typography …) still win. */
+html[data-density='compact'] :where(.ant-btn, .ant-input, .ant-input-affix-wrapper, .ant-input-number, .ant-input-group-addon, .ant-picker,
+    .ant-picker-input > input, .ant-mentions, .ant-select, .ant-select-dropdown, .ant-select-item, .ant-cascader-menu-item,
+    .ant-dropdown-menu-item, .ant-dropdown-menu-submenu-title, .ant-form, .ant-form-item, .ant-form-item-label > label,
+    .ant-checkbox-wrapper, .ant-radio-wrapper, .ant-radio-button-wrapper, .ant-segmented, .ant-table, .ant-card, .ant-card-extra,
+    .ant-list, .ant-list-item-meta-description, .ant-descriptions-item-label, .ant-descriptions-item-content, .ant-collapse, .ant-tabs,
+    .ant-menu, .ant-tree, .ant-transfer, .ant-pagination, .ant-alert, .ant-timeline, .ant-breadcrumb, .ant-statistic-title,
+    .ant-popover, .ant-modal, .ant-drawer, .ant-steps-item-description, .ant-empty, .ant-upload) { font-size: 13px; }
+html[data-density='compact'] :is(.ant-table.ant-table-small, .ant-table.ant-table-middle),
+html[data-density='compact'] .ant-tabs-small > .ant-tabs-nav .ant-tabs-tab { font-size: 13px; }
+html[data-density='compact'] :is(.ant-select-lg, .ant-input-number-lg, .ant-picker-large .ant-picker-input > input,
+    .ant-radio-group-large .ant-radio-button-wrapper, .ant-tabs-large > .ant-tabs-nav .ant-tabs-tab) { font-size: 14px; }
+html[data-density='compact'] .ant-tooltip-inner { font-size: 12px; }
+
+/* Controls: 30 px, small 24 px, large 36 px */
+html[data-density='compact'] .ant-btn { height: 30px; padding: 4px 12px; line-height: 20px; }
+html[data-density='compact'] .ant-btn .m-ti { width: 16px; height: 16px; vertical-align: -3px; }
+html[data-density='compact'] .ant-btn-icon-only { width: 30px; padding-left: 0; padding-right: 0; }
+html[data-density='compact'] .ant-btn-sm { height: 24px; padding: 0 8px; line-height: 22px; }
+html[data-density='compact'] .ant-btn-sm.ant-btn-icon-only { width: 24px; padding: 0; }
+html[data-density='compact'] .ant-btn-lg { height: 36px; padding: 6px 16px; font-size: 14px; }
+html[data-density='compact'] .ant-btn-lg.ant-btn-icon-only { width: 36px; padding: 0; }
+html[data-density='compact'] a.ant-btn { line-height: 28px; padding-bottom: 0; }
+html[data-density='compact'] a.ant-btn-sm { line-height: 22px; }
+html[data-density='compact'] a.ant-btn-lg { line-height: 34px; }
+
+html[data-density='compact'] .ant-input { padding: 4px 10px; line-height: 20px; }
+html[data-density='compact'] .ant-input-affix-wrapper { padding: 4px 10px; }
+html[data-density='compact'] .ant-input-affix-wrapper > input.ant-input { padding: 0; }
+html[data-density='compact'] :is(.ant-input-sm, .ant-input-affix-wrapper-sm) { padding: 1px 7px; }
+html[data-density='compact'] :is(.ant-input-lg, .ant-input-affix-wrapper-lg) { padding: 7px 12px; font-size: 14px; }
+html[data-density='compact'] .ant-picker { padding: 4px 10px; }
+html[data-density='compact'] .ant-picker-input > input { line-height: 20px; }
+html[data-density='compact'] .ant-picker-small { padding: 1px 7px; }
+html[data-density='compact'] .ant-input-number { height: 30px; }
+html[data-density='compact'] .ant-input-number-input { height: 28px; padding: 0 10px; }
+html[data-density='compact'] .ant-select-single:not(.ant-select-customize-input) .ant-select-selector { height: 30px; padding: 0 10px; }
+html[data-density='compact'] .ant-select-single:not(.ant-select-customize-input) .ant-select-selector .ant-select-selection-search-input { height: 28px; }
+html[data-density='compact'] .ant-select-single .ant-select-selector .ant-select-selection-item,
+html[data-density='compact'] .ant-select-single .ant-select-selector .ant-select-selection-placeholder { line-height: 28px; }
+html[data-density='compact'] .ant-select-multiple .ant-select-selector { min-height: 30px; padding: 1px 4px; }
+html[data-density='compact'] .ant-select-sm.ant-select-single:not(.ant-select-customize-input) .ant-select-selector { height: 24px; padding: 0 7px; }
+html[data-density='compact'] .ant-select-sm.ant-select-single:not(.ant-select-customize-input) .ant-select-selector .ant-select-selection-search-input { height: 22px; }
+html[data-density='compact'] .ant-select-sm.ant-select-single .ant-select-selector .ant-select-selection-item,
+html[data-density='compact'] .ant-select-sm.ant-select-single .ant-select-selector .ant-select-selection-placeholder { line-height: 22px; }
+html[data-density='compact'] .ant-radio-button-wrapper { height: 30px; line-height: 28px; padding: 0 12px; }
+html[data-density='compact'] .ant-radio-group-small .ant-radio-button-wrapper { height: 24px; line-height: 22px; padding: 0 8px; }
+html[data-density='compact'] .ant-segmented-item-label { min-height: 24px; line-height: 24px; padding: 0 10px; }
+html[data-density='compact'] select.m-select { height: 30px; padding: 4px 28px 4px 10px; line-height: 20px; }
+html[data-density='compact'] select.m-select.m-select-sm { height: 24px; padding: 1px 26px 1px 7px; }
+
+/* Forms: 14 px between fields, labels close to their control */
+html[data-density='compact'] .ant-form-item { margin-bottom: 14px; }
+html[data-density='compact'] .ant-form-item-with-help { margin-bottom: 0; }
+html[data-density='compact'] :is(.ant-form-vertical .ant-form-item-label, .ant-col-24.ant-form-item-label) { padding-bottom: 4px; }
+html[data-density='compact'] .ant-form-item-label > label { height: 30px; }
+html[data-density='compact'] .ant-form-item-control-input { min-height: 30px; }
+html[data-density='compact'] :is(.ant-form-item-explain, .ant-form-item-extra) { font-size: 12px; }
+
+html[data-density='compact'] .ant-tag { line-height: 18px; }
+
+/* Cards */
+html[data-density='compact'] .ant-card-head { min-height: 44px; padding: 0 16px; font-size: 14px; }
+html[data-density='compact'] :is(.ant-card-head-title, .ant-card-extra) { padding: 10px 0; }
+html[data-density='compact'] .ant-card-head-title { font-size: 14px; }
+html[data-density='compact'] .ant-card-body { padding: 16px; }
+html[data-density='compact'] .ant-card-small > .ant-card-head { min-height: 36px; padding: 0 12px; }
+html[data-density='compact'] .ant-card-small > .ant-card-head > .ant-card-head-wrapper > :is(.ant-card-head-title, .ant-card-extra) { padding: 6px 0; }
+html[data-density='compact'] .ant-card-small > .ant-card-body { padding: 12px; }
+html[data-density='compact'] .m-table-card .ant-card-body,
+html[data-density='compact'] .ant-card.m-table-flush > .ant-card-body { padding: 0; }
+
+/* Tables: 32 px rows; the toolbar's density menu gives 30 px (Standard) and 26 px (Compact) */
+html[data-density='compact'] .ant-table-thead > tr > th { padding: 8px 10px; }
+html[data-density='compact'] .ant-table-tbody > tr > td { padding: 6px 10px; }
+html[data-density='compact'] .ant-table-middle .ant-table-thead > tr > th { padding: 6px 10px; }
+html[data-density='compact'] .ant-table-middle .ant-table-tbody > tr > td { padding: 5px 10px; }
+html[data-density='compact'] .ant-table-small .ant-table-thead > tr > th { padding: 5px 8px; }
+html[data-density='compact'] .ant-table-small .ant-table-tbody > tr > td { padding: 3px 8px; }
+html[data-density='compact'] .ant-table-summary > tr > td { padding: 6px 10px; }
+html[data-density='compact'] .ant-table-pagination.ant-pagination { margin: 12px 0 0; }
+html[data-density='compact'] .m-table-card .ant-table-thead > tr > th:first-child,
+html[data-density='compact'] .m-table-card .ant-table-tbody > tr > td:first-child { padding-left: 16px; }
+html[data-density='compact'] .m-table-card .ant-table-thead > tr > th:last-child,
+html[data-density='compact'] .m-table-card .ant-table-tbody > tr > td:last-child { padding-right: 16px; }
+html[data-density='compact'] .m-table-card .ant-table-pagination.ant-pagination { margin: 0; padding: 8px 16px; }
+html[data-density='compact'] .m-table-toolbar { min-height: 46px; padding: 7px 16px; gap: 8px 12px; }
+html[data-density='compact'] .m-table-toolbar-title { font-size: 14px; }
+html[data-density='compact'] .m-table-alert { margin: 8px 16px 0; }
+html[data-density='compact'] .m-table-filters { gap: 8px 12px; padding: 10px 16px; }
+html[data-density='compact'] .m-grid-cell { min-height: 28px; padding-block: 3px; }
+html[data-density='compact'] .m-grid-summary { padding: 8px 16px; }
+html[data-density='compact'] .m-entity { gap: 10px; }
+
+html[data-density='compact'] :is(.ant-pagination-item, .ant-pagination-prev, .ant-pagination-next, .ant-pagination-jump-prev, .ant-pagination-jump-next) {
+    min-width: 28px; height: 28px; line-height: 26px;
+}
+html[data-density='compact'] :is(.ant-pagination-prev, .ant-pagination-next, .ant-pagination-jump-prev, .ant-pagination-jump-next) { line-height: 28px; }
+html[data-density='compact'] :is(.ant-pagination-total-text, .ant-pagination-options-quick-jumper) { height: 28px; line-height: 28px; }
+html[data-density='compact'] .ant-pagination-options-quick-jumper input { height: 28px; }
+
+/* Overlays */
+html[data-density='compact'] .ant-modal-header { padding: 12px 16px; }
+html[data-density='compact'] .ant-modal-title { font-size: 15px; }
+html[data-density='compact'] .ant-modal-body { padding: 16px; }
+html[data-density='compact'] .ant-modal-footer { padding: 10px 16px; }
+html[data-density='compact'] .ant-modal-close-x { width: 46px; height: 46px; line-height: 46px; }
+html[data-density='compact'] .ant-modal-confirm .ant-modal-body { padding: 20px; }
+html[data-density='compact'] .ant-drawer-header { padding: 12px 16px; }
+html[data-density='compact'] .ant-drawer-body { padding: 16px; }
+html[data-density='compact'] .ant-drawer-footer { padding: 10px 16px; }
+html[data-density='compact'] .m-drawer-form { margin: -16px; }
+html[data-density='compact'] .m-drawer-form-body { padding: 16px; }
+html[data-density='compact'] .m-drawer-form-footer { padding: 10px 16px; }
+html[data-density='compact'] .ant-popover-inner-content { padding: 8px 12px; }
+html[data-density='compact'] .ant-dropdown-menu-item { padding: 5px 10px; }
+html[data-density='compact'] .ant-select-item { min-height: 28px; padding: 4px 10px; line-height: 20px; }
+
+/* Data display */
+html[data-density='compact'] .ant-tabs-tab { padding: 8px 0; }
+html[data-density='compact'] .ant-tabs-tab + .ant-tabs-tab { margin-inline-start: 24px; }
+html[data-density='compact'] .ant-tabs-small > .ant-tabs-nav .ant-tabs-tab { padding: 6px 0; }
+html[data-density='compact'] .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab { padding: 6px 12px; }
+html[data-density='compact'] .ant-tabs-card > .ant-tabs-nav .ant-tabs-tab + .ant-tabs-tab { margin-inline-start: 2px; }
+html[data-density='compact'] :is(.ant-tabs-top, .ant-tabs-bottom) > .ant-tabs-nav { margin-bottom: 12px; }
+html[data-density='compact'] .ant-tabs-tab .m-ti { width: 16px; height: 16px; vertical-align: -3px; }
+html[data-density='compact'] :is(.ant-menu-vertical, .ant-menu-inline) > :is(.ant-menu-item, .ant-menu-submenu > .ant-menu-submenu-title),
+html[data-density='compact'] .ant-menu-sub.ant-menu-inline > .ant-menu-item { height: 32px; line-height: 32px; margin-block: 2px; }
+html[data-density='compact'] .ant-list-item { padding: 8px 0; }
+html[data-density='compact'] .ant-descriptions-header { margin-bottom: 12px; }
+html[data-density='compact'] .ant-descriptions-title { font-size: 14px; }
+html[data-density='compact'] :is(.ant-descriptions-row > th, .ant-descriptions-row > td) { padding-bottom: 8px; }
+html[data-density='compact'] .ant-descriptions-bordered :is(.ant-descriptions-item-label, .ant-descriptions-item-content) { padding: 6px 12px; }
+html[data-density='compact'] .ant-collapse > .ant-collapse-item > .ant-collapse-header { padding: 8px 12px; }
+html[data-density='compact'] .ant-collapse-content > .ant-collapse-content-box { padding: 12px; }
+html[data-density='compact'] .ant-alert { padding: 6px 12px; }
+html[data-density='compact'] .ant-statistic-content { font-size: 20px; }
+html[data-density='compact'] .ant-timeline-item { padding-bottom: 14px; }
+
+/* Page primitives */
+html[data-density='compact'] .m-page-header { gap: 8px 12px; margin-bottom: 16px; min-height: 30px; }
+html[data-density='compact'] .m-pretitle { font-size: 11px; }
+html[data-density='compact'] .m-page-title { font-size: 18px; line-height: 26px; }
+html[data-density='compact'] :is(.m-page-extra, .m-page-actions) { gap: 6px; }
+html[data-density='compact'] :is(.m-grid, .m-stack) { gap: 12px; }
+html[data-density='compact'] .m-stack-sm { gap: 6px; }
+html[data-density='compact'] .m-section-title { margin-bottom: 8px; font-size: 14px; line-height: 20px; }
+html[data-density='compact'] .m-demo-section { margin-bottom: 24px; }
+html[data-density='compact'] .m-demo-nav { margin-bottom: 16px; }
+html[data-density='compact'] .m-demo-grid { gap: 12px; }
+html[data-density='compact'] .m-stat-card .ant-card-body { padding: 14px 16px 6px; }
+html[data-density='compact'] .m-stat-card-value { font-size: 24px; line-height: 32px; }
+html[data-density='compact'] .m-stat-card-value small { font-size: 14px; }
+html[data-density='compact'] .m-stat-card-chart { height: 40px; }
+html[data-density='compact'] .m-stat-card-footer { margin-top: 6px; padding: 6px 0; line-height: 20px; }
+html[data-density='compact'] .m-query-filter-grid { column-gap: 16px; }
+html[data-density='compact'] .m-footer-toolbar { margin: 16px -16px -16px; padding: 8px 16px; }
+html[data-density='compact'] .m-settings-body { padding: 16px 24px; }
+html[data-density='compact'] .m-settings-title { margin-bottom: 16px; font-size: 18px; }

@@ -10,7 +10,7 @@
         ("Clients", s.Clients.ToString("N0"), "users"),
         ("Invoices", s.Invoices.ToString("N0"), "file-invoice"),
         ("Paid", Fmt.Money0(s.Paid), "circle-check"),
-        ("Unpaid", Fmt.Money0(s.Unpaid), "clock-dollar"),
+        ("Unpaid", Fmt.Money0(s.Unpaid), "ant:clock-circle"),
     ];
 }
 <app-page-header pretitle="Invoice" title="Invoices">
@@ -50,8 +50,7 @@
                         }
                         <input type="hidden" name="pageSize" value="@Model.Request.PageSize" />
                     </form>
-                    <app-button icon="download">Export</app-button>
-                    <app-table-settings reload-href="@grid.Current" />
+                    <app-table-settings reload-href="@grid.Current" clear-href="@grid.ClearLink("keyword", "status")" />
                 </div>
             </div>
 

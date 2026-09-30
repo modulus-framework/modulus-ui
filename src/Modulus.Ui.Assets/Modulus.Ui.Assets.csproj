@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <Description>Static assets of Modulus UI: the Ant Design based stylesheets and the shell, widget and plugin scripts shared by Blazor, MVC and Razor Pages.</Description>
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 

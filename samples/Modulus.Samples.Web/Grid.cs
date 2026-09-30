@@ -56,6 +56,13 @@ public sealed class Grid(HttpRequest request, ProTableRequest paging)
             $"""<th{(col is null ? "" : $" data-col=\"{E(col)}\"")} class="ant-table-cell{ColumnHeader.ThClass(true, current)}"{ColumnHeader.AriaSort(true, current)}{(style is null ? "" : $" style=\"{style}\"")}>{content}</th>""");
     }
 
+    /// <summary>Whether any of the given query values (search, filters) or a column search is set.</summary>
+    public bool Filtered(params string[] filters) =>
+        Searches.Count > 0 || filters.Any(f => !string.IsNullOrWhiteSpace(request.Query[f]));
+
+    /// <summary>The Clear link for a toolbar: the URL without the given filters and column searches, or null when none is set.</summary>
+    public string? ClearLink(params string[] filters) => Filtered(filters) ? ClearHref(filters) : null;
+
     /// <summary>The current URL without the given filters and every column search (Clear filters).</summary>
     public string ClearHref(params string[] filters) =>
         Href([.. filters.Select(f => (f, (string?)null)), .. Searches.Keys.Select(k => (ColumnSearch.Prefix + k, (string?)null))]);

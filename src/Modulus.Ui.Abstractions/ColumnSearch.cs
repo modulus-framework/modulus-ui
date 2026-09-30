@@ -11,6 +11,9 @@ public enum ColumnKind
     Date,
 }
 
+/// <summary>A choice of a column's select in a table's filter row: its label and the column search it sets.</summary>
+public sealed record ColumnChoice(string Label, string Query);
+
 /// <summary>
 /// The per-column search of every table (data table, editable grid, nested grid; Blazor and MVC, mirrored by
 /// modulus-widgets.js). The query is matched against the displayed text: it contains the query, <c>=x</c> is an exact
@@ -27,6 +30,24 @@ public static partial class ColumnSearch
 
     /// <summary>Most column searches read from a query string.</summary>
     public const int MaxSearches = 20;
+
+    /// <summary>Placeholder of a column's box in a table's filter row (under the headers).</summary>
+    public static string FilterPlaceholder(ColumnKind kind) => kind switch
+    {
+        ColumnKind.Number => "e.g. >100 or 10..50",
+        ColumnKind.Date => "e.g. 2027-01-01..2027-06-30",
+        _ => "Filter…",
+    };
+
+    /// <summary>The empty choice of a column's select in the filter row ("Any status").</summary>
+    public static string AnyText(string title) => $"Any {title.ToLowerInvariant()}";
+
+    /// <summary>
+    /// The choices of a filter-row select with the current search: a query that is not one of them (typed in the
+    /// search box, or from a link) is kept as an extra choice, so the select shows what is applied.
+    /// </summary>
+    public static IReadOnlyList<ColumnChoice> WithCurrent(IReadOnlyList<ColumnChoice> choices, string? current) =>
+        string.IsNullOrWhiteSpace(current) || choices.Any(c => c.Query == current.Trim()) ? choices : [.. choices, new ColumnChoice(current.Trim(), current.Trim())];
 
     /// <summary>The help line under the search box.</summary>
     public static string Hint(ColumnKind kind) => kind switch

@@ -1,0 +1,20 @@
+@* World choropleth (jsVectorMap) with its legend; the same markup as the MVC <app-vector-map> (MapHtml.Vector).
+   Hovering a country shows its value, clicking it selects it; the colours follow the light / dark theme. *@
+@using Modulus.Ui.Abstractions.Plugins
+
+@((MarkupString)MapHtml.Vector(Id, Data, Label, Height, Map))
+
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+
+    /// <summary>The values per ISO 3166-1 alpha-2 code and their classes (see <see cref="Choropleth.Build"/>).</summary>
+    [Parameter, EditorRequired] public Choropleth Data { get; set; } = default!;
+
+    /// <summary>Accessible name of the map.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    [Parameter] public string Height { get; set; } = "420px";
+
+    /// <summary>The jsVectorMap map to draw; "world" is bundled.</summary>
+    [Parameter] public string Map { get; set; } = "world";
+}

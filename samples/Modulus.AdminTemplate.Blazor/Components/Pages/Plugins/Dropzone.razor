@@ -1,0 +1,70 @@
+@page "/plugins/dropzone"
+@inject IMessageService Message 
+
+<PageTitle>Dropzone · Modulus</PageTitle>
+
+<PageHeading Pretitle="Plugins" Title="Dropzone" Subtitle="Drop files or click to pick them. Each file uploads at once and shows its progress." />
+
+<div class="m-row-cards">
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Drag and drop, with previews</h3><p class="m-card-subtitle">@Limits A file that breaks a rule is refused with the reason.</p></div></div>
+        <div class="m-card-body">
+            <Upload Name="file" Drag Multiple ListType="UploadListType.Picture" Accept="@PluginsContent.UploadAccept" Action="/plugins/dropzone/upload"
+                    BeforeUpload="Check" BeforeAllUpload="HasRoom" @bind-FileList="_files">
+                <p class="ant-upload-drag-icon"><Icon Type="inbox" /></p>
+                <p class="ant-upload-text">Drop files here or click to upload</p>
+                <p class="ant-upload-hint">@Limits</p>
+            </Upload>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Button upload</h3><p class="m-card-subtitle">One file at a time, uploaded at once</p></div></div>
+            <div class="m-card-body">
+                <Upload Name="file" Accept=".pdf" Action="/plugins/dropzone/upload" BeforeUpload="Check" @bind-FileList="_single" OnChange="KeepLast">
+                    <Button Icon="upload">Upload a PDF</Button>
+                </Upload>
+                <div class="m-upload-hint">PDF only; the new file replaces the old one.</div>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">What the server checks</h3><p class="m-card-subtitle">The browser checks first; the endpoint checks again</p></div></div>
+            <div class="m-card-body">
+                <ul class="m-plain-list">
+                    <li><Icon Type="file-protect" /><span>Type: <code>@PluginsContent.UploadAccept</code></span></li>
+                    <li><Icon Type="column-height" /><span>Size: up to @PluginsContent.MaxUploadMb MB per file</span></li>
+                    <li><Icon Type="ordered-list" /><span>Count: at most @PluginsContent.MaxUploadFiles files in the drop area</span></li>
+                    <li><Icon Type="delete" /><span>Nothing is stored: the demo endpoint answers and discards the file</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private static readonly string Limits = $"PDF or images, up to {PluginsContent.MaxUploadMb} MB each, at most {PluginsContent.MaxUploadFiles} files.";
+
+    private List<UploadFileItem> _files = [];
+    private List<UploadFileItem> _single = [];
+
+    // The same rules as the server (PluginsContent.CheckUpload); AntD drops a rejected file, so say why.
+    private bool Check(UploadFileItem file)
+    {
+        if (PluginsContent.CheckUpload(file.FileName, file.Size) is not { } error) return true;
+        Message.Error($"{file.FileName}: {error}");
+        return false;
+    }
+
+    private bool HasRoom(List<UploadFileItem> files)
+    {
+        if (_files.Count + files.Count <= PluginsContent.MaxUploadFiles) return true;
+        Message.Error($"At most {PluginsContent.MaxUploadFiles} files.");
+        return false;
+    }
+
+    private void KeepLast(UploadInfo info)
+    {
+        if (_single.Count > 1) _single = [_single[^1]];
+    }
+}

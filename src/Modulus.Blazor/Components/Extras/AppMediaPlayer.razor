@@ -1,0 +1,50 @@
+@* Inline media player: a <video> or <audio> with Ant Design controls (play, seek, volume, speed, captions, full screen).
+   The markup comes from Modulus.Ui.Abstractions.Plugins.MediaPlayerHtml, the same as the MVC <app-media-player>, and
+   modulus-plugins.js runs it from the markup alone, so no JS interop is needed. Playback state lives in the browser:
+   re-rendering with the same parameters leaves a playing video alone. *@
+@using Modulus.Ui.Abstractions.Plugins
+
+@((MarkupString)Markup)
+
+@code {
+    /// <summary>The media URL.</summary>
+    [Parameter, EditorRequired] public string Src { get; set; } = "";
+
+    /// <summary>True for a video, false for an audio bar.</summary>
+    [Parameter] public bool Video { get; set; } = true;
+
+    /// <summary>Picture shown before a video plays; the cover of an audio track.</summary>
+    [Parameter] public string? Poster { get; set; }
+
+    /// <summary>Title of an audio track, and the player's accessible name.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Second line of an audio track (artist, album).</summary>
+    [Parameter] public string? Subtitle { get; set; }
+
+    /// <summary>Captions, shown with the CC button or the c key.</summary>
+    [Parameter] public IReadOnlyList<MediaCaption>? Captions { get; set; }
+
+    [Parameter] public bool CaptionsOn { get; set; }
+
+    [Parameter] public bool Loop { get; set; }
+
+    /// <summary>Width / height of the video box, e.g. "16 / 9" or "4 / 3".</summary>
+    [Parameter] public string AspectRatio { get; set; } = "16 / 9";
+
+    [Parameter] public string? CssClass { get; set; }
+
+    private string Markup => MediaPlayerHtml.Render(new MediaPlayerOptions
+    {
+        Src = Src,
+        Video = Video,
+        Poster = Poster,
+        Title = Title,
+        Subtitle = Subtitle,
+        Captions = Captions ?? [],
+        CaptionsOn = CaptionsOn,
+        Loop = Loop,
+        AspectRatio = AspectRatio,
+        CssClass = CssClass,
+    });
+}

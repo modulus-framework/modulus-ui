@@ -1,0 +1,78 @@
+@* Colour picker: presets, formats, alpha, sizes, states, and a GET form whose values come back in the query string
+   (the same URL in MVC, Razor Pages and Blazor). *@
+@{
+    var brand = PluginsContent.Brand(Context.Request.Query["primary"], Context.Request.Query["accent"]);
+    var saved = Context.Request.Query.ContainsKey("primary");
+}
+<app-page-header pretitle="Plugins" title="Color picker" subtitle="Palette, hue and alpha sliders, hex or RGB input and preset swatches. Posts the colour as text."></app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Presets</h3><p class="m-card-subtitle">Brand swatches above the recommended palette</p></div></div>
+            <div class="m-card-body" x-data="{ color: '#066fd1' }" @@change="if ($event.target.name === 'PresetColor') color = $event.target.value || 'none'">
+                <div class="m-demo-row">
+                    <app-color-picker name="PresetColor" value="#066fd1" presets="GalleryData.ColorPresets" show-text aria-label="Colour with presets" />
+                </div>
+                <p class="m-muted">Value: <code x-text="color">#066fd1</code></p>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Formats</h3><p class="m-card-subtitle">The trigger shows, and the form posts, hex or RGB</p></div></div>
+            <div class="m-card-body">
+                <div class="m-demo-row">
+                    <app-color-picker name="HexColor" value="#2fb344" show-text aria-label="Colour in hex" />
+                    <app-color-picker name="RgbColor" value="#ae3ec9" format="rgb" show-text aria-label="Colour in RGB" />
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Alpha</h3><p class="m-card-subtitle">With the alpha slider, or opaque colours only</p></div></div>
+            <div class="m-card-body">
+                <div class="m-demo-row">
+                    <app-color-picker name="AlphaColor" value="#d6336c80" show-text aria-label="Colour with alpha" />
+                    <app-color-picker name="OpaqueColor" value="#d6336c" show-text disabled-alpha aria-label="Opaque colour" />
+                </div>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Sizes and states</h3><p class="m-card-subtitle">Small, middle and large; clearable; disabled</p></div></div>
+            <div class="m-card-body">
+                <div class="m-demo-row">
+                    <app-color-picker name="SmallColor" value="#f76707" size="small" aria-label="Small colour picker" />
+                    <app-color-picker name="MiddleColor" value="#f76707" aria-label="Middle colour picker" />
+                    <app-color-picker name="LargeColor" value="#f76707" size="large" aria-label="Large colour picker" />
+                    <app-color-picker name="ClearColor" value="#0ca678" allow-clear show-text aria-label="Clearable colour picker" />
+                    <app-color-picker name="DisabledColor" value="#722ed1" disabled aria-label="Disabled colour picker" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Inside a form</h3><p class="m-card-subtitle">Pick the brand colours and apply them; the preview shows what was submitted</p></div></div>
+        <div class="m-card-body">
+            <div class="m-row-cards m-cols-2">
+                <form class="ant-form ant-form-vertical" method="get" action="/plugins/color-picker">
+                    <app-form-item label="Primary colour">
+                        <app-color-picker name="primary" value="@brand.Primary" presets="GalleryData.ColorPresets" show-text disabled-alpha aria-label="Primary colour" />
+                    </app-form-item>
+                    <app-form-item label="Accent colour">
+                        <app-color-picker name="accent" value="@brand.Accent" presets="GalleryData.ColorPresets" show-text disabled-alpha aria-label="Accent colour" />
+                    </app-form-item>
+                    <div class="m-demo-row">
+                        <button type="submit" class="ant-btn ant-btn-primary"><app-icon type="check" /><span>Apply colours</span></button>
+                        <a class="ant-btn ant-btn-default" href="/plugins/color-picker"><span>Reset</span></a>
+                    </div>
+                </form>
+                <div class="m-color-preview" style="--m-preview-primary:@brand.Primary;--m-preview-accent:@brand.Accent" aria-label="Brand preview">
+                    <div class="m-color-preview-bar"><strong>Acme Inc</strong><span class="m-color-preview-tag">New</span></div>
+                    <p>@(saved ? "Applied colours" : "Default colours"): <code>@brand.Primary</code> and <code>@brand.Accent</code>.</p>
+                    <span class="m-color-preview-btn">Primary action</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

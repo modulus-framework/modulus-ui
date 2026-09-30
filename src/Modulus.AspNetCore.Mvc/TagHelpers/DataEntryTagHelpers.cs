@@ -279,39 +279,70 @@ public class SwitchTagHelper : BoundControlTagHelper
 }
 
 /// <summary>
-/// Date / time picker over the browser's native picker (accessible, localized, no JS bundle):
-/// <c>&lt;app-date-picker asp-for="Start" /&gt;</c>, <c>picker="time"</c>, <c>picker="month"</c>, <c>show-time</c>.
+/// Date / time picker with Ant Design's own popup, as AntD Blazor's DatePicker renders it:
+/// <c>&lt;app-date-picker asp-for="Start" /&gt;</c>, <c>picker="week|month|quarter|year|time"</c>, <c>show-time</c>.
+/// The text input shows the value in AntD's format (<c>2026-09-28</c>, <c>2026-09-28 10:00:00</c>, <c>2026-39Week</c>,
+/// <c>2026-09</c>, <c>2026-Q3</c>, <c>2026</c>); a hidden input posts <see cref="PickerText.Canonical"/>. Disabled dates:
+/// <c>min</c> / <c>max</c> (yyyy-MM-dd) and <c>disabled-days="sat,sun"</c>. Runs on <c>modulusPicker</c> (modulus-widgets.js).
 /// </summary>
 [HtmlTargetElement("app-date-picker", TagStructure = TagStructure.WithoutEndTag)]
 public class DatePickerTagHelper : BoundControlTagHelper
 {
-    /// <summary>Opens the native picker on click, not only from the calendar icon.</summary>
-    internal const string ShowPicker = " x-data @click=\"modulusShowPicker($el)\"";
-
-    /// <summary>date | week | month | time</summary>
+    /// <summary>date | week | month | quarter | year | time</summary>
     public string Picker { get; set; } = "date";
 
-    /// <summary>Date and time (datetime-local).</summary>
+    /// <summary>Date and time: a date panel with hour, minute and second columns, and Now / Ok.</summary>
     public bool ShowTime { get; set; }
+
+    /// <summary>Time columns for <c>picker="time"</c> and <c>show-time</c>: <c>HH:mm:ss</c> (default) or <c>HH:mm</c>.</summary>
+    public string Format { get; set; } = "HH:mm:ss";
+
+    /// <summary>Weekdays that can't be picked, as names or numbers (<c>"sat,sun"</c> or <c>"6,0"</c>), as AntD's <c>DisabledDate</c>.</summary>
+    public string? DisabledDays { get; set; }
+
+    /// <summary>Shown when a disabled date is typed.</summary>
+    public string DisabledDaysMessage { get; set; } = "This date can't be picked.";
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
-        var type = ShowTime ? "datetime-local" : Picker;
-        if (Picker == "time" && For?.Model is DateTime t) Value ??= t.ToString("HH:mm", CultureInfo.InvariantCulture);
-        if (Picker == "month" && For?.Model is DateTime mo) Value ??= mo.ToString("yyyy-MM", CultureInfo.InvariantCulture);
-        var attrs = ControlAttributes(output);
+        var (name, id, value) = Bound();
+        var picker = Picker is "week" or "month" or "quarter" or "year" or "time" ? Picker : "date";
+        var date = PickerText.TryParse(value, out var d) ? d : (DateTime?)null;
+        var (min, max) = (TakeAttribute(output, "min"), TakeAttribute(output, "max"));
+        var placeholder = TakeAttribute(output, "placeholder") ?? PickerText.Placeholder(picker);
+        var attrs = output.TakeAttributes();
+        var cfg = Widgets.Config(new
+        {
+            picker, showTime = ShowTime, format = Format,
+            values = new[] { date is { } v ? PickerText.Canonical(v, picker, ShowTime, Format) : "" },
+            min, max, days = PickerText.Days(DisabledDays), message = DisabledDaysMessage, disabled = Disabled,
+        });
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;
         output.AddClasses("ant-picker", Size switch { "small" => "ant-picker-small", "large" => "ant-picker-large", _ => null }, StatusClass("ant-picker"), Disabled ? "ant-picker-disabled" : null, "m-picker");
+        PickerText.Root(output, cfg);
+        var text = date is { } t ? PickerText.Display(t, picker, ShowTime, Format) : "";
         output.Content.SetHtmlContent(
-            $"""<div class="ant-picker-input"><input type="{type}"{ShowPicker}{attrs} />""" +
-            $"""<span class="ant-picker-suffix" aria-hidden="true">{AntIcons.Span(Picker == "time" ? "clock-circle" : "calendar")}</span></div>""");
+            """<div class="ant-picker-input">""" +
+            PickerText.TextInput(0, placeholder, text, id.Length > 0 && !attrs.Contains(" id=\"", StringComparison.Ordinal) ? id : null, Disabled, EffectiveStatus == "error", attrs) +
+            $"""<span class="ant-picker-suffix" aria-hidden="true">{AntIcons.Span(picker == "time" ? "clock-circle" : "calendar")}</span>""" +
+            PickerText.Clear("values[0]", Disabled) + "</div>" +
+            PickerText.Hidden(name, date is { } h ? PickerText.Canonical(h, picker, ShowTime, Format) : "", 0) +
+            PickerText.Drop);
+    }
+
+    internal static string? TakeAttribute(TagHelperOutput output, string name)
+    {
+        if (!output.Attributes.TryGetAttribute(name, out var a)) return null;
+        output.Attributes.Remove(a);
+        return a.Value?.ToString();
     }
 }
 
 /// <summary>
-/// Date range: <c>&lt;app-range-picker asp-for="Period" /&gt;</c> binds a two-item array/list;
-/// or use <c>name-from</c> / <c>name-to</c> with <c>value-from</c> / <c>value-to</c>.
+/// Date range with Ant Design's two-month popup: <c>&lt;app-range-picker asp-for="Period" /&gt;</c> binds a two-item
+/// array/list, or use <c>name-from</c> / <c>name-to</c> with <c>value-from</c> / <c>value-to</c>. <c>presets</c> fills the
+/// popup footer with preset tags (AntD's <c>Ranges</c>); <c>min</c>, <c>max</c> and <c>disabled-days</c> disable dates.
 /// </summary>
 [HtmlTargetElement("app-range-picker", TagStructure = TagStructure.WithoutEndTag)]
 public class RangePickerTagHelper : BoundControlTagHelper
@@ -320,28 +351,168 @@ public class RangePickerTagHelper : BoundControlTagHelper
     public string? NameTo { get; set; }
     public string? ValueFrom { get; set; }
     public string? ValueTo { get; set; }
+
+    /// <summary>Dates with times: a date panel with time columns for the end being edited, and Now / Ok.</summary>
     public bool ShowTime { get; set; }
+
+    /// <inheritdoc cref="DatePickerTagHelper.Format"/>
+    public string Format { get; set; } = "HH:mm:ss";
+
     public string PlaceholderFrom { get; set; } = "Start date";
     public string PlaceholderTo { get; set; } = "End date";
 
+    /// <summary>Preset ranges, shown as tags in the popup footer.</summary>
+    public IEnumerable<Modulus.Ui.Abstractions.Forms.DateRangePreset>? Presets { get; set; }
+
+    /// <inheritdoc cref="DatePickerTagHelper.DisabledDays"/>
+    public string? DisabledDays { get; set; }
+
+    /// <inheritdoc cref="DatePickerTagHelper.DisabledDaysMessage"/>
+    public string DisabledDaysMessage { get; set; } = "This date can't be picked.";
+
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
-        var (name, _, _) = Bound();
+        var (name, id, _) = Bound();
         var values = For?.Model is IEnumerable list and not string ? list.Cast<object?>().Select(Html.Format).ToArray() : [];
-        var from = ValueFrom ?? values.ElementAtOrDefault(0);
-        var to = ValueTo ?? values.ElementAtOrDefault(1);
-        var type = ShowTime ? "datetime-local" : "date";
-        var extra = output.TakeAttributes();
-        const string open = DatePickerTagHelper.ShowPicker;
+        var raw = new[] { ValueFrom ?? values.ElementAtOrDefault(0), ValueTo ?? values.ElementAtOrDefault(1) };
+        var dates = raw.Select(r => PickerText.TryParse(r, out var d) ? d : (DateTime?)null).ToArray();
+        var (min, max) = (DatePickerTagHelper.TakeAttribute(output, "min"), DatePickerTagHelper.TakeAttribute(output, "max"));
+        var attrs = output.TakeAttributes();
+        const string Fmt = "yyyy-MM-dd";
+        var cfg = Widgets.Config(new
+        {
+            picker = "date", showTime = ShowTime, format = Format, range = true,
+            values = dates.Select(d => d is { } v ? PickerText.Canonical(v, "date", ShowTime, Format) : "").ToArray(),
+            min, max, days = PickerText.Days(DisabledDays), message = DisabledDaysMessage, disabled = Disabled,
+            presets = (Presets ?? []).Select(p => new
+            {
+                label = p.Label,
+                from = p.From.ToString(Fmt, CultureInfo.InvariantCulture) + (ShowTime ? "T00:00:00" : ""),
+                to = p.To.ToString(Fmt, CultureInfo.InvariantCulture) + (ShowTime ? "T23:59:59" : ""),
+            }).ToArray(),
+        });
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;
-        output.AddClasses("ant-picker", "ant-picker-range", StatusClass("ant-picker"), Disabled ? "ant-picker-disabled" : null, "m-picker");
+        output.AddClasses("ant-picker", "ant-picker-range", Size switch { "small" => "ant-picker-small", "large" => "ant-picker-large", _ => null }, StatusClass("ant-picker"), Disabled ? "ant-picker-disabled" : null, "m-picker");
+        PickerText.Root(output, cfg);
+        string Text(int i) => dates[i] is { } t ? PickerText.Display(t, "date", ShowTime, Format) : "";
+        string Value(int i) => dates[i] is { } t ? PickerText.Canonical(t, "date", ShowTime, Format) : "";
+        var firstId = id.Length > 0 && !attrs.Contains(" id=\"", StringComparison.Ordinal) ? id : null;
+        var error = EffectiveStatus == "error";
         output.Content.SetHtmlContent(
-            $"""<div class="ant-picker-input"><input type="{type}"{open} aria-label="{Html.E(PlaceholderFrom)}"{Html.Attr("name", NameFrom ?? name)}{Html.Attr("value", from)}{Html.Attr("disabled", Disabled)}{extra} /></div>""" +
+            $"""<div class="ant-picker-input" :class="open && active === 0 && 'ant-picker-input-active'">{PickerText.TextInput(0, PlaceholderFrom, Text(0), firstId, Disabled, error, attrs)}</div>""" +
             $"""<div class="ant-picker-range-separator"><span aria-label="to" class="ant-picker-separator">{AntIcons.Span("swap-right")}</span></div>""" +
-            $"""<div class="ant-picker-input"><input type="{type}"{open} aria-label="{Html.E(PlaceholderTo)}"{Html.Attr("name", NameTo ?? name)}{Html.Attr("value", to)}{Html.Attr("disabled", Disabled)}{extra} /></div>""" +
-            $"""<span class="ant-picker-suffix" aria-hidden="true">{AntIcons.Span("calendar")}</span>""");
+            $"""<div class="ant-picker-input" :class="open && active === 1 && 'ant-picker-input-active'">{PickerText.TextInput(1, PlaceholderTo, Text(1), null, Disabled, error, attrs)}</div>""" +
+            """<div class="ant-picker-active-bar" :style="bar"></div>""" +
+            $"""<span class="ant-picker-suffix" aria-hidden="true">{AntIcons.Span("calendar")}</span>""" +
+            PickerText.Clear("values[0] || values[1]", Disabled) +
+            PickerText.Hidden(NameFrom ?? name, Value(0), 0) + PickerText.Hidden(NameTo ?? name, Value(1), 1) +
+            PickerText.Drop);
     }
+}
+
+/// <summary>
+/// Values and markup of <c>app-date-picker</c> / <c>app-range-picker</c>: parsing, AntD Blazor's display formats (en-US) and
+/// the canonical posted form, which <c>modulusPicker</c> (modulus-widgets.js) mirrors.
+/// </summary>
+public static class PickerText
+{
+    private static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
+    private static readonly string[] DayNames = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
+    /// <summary>AntD's en-US placeholders.</summary>
+    public static string Placeholder(string picker) => picker switch
+    {
+        "week" => "Select week", "month" => "Select month", "quarter" => "Select quarter", "year" => "Select year", "time" => "Select time",
+        _ => "Select date",
+    };
+
+    /// <summary>Week of the year as AntD Blazor counts it for en-US (CalendarWeekRule.FirstDay, Sunday).</summary>
+    public static int Week(DateTime d) => Inv.Calendar.GetWeekOfYear(d, CalendarWeekRule.FirstDay, DayOfWeek.Sunday);
+
+    /// <summary>
+    /// Reads yyyy-MM-dd, yyyy-MM-ddTHH:mm[:ss], yyyy-MM-dd HH:mm:ss, yyyy-MM, yyyy-Qn, yyyy-Www, yyyy and HH:mm[:ss]
+    /// (the time on today's date).
+    /// </summary>
+    public static bool TryParse(string? text, out DateTime value)
+    {
+        value = default;
+        var s = text?.Trim() ?? "";
+        if (s.Length == 0) return false;
+        string[] full = ["yyyy-MM-dd", "yyyy-MM-dd'T'HH:mm", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF"];
+        if (DateTime.TryParseExact(s, full, Inv, DateTimeStyles.None, out value)) return true;
+        if (s.Length is 7 && (s[5] is 'Q' or 'q') && int.TryParse(s[..4], NumberStyles.None, Inv, out var qy) && s[6] is >= '1' and <= '4')
+        {
+            value = new DateTime(qy, (s[6] - '1') * 3 + 1, 1);
+            return true;
+        }
+        var w = s.IndexOf("-W", StringComparison.OrdinalIgnoreCase);
+        if (w == 4 && int.TryParse(s[..4], NumberStyles.None, Inv, out var wy) && int.TryParse(s[6..], NumberStyles.None, Inv, out var wn) && wn is >= 1 and <= 53)
+        {
+            var jan1 = new DateTime(wy, 1, 1);
+            var start = jan1.AddDays(-(int)jan1.DayOfWeek + (wn - 1) * 7);
+            value = start.Year < wy ? jan1 : start;
+            return true;
+        }
+        if (DateTime.TryParseExact(s, "yyyy-MM", Inv, DateTimeStyles.None, out value)) return true;
+        if (s.Length == 4 && int.TryParse(s, NumberStyles.None, Inv, out var y) && y >= 1) { value = new DateTime(y, 1, 1); return true; }
+        if (TimeOnly.TryParseExact(s, ["HH:mm", "HH:mm:ss", "H:mm"], Inv, DateTimeStyles.None, out var time))
+        {
+            value = DateTime.Today.Add(time.ToTimeSpan());
+            return true;
+        }
+        return false;
+    }
+
+    private static string Time(DateTime d, string format) =>
+        d.ToString(format.Split(':').Length >= 3 ? "HH:mm:ss" : "HH:mm", Inv);
+
+    /// <summary>The text AntD Blazor shows for the value.</summary>
+    public static string Display(DateTime d, string picker, bool showTime, string format = "HH:mm:ss") => picker switch
+    {
+        "time" => Time(d, format),
+        _ when showTime => d.ToString("yyyy-MM-dd", Inv) + " " + Time(d, format),
+        "week" => $"{d.Year}-{Week(d)}Week",
+        "month" => d.ToString("yyyy-MM", Inv),
+        "quarter" => $"{d.Year}-Q{(d.Month - 1) / 3 + 1}",
+        "year" => d.Year.ToString(Inv),
+        _ => d.ToString("yyyy-MM-dd", Inv),
+    };
+
+    /// <summary>The posted value: as displayed, except yyyy-MM-ddTHH:mm:ss for dates with times and yyyy-Www for weeks.</summary>
+    public static string Canonical(DateTime d, string picker, bool showTime, string format = "HH:mm:ss") =>
+        showTime && picker != "time" ? d.ToString("yyyy-MM-dd'T'HH:mm:ss", Inv)
+        : picker == "week" ? $"{d.Year}-W{Week(d):00}"
+        : Display(d, picker, showTime, format);
+
+    /// <summary>Disabled weekdays as JavaScript <c>getDay()</c> numbers, from names or numbers ("sat,sun" or "6,0").</summary>
+    public static int[] Days(string? days) => string.IsNullOrWhiteSpace(days) ? [] :
+        days.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(d => int.TryParse(d, NumberStyles.None, Inv, out var n)
+                ? (n is >= 0 and <= 6 ? n : -1)
+                : Array.FindIndex(DayNames, x => d.StartsWith(x, StringComparison.OrdinalIgnoreCase)))
+            .Where(n => n >= 0).Distinct().Order().ToArray();
+
+    internal static void Root(TagHelperOutput output, string config)
+    {
+        output.Attributes.SetAttribute("x-data", new Microsoft.AspNetCore.Html.HtmlString($"modulusPicker({config})"));
+        output.Attributes.SetAttribute("@click.outside", "close(true)");
+        output.Attributes.SetAttribute("@mousedown", "rootDown($event)");
+    }
+
+    internal static string TextInput(int i, string placeholder, string text, string? id, bool disabled, bool invalid, string attrs) =>
+        $"""<input type="text" data-m-picker-text placeholder="{Html.E(placeholder)}" size="12" autocomplete="off" aria-haspopup="dialog" :aria-expanded="open"{Html.Attr("id", id)}""" +
+        $"""{Html.Attr("aria-label", id is null ? placeholder : null)} value="{Html.E(text)}" :value="texts[{i}]"{Html.Attr("disabled", disabled)}{(invalid ? " aria-invalid=\"true\"" : "")}""" +
+        $""" @focus="show({i})" @click="show({i})" @input="typed({i}, $event)" @keydown="keydown({i}, $event)"{attrs} />""";
+
+    internal static string Clear(string when, bool disabled) => disabled ? "" :
+        $"""<span class="ant-picker-clear" role="button" aria-label="Clear" x-show="{when}" x-cloak @mousedown.prevent @click.stop="clear()">{AntIcons.Span("close-circle", IconThemeType.Fill)}</span>""";
+
+    internal static string Hidden(string name, string value, int i) => name.Length == 0 ? "" :
+        $"""<input type="hidden" name="{Html.E(name)}" value="{Html.E(value)}" data-m-picker-value="{i}" />""";
+
+    internal const string Drop =
+        """<div x-ref="drop" :class="dropClass()" x-show="open" x-cloak x-html="open ? panel() : ''" @mousedown.prevent @click="pick($event)" @mouseover="hoverCell($event)"></div>""";
 }
 
 /// <summary>Slider over a native range input: <c>&lt;app-slider asp-for="Discount" min="0" max="100" show-value /&gt;</c>.</summary>
@@ -480,6 +651,9 @@ public class CheckboxGroupTagHelper : BoundControlTagHelper
 /// File upload: a button, or a drag-and-drop area with <c>drag</c>. Selected files are listed and can be
 /// removed before submit (the enclosing form needs <c>enctype="multipart/form-data"</c>).
 /// <code>&lt;app-upload name="files" drag multiple accept=".pdf,image/*" hint="PDF or images up to 10 MB" /&gt;</code>
+/// With <c>action</c> each file is posted there as soon as it is picked (field <c>name</c>, antiforgery header
+/// included) and shows its progress. <c>max-size</c> (MB), <c>max-count</c> and <c>accept</c> reject files in the
+/// browser with a message; <c>list-type="picture"</c> shows image thumbnails.
 /// </summary>
 [HtmlTargetElement("app-upload")]
 public class UploadTagHelper : TagHelper
@@ -496,15 +670,41 @@ public class UploadTagHelper : TagHelper
     /// <summary>Secondary text in the drag area.</summary>
     public string? Hint { get; set; }
 
+    /// <summary>text | picture</summary>
+    public string ListType { get; set; } = "text";
+
+    /// <summary>Largest file in megabytes.</summary>
+    public double? MaxSize { get; set; }
+
+    /// <summary>Most files in the list.</summary>
+    public int? MaxCount { get; set; }
+
+    /// <summary>URL each file is posted to as soon as it is added; unset keeps the files in the form.</summary>
+    public string? Action { get; set; }
+
     public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
     {
         var custom = (await output.GetChildContentAsync()).GetContent();
         var extra = output.TakeAttributes();
+        var picture = ListType == "picture";
         var input = $"""<input type="file" class="m-upload-input" x-ref="input" @change="sync()" name="{Html.E(Name)}"{Html.Attr("multiple", Multiple)}{Html.Attr("accept", Accept)}{Html.Attr("disabled", Disabled)}{extra} />""";
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;
         output.AddClasses("ant-upload-wrapper", "m-upload");
-        output.Attributes.SetAttribute("x-data", "modulusUpload");
+        var inv = CultureInfo.InvariantCulture;
+        output.Attributes.SetAttribute("x-data", MaxSize is null && MaxCount is null && Action is null && !picture && Accept is null
+            ? "modulusUpload"
+            : "modulusUpload({ " + string.Join(", ", new[]
+            {
+                MaxSize is { } mb ? $"maxSize: {(mb * 1024 * 1024).ToString("0", inv)}" : null,
+                MaxCount is { } n ? $"maxCount: {n.ToString(inv)}" : null,
+                Accept is null ? null : $"accept: '{Js(Accept)}'",
+                Action is null ? null : $"action: '{Js(Action)}'",
+                picture ? "picture: true" : null,
+            }.Where(x => x is not null)) + " })");
+
+        // Values go into a single-quoted JS string inside an attribute that SetAttribute encodes.
+        static string Js(string value) => value.Replace("\\", "", StringComparison.Ordinal).Replace("'", "", StringComparison.Ordinal);
 
         string trigger;
         if (Drag)
@@ -524,9 +724,19 @@ public class UploadTagHelper : TagHelper
                       (Hint is null ? "" : $"""<div class="m-upload-hint">{Html.E(Hint)}</div>""");
         }
 
+        var type = picture ? "picture" : "text";
+        var icon = picture
+            ? $"""<span class="ant-upload-list-item-thumbnail"><img x-show="file.url" :src="file.url" :alt="file.name" class="ant-upload-list-item-image" /><span x-show="!file.url">{AntIcons.Span("file")}</span></span>"""
+            : $"""<div class="ant-upload-text-icon">{AntIcons.Span("paper-clip")}</div>""";
         output.Content.SetHtmlContent(trigger +
-            """<div class="ant-upload-list ant-upload-list-text"><template x-for="(file, i) in files" :key="file.name + i"><div class="ant-upload-list-text-container"><div class="ant-upload-list-item ant-upload-list-item-done ant-upload-list-item-list-type-text">""" +
-            $"""<div class="ant-upload-list-item-info"><span class="ant-upload-span"><div class="ant-upload-text-icon">{AntIcons.Span("paper-clip")}</div><span class="ant-upload-list-item-name" x-text="file.name" :title="file.name"></span>""" +
-            $"""<span class="ant-upload-list-item-card-actions"><button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only ant-upload-list-item-card-actions-btn" :aria-label="'Remove ' + file.name" @click="remove(i)">{AntIcons.Span("delete")}</button></span></span></div></div></div></template></div>""");
+            $"""<div class="ant-upload-list ant-upload-list-{type}" aria-live="polite"><template x-for="(file, i) in files" :key="file.key"><div class="ant-upload-list-{type}-container">""" +
+            $"""<div class="ant-upload-list-item ant-upload-list-item-list-type-{type}" :class="'ant-upload-list-item-' + file.status">""" +
+            $"""<div class="ant-upload-list-item-info"><span class="ant-upload-span">{icon}<span class="ant-upload-list-item-name" x-text="file.name" :title="file.error || file.name"></span>""" +
+            """<span class="m-upload-size" x-text="file.size"></span>""" +
+            $"""<span class="ant-upload-list-item-card-actions"><button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only ant-upload-list-item-card-actions-btn" :aria-label="'Remove ' + file.name" @click="remove(i)">{AntIcons.Span("delete")}</button></span></span></div>""" +
+            """<div class="ant-upload-list-item-progress" x-show="file.status === 'uploading'"><div class="ant-progress ant-progress-line ant-progress-status-active ant-progress-small" role="progressbar" :aria-valuenow="file.percent" aria-valuemin="0" aria-valuemax="100" :aria-label="'Uploading ' + file.name">""" +
+            """<div class="ant-progress-outer"><div class="ant-progress-inner"><div class="ant-progress-bg" :style="'width:' + file.percent + '%;height:2px'"></div></div></div></div></div>""" +
+            """<div class="m-upload-error" x-show="file.error" x-text="file.error"></div>""" +
+            """</div></div></template></div>""");
     }
 }

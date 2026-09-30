@@ -1,4 +1,4 @@
-@using Microsoft.AspNetCore.Mvc.Rendering
+@using Microsoft.AspNetCore.Mvc.Rendering 
 @model GalleryForm
 @inject SampleStore Store
 @{
@@ -414,8 +414,8 @@
                 <p class="m-demo-desc">The dropdown ends with a name, a tag colour and Add. The new option joins the list and is selected.</p>
                 <div x-data="{ color: 'blue', tags: 'new' }" @@change="color = [...$el.querySelectorAll('input[name=ProductColor]')].map(i => i.value).join('') || 'none'; tags = [...$el.querySelectorAll('input[name=ProductTags]')].map(i => i.value).join(', ')">
                     <div class="m-demo-row">
-                        <app-creatable-select name="ProductColor" value="blue" options="GalleryData.ProductColors" placeholder="Colour" add-placeholder="New colour" allow-clear aria-label="Colour" style="width: 200px" />
-                        <app-creatable-select name="ProductTags" multiple values="@(new[] { "new" })" options="GalleryData.ProductTags" placeholder="Tags" add-placeholder="New tag" aria-label="Tags" style="width: 280px" />
+                        <app-creatable-select name="ProductColor" value="blue" options="GalleryData.ProductColors" placeholder="Colour" add-placeholder="Colour name" create-text="Create new colour" allow-clear aria-label="Colour" style="width: 200px" />
+                        <app-creatable-select name="ProductTags" multiple values="@(new[] { "new" })" options="GalleryData.ProductTags" placeholder="Tags" add-placeholder="Tag name" create-text="Create new tag" aria-label="Tags" style="width: 280px" />
                     </div>
                     <p class="m-muted">Value: <code x-text="color">blue</code> · <code x-text="tags">new</code></p>
                 </div>

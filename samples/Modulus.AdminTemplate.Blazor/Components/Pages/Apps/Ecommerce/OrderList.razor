@@ -22,7 +22,7 @@
         </div>
     </div>
 
-    <ProTable TItem="Order" @ref="_table" HeaderTitle="All orders" Request="LoadAsync" RowKey="o => o.Id" ScrollX="1000">
+    <ProTable TItem="Order" @ref="_table" HeaderTitle="All orders" Request="LoadAsync" RowKey="o => o.Id" ScrollX="1000" FiltersActive="@FiltersActive" OnClearFilters="ClearFilters">
         <ToolBar>
             <Input @bind-Value="_keyword" Placeholder="Search orders…" AllowClear Class="m-table-toolbar-search" OnPressEnter="SearchAsync" OnClear="SearchAsync" Prefix="@_searchIcon" />
             <Select TItemValue="OrderStatus?" TItem="string" Value="_status" ValueChanged="v => FilterAsync(() => _status = v)" Placeholder="Any status" AllowClear Style="width:160px">
@@ -41,7 +41,6 @@
                     }
                 </SelectOptions>
             </Select>
-            <Button Icon="download">Export</Button>
         </ToolBar>
         <Columns Context="row">
             <PropertyColumn Property="o => o.Id" Title="Order" Sortable Width="100">
@@ -84,10 +83,10 @@
 
     private (string Label, string Value, string Icon)[] Strip =>
     [
-        ("Pending payment", _stats.PendingPayment.ToString("N0"), "calendar-time"),
+        ("Pending payment", _stats.PendingPayment.ToString("N0"), "ant:field-time"),
         ("Completed", _stats.Completed.ToString("N0"), "checks"),
         ("Refunded", _stats.Refunded.ToString("N0"), "arrow-back-up"),
-        ("Failed", _stats.Failed.ToString("N0"), "alert-octagon"),
+        ("Failed", _stats.Failed.ToString("N0"), "ant:stop"),
     ];
 
     protected override void OnInitialized() => _stats = Store.OrderStats();
@@ -96,6 +95,16 @@
         Task.FromResult(Store.QueryOrders(new OrderQuery(_keyword, _status, _payment), request));
 
     private Task SearchAsync() => _table!.ReloadAsync(resetPage: true);
+
+    // The table's Clear button: the search box and every filter.
+    private bool FiltersActive => !string.IsNullOrWhiteSpace(_keyword) || _status is not null || _payment is not null;
+
+    private void ClearFilters()
+    {
+        _keyword = null;
+        _status = null;
+        _payment = null;
+    }
 
     private async Task FilterAsync(Action set)
     {

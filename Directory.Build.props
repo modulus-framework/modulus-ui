@@ -5,5 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- Only the libraries under src/ are packed (src/Directory.Build.props); samples, tests and tools are not. -->
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 </Project>

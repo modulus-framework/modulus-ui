@@ -1,0 +1,25 @@
+@page "/plugins/map-vector"
+
+<PageTitle>Map vector · Modulus</PageTitle>
+
+<PageHeading Pretitle="Plugins" Title="Map vector" Subtitle="A world choropleth from jsVectorMap: hover a country for its value, click to select it." />
+
+<div class="m-row-cards">
+    <div class="m-vector-layout">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Sales by country</h3><p class="m-card-subtitle">This year, in US dollars; darker is more</p></div></div>
+            <div class="m-card-body"><AppVectorMap Id="sales-map" Data="PluginsContent.SalesMap" Label="Sales by country" /></div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Top markets</h3><p class="m-card-subtitle">@PluginsContent.Money(PluginsContent.SalesTotal) in @PluginsContent.SalesByCountry.Count countries</p></div></div>
+            <div class="m-card-body">
+                <ul class="m-market-list">
+                    @foreach (var (code, value) in PluginsContent.TopMarkets(8))
+                    {
+                        <li><span class="m-market-name">@PluginsContent.CountryName(code)</span><span class="m-market-value">@PluginsContent.Money(value)</span><span class="m-market-bar"><span style="width: @((value / PluginsContent.TopMarkets(1)[0].Value * 100).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%"></span></span></li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

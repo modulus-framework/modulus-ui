@@ -1,0 +1,38 @@
+@using Modulus.AspNetCore.Mvc
+@* WYSIWYG editor: Quill with an Ant Design toolbar. The form posts the HTML back to this page, which shows it cleaned. *@
+@{
+    var posted = Context.Request.HasFormContentType ? Context.Request.Form["Body"].ToString() : null;
+    var result = PluginsContent.Clean(posted ?? PluginsContent.EditorSample);
+}
+<app-page-header pretitle="Plugins" title="WYSIWYG editor" subtitle="Headings, lists, quotes, code, links and images, with undo and redo. Posts clean HTML."></app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Announcement</h3><p class="m-card-subtitle">Select text to format it; Ctrl+K adds a link</p></div></div>
+            <div class="m-card-body">
+                <form method="post" action="/plugins/editor" class="m-editor-form">
+                    <app-editor name="Body" value="@result.Html" label="Announcement" placeholder="Write the announcement…" />
+                    <div class="m-demo-row">
+                        <button type="submit" class="ant-btn ant-btn-primary"><app-icon type="save" /><span>Save</span></button>
+                        <a class="ant-btn ant-btn-default" href="/plugins/editor"><span>Reset</span></a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">@(posted is null ? "Stored HTML" : "Saved HTML")</h3><p class="m-card-subtitle">@result.Words words, @result.Characters characters, after RichText.Sanitize on the server</p></div></div>
+            <div class="m-card-body m-editor-output">
+                <div class="m-editor-preview">@Html.Raw(result.Html)</div>
+                <pre class="m-html-source"><code>@result.Html</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Read-only</h3><p class="m-card-subtitle">The same content, shown without editing</p></div></div>
+        <div class="m-card-body">
+            <app-editor name="ReadOnlyBody" value="@PluginsContent.EditorSample" label="Read-only announcement" disabled min-height="120" />
+        </div>
+    </div>
+</div>

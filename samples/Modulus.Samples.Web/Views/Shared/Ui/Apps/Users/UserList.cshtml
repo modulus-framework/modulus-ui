@@ -6,7 +6,9 @@
     var q = Model.Query;
     static IEnumerable<SelectListItem> Items(IEnumerable<string> values, string? selected) => values.Select(v => new SelectListItem(v, v, v == selected));
 }
-<app-page-header pretitle="Users & access" title="Users" subtitle="Everyone with access to the workspace, their role and plan."></app-page-header>
+<app-page-header pretitle="Users & access" title="Users" subtitle="Everyone with access to the workspace, their role and plan.">
+    <a class="ant-btn ant-btn-default" href="/apps/users/grid"><app-icon type="appstore" /><span>Grid view</span></a>
+</app-page-header>
 
 @* The whole page body refreshes after a save or delete (stats + grid); links and the filter form
    inside it are boosted, so paging, sorting and filtering swap just this block and push the URL. *@
@@ -38,9 +40,8 @@
                         <span class="ant-input-prefix"><app-ti name="search" /></span>
                         <input class="ant-input" type="search" name="keyword" value="@q.Keyword" placeholder="Search users…" aria-label="Search users" form="users-filter" />
                     </span>
-                    <app-button icon="download">Export</app-button>
                     <app-button type="primary" icon="plus" @@click="$store.drawer.load('@Base/form', 'Add user')">Add user</app-button>
-                    <app-table-settings reload-href="@grid.Current" />
+                    <app-table-settings reload-href="@grid.Current" clear-href="@grid.ClearLink("keyword", "role", "plan", "status")" />
                 </div>
             </div>
 

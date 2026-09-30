@@ -1,0 +1,94 @@
+@page "/ui/typography"
+
+<PageTitle>Typography · Modulus</PageTitle>
+
+@* Headings, text styles, lists and code. MVC and Razor Pages render the same page from Samples.Web Views/Shared/Ui/Ui/Typography.cshtml. *@
+<PageHeading Pretitle="User interface" Title="Typography" Subtitle="Headings, text styles, lists and code, in light and dark." />
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Headings</h3><p class="m-card-subtitle">h1 to h6 inside <code>.m-type</code> content</p></div></div>
+            <div class="m-card-body m-type">
+                <h1>Heading 1 <small>38px</small></h1>
+                <h2>Heading 2 <small>30px</small></h2>
+                <h3>Heading 3 <small>24px</small></h3>
+                <h4>Heading 4 <small>20px</small></h4>
+                <h5>Heading 5 <small>16px</small></h5>
+                <h6>Heading 6 <small>14px</small></h6>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Page scale</h3><p class="m-card-subtitle">The utility classes the pages use</p></div></div>
+            <div class="m-card-body">
+                <dl class="m-type-scale">
+                    <dt><code>.m-h1</code></dt><dd><div class="m-h1">Revenue this month</div></dd>
+                    <dt><code>.m-h2</code></dt><dd><div class="m-h2">Revenue this month</div></dd>
+                    <dt><code>.m-h3</code></dt><dd><div class="m-h3">Revenue this month</div></dd>
+                    <dt><code>.m-subheader</code></dt><dd><div class="m-subheader">Revenue this month</div></dd>
+                    <dt><code>.m-small</code></dt><dd><div class="m-small">Revenue this month</div></dd>
+                    <dt><code>.m-muted</code></dt><dd><div class="m-muted">Revenue this month</div></dd>
+                    <dt><code>.m-num</code></dt><dd><div class="m-num">1,284,560.75</div></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Paragraphs</h3><p class="m-card-subtitle">Lead text, body text and inline styles</p></div></div>
+            <div class="m-card-body m-type">
+                <p class="m-type-lead">Modulus renders one Ant Design interface from Blazor, MVC and Razor Pages, so a page looks and behaves the same whichever stack serves it.</p>
+                <p>Body text uses the theme font at 14px with a comfortable line height. Links look like <a href="#">this link</a>, and text can be <strong>bold</strong>, <em>italic</em>, <u>underlined</u>, <del>deleted</del>, <mark>highlighted</mark> or <small>small</small>.</p>
+                <p>Inline code reads <code>dotnet add package Modulus.Blazor</code>, and keys read <kbd>Ctrl</kbd> + <kbd>K</kbd>.</p>
+                <p class="m-type-secondary">Secondary text, for hints and captions, is quieter than the body.</p>
+                <p class="m-type-state"><span class="m-type-success">Success text</span><span class="m-type-warning">Warning text</span><span class="m-type-danger">Danger text</span><span class="m-type-disabled">Disabled text</span></p>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Quotes and code</h3><p class="m-card-subtitle">Blockquote and a code block</p></div></div>
+            <div class="m-card-body m-type">
+                <blockquote>
+                    <p>Design is not just what it looks like and feels like. Design is how it works.</p>
+                    <footer>Steve Jobs, <cite>The New York Times</cite></footer>
+                </blockquote>
+                <pre><code>builder.Services.AddModulus(options =&gt;
+{
+    options.Theme.Primary = "#1677ff";
+    options.Theme.Dark = true;
+});</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Lists</h3><p class="m-card-subtitle">Unordered, ordered and nested</p></div></div>
+            <div class="m-card-body m-type m-type-lists">
+                <ul>
+                    <li>Dashboards and apps</li>
+                    <li>Tables
+                        <ul><li>Editable grid</li><li>Nested grid</li></ul>
+                    </li>
+                    <li>Forms and wizards</li>
+                </ul>
+                <ol>
+                    <li>Install the package</li>
+                    <li>Add the services</li>
+                    <li>Render the layout</li>
+                </ol>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Description list</h3><p class="m-card-subtitle">Terms and their details</p></div></div>
+            <div class="m-card-body m-type">
+                <dl class="m-type-dl">
+                    <dt>Font</dt><dd>System UI stack, or the font chosen in layout settings</dd>
+                    <dt>Base size</dt><dd>14px with a 22px line height</dd>
+                    <dt>Monospace</dt><dd>SFMono, Consolas and Menlo</dd>
+                    <dt>Numbers</dt><dd>Tabular figures in tables and KPIs</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

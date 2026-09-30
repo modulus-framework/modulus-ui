@@ -1,4 +1,4 @@
-# Upgrading Ant Design Blazor, htmx and Alpine.js
+# Upgrading Ant Design Blazor, htmx, Alpine.js and the plugin libraries
 
 Modulus pins every third-party UI dependency in one place, so upgrades are deliberate and checked.
 
@@ -7,6 +7,9 @@ Modulus pins every third-party UI dependency in one place, so upgrades are delib
 | `AntDesign`, `AntDesign.ProLayout` | `Directory.Packages.props` (keep both on the same version) | 1.6.2 |
 | htmx | `src/Modulus.Ui.Assets/wwwroot/lib/htmx/` | 2.0.11 |
 | Alpine.js | `src/Modulus.Ui.Assets/wwwroot/lib/alpinejs/` | 3.17.4 |
+| Leaflet (tile maps) | `src/Modulus.Ui.Assets/wwwroot/lib/leaflet/` | 1.9.4 |
+| Quill (WYSIWYG editor) | `src/Modulus.Ui.Assets/wwwroot/lib/quill/` | 2.0.3 |
+| jsVectorMap (vector map, with `world.js`) | `src/Modulus.Ui.Assets/wwwroot/lib/jsvectormap/` | not recorded; its build has no version banner, so write it here at the next upgrade |
 
 ## What protects you
 
@@ -17,7 +20,8 @@ Modulus pins every third-party UI dependency in one place, so upgrades are delib
   - component types added or removed since the recorded baseline;
   - every `alias` entry has an `App*` type that really derives from that component;
   - every `App*` type is listed in the manifest;
-  - every `app-*` tag named in an entry's `mvc` field is a real tag helper in `Modulus.AspNetCore.Mvc`.
+  - every `app-*` tag named in an entry's `mvc` field is a real tag helper in `Modulus.AspNetCore.Mvc`;
+  - `antd-dark-brand.css` still matches the pinned package's dark stylesheet (the brand colour in dark mode).
 - **Weekly drift workflow** (`.github/workflows/antd-drift.yml`) builds against the **latest** AntDesign release and opens
   or updates an `antd-drift` issue when something needs attention, before anyone bumps the pin.
 - **Tests** cover palette generation against the official antd palettes, alias rendering, Pro components, tag helpers
@@ -46,6 +50,11 @@ Modulus pins every third-party UI dependency in one place, so upgrades are delib
      ```bash
      dotnet run --project tools/antd-drift -- --update-baseline
      ```
+   - *`antd-dark-brand.css` no longer matches*: regenerate it, then check the diff for blue shades that are not in
+     `AntDarkBrand.Sources` (they stay antd blue in dark mode until added there):
+     ```bash
+     dotnet run --project tools/antd-drift -- --write-dark-brand
+     ```
 4. **Check the styling layer.** `modulus.css` refines antd's v4 CSS and depends on its class names. If AntDesign moves to
    antd v5 CSS (CSS-in-JS tokens), review the "v5 refresh" section of `modulus.css`; most of it becomes unnecessary. Also
    review `ThemeCss.Build`, which writes the v4 variable names that `ant-design-blazor.variable.css` reads.
@@ -72,3 +81,28 @@ Modulus pins every third-party UI dependency in one place, so upgrades are delib
    sort, paginate, switch the layout in the settings panel and toggle the theme, then reload to confirm both persist.
    On `/ui/components`, check tabs (click and arrow keys), the dropdown delete (confirm → toast), notification, modal
    (focus, Escape, submit closes it), collapse, switch, segmented, rate, upload and the input clear/reveal buttons.
+
+## Upgrading Leaflet, Quill or jsVectorMap
+
+1. Replace the files in `wwwroot/lib/<name>/` with the new builds from the official release, keeping the file names
+   (`modulus-plugins.js` loads them by path on first use), and update the table above.
+2. Read the release notes for the APIs Modulus calls:
+   - Leaflet: `L.map`, `L.tileLayer`, `L.marker` / `bindPopup`, `flyTo`, `fitBounds`, `invalidateSize`
+   - Quill: the `snow` theme, toolbar modules, `getSemanticHTML`, `text-change`
+   - jsVectorMap: the `world` map in `world.js`, region series (`regions` / `values`), `onRegionTooltipShow`
+3. Run a sample and check `/plugins/editor` (format, insert an image and a link, save, and confirm the cleaned HTML
+   comes back), `/plugins/map` and `/plugins/map-fullsize` (markers, popups, the place list flying to a place, resizing
+   the window) and `/plugins/map-vector` (fills, tooltips, legend), in light and dark mode, with SPA navigation on
+   (leave the page and come back).
+
+## SPA navigation and `IsHtmx()`
+
+`Request.IsHtmx()` is now false for boosted requests (`hx-boost`), as it already was for history restores: a boosted
+link or form is a page load, so `IsHtmx() ? NoContent() : Redirect(...)` keeps working when
+`ModulusThemeOptions.SpaNavigation` is on. Use `Request.IsBoosted()` to detect SPA navigation. To opt in:
+
+1. Set `Modulus:Theme:SpaNavigation` to `true` (and `SpaPrefetch` to `false` to turn off hover prefetch).
+2. Move inline page code to `Modulus.page(fn)` (or `Modulus.onPage(fn)` for code every page needs). `DOMContentLoaded`
+   fires once, on the first page only.
+3. Links that must load the whole page (downloads, pages outside the shell that respond with a shell page) take
+   `download` or `data-m-reload`; anything that isn't a shell fragment already falls back to a full load.

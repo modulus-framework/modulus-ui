@@ -44,6 +44,14 @@ public class GridSchemaTests
         Assert.False(GridSchema.Matches(columns, row, null, new Dictionary<string, string?> { ["status"] = "d" }));
         Assert.True(GridSchema.Matches(columns, row, null, new Dictionary<string, string?> { ["unknown"] = "x" }));
 
+        // Column searches on a column with a subtitle: =exact (a filter-row choice) matches the cell itself,
+        // contains also finds the subtitle, and !exclude looks at both.
+        var searches = (string q) => new Dictionary<string, string?> { ["name"] = q };
+        Assert.True(GridSchema.Matches(columns, row, null, searches: searches("=Portal")));
+        Assert.True(GridSchema.Matches(columns, row, null, searches: searches("example")));
+        Assert.False(GridSchema.Matches(columns, row, null, searches: searches("!example")));
+        Assert.False(GridSchema.Matches(columns, row, null, searches: searches("=Port")));
+
         columns[2].Hidden = true; // hidden columns are not searched
         Assert.False(GridSchema.Matches(columns, row, "active", culture: Us));
     }
@@ -259,14 +267,26 @@ public class GridSchemaTests
 
 public class EditableGridTests : BunitContext
 {
+    // Cells format with the current culture; CI runs under the invariant culture, which renders ¤1,200 instead of $1,200.
+    private readonly CultureInfo culture = CultureInfo.CurrentCulture;
+    private readonly CultureInfo uiCulture = CultureInfo.CurrentUICulture;
+
     public EditableGridTests()
     {
+        CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
         JSInterop.Mode = JSRuntimeMode.Loose;
         // Alert measures itself after render; loose interop would hand it a null element.
         JSInterop.Setup<AntDesign.JsInterop.HtmlElement>(_ => true).SetResult(new AntDesign.JsInterop.HtmlElement());
         // Select measures its trigger to size the dropdown.
         JSInterop.Setup<AntDesign.JsInterop.DomRect>(_ => true).SetResult(new AntDesign.JsInterop.DomRect());
         Services.AddAntDesign();
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        CultureInfo.CurrentCulture = culture;
+        CultureInfo.CurrentUICulture = uiCulture;
+        base.Dispose(disposing);
     }
 
     private static List<GridColumn> Columns() =>
@@ -298,20 +318,50 @@ public class EditableGridTests : BunitContext
     }
 
     [Fact]
+    public void DraggedRow_ReordersRows_MarksDirty_AndReportsThePageOrder()
+    {
+        var rows = Rows();
+        Modulus.Ui.Abstractions.Plugins.RowMove? moved = null;
+        var cut = Render<EditableGrid>(p => p.Add(g => g.Columns, Columns()).Add(g => g.Rows, rows).Add(g => g.HeaderTitle, "Projects")
+            .Add(g => g.OnRowMove, m => moved = m));
+
+        Assert.Equal(2, cut.FindAll("[data-m-sort-row]").Count);
+        Assert.Equal("Move Portal", cut.Find("[data-m-sort-row='r1']").GetAttribute("aria-label"));
+        Assert.NotNull(cut.Find("[data-m-sort-rows][data-m-sort-mode='event']"));
+
+        // What modulus-plugins.js writes after r2 is dropped on top.
+        cut.Find("input[data-m-sort-result]").Change("""{"id":"r2","from":"x","to":"x","index":0}""");
+
+        Assert.Equal(["r2", "r1"], rows.Select(r => r.Id));
+        Assert.Equal(["r2", "r1"], moved!.Order);
+        Assert.NotEmpty(cut.FindAll(".m-grid-dirty"));
+    }
+
+    [Fact]
+    public void DragHandles_AreLocked_WhileAColumnSortIsOn()
+    {
+        var cut = Render<EditableGrid>(p => p.Add(g => g.Columns, Columns()).Add(g => g.Rows, Rows()).Add(g => g.SortField, "budget")
+            .Add(g => g.OnSort, (string _) => { }));
+
+        Assert.All(cut.FindAll("[data-m-sort-row]"), h => Assert.Equal("true", h.GetAttribute("aria-disabled")));
+        Assert.NotNull(cut.Find("[data-m-sort-rows][data-m-sort-disabled]"));
+    }
+
+    [Fact]
     public async Task AddRow_InsertsAnEditableRowAtTheTop_AndMarksDirty()
     {
         var rows = Rows();
         var changes = 0;
         var cut = Render<EditableGrid>(p => p.Add(g => g.Columns, Columns()).Add(g => g.Rows, rows).Add(g => g.OnChange, () => changes++));
 
-        // AntD's Button runs OnClick after an await, so the click has to be awaited.
-        await cut.FindAll("button").First(b => b.TextContent.Contains("Add row")).ClickAsync(new());
+        // The toolbar's add button is an icon with a tooltip (Insert does the same).
+        await cut.Find("[data-m-grid-add]").ClickAsync(new());
 
         Assert.Equal(3, rows.Count);
         Assert.Equal("n3", rows[0].Id);
         Assert.Equal(1, changes);
         cut.WaitForAssertion(() => Assert.Equal(3, cut.FindAll("tbody tr.ant-table-row").Count));
-        Assert.NotEmpty(cut.FindAll(".m-grid-dirty"));
+        Assert.Equal("1 unsaved change", cut.Find(".m-grid-dirty").TextContent.Trim());
         Assert.NotEmpty(cut.FindAll(".m-grid-cell-editing input"));
     }
 
@@ -359,13 +409,37 @@ public class EditableGridTests : BunitContext
         var cut = Render<EditableGrid>(p => p.Add(g => g.Columns, RichColumns()).Add(g => g.Rows, RichRows()).Add(g => g.HeaderTitle, "Projects"));
 
         Assert.Contains("m-resizable", cut.Find(".m-grid").ClassList);
+        // The search box opens from its icon; Columns and Export CSV are labelled buttons; density sits in the More menu.
+        Assert.Empty(cut.FindAll(".m-grid-search"));
+        cut.Find("[data-m-search-toggle]").Click();
         Assert.Equal("Search projects…", cut.Find(".m-grid-search input").GetAttribute("placeholder"));
-        Assert.Contains(cut.FindAll(".m-table-toolbar-actions button"), b => b.TextContent.Trim() == "Columns");
-        Assert.Contains(cut.FindAll(".m-table-toolbar-actions button"), b => b.TextContent.Trim() == "Export CSV");
+        Assert.Equal("Columns", cut.Find(".m-table-columns-toggle").GetAttribute("aria-label"));
+        Assert.Equal("Columns", cut.Find(".m-table-columns-toggle").TextContent.Trim());
+        Assert.Equal("Export CSV", cut.Find(".m-grid-export").TextContent.Trim());
+        Assert.Equal("Add row (Insert)", cut.Find("[data-m-grid-add]").GetAttribute("title"));
+        Assert.NotNull(cut.Find(".m-table-toolbar-settings [aria-label='More actions']"));
         Assert.Equal(2, cut.FindAll(".m-table-filters .ant-select").Count); // owner, priority
         Assert.NotNull(cut.Find("thead th.ant-table-selection-column"));
         Assert.Equal(2, cut.FindAll("tbody td.ant-table-selection-column").Count);
         Assert.Equal("owner", cut.FindAll("thead .m-th")[1].GetAttribute("data-key"));
+    }
+
+    [Fact]
+    public void FilterRow_ShowsTheColumnSearchesUnderTheHeaders_AndFilters()
+    {
+        var cut = Render<EditableGrid>(p => p.Add(g => g.Columns, RichColumns()).Add(g => g.Rows, RichRows()));
+        Assert.Empty(cut.FindAll(".m-th-filter"));
+        Assert.Equal(3, cut.FindAll(".m-th-search").Count);
+
+        cut.Find(".m-table-filter-toggle").Click();
+
+        Assert.Equal("true", cut.Find(".m-table-filter-toggle").GetAttribute("aria-pressed"));
+        Assert.Equal(3, cut.FindAll(".m-th-filter").Count); // name, owner, priority (email is hidden)
+        Assert.Empty(cut.FindAll(".m-th-search"));
+        cut.FindAll(".m-th-filter")[1].Change("Ann");
+
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("tbody tr.ant-table-row")));
+        Assert.Contains("m-th-filter-active", cut.FindAll(".m-th-filter")[1].ClassName);
     }
 
     [Fact]
@@ -396,6 +470,33 @@ public class EditableGridTests : BunitContext
 
         cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("tbody .ant-table-row-expand-icon").Count));
         Assert.Contains("m-resizable", cut.Find(".m-table-card").ClassList);
+    }
+
+    [Fact]
+    public void ProTable_TitleExtraFollowsTheTitle_AndRowSelectableDisablesTheOtherRowsBoxes()
+    {
+        var cut = Render<ProTable<GridRecord>>(p => p
+            .Add(t => t.Request, _ => Task.FromResult(new ProTableResponse<GridRecord> { Data = RichRows(), Total = 2 }))
+            .Add(t => t.RowKey, r => r.Id)
+            .Add(t => t.HeaderTitle, "Projects")
+            .Add(t => t.TitleExtra, b => b.AddMarkupContent(0, "<span class=\"m-badge\">2</span>"))
+            .Add(t => t.Selectable, true)
+            .Add(t => t.RowSelectable, r => r.Id != "r2")
+            .Add(t => t.Columns, r => b =>
+            {
+                b.OpenComponent<PropertyColumn<GridRecord, string>>(0);
+                b.AddAttribute(1, "Property", (System.Linq.Expressions.Expression<Func<GridRecord, string>>)(x => x.Id));
+                b.CloseComponent();
+            }));
+
+        var title = cut.Find(".m-table-toolbar-title");
+        Assert.StartsWith("Projects", title.TextContent.Trim());
+        Assert.Equal("2", title.QuerySelector(".m-badge")!.TextContent);
+
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("tbody td.ant-table-selection-column input").Count));
+        var boxes = cut.FindAll("tbody td.ant-table-selection-column input");
+        Assert.False(boxes[0].HasAttribute("disabled"));
+        Assert.True(boxes[1].HasAttribute("disabled"));
     }
 
     [Fact]

@@ -6,6 +6,7 @@ using AntDesign;
 using Microsoft.AspNetCore.Html;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using Modulus.Ui.Abstractions;
+using Modulus.Ui.Abstractions.Plugins;
 using SortDirection = Modulus.Ui.Abstractions.SortDirection;
 using Modulus.Ui.Abstractions.Shell;
 
@@ -47,6 +48,9 @@ public class EditableGridTagHelper : TagHelper
 
     public bool AllowAddRow { get; set; } = true;
 
+    /// <summary>Tooltip of the add-row button ("Add style", say).</summary>
+    public string AddRowText { get; set; } = "Add row";
+
     public bool AllowDeleteRow { get; set; } = true;
 
     /// <summary>Column menus, the column settings panel and "Add column".</summary>
@@ -71,6 +75,15 @@ public class EditableGridTagHelper : TagHelper
     /// <summary>File name of the CSV export (default: the title).</summary>
     public string? ExportFileName { get; set; }
 
+    /// <summary>
+    /// A pager under the grid ("1–10 of 42", pages, rows per page), paging the rows after search and filters in the
+    /// browser (modulusGrid). Off for a grid whose rows are one page of a server list (the nested grid's levels).
+    /// </summary>
+    public bool Paged { get; set; } = true;
+
+    /// <summary>Rows per page to start with; the pager also offers <see cref="Paging.Sizes"/>.</summary>
+    [HtmlAttributeName("page-size")] public int PageSize { get; set; } = 10;
+
     /// <summary>The Columns button (show and hide columns) even when <see cref="AllowColumnEdit"/> is off.</summary>
     public bool AllowColumnHide { get; set; } = true;
 
@@ -85,8 +98,17 @@ public class EditableGridTagHelper : TagHelper
     /// <summary>Column headers sort the rows: ascending, descending, then unsorted (in the browser, or with <see cref="SortHref"/>).</summary>
     public bool Sortable { get; set; } = true;
 
+    /// <summary>
+    /// A drag handle on each row: drag it (or focus it and press Up, Down, Home, End) to reorder the rows. The rows
+    /// post in their new order. Locked while a column sort is on.
+    /// </summary>
+    [HtmlAttributeName("row-draggable")] public bool RowDraggable { get; set; } = true;
+
     /// <summary>A search icon in each column header for a search of that column (see <see cref="ColumnSearch"/>).</summary>
     public bool ColumnSearchable { get; set; } = true;
+
+    /// <summary>Starts with the filter row (a box or select under each column header) shown; the toolbar's filter button still toggles it.</summary>
+    [HtmlAttributeName("filter-row-open")] public bool FilterRowOpen { get; set; }
 
     /// <summary>Server sorting (the nested grid): column key → URL of the next sort. Null sorts in the browser.</summary>
     public Func<string, string>? SortHref { get; set; }
@@ -118,7 +140,7 @@ public class EditableGridTagHelper : TagHelper
         var culture = CultureInfo.CurrentCulture;
         var visible = GridSchema.Visible(Columns);
         var detail = RowDetail is not null;
-        var lead = (Selectable ? SelectionWidth : 0) + (detail ? ExpandWidth : 0);
+        var lead = DragWidth + (Selectable ? SelectionWidth : 0) + (detail ? ExpandWidth : 0);
         var offsets = GridSchema.StickyOffsets(visible, lead);
         var errors = (Errors ?? []).GroupBy(e => (e.RowId, e.Key)).ToDictionary(g => g.Key, g => g.First().Message);
         var hasLeft = visible.Any(c => c.Fixed == GridFixed.Left);
@@ -132,49 +154,69 @@ public class EditableGridTagHelper : TagHelper
         output.Attributes.SetAttribute("id", id);
         output.AddClasses("m-table-card", "m-grid", "ant-card");
         if (Resizable) output.AddClasses("m-resizable");
+        var filterRowOpen = FilterRowOpen && ColumnSearchable;
+        if (filterRowOpen) output.Attributes.SetAttribute("data-m-filter-row-open", "");
         output.Attributes.SetAttribute("x-data", new HtmlString($"modulusGrid({Widgets.Config(ClientConfig(culture))})"));
-        output.Attributes.SetAttribute("@grid-change", "dirty = true");
+        output.Attributes.SetAttribute("@grid-change", "touch($event.target)");
         output.Attributes.SetAttribute("@keydown.escape", "closeMenu()");
         if (Resizable) output.Attributes.SetAttribute("@m-col-resize", "resized($event.detail)");
         if (ColumnSearchable && SearchHref is null) output.Attributes.SetAttribute("@m-col-search.stop", "setSearch($event.detail)");
+        if (RowDraggable)
+        {
+            // modulus-plugins.js moves the row (with its detail row); modulusGrid marks it changed (modulus:sort).
+            output.Attributes.SetAttribute("data-m-sort-rows", id);
+            output.Attributes.SetAttribute("data-m-sort-root", "");
+            if (HeaderTitle is not null) output.Attributes.SetAttribute("data-m-sort-title", HeaderTitle);
+            if (ServerSorted) output.Attributes.SetAttribute("data-m-sort-disabled", "");
+        }
 
         var sb = new StringBuilder("""<div class="ant-card-body">""");
+        if (RowDraggable) sb.Append(SortableHtml.RowsHelp(HelpId(id)));
         sb.Append($"""<input type="hidden" name="{Html.E(n)}.schema" value="{Html.E(GridSchema.Serialize(Columns))}" x-ref="schema" />""");
 
-        // Toolbar
+        // Toolbar, as the Blazor grid's: the title and count; the unsaved-changes count with Discard and Save; icon
+        // buttons with tooltips (search, filter row, columns, add row, reload) and a "More" menu (export, add column,
+        // density). modulus-shell.js adds the keys: Ctrl+S saves, Insert adds a row, Ctrl+F searches, arrows move between cells.
         sb.Append("""<div class="m-table-toolbar"><div class="m-table-toolbar-title">""").Append(Html.E(HeaderTitle));
         if (slots.TryGetValue("grid-title-extra", out var titleExtra)) sb.Append(' ').Append(titleExtra);
-        sb.Append($"""<span class="m-grid-dirty" x-show="dirty"{(Dirty ? "" : " style=\"display: none;\"")}><span class="ant-badge ant-badge-status ant-badge-not-a-wrapper"><span class="ant-badge-status-dot ant-badge-status-warning"></span><span class="ant-badge-status-text">Unsaved changes</span></span></span>""");
         sb.Append("""</div><div class="m-table-toolbar-actions">""");
+        var hideClean = Dirty ? "" : " style=\"display: none;\"";
+        sb.Append($"""<span class="m-grid-dirty" x-show="dirty"{hideClean}><span class="ant-badge ant-badge-status ant-badge-not-a-wrapper" role="status"><span class="ant-badge-status-dot ant-badge-status-warning"></span><span class="ant-badge-status-text" x-text="changesText()">Unsaved changes</span></span></span>""");
+        if (ShowDiscard)
+            sb.Append($"""<button type="submit" name="{Html.E(n)}.op" value="discard" class="ant-btn ant-btn-text m-grid-discard" x-show="dirty"{hideClean}><span>Discard</span></button>""");
+        if (ShowSave)
+            sb.Append($$"""<button type="submit" name="{{Html.E(n)}}.op" value="save" class="ant-btn {{(Dirty ? "ant-btn-primary" : "ant-btn-default")}} m-grid-save" :class="{ 'ant-btn-primary': dirty, 'ant-btn-default': !dirty }" title="Save (Ctrl+S)" data-m-grid-save>{{AntIcons.Span("save")}}<span>Save</span></button>""");
         if (Searchable)
         {
             var what = HeaderTitle ?? "rows";
-            // No name: the keyword stays in the browser and is never posted with the grid.
-            sb.Append($"""<span class="ant-input-affix-wrapper m-table-toolbar-search m-grid-search"><span class="ant-input-prefix">{ShellRenderer.Icon("search")}</span>""")
-              .Append($"""<input class="ant-input" type="text" placeholder="Search {Html.E(what.ToLowerInvariant())}…" aria-label="Search {Html.E(what)}" autocomplete="off" x-model="keyword" @input.debounce.150ms="applyFilter()" @keydown.enter.prevent />""")
+            // No name: the keyword stays in the browser and is never posted with the grid. An empty box folds into its icon.
+            sb.Append($"""<button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-table-search-toggle" aria-label="Search {Html.E(what)}" title="Search (Ctrl+F)" data-m-search-toggle x-show="!searchShown()" @click="openSearch()">{AntIcons.Span("search")}</button>""");
+            sb.Append($"""<span class="ant-input-affix-wrapper m-table-toolbar-search m-grid-search" x-show="searchShown()" style="display: none;"><span class="ant-input-prefix">{AntIcons.Span("search")}</span>""")
+              .Append($"""<input class="ant-input" type="text" placeholder="Search {Html.E(what.ToLowerInvariant())}…" aria-label="Search {Html.E(what)}" autocomplete="off" x-ref="search" x-model="keyword" @input.debounce.150ms="applyFilter()" @keydown.enter.prevent @keydown.escape.stop="keyword = ''; applyFilter(); searchOpen = false" @blur="if (!keyword) searchOpen = false" />""")
               .Append($"""<span class="ant-input-suffix"><button type="button" class="ant-input-clear-icon m-input-clear ant-input-clear-icon-hidden" :class="keyword ? '' : 'ant-input-clear-icon-hidden'" aria-label="Clear search" tabindex="-1" @click="keyword = ''; applyFilter()">{AntIcons.Span("close-circle", IconThemeType.Fill)}</button></span></span>""");
         }
         if (slots.TryGetValue("grid-toolbar", out var toolbar)) sb.Append(toolbar);
+        // One click clears the search, the filters and the column searches (the nested grid adds its own, on the server).
+        if (ServerTarget is null)
+            sb.Append($"""<button type="button" class="ant-btn ant-btn-text m-table-clear" title="Clear the search and filters" x-show="anyFilter()" style="display: none;" @click="clearFilters()">{AntIcons.Span("close-circle")}<span>Clear</span></button>""");
+        if (ColumnSearchable) sb.Append(TableSettingsTagHelper.FilterRowButton);
         if (AllowColumnHide || AllowColumnEdit) sb.Append(ColumnSettings());
         if (Exportable)
-            sb.Append($"""<button type="button" class="ant-btn ant-btn-default" @click="exportCsv(false)">{ShellRenderer.Icon("download")}<span>Export CSV</span></button>""");
+            sb.Append($"""<button type="button" class="ant-btn ant-btn-default m-grid-export" title="Export the rows (after search and filters) to a CSV file" @click="exportCsv(false)">{AntIcons.Span("download")}<span>Export CSV</span></button>""");
         if (AllowAddRow)
-            sb.Append($"""<button type="submit" name="{Html.E(n)}.op" value="add-row" class="ant-btn ant-btn-default" @click.prevent="addRow()">{AntIcons.Span("plus")}<span>Add row</span></button>""");
-        if (AllowColumnEdit)
-            sb.Append($"""<button type="button" class="ant-btn ant-btn-default" @click="openColumnDialog()">{AntIcons.Span("insert-row-right")}<span>Add column</span></button>""");
-        if (ShowDiscard)
-            sb.Append($"""<button type="submit" name="{Html.E(n)}.op" value="discard" class="ant-btn ant-btn-default"{(Dirty ? "" : " disabled")} :disabled="!dirty"><span>Discard</span></button>""");
-        if (ShowSave)
-            sb.Append($"""<button type="submit" name="{Html.E(n)}.op" value="save" class="ant-btn ant-btn-primary">{AntIcons.Span("save")}<span>Save</span></button>""");
+            sb.Append($"""<button type="submit" name="{Html.E(n)}.op" value="add-row" class="ant-btn ant-btn-text ant-btn-icon-only m-grid-add" aria-label="{Html.E(AddRowText)}" title="{Html.E(AddRowText)} (Insert)" data-m-grid-add @click.prevent="addRow()">{AntIcons.Span("plus")}</button>""");
         sb.Append("""<div class="m-table-toolbar-settings">""");
         if (ReloadHref is not null && ReloadTarget is not null)
             sb.Append($"""<button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Reload" title="Reload" hx-get="{Html.E(ReloadHref)}" hx-target="{Html.E(ReloadTarget)}" hx-swap="outerHTML">{AntIcons.Span("reload")}</button>""");
+        var more = new StringBuilder();
+        if (AllowColumnEdit) more.Append(DropdownTagHelper.Item($"""{AntIcons.Span("insert-row-right")}<span>Add column</span>""", null, " @click=\"openColumnDialog()\""));
+        if (more.Length > 0) more.Append("""<li class="ant-dropdown-menu-item-divider" role="separator"></li>""");
+        more.Append("""<li class="ant-dropdown-menu-item-group-title" role="presentation">Density</li>""");
+        foreach (var (label, value) in new[] { ("Comfortable", ""), ("Standard", "ant-table-middle"), ("Compact", "ant-table-small") })
+            more.Append(DropdownTagHelper.Item(label, null, $""" @click="density = '{value}'" :class="density === '{value}' && 'ant-dropdown-menu-item-selected'" """.TrimEnd()));
         sb.Append(DropdownTagHelper.Render(
-            $"""<button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Table density" title="Density">{AntIcons.Span("column-height")}</button>""",
-            DropdownTagHelper.Item("Comfortable", null, " @click=\"density = ''\"") +
-            DropdownTagHelper.Item("Standard", null, " @click=\"density = 'ant-table-middle'\"") +
-            DropdownTagHelper.Item("Compact", null, " @click=\"density = 'ant-table-small'\""),
-            "bottomRight"));
+            $"""<button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="More actions" title="More actions">{AntIcons.Span("more")}</button>""",
+            more.ToString(), "bottomRight"));
         sb.Append("</div></div></div>");
 
         // Filter row: the app's own (grid-filters), or a dropdown per Filterable column, applied in the browser.
@@ -189,7 +231,8 @@ public class EditableGridTagHelper : TagHelper
                 foreach (var o in GridSchema.FilterOptions(c)) sb.Append($"""<option value="{Html.E(o.Value)}">{Html.E(o.Label)}</option>""");
                 sb.Append("</select>");
             }
-            sb.Append("""<button type="button" class="ant-btn ant-btn-link m-grid-clear-filters" x-show="filtered()" style="display: none;" @click="clearFilters()"><span>Clear filters</span></button></div>""");
+            sb.Append("</div>"); // the toolbar's Clear resets them
+
         }
 
         if (Selectable) sb.Append(BatchBar(slots.GetValueOrDefault("grid-batch")));
@@ -202,14 +245,17 @@ public class EditableGridTagHelper : TagHelper
         sb.Append($"""<div class="ant-table-wrapper"><div class="ant-table-spin-wrapper ant-spin-nested-loading"><div><div class="ant-spin-container"><div class="{tableClass}" x-ref="table" :class="tableClass()">""");
         sb.Append($"""<div class="ant-table-container"><div class="ant-table-content" style="overflow: auto hidden;" x-ref="scroller" @scroll.passive="onScroll()">""");
         sb.Append($"""<table style="width: {width}px; min-width: 100%; table-layout: fixed;"><colgroup>""");
+        if (RowDraggable) sb.Append($"""<col style="width: {DragWidth}px;">""");
         if (Selectable) sb.Append($"""<col class="ant-table-selection-col" style="width: {SelectionWidth}px;">""");
         if (detail) sb.Append("""<col class="ant-table-expand-icon-col" style="width: 48px;">""");
         foreach (var c in visible) sb.Append($"""<col style="width: {c.Width ?? 150}px; min-width: {c.Width ?? 150}px;">""");
         if (AllowDeleteRow) sb.Append($"""<col style="width: {ActionsWidth}px; min-width: {ActionsWidth}px;">""");
-        sb.Append("""</colgroup><thead class="ant-table-thead"><tr>""");
+        sb.Append($"""</colgroup><thead class="ant-table-thead{(filterRowOpen ? " m-filter-row-on" : "")}"><tr>""");
+        if (RowDraggable)
+            sb.Append($"""<th class="{Html.Cx("ant-table-cell", "m-row-drag-cell", hasLeft ? "ant-table-cell-fix-left" : null)}"{(hasLeft ? " style=\"position: sticky; left: 0px;\"" : "")}><span class="m-sr-only">Reorder</span></th>""");
         if (Selectable)
-            sb.Append($"""<th class="{Html.Cx("ant-table-cell", "ant-table-selection-column", hasLeft ? "ant-table-cell-fix-left" : null)}"{(hasLeft ? " style=\"position: sticky; left: 0px;\"" : "")}>{Checkbox("Select all rows", " data-select-all @change=\"selectAll($el.checked)\"")}</th>""");
-        if (detail) sb.Append($"""<th class="{Html.Cx("ant-table-cell", "ant-table-row-expand-icon-cell", hasLeft ? "ant-table-cell-fix-left" : null)}"{(hasLeft ? $" style=\"position: sticky; left: {(Selectable ? SelectionWidth : 0)}px;\"" : "")}></th>""");
+            sb.Append($"""<th class="{Html.Cx("ant-table-cell", "ant-table-selection-column", hasLeft ? "ant-table-cell-fix-left" : null)}"{(hasLeft ? $" style=\"position: sticky; left: {DragWidth}px;\"" : "")}>{Checkbox("Select all rows", " data-select-all @change=\"selectAll($el.checked)\"")}</th>""");
+        if (detail) sb.Append($"""<th class="{Html.Cx("ant-table-cell", "ant-table-row-expand-icon-cell", hasLeft ? "ant-table-cell-fix-left" : null)}"{(hasLeft ? $" style=\"position: sticky; left: {DragWidth + (Selectable ? SelectionWidth : 0)}px;\"" : "")}></th>""");
         for (var i = 0; i < visible.Count; i++)
         {
             var c = visible[i];
@@ -221,8 +267,8 @@ public class EditableGridTagHelper : TagHelper
         }
         if (AllowDeleteRow) sb.Append("""<th class="m-grid-actions ant-table-cell ant-table-cell-fix-right ant-table-cell-fix-right-first" style="text-align: center; position: sticky; right: 0px;"><span class="m-sr-only">Actions</span></th>""");
         sb.Append("""</tr></thead><tbody class="ant-table-tbody" x-ref="body">""");
-        var colspan = visible.Count + (Selectable ? 1 : 0) + (detail ? 1 : 0) + (AllowDeleteRow ? 1 : 0);
-        foreach (var row in Rows) sb.Append(Row(row, visible, offsets, errors, detail, colspan, culture, newRow: false));
+        var colspan = visible.Count + (RowDraggable ? 1 : 0) + (Selectable ? 1 : 0) + (detail ? 1 : 0) + (AllowDeleteRow ? 1 : 0);
+        foreach (var row in Rows) sb.Append(Row(row, visible, offsets, errors, detail, colspan, culture, newRow: false, id));
         if (Rows.Count == 0)
             sb.Append($"""<tr class="ant-table-placeholder" x-ref="empty"><td class="ant-table-cell" colspan="{colspan}"><div class="m-table-empty">No rows yet. Use Add row to start.</div></td></tr>""");
         sb.Append("</tbody></table></div></div></div></div></div></div></div>");
@@ -232,9 +278,10 @@ public class EditableGridTagHelper : TagHelper
         {
             var blank = new GridRecord("__id__");
             foreach (var c in Columns) blank[c.Key] = c.Type == GridCellType.Switch ? "false" : null;
-            sb.Append($"""<template x-ref="rowTemplate">{Row(blank, visible, offsets, new(), detail, colspan, culture, newRow: true)}</template>""");
+            sb.Append($"""<template x-ref="rowTemplate">{Row(blank, visible, offsets, new(), detail, colspan, culture, newRow: true, id)}</template>""");
         }
 
+        if (Paged) sb.Append(Pager());
         if (slots.TryGetValue("grid-summary", out var summary)) sb.Append($"""<div class="m-grid-summary">{summary}</div>""");
         sb.Append("</div>");
 
@@ -247,6 +294,13 @@ public class EditableGridTagHelper : TagHelper
     }
 
     // ---- Headers: sorting and column search, in the browser or (the nested grid) on the server ----
+
+    private int DragWidth => RowDraggable ? SortableHtml.RowHandleWidth : 0;
+
+    // A server sort (the nested grid) decides the order, so rows don't drag.
+    private bool ServerSorted => SortHref is not null && SortField is not null;
+
+    private static string HelpId(string gridId) => $"{gridId}-drag-help";
 
     private SortDirection SortOf(string key) =>
         SortHref is null || SortField != key ? SortDirection.None : SortDescending ? SortDirection.Descending : SortDirection.Ascending;
@@ -263,13 +317,13 @@ public class EditableGridTagHelper : TagHelper
             // The link is "#": a level's endpoint answers with a fragment, so only htmx follows it.
             sortable: Sortable, sort: SortOf(c.Key), sortHref: sortHref is null ? null : "#", sortAttributes: sortAttributes,
             searchable: ColumnSearchable, search: Searches?.GetValueOrDefault(c.Key), searchHref: SearchHref?.Invoke(c.Key), searchAttributes: SearchHref is null ? null : hx,
-            extra: menu);
+            extra: menu, choices: GridSchema.SearchChoices(c));
     }
 
     // ---- Rows and cells ----
 
     private string Row(GridRecord row, IReadOnlyList<GridColumn> visible, IReadOnlyDictionary<string, int> offsets,
-        Dictionary<(string, string), string> errors, bool detail, int colspan, CultureInfo culture, bool newRow)
+        Dictionary<(string, string), string> errors, bool detail, int colspan, CultureInfo culture, bool newRow, string gridId)
     {
         var n = Name;
         var hasLeft = visible.Any(c => c.Fixed == GridFixed.Left);
@@ -278,18 +332,24 @@ public class EditableGridTagHelper : TagHelper
         var index = $"""<input type="hidden" name="{Html.E(n)}.index" value="{Html.E(row.Id)}" />""" +
                     string.Concat(Columns.Where(c => c.Hidden).Select(c =>
                         $"""<input type="hidden" name="{Html.E(n)}[{Html.E(row.Id)}].{Html.E(c.Key)}" value="{Html.E(row[c.Key] ?? "")}" />"""));
+        if (RowDraggable)
+        {
+            var label = visible.Count > 0 && GridSchema.Format(visible[0], row[visible[0].Key], culture) is { Length: > 0 } text ? text : "row";
+            sb.Append($"""<td class="{Html.Cx("ant-table-cell", "m-row-drag-cell", hasLeft ? "ant-table-cell-fix-left" : null)}"{(hasLeft ? " style=\"position: sticky; left: 0px;\"" : "")}>{index}{SortableHtml.RowHandle(row.Id, label, HelpId(gridId), ServerSorted)}</td>""");
+            index = "";
+        }
         if (Selectable)
         {
             // The checkbox has no name: selection lives in the browser and is not posted with the grid.
-            sb.Append($"""<td class="{Html.Cx("ant-table-cell", "ant-table-selection-column", hasLeft ? "ant-table-cell-fix-left" : null)}"{(hasLeft ? " style=\"position: sticky; left: 0px;\"" : "")}>{index}{Checkbox("Select row", " data-select-row @change=\"selectRow($el)\"")}</td>""");
+            sb.Append($"""<td class="{Html.Cx("ant-table-cell", "ant-table-selection-column", hasLeft ? "ant-table-cell-fix-left" : null)}"{(hasLeft ? $" style=\"position: sticky; left: {DragWidth}px;\"" : "")}>{index}{Checkbox("Select row", " data-select-row @change=\"selectRow($el)\"")}</td>""");
             index = "";
         }
         if (detail)
         {
-            var fix = hasLeft ? $" style=\"position: sticky; left: {(Selectable ? SelectionWidth : 0)}px;\"" : "";
+            var fix = hasLeft ? $" style=\"position: sticky; left: {DragWidth + (Selectable ? SelectionWidth : 0)}px;\"" : "";
             var button = newRow
                 ? """<button type="button" class="ant-table-row-expand-icon ant-table-row-expand-icon-spaced" aria-hidden="true" tabindex="-1"></button>"""
-                : """<button type="button" class="ant-table-row-expand-icon ant-table-row-expand-icon-collapsed" aria-label="Expand row" aria-expanded="false" @click="toggleRow($el)"></button>""";
+                : """<button type="button" class="ant-table-row-expand-icon ant-table-row-expand-icon-collapsed" aria-label="Expand row" title="Show or hide the details" aria-expanded="false" @click="toggleRow($el)"></button>""";
             sb.Append($"""<td class="{Html.Cx("ant-table-cell", "ant-table-row-expand-icon-cell", hasLeft ? "ant-table-cell-fix-left" : null)}"{fix}>{index}{button}</td>""");
             index = "";
         }
@@ -346,7 +406,7 @@ public class EditableGridTagHelper : TagHelper
 
         var label = $"Edit {c.Title}: {GridSchema.Format(c, value, culture)}";
         return $"""<div class="{Html.Cx("m-grid-cell", "m-grid-cell-editable", errorClass)}" tabindex="0" role="button" aria-label="{Html.E(label)}"{(error is null ? "" : $" title=\"{Html.E(error)}\"")} @click="edit($el)" @keydown.enter.prevent="edit($el)" @keydown.f2.prevent="edit($el)">{view}</div>""" +
-               $"""<div class="m-grid-cell m-grid-cell-editing" hidden @focusout="leave($event)" @keydown.enter.prevent="commit($el)" @keydown.escape.stop.prevent="cancel($el)">{Editor(c, field, value)}{AddOptionRow(c, row.Id)}</div>{message}""";
+               $"""<div class="m-grid-cell m-grid-cell-editing" hidden @focusout="leave($event)" @keydown.enter.prevent="commit($el)" @keydown.escape.stop.prevent="cancel($el)"{EditorEvents(c)}>{Editor(c, field, value, row.Id)}</div>{message}""";
     }
 
     /// <summary>The read-only cell content; mirrors EditableGrid.View and modulusGrid.view() in modulus-widgets.js.</summary>
@@ -405,29 +465,25 @@ public class EditableGridTagHelper : TagHelper
             sb.Append("</select>");
         }
         sb.Append(extra);
-        sb.Append($"""<button type="button" class="ant-btn ant-btn-default ant-btn-sm" @click="exportCsv(true)">{ShellRenderer.Icon("download")}<span>Export selected</span></button>""");
+        sb.Append($"""<button type="button" class="ant-btn ant-btn-default ant-btn-sm" @click="exportCsv(true)">{AntIcons.Span("download")}<span>Export selected</span></button>""");
         if (AllowDeleteRow)
-            sb.Append($"""<button type="button" class="ant-btn ant-btn-default ant-btn-dangerous ant-btn-sm" @click="deleteSelected()">{AntIcons.Span("delete")}<span>Delete</span></button>""");
+            sb.Append($"""<button type="button" class="ant-btn ant-btn-default ant-btn-dangerous ant-btn-sm" data-m-grid-delete-selected @click="deleteSelected()">{AntIcons.Span("delete")}<span>Delete</span></button>""");
         return sb.Append("</div></div></div>").ToString();
     }
 
-    // "Add option" row under a Select, Multi-select or Tag editor, as in AppCreatableSelect: a name and a tag colour,
-    // posted as add-option:{key}:{row} (EditableGridForm.Apply adds the option and picks it for the cell).
-    private string AddOptionRow(GridColumn c, string rowId)
+    // The option select ends the edit when it closes and posts "Create new …" (add-option); the date picker ends it on
+    // a pick. On the editor, so the grid's commit and submitOp answer (inside the widget its own methods would).
+    private static string EditorEvents(GridColumn c) => c.Type switch
     {
-        if (c.Type is not (GridCellType.Select or GridCellType.MultiSelect or GridCellType.Tag) || c.Options.Count >= GridSchema.MaxOptions) return "";
-        var colorField = Html.E(EditableGridForm.ColorField(Name, rowId, c.Key));
-        var op = Html.E($"add-option:{c.Key}:{rowId}");
-        var next = GridSchema.OptionColors[c.Options.Count % GridSchema.OptionColors.Count];
-        var swatches = string.Concat(GridSchema.OptionColors.Select(color =>
-            $"""<label class="m-cselect-swatch-label" title="{color}" @mousedown.prevent><input type="radio" class="m-sr-only" name="{colorField}" value="{color}"{(color == next ? " checked" : "")} /><span class="m-cselect-swatch ant-tag-{color}"></span><span class="m-sr-only">{color}</span></label>"""));
-        return $"""<div class="m-cselect-footer m-grid-add-option"><div class="m-cselect-add">""" +
-               $"""<input type="text" class="ant-input ant-input-sm" name="{Html.E(EditableGridForm.OptionField(Name, rowId, c.Key))}" maxlength="{GridSchema.MaxOptionLabel}" placeholder="New option" aria-label="New {Html.E(c.Title.ToLowerInvariant())} option" @keydown.enter.stop.prevent="submitOp('{op}')" />""" +
-               $"""<button type="button" class="ant-btn ant-btn-text ant-btn-sm m-cselect-add-btn" @mousedown.prevent @click="submitOp('{op}')">{AntIcons.Span("plus")}<span>Add</span></button></div>""" +
-               $"""<div class="m-cselect-colors" role="radiogroup" aria-label="Colour">{swatches}</div></div>""";
-    }
+        GridCellType.Select or GridCellType.Tag or GridCellType.MultiSelect => """ @m-cselect-close="commit($el)" @m-cselect-add="submitOp($event.detail)" """.TrimEnd(),
+        GridCellType.Date => """ @m-picker-pick="commit($el)" """.TrimEnd(),
+        _ => "",
+    };
 
-    private static string Editor(GridColumn c, string field, string? value)
+    private static string SafeId(string value) =>
+        "m-cselect-" + string.Concat(value.Select(ch => char.IsAsciiLetterOrDigit(ch) || ch is '-' or '_' ? ch : '_'));
+
+    private string Editor(GridColumn c, string field, string? value, string rowId)
     {
         var name = Html.E(field);
         var aria = Html.E(c.Title);
@@ -436,20 +492,28 @@ public class EditableGridTagHelper : TagHelper
             case GridCellType.Number or GridCellType.Currency or GridCellType.Percent or GridCellType.Progress:
                 return $"""<input type="number" class="ant-input m-num" name="{name}" value="{Html.E(value)}" step="any" inputmode="decimal"{Html.Attr("min", c.Min?.ToString(CultureInfo.InvariantCulture))}{Html.Attr("max", c.Max?.ToString(CultureInfo.InvariantCulture))} aria-label="{aria}" />""";
             case GridCellType.Date:
-                return $"""<input type="date" class="ant-input" name="{name}" value="{Html.E(value)}" aria-label="{aria}" />""";
-            case GridCellType.Select or GridCellType.Tag:
-                var options = new StringBuilder(c.Required ? "" : """<option value="">—</option>""");
-                if (c.Required && GridSchema.Option(c, value) is null) options.Append("""<option value="" selected disabled>Select…</option>""");
-                foreach (var o in c.Options) options.Append($"""<option value="{Html.E(o.Value)}"{(o.Value == value ? " selected" : "")}>{Html.E(o.Label)}</option>""");
-                return $"""<select class="m-select" name="{name}" aria-label="{aria}" @change="commit($el.parentElement)">{options}</select>""";
-            case GridCellType.MultiSelect:
-                var chosen = GridSchema.Many(value);
-                var boxes = string.Concat(c.Options.Select(o =>
+                // Ant Design's picker popup (modulusPicker, as app-date-picker), like the Blazor grid's DatePicker; a
+                // pick ends the edit (m-picker-pick). The hidden input posts yyyy-MM-dd.
+                var date = GridSchema.Date(value) is { } d ? d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : "";
+                var cfg = Widgets.Config(new { picker = "date", showTime = false, values = new[] { date }, disabled = false });
+                return $"""<div class="ant-picker m-picker" style="width: 100%;" x-data="modulusPicker({cfg})" @click.outside="close(true)" @mousedown="rootDown($event)">""" +
+                       """<div class="ant-picker-input">""" +
+                       PickerText.TextInput(0, PickerText.Placeholder("date"), date, null, false, false, "") +
+                       $"""<span class="ant-picker-suffix" aria-hidden="true">{AntIcons.Span("calendar")}</span>""" +
+                       (c.Required ? "" : PickerText.Clear("values[0]", false)) + "</div>" +
+                       PickerText.Hidden(field, date, 0) + PickerText.Drop + "</div>";
+            case GridCellType.Select or GridCellType.Tag or GridCellType.MultiSelect:
+                // The Blazor grid's AppCreatableSelect (modulusCreatableSelect): coloured options, a check on the picked
+                // ones and "Create new …", which posts add-option:{key}:{row} so the option joins the column's schema.
+                var multiple = c.Type == GridCellType.MultiSelect;
+                return CreatableSelectTagHelper.Render(new CreatableSelectModel(field, SafeId($"{field}-list"), c.Options)
                 {
-                    var on = chosen.Contains(o.Value);
-                    return $"""<label class="{Html.Cx("ant-checkbox-wrapper", on ? "ant-checkbox-wrapper-checked" : null)}"><span class="{Html.Cx("ant-checkbox", on ? "ant-checkbox-checked" : null)}"><input type="checkbox" class="ant-checkbox-input" name="{name}" value="{Html.E(o.Value)}"{(on ? " checked" : "")} @change="checkbox($el)" /><span class="ant-checkbox-inner"></span></span><span>{Html.E(o.Label)}</span></label>""";
-                }));
-                return $"""<div class="m-grid-multi" role="group" aria-label="{aria}">{boxes}<button type="button" class="ant-btn ant-btn-primary ant-btn-sm" @click="commit($el.closest('.m-grid-cell-editing'))">Done</button></div>""";
+                    Multiple = multiple, Value = multiple ? null : value, Values = multiple ? GridSchema.Many(value) : [],
+                    AllowClear = !c.Required, AriaLabel = c.Title, AddPlaceholder = "New option",
+                    CreateText = $"Create new {c.Title.ToLowerInvariant()}", AllowAdd = c.Options.Count < GridSchema.MaxOptions,
+                    GridOp = $"add-option:{c.Key}:{rowId}", OptionField = EditableGridForm.OptionField(Name, rowId, c.Key),
+                    ColorField = EditableGridForm.ColorField(Name, rowId, c.Key),
+                }, " style=\"width: 100%;\"");
             default:
                 return $"""<input type="text" class="ant-input" name="{name}" value="{Html.E(value)}" maxlength="500" aria-label="{aria}" />""";
         }
@@ -459,6 +523,7 @@ public class EditableGridTagHelper : TagHelper
     {
         var c = visible[i];
         var align = c.AlignRight ? "text-align: right; " : "";
+        if (c.Type == GridCellType.Switch) extra += " m-grid-td-center"; // yes/no columns read best centred
         switch (c.Fixed)
         {
             case GridFixed.Left:
@@ -496,7 +561,7 @@ public class EditableGridTagHelper : TagHelper
                   .Append("</span>");
             sb.Append("</li>");
         }
-        return $$"""<div class="m-dropdown" x-data="dropdown" @click.outside="close()" @keydown.escape="close()"><div class="m-dropdown-trigger ant-dropdown-trigger" @click="toggle()" :class="open && 'ant-dropdown-open'" aria-haspopup="dialog" :aria-expanded="open"><button type="button" class="ant-btn ant-btn-default" aria-label="Column settings">{{ShellRenderer.Icon("columns")}}<span>Columns</span></button></div>""" +
+        return $$"""<div class="m-dropdown" x-data="dropdown" @click.outside="close()" @keydown.escape="close()"><div class="m-dropdown-trigger ant-dropdown-trigger" @click="toggle()" :class="open && 'ant-dropdown-open'" aria-haspopup="dialog" :aria-expanded="open"><button type="button" class="ant-btn ant-btn-default m-table-columns-toggle" aria-label="Columns" title="Show, hide, pin and order columns">{{AntIcons.Span("setting")}}<span>Columns</span></button></div>""" +
                $$"""<div class="ant-popover ant-popover-placement-bottomRight m-dropdown-panel m-dropdown-right m-grid-columns-popover" x-show="open" x-transition.opacity x-cloak><div class="ant-popover-content"><div class="ant-popover-inner" role="dialog" aria-label="Columns"><div class="ant-popover-title"><div class="m-grid-columns-head"><span>Columns</span><span class="m-muted">{{Columns.Count(c => !c.Hidden)}} of {{Columns.Count}} shown</span></div></div>""" +
                $$"""<div class="ant-popover-inner-content"><ul class="m-grid-columns" role="list">{{sb}}</ul></div></div></div></div></div>""";
 
@@ -552,6 +617,24 @@ public class EditableGridTagHelper : TagHelper
 
     // ---- Client config ----
 
+    // The data table's pager, run in the browser by modulusGrid (pageItems, goPage, setPageSize): the range, the page
+    // window with ••• jumps (Paging.Window), and rows per page.
+    private string Pager()
+    {
+        var sizes = string.Concat(Paging.SizesWith(PageSize).Select(s =>
+            $"""<option value="{s}"{(s == PageSize ? " selected" : "")}>{s} / page</option>"""));
+        return """<ul class="ant-pagination ant-pagination-mini ant-table-pagination ant-table-pagination-right m-grid-pager" aria-label="Pagination" x-show="matched > 0">""" +
+               """<li class="ant-pagination-total-text" x-text="rangeText()"></li>""" +
+               $"""<li class="ant-pagination-prev" :class="page <= 1 && 'ant-pagination-disabled'" :aria-disabled="page <= 1"><button type="button" class="ant-pagination-item-link" aria-label="Previous page" :disabled="page <= 1" @click="goPage(page - 1)">{AntIcons.Span("left")}</button></li>""" +
+               """<template x-for="item in pageItems()" :key="item.key">""" +
+               """<li :class="item.cls" :aria-current="item.active ? 'page' : null" :title="item.title">""" +
+               """<a :class="item.page ? '' : 'ant-pagination-item-link'" href="#" role="button" :aria-label="item.title" @click.prevent="goPage(item.to)">""" +
+               """<span x-show="item.page" x-text="item.page"></span>""" +
+               """<span class="ant-pagination-item-container" x-show="!item.page"><span class="ant-pagination-item-ellipsis">•••</span></span></a></li></template>""" +
+               $"""<li class="ant-pagination-next" :class="page >= pages() && 'ant-pagination-disabled'" :aria-disabled="page >= pages()"><button type="button" class="ant-pagination-item-link" aria-label="Next page" :disabled="page >= pages()" @click="goPage(page + 1)">{AntIcons.Span("right")}</button></li>""" +
+               $"""<li class="ant-pagination-options"><select class="m-select m-select-sm m-pager-size" aria-label="Rows per page" @change="setPageSize($el.value)">{sizes}</select></li></ul>""";
+    }
+
     private object ClientConfig(CultureInfo culture)
     {
         string currency;
@@ -564,6 +647,9 @@ public class EditableGridTagHelper : TagHelper
             currency,
             datePattern = culture.DateTimeFormat.ShortDatePattern,
             dirty = Dirty,
+            paged = Paged,
+            pageSize = Math.Max(1, PageSize),
+            dragLocked = !RowDraggable || ServerSorted,
             check = AntIcons.Span("check-circle", IconThemeType.Fill),
             file = $"{ExportFileName ?? HeaderTitle ?? "grid"}.csv",
             columns = Columns.ToDictionary(c => c.Key, c => new

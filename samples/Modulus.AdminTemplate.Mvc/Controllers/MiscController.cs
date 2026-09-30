@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Modulus.AdminTemplate.Mvc.Controllers;
 
 /// <summary>Error, status and holding pages. The status-code middleware re-executes /not-found and /error.</summary>
+[Microsoft.AspNetCore.Authorization.AllowAnonymous]
 public class MiscController : SampleController
 {
     // Any verb: the status-code middleware re-executes the original request method.

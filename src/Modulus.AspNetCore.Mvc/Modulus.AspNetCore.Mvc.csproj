@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <Description>Modulus UI for ASP.NET Core MVC and Razor Pages: tag helpers that render the Ant Design DOM, the admin shell layout, htmx helpers and Alpine widgets.</Description>
     <ImplicitUsings>enable</ImplicitUsings>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
   </PropertyGroup>

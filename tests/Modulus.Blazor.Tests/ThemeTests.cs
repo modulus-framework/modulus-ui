@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Modulus.Ui.Abstractions.Theming;
 using Xunit;
 
@@ -62,6 +63,43 @@ public class ThemeTests
         var css = ThemeCss.Build(new ModulusThemeOptions { PrimaryColor = "not-a-colour" });
 
         Assert.Contains("--ant-primary-color:#1677ff;", css);
+    }
+
+    [Fact]
+    public void DarkBrand_KeepsAntdsOwnShades_ForAntdsBlue()
+    {
+        var primary = AntColor.Parse("#1890ff");
+
+        Assert.Equal("#177ddc", AntDarkBrand.DarkPrimary(primary).ToHex());
+        foreach (var hex in AntDarkBrand.Sources)
+        {
+            var source = AntColor.Parse("#" + hex);
+            var moved = AntDarkBrand.Recolor(source, primary);
+            Assert.True(Math.Abs(moved.R - source.R) <= 2 && Math.Abs(moved.G - source.G) <= 2 && Math.Abs(moved.B - source.B) <= 2, $"{hex} -> {moved.ToHex()}");
+        }
+    }
+
+    [Fact]
+    public void DarkBrand_MovesThePrimaryShadeToTheBrandsDarkPrimary()
+    {
+        var green = AntColor.Parse("#2fb344");
+        var css = ThemeCss.Build(new ModulusThemeOptions { PrimaryColor = "#2fb344" });
+
+        Assert.Contains($"--m-adp-177ddc:{AntDarkBrand.DarkPrimary(green).ToHex()};", css);
+        foreach (var hex in AntDarkBrand.Sources) Assert.Contains($"--m-adp-{hex}:", css);
+    }
+
+    [Fact]
+    public void DarkBrandStylesheet_UsesOnlyVariablesThemeCssSets()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Modulus.slnx"))) dir = dir.Parent;
+        Assert.NotNull(dir);
+        var css = File.ReadAllText(Path.Combine(dir.FullName, "src", "Modulus.Ui.Assets", "wwwroot", "css", "antd-dark-brand.css"));
+
+        var used = Regex.Matches(css, @"--m-adp-([0-9a-f]{6})").Select(m => m.Groups[1].Value).Distinct().ToList();
+        Assert.NotEmpty(used);
+        Assert.All(used, hex => Assert.Contains(hex, AntDarkBrand.Sources));
     }
 
     [Theory]

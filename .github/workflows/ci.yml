@@ -9,11 +9,14 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    env:
+      # Prerelease version of the packages built here (src/Directory.Build.props holds the version prefix).
+      VersionSuffix: ci.${{ github.run_number }}
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
-    - uses: actions/setup-dotnet@v4
+    - uses: actions/setup-dotnet@v6
       with:
         dotnet-version: '10.0.x'
 
@@ -30,9 +33,19 @@ jobs:
     - name: Ant Design drift check
       run: dotnet run --project tools/antd-drift --configuration Release --no-build
 
+    - name: Pack
+      run: dotnet pack Modulus.slnx --configuration Release --no-build --output artifacts/packages
+
+    - name: Upload packages
+      uses: actions/upload-artifact@v7
+      with:
+        name: packages
+        path: artifacts/packages/
+        if-no-files-found: error
+
     - name: Upload drift report
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: drift-report
         path: drift-reports/

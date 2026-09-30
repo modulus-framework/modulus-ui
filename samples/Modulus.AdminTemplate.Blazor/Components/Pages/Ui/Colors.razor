@@ -1,0 +1,62 @@
+@page "/ui/colors"
+
+<PageTitle>Colours · Modulus</PageTitle>
+
+@* Theme tokens and the Ant Design palette. MVC and Razor Pages render the same page from Samples.Web Views/Shared/Ui/Ui/Colors.cshtml. *@
+<PageHeading Pretitle="User interface" Title="Colours" Subtitle="Theme colour tokens and the Ant Design palette." />
+
+<div class="m-row-cards" data-m-copy-scope>
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Theme colours</h3><p class="m-card-subtitle">Read from the live theme, so they follow the brand colour and dark mode. Click to copy the variable.</p></div></div>
+        <div class="m-card-body">
+            <ul class="m-token-grid">
+                @foreach (var t in UiContent.Semantic)
+                {
+                    <li>
+                        <button type="button" class="m-token" data-m-copy="var(@t.Variable)" title="Copy var(@t.Variable)">
+                            <span class="m-token-swatch" style="background: var(@t.Variable, @t.Hex)"></span>
+                            <span class="m-token-text"><span class="m-token-name">@t.Label</span><code>@t.Variable</code><span class="m-token-use">@t.Use</span></span>
+                        </button>
+                    </li>
+                }
+            </ul>
+            <h4 class="m-subheader m-mt-24 m-mb-12">Neutrals</h4>
+            <ul class="m-token-grid">
+                @foreach (var t in UiContent.Neutrals)
+                {
+                    <li>
+                        <button type="button" class="m-token" data-m-copy="var(@t.Variable)" title="Copy var(@t.Variable)">
+                            <span class="m-token-swatch" style="background: var(@t.Variable, @t.Hex)"></span>
+                            <span class="m-token-text"><span class="m-token-name">@t.Label</span><code>@t.Variable</code><span class="m-token-use">@t.Use</span></span>
+                        </button>
+                    </li>
+                }
+            </ul>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Palette</h3><p class="m-card-subtitle">The 12 Ant Design preset colours, ten shades each; shade 6 is the base. Click a shade to copy its hex.</p></div></div>
+        <div class="m-card-body">
+            <div class="m-palette">
+                @foreach (var c in UiContent.Palette)
+                {
+                    <section class="m-palette-color" aria-label="@c.Label">
+                        <div class="m-palette-head"><span class="m-palette-title">@c.Label</span><code>@c.Key</code></div>
+                        <ol class="m-palette-shades">
+                            @foreach (var s in c.Shades)
+                            {
+                                <li>
+                                    <button type="button" class="m-palette-shade @(s.DarkText ? "m-palette-shade-light" : "") @(s.Index == 6 ? "m-palette-shade-base" : "")" style="background: @s.Hex" data-m-copy="@s.Hex" title="Copy @s.Hex">
+                                        <span>@c.Key-@s.Index</span><span class="m-palette-hex">@s.Hex</span>
+                                    </button>
+                                </li>
+                            }
+                        </ol>
+                    </section>
+                }
+            </div>
+        </div>
+    </div>
+    <span class="m-sr-only" role="status" aria-live="polite" data-m-copy-live></span>
+</div>

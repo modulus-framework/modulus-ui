@@ -1,5 +1,6 @@
 @* One-shot toast after a redirect (Post/Redirect/Get): TempData["Flash"] = "…", TempData["FlashType"] = "success|info|warning|error". *@
 @if (TempData["Flash"] is string flash)
 {
-    <script>document.addEventListener('DOMContentLoaded', function () { window.modulusMessage(@Json.Serialize(TempData["FlashType"] as string ?? "success"), @Json.Serialize(flash)); });</script>
+    @* Rendered after <modulus-scripts /> (or inside a page swapped in by SPA navigation), so the toast host is ready. *@
+    <script>window.modulusMessage(@Json.Serialize(TempData["FlashType"] as string ?? "success"), @Json.Serialize(flash));</script>
 }

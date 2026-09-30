@@ -29,7 +29,31 @@
     {
         <span class="ant-table-column-title m-th-title">@Title@if (Required) {<span class="m-grid-required" aria-hidden="true">*</span>}</span>
     }
-    @if (Searchable && Host is not null)
+    @if (Searchable && Host is not null && Scope?.FilterRow == true)
+    {
+        var current = Host.SearchOf(Key);
+        var activeClass = string.IsNullOrWhiteSpace(current) ? "" : " m-th-filter-active";
+        @* The table's filter row: the column search typed in place (Enter or leaving the box applies it), or picked
+           from a select for option columns. *@
+        if (Choices is not null)
+        {
+            <select class="@($"m-select m-th-filter m-th-filter-on{activeClass}")" aria-label="@($"Filter {Title}")" disabled="@Locked" title="@(Locked ? LockedText : null)"
+                    @onchange="FilterChangedAsync" @onclick:stopPropagation>
+                <option value="">@ColumnSearch.AnyText(Title)</option>
+                @foreach (var choice in ColumnSearch.WithCurrent(Choices, current))
+                {
+                    <option value="@choice.Query" selected="@(choice.Query == current?.Trim())">@choice.Label</option>
+                }
+            </select>
+        }
+        else
+        {
+            <input class="@($"ant-input ant-input-sm m-th-filter m-th-filter-on{activeClass}")" type="text"
+                   value="@current" placeholder="@ColumnSearch.FilterPlaceholder(Kind)" aria-label="@($"Filter {Title}")" title="@(Locked ? LockedText : ColumnSearch.Hint(Kind))" disabled="@Locked"
+                   autocomplete="off" maxlength="@ColumnSearch.MaxLength" @onchange="FilterChangedAsync" @onclick:stopPropagation />
+        }
+    }
+    else if (Searchable && Host is not null)
     {
         var value = Host.SearchOf(Key);
         var active = !string.IsNullOrWhiteSpace(value);
@@ -78,12 +102,19 @@
 
     [Parameter] public bool Searchable { get; set; } = true;
 
+    /// <summary>Choices of the column's box in the filter row (a select instead of a text box); see <c>GridSchema.SearchChoices</c>.</summary>
+    [Parameter] public IReadOnlyList<ColumnChoice>? Choices { get; set; }
+
     /// <summary>More header content after the search icon (a column menu).</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     [CascadingParameter] public ColumnHeaderScope? Scope { get; set; }
 
     private IColumnHeaderHost? Host => Scope?.Host;
+
+    private bool Locked => Scope?.Locked == true;
+
+    private const string LockedText = "Save or discard your changes first";
 
     private bool _open, _focus;
     private string? _draft;
@@ -126,6 +157,13 @@
     {
         _open = false;
         if (Host is not null) await Host.SearchAsync(Key, string.IsNullOrWhiteSpace(_draft) ? null : _draft.Trim());
+    }
+
+    private async Task FilterChangedAsync(ChangeEventArgs e)
+    {
+        var value = e.Value?.ToString()?.Trim();
+        if (Host is null || (value ?? "") == (Host.SearchOf(Key) ?? "")) return;
+        await Host.SearchAsync(Key, string.IsNullOrEmpty(value) ? null : value);
     }
 
     private async Task ResetAsync()

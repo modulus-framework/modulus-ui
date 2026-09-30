@@ -31,19 +31,22 @@ public class ModulusHeadTagHelper(IOptions<ModulusThemeOptions> options) : TagHe
             <link rel="preload" href="/_content/Modulus.Ui.Assets/fonts/inter/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
             <link rel="stylesheet" href="/_content/AntDesign/css/ant-design-blazor.variable.min.css" data-theme-css="light" media="{(dark ? "not all" : "all")}" />
             <link rel="stylesheet" href="/_content/AntDesign/css/ant-design-blazor.dark.min.css" data-theme-css="dark" media="{(dark ? "all" : "not all")}" />
+            <link rel="stylesheet" href="/_content/Modulus.Ui.Assets/css/antd-dark-brand.css" data-theme-css="dark" media="{(dark ? "all" : "not all")}" />
             <link rel="stylesheet" href="/_content/Modulus.Ui.Assets/css/modulus.css" />
             <link rel="stylesheet" href="/_content/Modulus.Ui.Assets/css/modulus-shell.css" />
             <link rel="stylesheet" href="/_content/Modulus.Ui.Assets/css/modulus-pages.css" />
             <style id="modulus-brand">{ThemeCss.Build(theme)}</style>
             <script src="/_content/Modulus.Ui.Assets/js/modulus-theme.js" data-default="{@default}" {ThemeCss.ScriptAttributes(theme)}></script>
             <script src="/_content/Modulus.Ui.Assets/js/modulus-shell.js" defer></script>
+            <script src="/_content/Modulus.Ui.Assets/js/modulus-plugins.js" defer></script>
             """);
     }
 }
 
 /// <summary>
 /// <c>&lt;modulus-scripts /&gt;</c> before &lt;/body&gt;: pinned htmx and Alpine.js (served locally,
-/// no CDN) plus the Modulus MVC runtime (drawer, dropdowns, toasts, confirm dialogs).
+/// no CDN) plus the Modulus MVC runtime (drawer, dropdowns, toasts, confirm dialogs) and SPA navigation
+/// (<c>modulus-spa.js</c>, active when the layout's &lt;body&gt; has <c>data-m-spa</c>).
 /// </summary>
 [HtmlTargetElement("modulus-scripts", TagStructure = TagStructure.WithoutEndTag)]
 public class ModulusScriptsTagHelper : TagHelper
@@ -54,6 +57,8 @@ public class ModulusScriptsTagHelper : TagHelper
         output.Content.SetHtmlContent("""
             <script src="/_content/Modulus.Ui.Assets/lib/htmx/htmx.min.js"></script>
             <script src="/_content/Modulus.Ui.Assets/js/modulus-mvc.js"></script>
+            <script src="/_content/Modulus.Ui.Assets/js/modulus-spa.js"></script>
+            <script src="/_content/Modulus.Ui.Assets/js/modulus-virtual.js" defer></script>
             <script src="/_content/Modulus.Ui.Assets/js/modulus-widgets.js"></script>
             <script defer src="/_content/Modulus.Ui.Assets/lib/alpinejs/alpine.min.js"></script>
             """);

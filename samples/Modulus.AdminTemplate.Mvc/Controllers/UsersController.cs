@@ -20,6 +20,10 @@ public class UsersController(SampleStore store) : SampleController
     public IActionResult List([FromQuery] UserQuery query, [FromQuery] ProTableRequest request) =>
         Page("Users", "Apps/Users/UserList", UserListPage.Load(store, query, request));
 
+    [HttpGet("grid")]
+    public IActionResult Grid(string? q, string? role, int current = 1) =>
+        Page("Users", "Apps/Users/UserGrid", UserGridPage.Load(store, q, role, current));
+
     [HttpGet("list/form/{id:int?}")]
     public IActionResult Form(int? id)
     {

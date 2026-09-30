@@ -38,6 +38,12 @@ public sealed class NestedGridLevel
     /// <summary>Column headers sort the level (ascending, descending, unsorted) and each has a column search.</summary>
     public bool Sortable { get; set; } = true;
 
+    /// <summary>
+    /// A drag handle on each row to reorder the page (not while a column sort is on). Save hands the rows over in the
+    /// new order with <see cref="NestedGridChanges.Ordered"/> set; <see cref="NestedGridQuery.StoreOrder"/> keeps it.
+    /// </summary>
+    public bool RowDraggable { get; set; } = true;
+
     /// <summary>Rows of this level expand into the next level, when there is one.</summary>
     public bool Expandable { get; set; } = true;
 
@@ -77,6 +83,18 @@ public sealed class NestedGridSettings
 public sealed record NestedGridRequest(int Level, string? ParentId, string? Keyword = null, string? SortField = null, bool Descending = false, int Page = 1, int PageSize = 5,
     IReadOnlyDictionary<string, string?>? Filters = null, IReadOnlyDictionary<string, string?>? Searches = null)
 {
+    /// <summary>
+    /// The page size was picked by the user (not the level's default), so the level's URLs carry it
+    /// (<c>size=20</c>). The page size itself is <see cref="PageSize"/>.
+    /// </summary>
+    public bool CustomPageSize { get; init; }
+
+    /// <summary>The same request with no keyword, filters or column searches, back on page 1 (a Clear button).</summary>
+    public NestedGridRequest Cleared() => this with { Keyword = null, Filters = null, Searches = null, Page = 1 };
+
+    /// <summary>Whether a keyword, a filter or a column search is set.</summary>
+    public bool Filtered => !string.IsNullOrWhiteSpace(Keyword) || ActiveFilters.Any() || ActiveSearches.Any();
+
     /// <summary>The column searches that have a value.</summary>
     public IEnumerable<KeyValuePair<string, string?>> ActiveSearches => (Searches ?? new Dictionary<string, string?>()).Where(s => !string.IsNullOrWhiteSpace(s.Value));
 
@@ -110,7 +128,14 @@ public sealed record NestedGridRequest(int Level, string? ParentId, string? Keyw
 public sealed record NestedGridPage(IReadOnlyList<GridRecord> Rows, int Total);
 
 /// <summary>What Save hands the app: the rows on the page as edited (new rows keep their temporary ids) and the ids deleted.</summary>
-public sealed record NestedGridChanges(int Level, string? ParentId, IReadOnlyList<GridColumn> Columns, IReadOnlyList<GridRecord> Rows, IReadOnlyList<string> DeletedIds);
+public sealed record NestedGridChanges(int Level, string? ParentId, IReadOnlyList<GridColumn> Columns, IReadOnlyList<GridRecord> Rows, IReadOnlyList<string> DeletedIds)
+{
+    /// <summary>
+    /// <see cref="Rows"/> are in the order the user left them (no column sort was on), so the app can store that
+    /// order (see <see cref="NestedGridQuery.StoreOrder"/>). False when a column sort decided it.
+    /// </summary>
+    public bool Ordered { get; init; }
+}
 
 /// <summary>Search, sort and paging over in-memory rows, by the grid's own formatting rules.</summary>
 public static class NestedGridQuery
@@ -128,6 +153,24 @@ public static class NestedGridQuery
         var pages = Math.Max(1, (int)Math.Ceiling(list.Count / (double)size));
         var page = Math.Clamp(request.Page, 1, pages);
         return new NestedGridPage(list.Skip((page - 1) * size).Take(size).ToList(), list.Count);
+    }
+
+    /// <summary>
+    /// Stores the order of a saved page in the level's full list: the page's rows take the slots they held (rows on
+    /// other pages or filtered out keep theirs), and rows added on the page (<paramref name="added"/>, already in
+    /// <paramref name="all"/>) join that block where they were placed. <paramref name="order"/> is the page's ids as saved.
+    /// </summary>
+    public static void StoreOrder(List<GridRecord> all, IReadOnlyList<string> order, IReadOnlySet<string> added)
+    {
+        var newRows = all.Where(r => added.Contains(r.Id)).ToList();
+        if (newRows.Count > 0)
+        {
+            all.RemoveAll(r => added.Contains(r.Id));
+            var pageIds = order.ToHashSet(StringComparer.Ordinal);
+            var first = all.FindIndex(r => pageIds.Contains(r.Id));
+            all.InsertRange(first < 0 ? all.Count : first, newRows);
+        }
+        GridSchema.Reorder(all, order, r => r.Id);
     }
 
     /// <summary>The page a request lands on once clamped to the rows there are.</summary>

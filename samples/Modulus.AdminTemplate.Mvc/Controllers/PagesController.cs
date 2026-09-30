@@ -16,6 +16,9 @@ public class PagesController(SampleStore store) : SampleController
     [HttpGet("faq")]
     public IActionResult Faq() => Page("FAQ", "Pages/Faq");
 
+    [HttpGet("changelog")]
+    public IActionResult Changelog() => Page("Changelog", "Pages/Changelog");
+
     [HttpGet("help-center")]
     public IActionResult HelpCenter() => Page("Help center", "Pages/HelpCenter");
 

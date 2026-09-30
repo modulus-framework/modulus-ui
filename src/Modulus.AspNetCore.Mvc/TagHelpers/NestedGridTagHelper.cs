@@ -45,6 +45,7 @@ public class NestedGridTagHelper : TagHelper
             Errors = v.Errors,
             Dirty = v.Dirty,
             AllowAddRow = level.Editable && level.AllowAdd,
+            AddRowText = $"Add {GridSchema.Singular(level.Title)}",
             AllowDeleteRow = level.Editable && level.AllowDelete,
             AllowColumnEdit = false,
             ShowSave = level.Editable,
@@ -58,7 +59,13 @@ public class NestedGridTagHelper : TagHelper
             ReloadTarget = "#" + container,
             // Headers sort and search the level on the server too: each is an htmx GET of this level.
             Sortable = level.Sortable,
+            // Rows drag to a new order, posted with Save (not while the level is sorted by a column).
+            RowDraggable = level.RowDraggable,
             ColumnSearchable = level.Searchable,
+            // A level is one page of the server's rows; its own pager (below) pages on the server.
+            Paged = false,
+            // The filters sit under the column headers (a select for option columns), shown from the start.
+            FilterRowOpen = level.Searchable,
             SortHref = key => NestedGridForm.Url(Url, r.WithSort(key)),
             SortField = r.SortField,
             SortDescending = r.Descending,
@@ -69,8 +76,8 @@ public class NestedGridTagHelper : TagHelper
         if (!level.Editable) foreach (var c in v.Columns) c.Editable = false;
 
         var toolbar = Toolbar(level, r, container);
-        var filters = Filters(r, container);
-        var summary = Pager(r, v.Total, container);
+        var filters = Filters(r, container, level.Searchable);
+        var summary = Pager(r, v.Total, container, Math.Max(1, level.PageSize));
         var gridContext = new TagHelperContext("app-editable-grid", [], new Dictionary<object, object>(), context.UniqueId + "-g");
         var gridOutput = new TagHelperOutput("app-editable-grid", [new TagHelperAttribute("id", container + "-grid")], (_, _) =>
         {
@@ -118,16 +125,23 @@ public class NestedGridTagHelper : TagHelper
         if (level.Searchable)
         {
             var url = NestedGridForm.Url(Url, r with { Page = 1 }, "q");
-            sb.Append($"""<span class="ant-input-affix-wrapper m-table-toolbar-search m-nested-search"><span class="ant-input-prefix">{ShellRenderer.Icon("search")}</span>""");
+            // The box folds into a search icon while empty (modulus-shell.js, [data-m-search-reveal]).
+            var open = !string.IsNullOrEmpty(r.Keyword);
+            sb.Append($"""<button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-table-search-toggle" aria-label="Search {Html.E(level.Title)}" title="Search (Ctrl+F)" data-m-search-toggle data-m-search-reveal{(open ? " hidden" : "")}>{AntIcons.Span("search")}</button>""");
+            sb.Append($"""<span class="ant-input-affix-wrapper m-table-toolbar-search m-nested-search"{(open ? "" : " hidden")}><span class="ant-input-prefix">{AntIcons.Span("search")}</span>""");
             sb.Append($"""<input class="ant-input" type="search" name="q" value="{Html.E(r.Keyword)}" placeholder="Search {Html.E(level.Title.ToLowerInvariant())}…" aria-label="Search {Html.E(level.Title)}" autocomplete="off" hx-get="{Html.E(url)}" hx-trigger="keyup[key=='Enter'], search" hx-include="this" {target}onkeydown="if (event.key === 'Enter') event.preventDefault()" /></span>""");
         }
+        // One click clears the level's keyword, filters and column searches.
+        if (r.Filtered)
+            sb.Append($"""<button type="button" class="ant-btn ant-btn-text m-table-clear" title="Clear the search and filters" hx-get="{Html.E(NestedGridForm.Url(Url, r.Cleared()))}" {target}>{AntIcons.Span("close-circle")}<span>Clear</span></button>""");
         return sb.ToString();
     }
 
-    // The filter row: a dropdown per Filterable column; each change is an htmx GET of this level with f.{key}.
-    private string Filters(NestedGridRequest r, string container)
+    // The filter bar above the table: a dropdown per Filterable column; each change is an htmx GET of this level with
+    // f.{key}. A searchable level filters in the row under its headers instead (no bar); the toolbar's Clear resets both.
+    private string Filters(NestedGridRequest r, string container, bool filterRow)
     {
-        var columns = GridSchema.FilterColumns(View.Columns);
+        IReadOnlyList<GridColumn> columns = filterRow ? [] : GridSchema.FilterColumns(View.Columns);
         if (columns.Count == 0) return "";
         var sb = new StringBuilder();
         foreach (var c in columns)
@@ -139,31 +153,49 @@ public class NestedGridTagHelper : TagHelper
                 sb.Append($"""<option value="{Html.E(o.Value)}"{(o.Value == current ? " selected" : "")}>{Html.E(o.Label)}</option>""");
             sb.Append("</select>");
         }
-        if (r.ActiveFilters.Any() || r.ActiveSearches.Any())
-            sb.Append($"""<button type="button" class="ant-btn ant-btn-link m-grid-clear-filters" hx-get="{Html.E(NestedGridForm.Url(Url, r with { Filters = null, Searches = null, Page = 1 }))}" hx-target="#{container}" hx-swap="outerHTML"><span>Clear filters</span></button>""");
         return sb.ToString();
     }
 
-    // Ant Design's small pagination with the "1–5 of 14" range, as the data table shows it; each page is an htmx GET of this level.
-    private string Pager(NestedGridRequest r, int total, string container)
+    // The data table's pager, on the server: the "1–5 of 14" range, Ant Design's page window with ••• jumps
+    // (Paging.Window) and rows per page (size=, carried in the level's URLs). Each is an htmx GET of this level.
+    private string Pager(NestedGridRequest r, int total, string container, int levelSize)
     {
         if (total <= 0) return "";
-        var pages = (int)Math.Ceiling(total / (double)Math.Max(1, r.PageSize));
+        var pages = Paging.Pages(total, r.PageSize);
         var page = Math.Clamp(r.Page, 1, pages);
-        string Link(int p, string text, string label) =>
-            $"""<a href="#" hx-get="{Html.E(NestedGridForm.Url(Url, r with { Page = p }))}" hx-target="#{container}" hx-swap="outerHTML" aria-label="{label}">{text}</a>""";
-        var from = (page - 1) * r.PageSize + 1;
-        var to = Math.Min(total, page * r.PageSize);
-        var sb = new StringBuilder("""<ul class="ant-pagination ant-pagination-mini m-nested-pager">""");
-        sb.Append($"""<li class="ant-pagination-total-text">{from.ToString(CultureInfo.CurrentCulture)}–{to.ToString(CultureInfo.CurrentCulture)} of {total.ToString(CultureInfo.CurrentCulture)}</li>""");
+        var target = $"""hx-target="#{container}" hx-swap="outerHTML" """.TrimEnd();
+        string Link(int p, string text, string label, string cls = "") =>
+            $"""<a{(cls.Length > 0 ? $" class=\"{cls}\"" : "")} href="#" hx-get="{Html.E(NestedGridForm.Url(Url, r with { Page = p }))}" {target} aria-label="{label}">{text}</a>""";
+        var sb = new StringBuilder("""<ul class="ant-pagination ant-pagination-mini m-nested-pager" aria-label="Pagination">""");
+        sb.Append($"""<li class="ant-pagination-total-text">{Paging.Range(page, r.PageSize, total)}</li>""");
         sb.Append(page > 1
-            ? $"""<li class="ant-pagination-prev">{Link(page - 1, AntIcons.Span("left"), "Previous page")}</li>"""
+            ? $"""<li class="ant-pagination-prev">{Link(page - 1, AntIcons.Span("left"), "Previous page", "ant-pagination-item-link")}</li>"""
             : $"""<li class="ant-pagination-prev ant-pagination-disabled" aria-disabled="true"><span class="ant-pagination-item-link">{AntIcons.Span("left")}</span></li>""");
-        for (var p = 1; p <= pages; p++)
+        var window = Paging.Window(page, pages);
+        for (var i = 0; i < window.Count; i++)
+        {
+            var p = window[i];
+            if (p == 0)
+            {
+                // AntD's jump item: ••• that moves five pages.
+                var next = i > 0 && window[i - 1] >= page;
+                var kind = next ? "jump-next" : "jump-prev";
+                var to = next ? Math.Min(pages, page + 5) : Math.Max(1, page - 5);
+                var jumpTitle = next ? "Next 5 pages" : "Previous 5 pages";
+                const string ellipsis = """<span class="ant-pagination-item-container"><span class="ant-pagination-item-ellipsis">•••</span></span>""";
+                sb.Append($"""<li class="ant-pagination-{kind} ant-pagination-{kind}-custom-icon" title="{jumpTitle}">{Link(to, ellipsis, jumpTitle, "ant-pagination-item-link")}</li>""");
+                continue;
+            }
             sb.Append($"""<li class="{Html.Cx("ant-pagination-item", $"ant-pagination-item-{p}", p == page ? "ant-pagination-item-active" : null)}"{(p == page ? " aria-current=\"page\"" : "")}>{Link(p, p.ToString(CultureInfo.InvariantCulture), $"Page {p}")}</li>""");
+        }
         sb.Append(page < pages
-            ? $"""<li class="ant-pagination-next">{Link(page + 1, AntIcons.Span("right"), "Next page")}</li>"""
+            ? $"""<li class="ant-pagination-next">{Link(page + 1, AntIcons.Span("right"), "Next page", "ant-pagination-item-link")}</li>"""
             : $"""<li class="ant-pagination-next ant-pagination-disabled" aria-disabled="true"><span class="ant-pagination-item-link">{AntIcons.Span("right")}</span></li>""");
-        return sb.Append("</ul>").ToString();
+        // Rows per page: the select's own value is the size= of the request (the URL leaves it out).
+        var sizeUrl = NestedGridForm.Url(Url, r with { Page = 1 }, "size");
+        sb.Append($"""<li class="ant-pagination-options"><select class="m-select m-select-sm m-pager-size" name="size" aria-label="Rows per page" hx-get="{Html.E(sizeUrl)}" hx-trigger="change" hx-include="this" {target} onchange="event.stopPropagation()">""");
+        foreach (var size in Paging.SizesWith(levelSize))
+            sb.Append($"""<option value="{size}"{(size == r.PageSize ? " selected" : "")}>{size} / page</option>""");
+        return sb.Append("</select></li></ul>").ToString();
     }
 }

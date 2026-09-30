@@ -27,10 +27,9 @@
         }
     </div>
 
-    <ProTable TItem="Customer" @ref="_table" HeaderTitle="All customers" Request="LoadAsync" RowKey="c => c.Id" Selectable ScrollX="1000">
+    <ProTable TItem="Customer" @ref="_table" HeaderTitle="All customers" Request="LoadAsync" RowKey="c => c.Id" Selectable ScrollX="1000" FiltersActive="@FiltersActive" OnClearFilters="ClearFilters">
         <ToolBar>
             <Input @bind-Value="_keyword" Placeholder="Search customers…" AllowClear Class="m-table-toolbar-search" OnPressEnter="SearchAsync" OnClear="SearchAsync" Prefix="@_searchIcon" />
-            <Button Icon="download">Export</Button>
         </ToolBar>
         <Filters>
             <Select TItemValue="CustomerStatus?" TItem="string" Value="_query.Status" ValueChanged="v => FilterAsync(() => _query.Status = v)" Placeholder="Status" AllowClear>
@@ -117,6 +116,17 @@
     }
 
     private Task SearchAsync() => _table!.ReloadAsync(resetPage: true);
+
+    // The table's Clear button: the search box and every filter.
+    private bool FiltersActive => !string.IsNullOrWhiteSpace(_keyword) || _query.Status is not null || _query.Tier is not null || _query.City is not null;
+
+    private void ClearFilters()
+    {
+        _keyword = null;
+        _query.Status = null;
+        _query.Tier = null;
+        _query.City = null;
+    }
 
     private async Task FilterAsync(Action set)
     {

@@ -1,0 +1,33 @@
+@* Inline player: a video and an audio track with Ant Design controls, captions and keyboard keys. *@
+<app-page-header pretitle="Plugins" title="Inline player" subtitle="Video and audio with custom controls: seek, volume, speed, captions, full screen and keyboard keys."></app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Video</h3><p class="m-card-subtitle">A short CC0 clip with a poster and captions</p></div></div>
+            <div class="m-card-body">
+                <app-media-player src="@PluginsContent.VideoSrc" poster="@PluginsContent.VideoPoster" title="Flower clip" captions="PluginsContent.VideoCaptions" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Audio</h3><p class="m-card-subtitle">A track made on the server, with its chords as captions</p></div></div>
+            <div class="m-card-body m-player-demo">
+                <app-media-player audio src="@PluginsContent.TrackUrl" poster="@PluginsContent.TrackCover" title="Four chords" subtitle="Modulus demo · 0:16" captions="PluginsContent.TrackCaptions" captions-on loop />
+                <p class="m-muted">Only one player plays at a time: starting one pauses the other.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Keyboard</h3><p class="m-card-subtitle">While focus is inside a player</p></div></div>
+        <div class="m-card-body">
+            <ul class="m-plain-list m-keys-list">
+                <li><kbd>K</kbd><kbd>Space</kbd><span>Play and pause</span></li>
+                <li><kbd>←</kbd><kbd>→</kbd><span>Back and forward 5 seconds; <kbd>J</kbd> <kbd>L</kbd> 10 seconds</span></li>
+                <li><kbd>M</kbd><span>Mute and unmute</span></li>
+                <li><kbd>C</kbd><span>Captions on and off</span></li>
+                <li><kbd>F</kbd><span>Full screen (or a double click on the video)</span></li>
+            </ul>
+        </div>
+    </div>
+</div>

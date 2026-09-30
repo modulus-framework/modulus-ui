@@ -88,19 +88,6 @@ public class PaginationTagHelper : TagHelper
         return $"""<li class="{cls}"><a class="{linkClass}" href="#" aria-label="{aria}" hx-get="{Html.E(href)}"{target}{include}>{label}</a></li>""";
     }
 
-    /// <summary>Pages to show; 0 marks an ellipsis.</summary>
-    private static IEnumerable<int> Window(int current, int pages)
-    {
-        if (pages <= 7) return Enumerable.Range(1, pages);
-        // Same window as AntD (rc-pagination): two pages either side of the current one, five at the ends.
-        var left = Math.Max(1, current - 2);
-        var right = Math.Min(pages, current + 2);
-        if (current - 1 <= 2) right = 5;
-        if (pages - current <= 2) left = pages - 4;
-        var result = new List<int>();
-        if (left != 1) { result.Add(1); if (left > 2) result.Add(0); }
-        result.AddRange(Enumerable.Range(left, right - left + 1));
-        if (right != pages) { if (right < pages - 1) result.Add(0); result.Add(pages); }
-        return result;
-    }
+    /// <summary>Pages to show; 0 marks an ellipsis (<see cref="Modulus.Ui.Abstractions.Paging.Window"/>).</summary>
+    private static IEnumerable<int> Window(int current, int pages) => Modulus.Ui.Abstractions.Paging.Window(current, pages);
 }
