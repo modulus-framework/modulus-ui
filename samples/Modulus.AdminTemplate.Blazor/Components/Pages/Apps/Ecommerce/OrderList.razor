@@ -5,7 +5,7 @@
 
 <PageHeading Pretitle="eCommerce" Title="Orders">
     <Actions>
-        <a class="ant-btn ant-btn-default" href="/dashboards/ecommerce"><Ti Name="chart-bar" /><span>Sales overview</span></a>
+        <a class="ant-btn ant-btn-default" href="/dashboards/ecommerce"><Ti Name="bar-chart" /><span>Sales overview</span></a>
     </Actions>
 </PageHeading>
 
@@ -83,10 +83,10 @@
 
     private (string Label, string Value, string Icon)[] Strip =>
     [
-        ("Pending payment", _stats.PendingPayment.ToString("N0"), "ant:field-time"),
-        ("Completed", _stats.Completed.ToString("N0"), "checks"),
-        ("Refunded", _stats.Refunded.ToString("N0"), "arrow-back-up"),
-        ("Failed", _stats.Failed.ToString("N0"), "ant:stop"),
+        ("Pending payment", _stats.PendingPayment.ToString("N0"), "field-time"),
+        ("Completed", _stats.Completed.ToString("N0"), "ri:check-double"),
+        ("Refunded", _stats.Refunded.ToString("N0"), "undo"),
+        ("Failed", _stats.Failed.ToString("N0"), "stop"),
     ];
 
     protected override void OnInitialized() => _stats = Store.OrderStats();

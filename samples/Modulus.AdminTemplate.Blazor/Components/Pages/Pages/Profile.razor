@@ -9,13 +9,13 @@
         <div>
             <h1 class="m-profile-name">@CurrentUser.Name</h1>
             <div class="m-profile-meta">
-                <span><Ti Name="briefcase" />@CurrentUser.Title</span>
-                <span><Ti Name="map-pin" />San Francisco, US</span>
+                <span><Ti Name="ri:briefcase" />@CurrentUser.Title</span>
+                <span><Ti Name="environment" />San Francisco, US</span>
                 <span><Ti Name="calendar" />Joined April 2021</span>
             </div>
         </div>
         <div class="m-profile-actions">
-            <a class="ant-btn ant-btn-default" href="/pages/account-settings"><Ti Name="settings" /><span>Edit profile</span></a>
+            <a class="ant-btn ant-btn-default" href="/pages/account-settings"><Ti Name="setting" /><span>Edit profile</span></a>
             <a class="ant-btn ant-btn-primary" href="/apps/chat"><Ti Name="message" /><span>Message</span></a>
         </div>
     </div>
@@ -103,11 +103,11 @@
                             <div class="m-form-actions">
                                 @if (c.Connected)
                                 {
-                                    <a class="ant-btn ant-btn-primary" href="/pages/profile?tab=connections"><Ti Name="user-check" /><span>Connected</span></a>
+                                    <a class="ant-btn ant-btn-primary" href="/pages/profile?tab=connections"><Ti Name="ri:user-follow" /><span>Connected</span></a>
                                 }
                                 else
                                 {
-                                    <a class="ant-btn ant-btn-default" href="/pages/profile?tab=connections"><Ti Name="user-plus" /><span>Connect</span></a>
+                                    <a class="ant-btn ant-btn-default" href="/pages/profile?tab=connections"><Ti Name="user-add" /><span>Connect</span></a>
                                 }
                                 <a class="ant-btn ant-btn-default ant-btn-icon-only" href="/apps/email" aria-label="Email @c.Name"><Ti Name="mail" /></a>
                             </div>
@@ -124,16 +124,16 @@
                         <div class="m-card-body">
                             <dl class="m-dl">
                                 <dt><Ti Name="user" />Full name</dt><dd>@CurrentUser.Name</dd>
-                                <dt><Ti Name="circle-check" />Status</dt><dd><span class="m-badge m-badge-success-lt">Active</span></dd>
+                                <dt><Ti Name="check-circle" />Status</dt><dd><span class="m-badge m-badge-success-lt">Active</span></dd>
                                 <dt><Ti Name="crown" />Role</dt><dd>@CurrentUser.Role</dd>
                                 <dt><Ti Name="flag" />Country</dt><dd>United States</dd>
-                                <dt><Ti Name="language" />Languages</dt><dd>English, Korean</dd>
+                                <dt><Ti Name="translation" />Languages</dt><dd>English, Korean</dd>
                             </dl>
                             <div class="m-subheader m-mt-24 m-mb-8">Contacts</div>
                             <dl class="m-dl">
                                 <dt><Ti Name="phone" />Phone</dt><dd>+1 202 555 0111</dd>
                                 <dt><Ti Name="mail" />Email</dt><dd class="m-truncate">@CurrentUser.Email</dd>
-                                <dt><Ti Name="brand-slack" />Slack</dt><dd>@@serena</dd>
+                                <dt><Ti Name="slack" />Slack</dt><dd>@@serena</dd>
                             </dl>
                         </div>
                     </div>
@@ -141,9 +141,9 @@
                         <div class="m-card-header"><h2 class="m-card-title">Overview</h2></div>
                         <div class="m-card-body">
                             <dl class="m-dl">
-                                <dt><Ti Name="checks" />Tasks compiled</dt><dd>13.5k</dd>
-                                <dt><Ti Name="briefcase" />Projects</dt><dd>@SampleContent.Projects.Count</dd>
-                                <dt><Ti Name="users" />Connections</dt><dd>897</dd>
+                                <dt><Ti Name="ri:check-double" />Tasks compiled</dt><dd>13.5k</dd>
+                                <dt><Ti Name="ri:briefcase" />Projects</dt><dd>@SampleContent.Projects.Count</dd>
+                                <dt><Ti Name="team" />Connections</dt><dd>897</dd>
                             </dl>
                         </div>
                     </div>
@@ -206,7 +206,7 @@
 
 @code {
     private static readonly (string Key, string Label, string Icon)[] Tabs =
-        [("profile", "Profile", "user"), ("teams", "Teams", "users-group"), ("projects", "Projects", "layout-grid"), ("connections", "Connections", "link")];
+        [("profile", "Profile", "user"), ("teams", "Teams", "ri:group"), ("projects", "Projects", "appstore"), ("connections", "Connections", "link")];
 
     [SupplyParameterFromQuery] public string? Tab { get; set; }
 

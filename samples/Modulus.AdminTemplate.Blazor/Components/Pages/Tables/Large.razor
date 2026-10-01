@@ -1,6 +1,8 @@
 @page "/tables/large"
 @using Microsoft.AspNetCore.Components.Web.Virtualization
 @using Modulus.Ui.Abstractions.Data
+@using Modulus.Ui.Abstractions.Pivot
+@inject NavigationManager Navigation
 
 <PageTitle>Large data · Modulus</PageTitle>
 
@@ -12,7 +14,8 @@
 <div class="m-nested-settings">
     <span class="m-muted">Mode</span>
     <Segmented TValue="string" Labels="_modes" @bind-Value="_mode" />
-    <Select TItemValue="ShipmentStatus?" TItem="string" Value="_status" ValueChanged="StatusChanged" Placeholder="Status" AllowClear Style="width: 160px">
+    <Input TValue="string" Value="@_filter.Keyword" ValueChanged="KeywordChanged" BindOnInput DebounceMilliseconds="300" AllowClear MaxLength="200" Placeholder="Reference or customer…" Class="m-table-toolbar-search" Prefix="@_searchIcon" aria-label="Search shipments" />
+    <Select TItemValue="ShipmentStatus?" TItem="string" Value="_filter.Status" ValueChanged="StatusChanged" Placeholder="Status" AllowClear Style="width: 160px">
         <SelectOptions>
             @foreach (var s in Enum.GetValues<ShipmentStatus>())
             {
@@ -20,6 +23,18 @@
             }
         </SelectOptions>
     </Select>
+    <Select TItemValue="string" TItem="string" Value="_filter.City" ValueChanged="CityChanged" Placeholder="City" AllowClear Style="width: 160px">
+        <SelectOptions>
+            @foreach (var c in Shipments.Cities)
+            {
+                <SelectOption TItemValue="string" TItem="string" Value="c" Label="@c" />
+            }
+        </SelectOptions>
+    </Select>
+    @if (!_filter.IsEmpty)
+    {
+        <button type="button" class="ant-btn ant-btn-text m-table-clear" title="Clear the search and filters" @onclick="ClearFilters"><Ti Name="close-circle" /><span>Clear</span></button>
+    }
     <span class="m-small m-muted">@_total.ToString("N0") matching · query @_ms.ToString("0.0") ms</span>
 </div>
 
@@ -53,7 +68,7 @@ else
                                     </tr>
                                 </thead>
                                 <tbody class="ant-table-tbody">
-                                    <Virtualize @key="_status" TItem="Shipment" ItemsProvider="ProvideAsync" ItemSize="40" OverscanCount="8" SpacerElement="tr">
+                                    <Virtualize @key="_filter" TItem="Shipment" ItemsProvider="ProvideAsync" ItemSize="40" OverscanCount="8" SpacerElement="tr">
                                         <ItemContent Context="s">
                                             <tr class="ant-table-row ant-table-row-level-0" @key="s.Id">
                                                 <td class="ant-table-cell"><span class="m-num m-heading">@s.Reference</span></td>
@@ -79,9 +94,16 @@ else
 }
 
 @code {
+    private readonly RenderFragment _searchIcon = @<Ti Name="search" />;
+
     private readonly string[] _modes = ["Pages", "Virtual"];
     private string _mode = "Pages";
-    private ShipmentStatus? _status;
+    // The filters are in the URL (?status=&city=&keyword=, as in MVC), so the pivot's drill-down links open them.
+    [SupplyParameterFromQuery] public string? Status { get; set; }
+    [SupplyParameterFromQuery] public string? City { get; set; }
+    [SupplyParameterFromQuery] public string? Keyword { get; set; }
+
+    private ShipmentFilter _filter = new();
     private ProTable<Shipment>? _table;
     private int _total;
     private double _ms;
@@ -95,10 +117,37 @@ else
         _ => "red",
     };
 
-    private async Task StatusChanged(ShipmentStatus? status)
+    protected override async Task OnParametersSetAsync()
     {
-        _status = status;
+        var filter = new ShipmentFilter(Enum.TryParse<ShipmentStatus>(Status, out var s) ? s : null,
+            string.IsNullOrWhiteSpace(City) ? null : City, string.IsNullOrWhiteSpace(Keyword) ? null : Keyword);
+        if (filter == _filter) return;
+        _filter = filter;
         if (_table is not null) await _table.ReloadAsync(resetPage: true);
+    }
+
+    // A filter shows and loads at once, then goes into the URL; that navigation finds the same filter and does nothing.
+    // AntD Select and Search can report their value again on render, so an unchanged filter neither reloads nor
+    // navigates (else every render would navigate and the page would reload without end).
+    private Task StatusChanged(ShipmentStatus? status) => Go(_filter with { Status = status });
+
+    private Task ClearFilters() => Go(new ShipmentFilter());
+
+    private Task CityChanged(string? city) => Go(_filter with { City = string.IsNullOrWhiteSpace(city) ? null : city });
+
+    private Task KeywordChanged(string? keyword) => Go(_filter with { Keyword = string.IsNullOrWhiteSpace(keyword) ? null : keyword.Trim() });
+
+    private async Task Go(ShipmentFilter filter)
+    {
+        if (filter == _filter) return;
+        _filter = filter;
+        if (_table is not null) await _table.ReloadAsync(resetPage: true);
+        var query = new List<KeyValuePair<string, string>>();
+        if (filter.Status is { } status) query.Add(new("status", status.ToString()));
+        if (filter.City is { } city) query.Add(new("city", city));
+        if (filter.Keyword is { } keyword) query.Add(new("keyword", keyword));
+        var url = "/tables/large" + (query.Count == 0 ? "" : "?" + PivotState.Encode(query));
+        if (Navigation.ToAbsoluteUri(url) != new Uri(Navigation.Uri)) Navigation.NavigateTo(url);
     }
 
     private Task<ProTableResponse<Shipment>> LoadAsync(ProTableRequest request)
@@ -111,8 +160,8 @@ else
     private ValueTask<ItemsProviderResult<Shipment>> ProvideAsync(ItemsProviderRequest request)
     {
         var count = Math.Clamp(request.Count, 1, 200);
-        var rows = Shipments.Table.Apply(Shipments.Where(_status), new ProTableRequest()).Skip(request.StartIndex).Take(count).ToList();
-        var total = Shipments.Table.Filter(Shipments.Where(_status), new ProTableRequest()).Count();
+        var rows = Shipments.Table.Apply(Shipments.Where(_filter), new ProTableRequest()).Skip(request.StartIndex).Take(count).ToList();
+        var total = Shipments.Table.Filter(Shipments.Where(_filter), new ProTableRequest()).Count();
         _total = total;
         return ValueTask.FromResult(new ItemsProviderResult<Shipment>(rows, total));
     }
@@ -120,7 +169,7 @@ else
     private TablePage<Shipment> Run(ProTableRequest request, CountMode count)
     {
         var watch = System.Diagnostics.Stopwatch.StartNew();
-        var page = Shipments.Page(_status, request, count);
+        var page = Shipments.Page(_filter, request, count);
         _ms = watch.Elapsed.TotalMilliseconds;
         _total = page.Total ?? _total;
         return page;

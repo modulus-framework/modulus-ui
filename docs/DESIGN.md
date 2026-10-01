@@ -228,6 +228,54 @@ charts
   cancelled when scrolled past, the first block seeded with the page). Blazor uses `Virtualize` over the same query.
 - A page's own boost area (`hx-sync="#area:replace"`) cancels a filter or sort request still running when another starts.
 
+### Pivot
+
+In the manner of Odoo's pivot view, copied as it is: collapsible "Total" headers on both axes, a group-by dropdown on
+a closed last-level header (dates offer Year, Quarter, Month, Week and Day), and a toolbar with Measures, Flip axis,
+Expand all and Download.
+
+- **Only registered fields reach the query.** `PivotQuery<T>` (`Modulus.Ui.Abstractions.Pivot`) is built like
+  `TableQuery<T>`: `Dimension` (text or enum), `Date` and `Measure` (sum, average, min or max, fixed per measure like
+  Odoo's `aggregator`; count is built in). `State(query)` drops unknown group-bys and measures.
+- **Only what shows is read, as in Odoo.** `Run` issues one `GroupBy` per pair of depths (row depth × column depth)
+  that has open headers, filtered to the records under those open headers (the header keys go in as parameters). A
+  closed header is one group, however much lies under it, so City → Customer with only Berlin open reads Berlin's
+  customers, not every city's. The key is a `PivotKey` with eight text and eight number slots; dates group by numbers
+  such as `202407`. The database returns the count and one sum, min or max per measure for each group, so every
+  total comes from the database; averages are sum/count. `MaxGroups` (10,000 by default) caps the groups of all the
+  queries together, roughly the cells the table would show, and turns a bigger table into a message.
+- **The layout is the URL.**
+  - `PivotState` holds the group-bys (`rows`, `cols`), the measures, the open headers and the sort.
+  - Open headers are paths such as `*/Berlin/2024`, in `rx`/`cx`. *Expand all* records a depth (`ra`/`ca`), and the
+    list then names the closed headers, so a group-by added later still opens only its own header.
+  - Every control is a link to the next state, so the pivot needs no script: htmx boost (MVC, Razor Pages) or the
+    Blazor router follows it, and back and forward step through the layouts.
+  - `PivotState.Link` keeps the page's own filters in the query.
+- **One renderer.** `PivotHtml` draws the toolbar and the AntD bordered table (column header rows with colspans, row
+  headers indented by `--m-depth`). `AppPivotGrid` and `<app-pivot-grid>` both call it. Header dropdowns are
+  `details.m-dropdown`; `modulus-shell.js` floats their panel out of the scrolling table (`placeDropdown`).
+- **Download** is `PivotXlsx`: SpreadsheetML written into a zip, with no library. It has the same headers (merged),
+  indented row labels and bold totals.
+
+### Component architecture rules
+
+Adapted from the 2.0 proposal; new components follow them.
+
+1. **One renderer, two front ends.** Markup is a static `*Html` class in `Modulus.Ui.Abstractions`; the Blazor
+   component and the tag helper are thin adapters, and a test proves they emit the same DOM.
+2. **State lives in the URL or in form fields**, not in the component. A control that changes the view is a link or
+   a GET form; a control that changes data posts a form.
+3. **The server decides what runs.** Fields, sorts, searches and measures are registered; values from the query
+   string are checked against them and go into queries as parameters.
+4. **Large data stays on the server.** Page, group and aggregate in the query (`IQueryable`); send only what is
+   shown, and cap what one request can ask for (`MaxGroups`, page sizes).
+5. **AntD DOM and tokens.** Emit Ant Design class names and use the `--m-*` tokens, so a component works in light,
+   dark and compact density, and at 390 px.
+6. **One `[data-m-*]` root per script widget**, started and torn down by the `modulus-plugins.js` observer, so it
+   works after htmx swaps, Blazor renders and SPA navigation alike. Libraries load on first use.
+7. **No new dependency without a reason.** Prefer a small piece of Modulus code (like the xlsx writer) to a package,
+   and record each vendored library with its licence.
+
 ### Plugins
 
 - **One renderer, two front ends.** Each plugin's markup is a static class in `Modulus.Ui.Abstractions.Plugins`
@@ -272,7 +320,7 @@ charts
 | Feedback | Toast (`message`) for success; inline form errors for validation; `Result` pages for 403/404/500 |
 | KPIs | `StatisticCard`: label, headline value, 46 px chart slot, divider, footer metric; trends always carry text, never colour alone |
 | Charts | One series per chart, one axis from zero, recessive grid, hover tooltips, a screen-reader table |
-| Icons | Tabler icons (`<Ti Name="users" />` / `<app-ti name="users" />`, from one SVG sprite) for page content and navigation; Ant Design icons inside Ant Design controls, on grid toolbars and on plugin pages (a Tabler name missing from the sprite uses an `ant:` icon instead) |
+| Icons | Ant Design icons only, drawn inline. Page content and navigation name an Ant Design outline icon (`<Ti Name="team" />` / `<app-ti name="team" />`, menu items, apps and links alike; an `ant:` prefix is optional). Ant Design icons newer than the AntDesign package, and the few concepts Ant Design has no icon for (Remix Icon, `ri:`), are bundled in `ExtraIconSvg` by `tools/icons/build.sh` |
 | Menus | Modules add items through `IMenuContributor`; `Order` 0–99 for app sections, 90+ for settings. In a menu, plain entries come first, then sections |
 | Page scripts (MVC) | `Modulus.page(fn)` or `Modulus.onPage(fn)`, returning a cleanup if needed, never `DOMContentLoaded`, so pages work with SPA navigation |
 
@@ -284,3 +332,5 @@ See [PLAN.md](PLAN.md) for status. Not started:
 - Hardening: error policy, CSP nonce, compression and caching, observability.
 - Quality gates in CI: parity snapshots, Playwright flows, performance budgets.
 - Replace `AntIcons` reflection if AntDesign makes its icon store public.
+- Modulus 2.0: Spreadsheet (with a widget init/destroy registry), document templates and Document Processing,
+  `IUiStateStore` with saved views, and permission-aware columns. See PLAN.md §7 for the decisions and order.

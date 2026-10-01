@@ -9,6 +9,11 @@
  *   [data-m-nav-open]      opens the sidebar drawer (small screens); [data-m-nav-close] closes it
  *   [data-m-search]        filters every navigation link; Ctrl+K or "/" focuses it
  *   [data-m-theme-toggle]  light / dark
+ *   [data-m-fullscreen]    the whole app full screen and back (html.m-fullscreen while it is; Escape also leaves).
+ *                          A whole page load ends full screen in every browser, and only a click may start it again, so
+ *                          after one the next click or key press goes back to full screen
+ *   select[data-m-nav-select]  options are URLs (a pager's page size): the chosen one loads as a link in its place, so
+ *                          the list's boost area (or SPA navigation) swaps it in instead of loading a whole page
  *   [data-m-customizer]    theme settings panel (colour mode, scheme, base, font, radius, layout presets, layout, width,
  *                          header, sidebar, menu, direction)
  *   [data-m-fold-toggle]   folds or unfolds the vertical sidebar; a folded sidebar shows groups and names as flyouts
@@ -59,8 +64,61 @@
 
     document.addEventListener('toggle', function (e) {
         var d = e.target;
-        if (d.open && d.matches && d.matches('details.m-dropdown, details[data-m-dropdown]')) closeDropdowns(d);
+        if (d.open && d.matches && d.matches('details.m-dropdown, details[data-m-dropdown]')) {
+            closeDropdowns(d);
+            // A panel inside a scrolling box (a pivot header in its table) floats out of it.
+            if (d.querySelector(':scope > .m-dropdown-panel')) placeDropdown(d);
+        }
+        // A pivot header's cell rises above the other sticky cells while its menu is open (CSS :has() does the same).
+        if (d.matches && d.matches('details.m-pivot-groupby')) {
+            var cell = d.closest('th');
+            if (cell) cell.classList.toggle('m-pivot-menu-open', d.open);
+        }
+        // A submenu inside a floating panel (the pivot's date intervals) changes its height: place it again.
+        if (d.matches && d.matches('details.m-pivot-sub')) {
+            var menu = d.closest('details.m-dropdown-float');
+            if (menu) placeDropdown(menu);
+        }
     }, true);
+
+    // A pivot link (header, menu, toolbar, sort) loads the next layout: mark the pivot busy until the new markup
+    // replaces it (htmx swap or Blazor render), so a slow query shows progress. The timer clears a pivot that stayed.
+    document.addEventListener('click', function (e) {
+        // Not e.defaultPrevented: htmx and the Blazor router cancel the click to follow the link themselves.
+        if (e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        var t = e.target;
+        var link = t instanceof Element ? t.closest('.m-pivot a[href]') : null;
+        if (!link || link.hasAttribute('download') || link.target === '_blank') return;
+        var pivot = link.closest('.m-pivot');
+        if (link.closest('.m-pivot-value')) return; // a drill-down leaves the page
+        pivot.classList.add('m-pivot-busy');
+        pivot.setAttribute('aria-busy', 'true');
+        keepPivotScroll(pivot);
+        setTimeout(function () {
+            pivot.classList.remove('m-pivot-busy');
+            pivot.removeAttribute('aria-busy');
+        }, 15000);
+    });
+
+    // The new pivot replaces the old one whole: give its table the old scroll position, and keep the page where it was
+    // (the Blazor router scrolls to the top after a navigation).
+    var pivotWatch = null;
+    function keepPivotScroll(pivot) {
+        var box = pivot.querySelector('.m-pivot-table .ant-table-content');
+        var saved = { id: pivot.id, top: box ? box.scrollTop : 0, left: box ? box.scrollLeft : 0, y: window.scrollY };
+        if (pivotWatch) pivotWatch.disconnect();
+        var watch = pivotWatch = new MutationObserver(function () {
+            var next = saved.id ? document.getElementById(saved.id) : document.querySelector('.m-pivot');
+            if (!next || next === pivot) return;
+            watch.disconnect();
+            var nextBox = next.querySelector('.m-pivot-table .ant-table-content');
+            if (nextBox) { nextBox.scrollTop = saved.top; nextBox.scrollLeft = saved.left; }
+            window.scrollTo(window.scrollX, saved.y);
+            requestAnimationFrame(function () { window.scrollTo(window.scrollX, saved.y); });
+        });
+        watch.observe(document.body, { childList: true, subtree: true });
+        setTimeout(function () { watch.disconnect(); }, 15000);
+    }
 
     document.addEventListener('click', function (e) {
         var t = e.target;
@@ -79,6 +137,7 @@
         if (t.closest('[data-m-fold-toggle]')) { toggleFold(); return; }
         // A folded sidebar's groups open as flyouts; branches inside a flyout still fold open on click.
         if (folded() && t.closest('.m-sidebar .m-snav > .m-snav-item > .m-snav-group > summary')) { e.preventDefault(); return; }
+        if (t.closest('[data-m-fullscreen]')) { toggleFullscreen(); return; }
         if (t.closest('[data-m-theme-toggle]')) { window.modulusTheme && window.modulusTheme.toggle(); syncCustomizer(); return; }
         if (t.closest('[data-m-customizer-open]')) { openCustomizer(); return; }
         if (t.closest('[data-m-customizer-close]')) { closeCustomizer(); return; }
@@ -110,6 +169,92 @@
         var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '') || (e.target && e.target.isContentEditable);
         if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)) { e.preventDefault(); openSearch(); }
         else if (e.key === '/' && !typing) { e.preventDefault(); openSearch(); }
+    });
+
+    // Full screen: the button shows only where the browser allows it (not on iPhone Safari), and html.m-fullscreen
+    // swaps its icon and label, also after Escape or F11's own exit and after Blazor or htmx re-render the header.
+    function fullscreenElement() { return document.fullscreenElement || document.webkitFullscreenElement || null; }
+    function toggleFullscreen() {
+        if (fullscreenElement()) {
+            var exit = document.exitFullscreen || document.webkitExitFullscreen;
+            if (exit) exit.call(document);
+            return;
+        }
+        var enter = root.requestFullscreen || root.webkitRequestFullscreen;
+        if (!enter) return;
+        var done = enter.call(root, { navigationUI: 'hide' });
+        if (done && done.catch) done.catch(function () { });
+    }
+    var FULLSCREEN_KEY = 'modulus-fullscreen', leaving = false;
+    function rememberFullscreen(on) {
+        try { if (on) sessionStorage.setItem(FULLSCREEN_KEY, '1'); else sessionStorage.removeItem(FULLSCREEN_KEY); } catch (e) { }
+    }
+    function rememberedFullscreen() {
+        try { return sessionStorage.getItem(FULLSCREEN_KEY) === '1'; } catch (e) { return false; }
+    }
+    // The page is unloading (a whole page load): the browser ends full screen, but the app should come back to it.
+    window.addEventListener('beforeunload', function () { leaving = true; setTimeout(function () { leaving = false; }, 3000); });
+    window.addEventListener('pagehide', function () { leaving = true; });
+    function fullscreenChanged() {
+        var on = !!fullscreenElement();
+        if (on) rememberFullscreen(true);
+        // Left by Escape or the button: forget it. Not when the page unloads (the timer never runs then).
+        else setTimeout(function () { if (!leaving) rememberFullscreen(false); }, 0);
+        syncFullscreen();
+    }
+    // After a whole page load in full screen: the next click or key press (a user gesture) enters it again.
+    var restoreArmed = false;
+    function armFullscreenRestore() {
+        if (restoreArmed || !rememberedFullscreen() || fullscreenElement() || !(document.fullscreenEnabled || document.webkitFullscreenEnabled)) return;
+        restoreArmed = true;
+        function again(e) {
+            if (e.type === 'keydown' && (e.key === 'Escape' || e.ctrlKey || e.metaKey || e.altKey)) return;
+            document.removeEventListener('click', again, true);
+            document.removeEventListener('keydown', again, true);
+            restoreArmed = false;
+            if (e.target && e.target.closest && e.target.closest('[data-m-fullscreen]')) return; // the button decides
+            if (!fullscreenElement() && rememberedFullscreen()) toggleFullscreen();
+        }
+        document.addEventListener('click', again, true);
+        document.addEventListener('keydown', again, true);
+    }
+    window.addEventListener('pageshow', function () { leaving = false; armFullscreenRestore(); });
+    function syncFullscreen() {
+        var on = !!fullscreenElement();
+        root.classList.toggle('m-fullscreen', on);
+        root.classList.toggle('m-can-fullscreen', !!(document.fullscreenEnabled || document.webkitFullscreenEnabled));
+        document.querySelectorAll('[data-m-fullscreen]').forEach(function (b) {
+            var label = on ? 'Exit full screen' : 'Full screen';
+            b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            b.setAttribute('aria-label', label);
+            b.title = label;
+        });
+    }
+    document.addEventListener('fullscreenchange', fullscreenChanged);
+    document.addEventListener('webkitfullscreenchange', fullscreenChanged);
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', syncFullscreen); else syncFullscreen();
+    document.addEventListener('htmx:afterSettle', syncFullscreen);
+    window.addEventListener('load', function () {
+        if (window.Blazor && window.Blazor.addEventListener) window.Blazor.addEventListener('enhancedload', syncFullscreen);
+    });
+
+    // A select whose options are URLs (a pager's page size): the chosen URL loads as a link next to it, which htmx
+    // boosts like the list's other links (its boost area, or SPA navigation), so the page doesn't load whole.
+    document.addEventListener('change', function (e) {
+        var select = e.target;
+        if (!(select instanceof HTMLSelectElement) || !select.hasAttribute('data-m-nav-select') || !select.value) return;
+        var link = select.nextElementSibling;
+        if (!link || !link.hasAttribute('data-m-nav-link')) {
+            link = document.createElement('a');
+            link.hidden = true;
+            link.tabIndex = -1;
+            link.setAttribute('aria-hidden', 'true');
+            link.setAttribute('data-m-nav-link', '');
+            select.insertAdjacentElement('afterend', link);
+        }
+        link.setAttribute('href', select.value);
+        if (window.htmx) window.htmx.process(link); // boost it with its new href
+        link.click();
     });
 
     // The search keycap reads ⌘ K on Apple devices; again after Blazor's enhanced navigation re-renders the header.
@@ -361,31 +506,24 @@
         input.setAttribute('aria-expanded', 'true');
     }
 
-    // A link's icon as a string that survives localStorage: the sprite href of a Tabler icon, or "ant:name" for an
-    // Ant Design icon drawn inline (ShellRenderer marks those with data-m-icon).
+    // A link's icon as a string that survives localStorage: its name (ShellRenderer marks every icon with data-m-icon).
     function iconRef(a) {
         var inline = a.querySelector('svg.m-ai[data-m-icon]');
-        if (inline) return inline.getAttribute('data-m-icon');
-        var use = a.querySelector('svg use');
-        return use ? use.getAttribute('href') : null;
+        return inline ? inline.getAttribute('data-m-icon') : null;
     }
 
-    function iconSvg(href) {
-        if (href && href.indexOf('ant:') === 0) {
-            var source = document.querySelector('svg.m-ai[data-m-icon="' + CSS.escape(href) + '"]');
-            if (source) {
-                var copy = source.cloneNode(true);
-                copy.setAttribute('class', 'm-ti m-ai');
-                return copy;
-            }
-            href = null;
+    // A copy of the page's own drawing of that icon; an empty icon of the same size when none is on the page
+    // (an entry saved before an upgrade, or a menu item whose icon is no longer rendered).
+    function iconSvg(ref) {
+        var source = ref ? document.querySelector('svg.m-ai[data-m-icon="' + CSS.escape(ref) + '"]') : null;
+        if (source) {
+            var copy = source.cloneNode(true);
+            copy.setAttribute('class', 'm-ti m-ai');
+            return copy;
         }
         var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('class', 'm-ti');
+        svg.setAttribute('class', 'm-ti m-ai');
         svg.setAttribute('aria-hidden', 'true');
-        var use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-        use.setAttribute('href', href || '/_content/Modulus.Ui.Assets/icons/tabler.svg#ti-file');
-        svg.appendChild(use);
         return svg;
     }
 

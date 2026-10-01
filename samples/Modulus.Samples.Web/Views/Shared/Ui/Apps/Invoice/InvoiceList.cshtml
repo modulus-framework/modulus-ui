@@ -7,10 +7,10 @@
     var s = Model.Stats;
     (string Label, string Value, string Icon)[] strip =
     [
-        ("Clients", s.Clients.ToString("N0"), "users"),
-        ("Invoices", s.Invoices.ToString("N0"), "file-invoice"),
-        ("Paid", Fmt.Money0(s.Paid), "circle-check"),
-        ("Unpaid", Fmt.Money0(s.Unpaid), "ant:clock-circle"),
+        ("Clients", s.Clients.ToString("N0"), "team"),
+        ("Invoices", s.Invoices.ToString("N0"), "file-text"),
+        ("Paid", Fmt.Money0(s.Paid), "check-circle"),
+        ("Unpaid", Fmt.Money0(s.Unpaid), "clock-circle"),
     ];
 }
 <app-page-header pretitle="Invoice" title="Invoices">
@@ -100,7 +100,7 @@
                                     {
                                         <tr class="ant-table-row ant-table-row-level-0">
                                             <td class="ant-table-cell ant-table-selection-column"><app-checkbox name="ids" value="@i.Id.ToString()" aria-label="@($"Select invoice {i.Number}")" /></td>
-                                            <td class="ant-table-cell@(grid.SortClass("Id"))"><a class="m-medium" href="/apps/invoice/preview/@i.Id" hx-boost="false">@i.Number</a></td>
+                                            <td class="ant-table-cell@(grid.SortClass("Id"))"><a class="m-medium" href="/apps/invoice/preview/@i.Id" hx-boost="false" data-m-page>@i.Number</a></td>
                                             <td class="ant-table-cell" style="text-align:center">
                                                 <span class="m-icon-tile m-tile-sm m-tile-round m-tile-@SampleUi.InvoiceTone(i.Status)-lt" title="@SampleUi.Label(i.Status) · due @Fmt.Date(i.DueAt)"><app-ti name="@SampleUi.InvoiceIcon(i.Status)" /><span class="m-sr-only">@SampleUi.Label(i.Status)</span></span>
                                             </td>
@@ -124,11 +124,11 @@
                                             </td>
                                             <td class="ant-table-cell" style="text-align:right">
                                                 <div class="m-row-actions">
-                                                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/invoice/preview/@i.Id" hx-boost="false" aria-label="Preview invoice @i.Number" title="Preview"><app-ti name="eye" /></a>
-                                                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/invoice/edit/@i.Id" hx-boost="false" aria-label="Edit invoice @i.Number" title="Edit"><app-ti name="edit" /></a>
+                                                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/invoice/preview/@i.Id" hx-boost="false" data-m-page aria-label="Preview invoice @i.Number" title="Preview"><app-ti name="eye" /></a>
+                                                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/invoice/edit/@i.Id" hx-boost="false" data-m-page aria-label="Edit invoice @i.Number" title="Edit"><app-ti name="edit" /></a>
                                                     <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete invoice @i.Number" title="Delete"
                                                             hx-post="@Base/delete" hx-vals='{"ids": @i.Id}' hx-swap="none"
-                                                            hx-confirm="@($"Delete invoice {i.Number}?")" data-confirm-danger data-confirm-ok="Delete"><app-ti name="trash" /></button>
+                                                            hx-confirm="@($"Delete invoice {i.Number}?")" data-confirm-danger data-confirm-ok="Delete"><app-ti name="delete" /></button>
                                                 </div>
                                             </td>
                                         </tr>

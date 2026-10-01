@@ -5,8 +5,8 @@
 @* Finance, sales, receivables, inventory and operations on one page, built from the business charts. MVC and Razor Pages render the same page from Samples.Web Views/Shared/Ui/Dashboards/Erp.cshtml. *@
 <PageHeading Pretitle="Dashboards" Title="ERP analytics" Subtitle="Fiscal year 2026 · all entities · figures in USD">
     <Actions>
-        <a class="ant-btn" href="/ui/charts"><Ti Name="chart-pie" /><span>All charts</span></a>
-        <a class="ant-btn ant-btn-primary" href="/apps/invoice/list"><Ti Name="file-invoice" /><span>Open invoices</span></a>
+        <a class="ant-btn" href="/ui/charts"><Ti Name="pie-chart" /><span>All charts</span></a>
+        <a class="ant-btn ant-btn-primary" href="/apps/invoice/list"><Ti Name="file-text" /><span>Open invoices</span></a>
     </Actions>
 </PageHeading>
 
@@ -20,7 +20,7 @@
                     <div class="m-kpi-head">
                         <span class="m-subheader">@k.Label</span>
                         <span class="m-delta @(good ? "m-delta-up" : "m-delta-down")" style="margin-left:auto">
-                            @(k.Delta >= 0 ? "+" : "")@k.Delta.ToString("0.0")% <Ti Name="@(k.Delta >= 0 ? "trending-up" : "trending-down")" />
+                            @(k.Delta >= 0 ? "+" : "")@k.Delta.ToString("0.0")% <Ti Name="@(k.Delta >= 0 ? "trending-up" : "fall")" />
                         </span>
                     </div>
                     <div class="m-kpi-value"><span class="m-h1">@k.Value</span></div>

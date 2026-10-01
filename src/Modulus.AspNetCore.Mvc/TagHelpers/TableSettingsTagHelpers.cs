@@ -40,7 +40,7 @@ public class TableSettingsTagHelper : TagHelper
 
     /// <summary>
     /// The URL without the search and filters: a Clear button before the others. Pass it only while a search or a
-    /// filter is set (null hides the button).
+    /// filter is set; null or empty hides the button (Razor passes <c>clear-href="@null"</c> as an empty string).
     /// </summary>
     [HtmlAttributeName("clear-href")] public string? ClearHref { get; set; }
 
@@ -50,10 +50,10 @@ public class TableSettingsTagHelper : TagHelper
         output.TagMode = TagMode.StartTagAndEndTag;
         output.AddClasses("m-table-toolbar-settings");
         output.PreElement.SetHtmlContent(
-            (ClearHref is null ? "" : $"""<a class="ant-btn ant-btn-text m-table-clear" href="{Html.E(ClearHref)}" title="Clear the search and filters">{AntIcons.Span("close-circle")}<span>Clear</span></a>""") +
+            (string.IsNullOrEmpty(ClearHref) ? "" : ClearButton(ClearHref)) +
             (Columns ? ColumnsButton : "") +
             (Export ? ExportButton(ExportName) : ""));
-        var reload = ReloadHref is null ? "" :
+        var reload = string.IsNullOrEmpty(ReloadHref) ? "" :
             $"""<a class="ant-btn ant-btn-text ant-btn-icon-only" href="{Html.E(ReloadHref)}" aria-label="Reload" title="Reload">{AntIcons.Span("reload")}</a>""";
         var density = !Density ? "" : DropdownTagHelper.Render(
             $"""<button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Table density" title="Density">{AntIcons.Span("column-height")}</button>""",
@@ -61,6 +61,10 @@ public class TableSettingsTagHelper : TagHelper
             "bottomRight");
         output.Content.SetHtmlContent((FilterRow ? FilterRowButton : "") + reload + density);
     }
+
+    /// <summary>The toolbar's Clear button: a link to the list without its search and filters.</summary>
+    public static string ClearButton(string href) =>
+        $"""<a class="ant-btn ant-btn-text m-table-clear" href="{Html.E(href)}" title="Clear the search and filters">{AntIcons.Span("close-circle")}<span>Clear</span></a>""";
 
     /// <summary>The toolbar's Columns button (modulus-shell.js, [data-m-table-columns]), as the Blazor ProTable renders it.</summary>
     internal static string ColumnsButton =>

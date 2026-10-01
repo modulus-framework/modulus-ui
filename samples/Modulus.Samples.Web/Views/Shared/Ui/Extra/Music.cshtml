@@ -5,7 +5,7 @@
     var elapsed = now.Seconds * 2 / 5;
 }
 <app-page-header pretitle="Extra" title="Music" subtitle="Your library, playlists and what's playing now">
-    <a class="ant-btn ant-btn-default" href="/extra/music"><app-ti name="playlist" /><span>New playlist</span></a>
+    <a class="ant-btn ant-btn-default" href="/extra/music"><app-ti name="ri:play-list" /><span>New playlist</span></a>
 </app-page-header>
 
 <div class="m-row-cards">
@@ -20,17 +20,17 @@
                 </div>
             </div>
             <div class="m-player-controls">
-                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Shuffle"><app-ti name="arrows-shuffle" /></button>
-                <a class="ant-btn ant-btn-text ant-btn-icon-only" href="/extra/music?track=@(now.No == 1 ? ExtraContent.Tracks.Count : now.No - 1)" aria-label="Previous track"><app-ti name="player-skip-back" /></a>
-                <button type="button" class="ant-btn ant-btn-primary m-player-play" aria-label="Pause"><app-ti name="player-pause" /></button>
-                <a class="ant-btn ant-btn-text ant-btn-icon-only" href="/extra/music?track=@(now.No % ExtraContent.Tracks.Count + 1)" aria-label="Next track"><app-ti name="player-skip-forward" /></a>
-                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Repeat"><app-ti name="repeat" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Shuffle"><app-ti name="ri:shuffle" /></button>
+                <a class="ant-btn ant-btn-text ant-btn-icon-only" href="/extra/music?track=@(now.No == 1 ? ExtraContent.Tracks.Count : now.No - 1)" aria-label="Previous track"><app-ti name="step-backward" /></a>
+                <button type="button" class="ant-btn ant-btn-primary m-player-play" aria-label="Pause"><app-ti name="pause" /></button>
+                <a class="ant-btn ant-btn-text ant-btn-icon-only" href="/extra/music?track=@(now.No % ExtraContent.Tracks.Count + 1)" aria-label="Next track"><app-ti name="step-forward" /></a>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Repeat"><app-ti name="ri:repeat" /></button>
             </div>
             <div class="m-player-progress">
                 <span>@ExtraContent.Duration(elapsed)</span>
                 <div class="m-progress" role="progressbar" aria-label="Playback position" aria-valuemin="0" aria-valuemax="@now.Seconds" aria-valuenow="@elapsed"><div class="m-progress-bar" style="width:@Fmt.Pct(elapsed, now.Seconds)%"></div></div>
                 <span>@ExtraContent.Duration(now.Seconds)</span>
-                <app-ti name="volume" />
+                <app-ti name="sound" />
             </div>
         </div>
     </div>
@@ -58,14 +58,14 @@
         <div class="ant-table-wrapper m-table-flush">
             <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
                 <table style="table-layout:auto">
-                    <thead class="ant-table-thead"><tr><th class="ant-table-cell" style="width:48px">#</th><th class="ant-table-cell">Title</th><th class="ant-table-cell">Album</th><th class="ant-table-cell m-right">Plays</th><th class="ant-table-cell m-right"><app-ti name="clock" /><span class="m-sr-only">Duration</span></th></tr></thead>
+                    <thead class="ant-table-thead"><tr><th class="ant-table-cell" style="width:48px">#</th><th class="ant-table-cell">Title</th><th class="ant-table-cell">Album</th><th class="ant-table-cell m-right">Plays</th><th class="ant-table-cell m-right"><app-ti name="clock-circle" /><span class="m-sr-only">Duration</span></th></tr></thead>
                     <tbody class="ant-table-tbody">
                         @foreach (var t in ExtraContent.Tracks)
                         {
                             var a = ExtraContent.Albums[t.Album];
                             var playing = t.No == now.No;
                             <tr class="ant-table-row @(playing ? "m-track-playing" : "")">
-                                <td class="ant-table-cell m-muted">@if (playing) { <app-ti name="volume" class="m-text-primary" /> } else { @t.No }</td>
+                                <td class="ant-table-cell m-muted">@if (playing) { <app-ti name="sound" class="m-text-primary" /> } else { @t.No }</td>
                                 <td class="ant-table-cell">
                                     <a class="m-flex m-gap-12" style="align-items:center" href="/extra/music?track=@t.No" aria-current="@(playing ? "true" : null)">
                                         <img class="m-cover-sm" src="@ExtraContent.Cover(a)" alt="" loading="lazy" />

@@ -11,7 +11,7 @@
 <div class="m-card m-app">
     <aside class="m-app-side">
         <div class="m-app-side-head">
-            <button type="button" class="ant-btn ant-btn-primary ant-btn-block" @onclick="() => OpenCompose(null, false)"><Ti Name="pencil" /><span>Compose</span></button>
+            <button type="button" class="ant-btn ant-btn-primary ant-btn-block" @onclick="() => OpenCompose(null, false)"><Ti Name="edit" /><span>Compose</span></button>
         </div>
         <nav class="m-app-side-body" aria-label="Mail folders">
             <ul class="m-app-nav">
@@ -48,8 +48,8 @@
                 <h2 class="m-h3 m-truncate" style="margin:0;flex:1">@m.Subject</h2>
                 <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="@(m.Starred ? "Unstar" : "Star")" title="@(m.Starred ? "Unstar" : "Star")" @onclick="() => Star(m.Id)"><Ti Name="star" Class="@(m.Starred ? "m-text-warning" : null)" /></button>
                 <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Mark as unread" title="Mark as unread" @onclick="() => MarkRead([m.Id], false)"><Ti Name="mail" /></button>
-                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")" title="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")" @onclick="() => MoveOpen(m.Folder == MailFolder.Spam ? MailFolder.Inbox : MailFolder.Spam)"><Ti Name="ant:stop" /></button>
-                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-danger-hover" aria-label="@(m.Folder == MailFolder.Trash ? "Delete forever" : "Move to trash")" title="@(m.Folder == MailFolder.Trash ? "Delete forever" : "Move to trash")" @onclick="() => MoveOpen(MailFolder.Trash)"><Ti Name="trash" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")" title="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")" @onclick="() => MoveOpen(m.Folder == MailFolder.Spam ? MailFolder.Inbox : MailFolder.Spam)"><Ti Name="stop" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-danger-hover" aria-label="@(m.Folder == MailFolder.Trash ? "Delete forever" : "Move to trash")" title="@(m.Folder == MailFolder.Trash ? "Delete forever" : "Move to trash")" @onclick="() => MoveOpen(MailFolder.Trash)"><Ti Name="delete" /></button>
             </div>
             <div class="m-app-scroll">
                 <article class="m-mail-read">
@@ -81,13 +81,13 @@
                         <div class="m-mail-attachments">
                             @foreach (var a in m.Attachments)
                             {
-                                <a class="m-mail-attachment" href="#" @onclick:preventDefault><Ti Name="paperclip" /><span class="m-medium">@a.Name</span><span class="m-xsmall m-muted">@a.Size</span></a>
+                                <a class="m-mail-attachment" href="#" @onclick:preventDefault><Ti Name="paper-clip" /><span class="m-medium">@a.Name</span><span class="m-xsmall m-muted">@a.Size</span></a>
                             }
                         </div>
                     }
                     <div class="m-flex m-gap-8 m-mt-24">
-                        <button type="button" class="ant-btn ant-btn-default" @onclick="() => OpenCompose(m, false)"><Ti Name="arrow-back-up" /><span>Reply</span></button>
-                        <button type="button" class="ant-btn ant-btn-default" @onclick="() => OpenCompose(m, true)"><Ti Name="arrow-forward-up" /><span>Forward</span></button>
+                        <button type="button" class="ant-btn ant-btn-default" @onclick="() => OpenCompose(m, false)"><Ti Name="undo" /><span>Reply</span></button>
+                        <button type="button" class="ant-btn ant-btn-default" @onclick="() => OpenCompose(m, true)"><Ti Name="redo" /><span>Forward</span></button>
                     </div>
                 </article>
             </div>
@@ -102,23 +102,23 @@
                 @if (_selected.Count > 0)
                 {
                     <div class="m-flex m-gap-8">
-                        <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Mark as read" title="Mark as read" @onclick="() => MarkRead(_selected, true)"><Ti Name="mail-opened" /></button>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Mark as read" title="Mark as read" @onclick="() => MarkRead(_selected, true)"><Ti Name="ri:mail-open" /></button>
                         <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Mark as unread" title="Mark as unread" @onclick="() => MarkRead(_selected, false)"><Ti Name="mail" /></button>
                         @if (InTrash)
                         {
                             <Popconfirm Title="Delete the selected messages forever?" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => MoveSelected(MailFolder.Trash)">
-                                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-danger-hover" aria-label="Delete forever" title="Delete forever"><Ti Name="trash" /></button>
+                                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-danger-hover" aria-label="Delete forever" title="Delete forever"><Ti Name="delete" /></button>
                             </Popconfirm>
                         }
                         else
                         {
-                            <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-danger-hover" aria-label="Move to trash" title="Move to trash" @onclick="() => MoveSelected(MailFolder.Trash)"><Ti Name="trash" /></button>
+                            <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-danger-hover" aria-label="Move to trash" title="Move to trash" @onclick="() => MoveSelected(MailFolder.Trash)"><Ti Name="delete" /></button>
                         }
                     </div>
                 }
                 <span class="m-spacer"></span>
                 <span class="m-small m-muted">@_messages.Count @(_messages.Count == 1 ? "message" : "messages")</span>
-                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Refresh" title="Refresh" @onclick="Load"><Ti Name="refresh" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Refresh" title="Refresh" @onclick="Load"><Ti Name="reload" /></button>
             </div>
             <div class="m-app-scroll" id="mail-list">
                 @if (_messages.Count == 0)
@@ -141,7 +141,7 @@
                             {
                                 <span class="m-app-dot" style="--c:@SampleUi.LabelColor(label)" title="@label"></span>
                             }
-                            @if (msg.Attachments.Count > 0) { <Ti Name="paperclip" /> }
+                            @if (msg.Attachments.Count > 0) { <Ti Name="paper-clip" /> }
                             <time datetime="@msg.At.ToString("o")">@(msg.At.Date == DateTime.Today ? Fmt.Time(msg.At) : msg.At.ToString("MMM d"))</time>
                         </span>
                     </div>

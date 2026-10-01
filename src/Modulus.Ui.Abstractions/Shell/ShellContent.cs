@@ -70,7 +70,7 @@ public sealed class ShellContent
     public IReadOnlyList<ShellLink> UserLinks { get; set; } =
     [
         new("Profile", "profile", "user"),
-        new("Settings", "settings", "settings"),
+        new("Settings", "settings", "setting"),
     ];
 
     /// <summary>Sign-out link at the bottom of the user menu. Null hides it.</summary>

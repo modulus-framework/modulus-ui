@@ -41,6 +41,19 @@ public class TablesController : SampleController
         return PartialView("~/Views/Shared/Ui/Tables/_LargeRows.cshtml", LargeTablePage.Rows(mode, filter, request));
     }
 
+    /// <summary>Pivot of the 100,000 shipments, in the manner of Odoo's pivot view: the layout is in the query string.</summary>
+    [HttpGet("pivot")]
+    public IActionResult Pivot([FromQuery] ShipmentFilter filter) =>
+        Page("Pivot", "Tables/Pivot", PivotTablePage.Load(filter, QueryValues()));
+
+    /// <summary>The pivot as an Excel workbook (the toolbar's Download).</summary>
+    [HttpGet("pivot/download")]
+    public IActionResult PivotDownload([FromQuery] ShipmentFilter filter) =>
+        File(PivotTablePage.Download(filter, QueryValues()), Modulus.Ui.Abstractions.Pivot.PivotXlsx.ContentType, PivotTablePage.DownloadName);
+
+    private IEnumerable<KeyValuePair<string, string?>> QueryValues() =>
+        Request.Query.SelectMany(q => q.Value.Select(v => new KeyValuePair<string, string?>(q.Key, v)));
+
     /// <summary>CSV of the selected rows (ids) or of every row matching the filters.</summary>
     [HttpGet("advanced/export")]
     public IActionResult Export([FromQuery] EmployeeQuery query, [FromQuery] int[] ids) =>

@@ -42,18 +42,18 @@ public static class ExtraContent
     [
         new("orders", "shopping-cart", "primary", "Paweł Kuna", "placed order", "#ORD-10482", At(0, 10, 42), "3 items · $1,240.00"),
         new("comments", "message", "azure", "Jeffie Lewzey", "commented on", "Q3 roadmap", At(0, 9, 58), "“Can we move the analytics milestone to the first sprint? Design is ready.”"),
-        new("invoices", "file-invoice", "green", "Mallory Hulme", "paid invoice", "INV-4471", At(0, 9, 15), "$3,480.00 via bank transfer"),
-        new("users", "user-plus", "purple", "Dunn Slane", "joined the team", "Sales", At(0, 8, 30)),
-        new("orders", "truck-delivery", "orange", "Warehouse bot", "shipped order", "#ORD-10477", At(0, 7, 5), "UPS 1Z 999 AA1 0123 4567 84"),
+        new("invoices", "file-text", "green", "Mallory Hulme", "paid invoice", "INV-4471", At(0, 9, 15), "$3,480.00 via bank transfer"),
+        new("users", "user-add", "purple", "Dunn Slane", "joined the team", "Sales", At(0, 8, 30)),
+        new("orders", "truck", "orange", "Warehouse bot", "shipped order", "#ORD-10477", At(0, 7, 5), "UPS 1Z 999 AA1 0123 4567 84"),
         new("files", "upload", "teal", "Emmy Levet", "uploaded", "brand-guidelines-v4.pdf", At(1, 17, 20), "4.2 MB"),
         new("comments", "message", "azure", "Maryjo Lebarree", "replied in", "Onboarding checklist", At(1, 15, 48), "“Done — the SSO step now links to the new article.”"),
-        new("invoices", "file-dollar", "yellow", "Egan Poetz", "sent invoice", "INV-4472", At(1, 14, 2), "$860.00 due in 14 days"),
-        new("users", "shield-lock", "red", "Kellie Skingley", "changed role of", "Leesa Beaty", At(1, 11, 36), "Viewer → Editor"),
-        new("orders", "arrow-back-up", "gray", "Avivah Mugleston", "refunded order", "#ORD-10431", At(1, 9, 10), "$129.00 returned to card"),
+        new("invoices", "account-book", "yellow", "Egan Poetz", "sent invoice", "INV-4472", At(1, 14, 2), "$860.00 due in 14 days"),
+        new("users", "ri:shield-keyhole", "red", "Kellie Skingley", "changed role of", "Leesa Beaty", At(1, 11, 36), "Viewer → Editor"),
+        new("orders", "undo", "gray", "Avivah Mugleston", "refunded order", "#ORD-10431", At(1, 9, 10), "$129.00 returned to card"),
         new("files", "folder", "teal", "Arlie Armstead", "created folder", "Contracts 2026", At(2, 16, 0)),
         new("comments", "message", "azure", "Tessie Curzon", "mentioned you in", "Pricing page copy", At(2, 13, 25), "“@you can you check the yearly discount wording?”"),
-        new("invoices", "file-invoice", "green", "Tabler Store", "received payment for", "INV-4465", At(2, 10, 5), "$12,400.00 via Stripe"),
-        new("users", "user-x", "gray", "System", "deactivated", "former.contractor@modulus.dev", At(3, 18, 12)),
+        new("invoices", "file-text", "green", "Tabler Store", "received payment for", "INV-4465", At(2, 10, 5), "$12,400.00 via Stripe"),
+        new("users", "user-delete", "gray", "System", "deactivated", "former.contractor@modulus.dev", At(3, 18, 12)),
         new("orders", "shopping-cart", "primary", "Nicolas Ducker", "placed order", "#ORD-10470", At(3, 12, 44), "1 item · $89.00"),
     ];
 
@@ -78,9 +78,9 @@ public static class ExtraContent
 
     public static readonly IReadOnlyList<(string Brand, string Icon, string Label, string Detail, bool Default)> PaymentMethods =
     [
-        ("Visa", "brand-visa", "Visa ending in 4242", "Expires 08/2028", true),
-        ("Mastercard", "brand-mastercard", "Mastercard ending in 5454", "Expires 02/2027", false),
-        ("PayPal", "brand-paypal", "PayPal · billing@modulus.dev", "Linked Mar 2026", false),
+        ("Visa", "ri:visa", "Visa ending in 4242", "Expires 08/2028", true),
+        ("Mastercard", "ri:mastercard", "Mastercard ending in 5454", "Expires 02/2027", false),
+        ("PayPal", "ri:paypal", "PayPal · billing@modulus.dev", "Linked Mar 2026", false),
     ];
 
     public static readonly IReadOnlyList<(string Number, DateTime Date, string Description, decimal Amount, string Status)> BillingHistory =
@@ -156,7 +156,7 @@ public static class ExtraContent
     // Pay ----------------------------------------------------------------------------------------------------
 
     public static readonly IReadOnlyList<(string Key, string Label, string Icon)> PayMethods =
-        [("card", "Card", "credit-card"), ("paypal", "PayPal", "brand-paypal"), ("bank", "Bank transfer", "building-bank")];
+        [("card", "Card", "credit-card"), ("paypal", "PayPal", "ri:paypal"), ("bank", "Bank transfer", "bank")];
 
     public static PayPage Pay(string? plan, string? method)
     {
@@ -276,11 +276,11 @@ public static class ExtraContent
 
     public static readonly IReadOnlyList<(string Icon, string Tone, string Title, string Text)> Features =
     [
-        ("layout-dashboard", "primary", "Dashboards that ship", "Analytics, CRM, eCommerce and ERP dashboards with real charts, not screenshots."),
-        ("forms", "green", "Business-grade forms", "Money, phone, lookup, signature and rich text fields with validation on both sides."),
+        ("dashboard", "primary", "Dashboards that ship", "Analytics, CRM, eCommerce and ERP dashboards with real charts, not screenshots."),
+        ("form", "green", "Business-grade forms", "Money, phone, lookup, signature and rich text fields with validation on both sides."),
         ("table", "orange", "Data grids", "Sorting, column search, resizing, inline editing and nested rows in one table design."),
-        ("palette", "purple", "Themes and layouts", "Fifteen layout presets, light and dark themes and your brand colour in one setting."),
-        ("device-mobile", "teal", "Responsive by default", "Every page works from a 390 px phone to an ultrawide monitor, left-to-right or right-to-left."),
+        ("ri:palette", "purple", "Themes and layouts", "Fifteen layout presets, light and dark themes and your brand colour in one setting."),
+        ("mobile", "teal", "Responsive by default", "Every page works from a 390 px phone to an ultrawide monitor, left-to-right or right-to-left."),
         ("code", "red", "Blazor, MVC and Razor Pages", "The same components and markup in all three, so teams can share one design system."),
     ];
 
@@ -376,20 +376,20 @@ public static class ExtraContent
 
     public static readonly IReadOnlyList<SearchHit> SearchIndex =
     [
-        new("pages", "layout-dashboard", "Analytics dashboard", "/", "Overview › Analytics", "Revenue, sessions and conversion for the last 7, 30 or 90 days, with the top pages and recent payments."),
-        new("pages", "building", "ERP analytics dashboard", "/dashboards/erp", "Overview › ERP analytics", "Cash position, receivables aging, inventory turnover and margin by product line in one dashboard."),
-        new("pages", "users-group", "CRM dashboard", "/dashboards/crm", "Overview › CRM", "Pipeline value, deals won and lost per month and the activity of your sales team."),
-        new("pages", "file-invoice", "Invoices", "/apps/invoice/list", "Invoicing › Invoices", "Every invoice with its status, due date and balance. Filter, export, or send reminders."),
-        new("pages", "settings", "Account settings", "/pages/account-settings", "Settings › General", "Profile details, password and two-factor authentication, notifications and connected apps."),
+        new("pages", "dashboard", "Analytics dashboard", "/", "Overview › Analytics", "Revenue, sessions and conversion for the last 7, 30 or 90 days, with the top pages and recent payments."),
+        new("pages", "ri:building", "ERP analytics dashboard", "/dashboards/erp", "Overview › ERP analytics", "Cash position, receivables aging, inventory turnover and margin by product line in one dashboard."),
+        new("pages", "ri:group", "CRM dashboard", "/dashboards/crm", "Overview › CRM", "Pipeline value, deals won and lost per month and the activity of your sales team."),
+        new("pages", "file-text", "Invoices", "/apps/invoice/list", "Invoicing › Invoices", "Every invoice with its status, due date and balance. Filter, export, or send reminders."),
+        new("pages", "setting", "Account settings", "/pages/account-settings", "Settings › General", "Profile details, password and two-factor authentication, notifications and connected apps."),
         new("customers", "user", "Acme Logistics", "/apps/customers", "Customers › Enterprise", "Customer since 2023 · 42 orders · $128,400 lifetime value. Primary contact: Mallory Hulme."),
         new("customers", "user", "Northwind Freight", "/apps/customers", "Customers › Business", "Customer since 2024 · 18 orders · uses the ERP dashboard for weekly reviews."),
         new("customers", "user", "Fabrikam Studio", "/apps/customers", "Customers › Business", "Customer since 2025 · 7 orders · invoice INV-4472 due in 14 days."),
         new("files", "file-text", "Q3 dashboard review.pdf", "#", "Files › Reports · 2.4 MB", "Slides from the quarterly review: dashboard adoption, revenue by region and next quarter's goals."),
-        new("files", "file-description", "brand-guidelines-v4.pdf", "#", "Files › Design · 4.2 MB", "Logo, colour, typography and the dashboard illustration style used across the product."),
-        new("files", "file-dollar", "invoice-template.docx", "#", "Files › Finance · 180 KB", "Company invoice template with payment terms and bank details."),
-        new("help", "help-circle", "How do I customise a dashboard?", "/pages/help-center", "Help center › Getting started", "Add, move and resize cards, pick a date range and save the layout as your default dashboard."),
-        new("help", "help-circle", "Exporting reports to Excel", "/pages/help-center", "Help center › Reports", "Every table and dashboard card can be exported as CSV or XLSX from its menu."),
-        new("help", "help-circle", "Setting up two-factor authentication", "/pages/help-center", "Help center › Security", "Use an authenticator app or security key to protect your account."),
+        new("files", "profile", "brand-guidelines-v4.pdf", "#", "Files › Design · 4.2 MB", "Logo, colour, typography and the dashboard illustration style used across the product."),
+        new("files", "account-book", "invoice-template.docx", "#", "Files › Finance · 180 KB", "Company invoice template with payment terms and bank details."),
+        new("help", "question-circle", "How do I customise a dashboard?", "/pages/help-center", "Help center › Getting started", "Add, move and resize cards, pick a date range and save the layout as your default dashboard."),
+        new("help", "question-circle", "Exporting reports to Excel", "/pages/help-center", "Help center › Reports", "Every table and dashboard card can be exported as CSV or XLSX from its menu."),
+        new("help", "question-circle", "Setting up two-factor authentication", "/pages/help-center", "Help center › Security", "Use an authenticator app or security key to protect your account."),
     ];
 
     public static SearchPage Search(string? q, string? tab)
@@ -415,11 +415,11 @@ public static class ExtraContent
 
     public static readonly IReadOnlyList<(string Href, string Icon, string Label)> SettingsNav =
     [
-        ("/pages/account-settings", "user-circle", "My account"),
+        ("/pages/account-settings", "ri:account-circle", "My account"),
         ("/extra/settings-plan", "crown", "Plan"),
         ("/extra/billing", "credit-card", "Billing"),
         ("/pages/account-settings?tab=notifications", "bell", "Notifications"),
-        ("/pages/account-settings?tab=security", "shield-lock", "Security"),
+        ("/pages/account-settings?tab=security", "ri:shield-keyhole", "Security"),
     ];
 
     // Signatures ---------------------------------------------------------------------------------------------

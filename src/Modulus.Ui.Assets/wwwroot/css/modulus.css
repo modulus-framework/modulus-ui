@@ -2366,6 +2366,9 @@ tr.m-sort-placeholder-row > td { padding: 0 !important; border: 1px dashed var(-
 .m-table-card .m-table-toolbar .ant-btn:not(.ant-btn-icon-only) { height: 28px; padding: 0 10px; font-size: 13px; }
 .m-table-card .m-table-toolbar .ant-btn-icon-only { width: 28px; height: 28px; }
 .m-table-card .m-table-toolbar-search.ant-input-affix-wrapper { padding-top: 2px; padding-bottom: 2px; }
+/* An AntD Search (input + search button) in a table toolbar: the input matches the toolbar's 28px button. */
+.m-table-card .m-table-toolbar .ant-input-search .ant-input-affix-wrapper { padding-top: 2px; padding-bottom: 2px; }
+.m-table-card .m-table-toolbar .ant-input-search > .ant-input-group > .ant-input { height: 28px; }
 .m-table-card .m-table-filters { gap: 8px 12px; padding: 8px 14px; }
 .m-table-card .ant-table-pagination.ant-pagination, .m-table-card .m-grid-summary { padding: 6px 14px; }
 .m-table-card .ant-tag { margin-inline-end: 0; padding: 0 6px; font-size: 12px; line-height: 18px; }

@@ -91,6 +91,17 @@ app.MapGet(SampleAuth.LogoutPath, async (HttpContext http) =>
     return Results.LocalRedirect(SampleAuth.LoginPath);
 }).AllowAnonymous();
 
+// Excel download of the pivot page (/tables/pivot); MVC and Razor Pages serve the same URL.
+app.MapGet(PivotTablePage.DownloadPath, (HttpRequest request) =>
+{
+    var q = request.Query;
+    var query = q.SelectMany(kv => kv.Value.Select(v => new KeyValuePair<string, string?>(kv.Key, v))).ToList();
+    var filter = new ShipmentFilter(Enum.TryParse<ShipmentStatus>(q["status"], out var status) ? status : null, Text(q["city"]), Text(q["keyword"]));
+    return Results.File(PivotTablePage.Download(filter, query), Modulus.Ui.Abstractions.Pivot.PivotXlsx.ContentType, PivotTablePage.DownloadName);
+
+    static string? Text(string? value) => string.IsNullOrEmpty(value) ? null : value;
+});
+
 // CSV export for the data table page (/tables/advanced); MVC and Razor Pages serve the same URL.
 app.MapGet("/tables/advanced/export", (HttpRequest request) =>
 {

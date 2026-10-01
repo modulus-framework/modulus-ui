@@ -1,8 +1,8 @@
-@* Tabler outline icon from the bundled sprite: <Ti Name="home" /> *@
+@* Named icon, drawn as an Ant Design icon inline: <Ti Name="home" /> *@
 @((MarkupString)ShellRenderer.Icon(Name, Class))
 
 @code {
-    /// <summary>Tabler Icons name, e.g. "home", "users", "chart-bar" (see tools/tabler-icons/icons.txt).</summary>
+    /// <summary>Ant Design outline icon name, e.g. "home", "team", "bar-chart", or a Remix Icon fallback such as "ri:fingerprint".</summary>
     [Parameter, EditorRequired] public string Name { get; set; } = "";
 
     [Parameter] public string? Class { get; set; }

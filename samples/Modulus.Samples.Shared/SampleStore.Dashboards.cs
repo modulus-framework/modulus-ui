@@ -95,10 +95,10 @@ public sealed partial class SampleStore
         };
         var tiles = new List<StatTile>
         {
-            new("currency-dollar", "primary", $"{days * 43} Sales", $"{days / 3 + 2} waiting payments"),
+            new("dollar", "primary", $"{days * 43} Sales", $"{days / 3 + 2} waiting payments"),
             new("shopping-cart", "green", $"{days * 26} Orders", $"{days + 2} shipped"),
-            new("users", "orange", $"{days * 6 + 11} New customers", "18 from referrals"),
-            new("lifebuoy", "purple", $"{days * 2 + 7} Tickets", $"{days / 4 + 1} awaiting reply"),
+            new("team", "orange", $"{days * 6 + 11} New customers", "18 from referrals"),
+            new("ri:lifebuoy", "purple", $"{days * 2 + 7} Tickets", $"{days / 4 + 1} awaiting reply"),
         };
         var channels = new List<ChartSlice> { new("Organic search", 4_812), new("Direct", 2_630), new("Referral", 1_472), new("Social", 1_104), new("Email", 687) };
 
@@ -117,7 +117,7 @@ public sealed partial class SampleStore
             new("/", 12_480, 8_512, 0.38), new("/pricing", 6_320, 5_102, 0.42), new("/apps/invoice/list", 4_870, 2_910, 0.21),
             new("/features/analytics", 3_992, 3_104, 0.47), new("/blog/htmx-and-blazor", 3_214, 2_870, 0.55), new("/docs/getting-started", 2_830, 2_016, 0.29),
         };
-        var browsers = new List<BrowserShare> { new("Chrome", "brand-chrome", 0.62), new("Safari", "brand-safari", 0.19), new("Edge", "brand-edge", 0.09), new("Firefox", "brand-firefox", 0.07) };
+        var browsers = new List<BrowserShare> { new("Chrome", "chrome", 0.62), new("Safari", "ri:safari", 0.19), new("Edge", "ri:edge", 0.09), new("Firefox", "ri:firefox", 0.07) };
 
         List<RecentOrder> orders;
         lock (_gate)
@@ -129,11 +129,11 @@ public sealed partial class SampleStore
         var now = DateTime.Now;
         List<ActivityItem> activity =
         [
-            new("Olivia Bennett", "paid invoice", "#5012", now.AddMinutes(-12), "receipt"),
-            new("Noah Tanaka", "upgraded", "Fabrikam to Enterprise", now.AddHours(-2), "trending-up"),
-            new("Aisha Khan", "resolved ticket", "#4821", now.AddHours(-5), "circle-check"),
-            new("System", "flagged low stock for", "Dock Pro", now.AddHours(-9), "alert-triangle"),
-            new("Mateo Reyes", "added customer", "Coho Vineyard", now.AddDays(-1), "user-plus"),
+            new("Olivia Bennett", "paid invoice", "#5012", now.AddMinutes(-12), "ri:bill"),
+            new("Noah Tanaka", "upgraded", "Fabrikam to Enterprise", now.AddHours(-2), "rise"),
+            new("Aisha Khan", "resolved ticket", "#4821", now.AddHours(-5), "check-circle"),
+            new("System", "flagged low stock for", "Dock Pro", now.AddHours(-9), "warning"),
+            new("Mateo Reyes", "added customer", "Coho Vineyard", now.AddDays(-1), "user-add"),
         ];
 
         return new AnalyticsDashboard(days, kpis, tiles, labels,
@@ -176,15 +176,15 @@ public sealed partial class SampleStore
             ],
             [
                 new("Renewal call", "Olivia Bennett · Northwind", now.Date.AddHours(10), "phone"),
-                new("Product demo", "Litware procurement", now.Date.AddHours(13.5), "video"),
+                new("Product demo", "Litware procurement", now.Date.AddHours(13.5), "video-camera"),
                 new("Contract review", "Legal, Fabrikam", now.Date.AddDays(1).AddHours(9), "file-text"),
-                new("QBR", "Woodgrove Bank", now.Date.AddDays(2).AddHours(15), "presentation"),
+                new("QBR", "Woodgrove Bank", now.Date.AddDays(2).AddHours(15), "fund-projection-screen"),
             ],
             [
                 new("Priya Silva", "closed deal with", "Tailspin ($42,000)", now.AddMinutes(-35), "trophy"),
                 new("Noah Tanaka", "moved", "Contoso to Negotiation", now.AddHours(-3), "arrow-right"),
                 new("Kwame Mensah", "logged a call with", "Blue Yonder", now.AddHours(-6), "phone"),
-                new("Serena Park", "created", "Q4 forecast", now.AddDays(-1), "chart-line"),
+                new("Serena Park", "created", "Q4 forecast", now.AddDays(-1), "line-chart"),
             ]);
     }
 
@@ -199,28 +199,28 @@ public sealed partial class SampleStore
         return new EcommerceDashboard(
             48_900, 0.78,
             [
-                new("chart-bar", "primary", "230k", "Sales"),
-                new("users", "azure", "8.549k", "Customers"),
-                new("package", "red", "1.423k", "Products"),
-                new("currency-dollar", "green", "$9,745", "Revenue"),
+                new("bar-chart", "primary", "230k", "Sales"),
+                new("team", "azure", "8.549k", "Customers"),
+                new("product", "red", "1.423k", "Products"),
+                new("dollar", "green", "$9,745", "Revenue"),
             ],
             MonthNames,
             [new ChartSeries("Earning", earning), new ChartSeries("Expense", expense)],
             (decimal)earning.Sum(), (decimal)expense.Sum(),
             [new("Hardware", 38_420), new("Software", 29_870), new("Services", 18_310), new("Accessories", 9_640)],
             [
-                new("Edge Gateway X2", "MD-1000", 999.99m, 2_486, "server", 1),
+                new("Edge Gateway X2", "MD-1000", 999.99m, 2_486, "hdd", 1),
                 new("Inventory Cloud", "MD-1084", 299.99m, 2_590, "cloud", 2),
-                new("Access Card (100)", "MD-1105", 89.99m, 2_176, "id-badge-2", 3),
-                new("Sensor Hub", "MD-1007", 149.99m, 2_128, "cpu", 4),
+                new("Access Card (100)", "MD-1105", 89.99m, 2_176, "idcard", 3),
+                new("Sensor Hub", "MD-1007", 149.99m, 2_128, "ri:cpu", 4),
                 new("Fleet Tracker", "MD-1091", 219.99m, 2_110, "truck", 5),
             ],
             [
                 new("Wallet", "Starbucks", -74.00m, "wallet", 1),
-                new("Bank transfer", "Add money", 480.00m, "building-bank", 2),
-                new("PayPal", "Client payment", 268.00m, "brand-paypal", 3),
+                new("Bank transfer", "Add money", 480.00m, "bank", 2),
+                new("PayPal", "Client payment", 268.00m, "ri:paypal", 3),
                 new("Mastercard", "Ordered food", -22.00m, "credit-card", 4),
-                new("Refund", "Order #6951", 98.00m, "arrow-back-up", 5),
+                new("Refund", "Order #6951", 98.00m, "undo", 5),
             ],
             recent,
             OrderCounts());

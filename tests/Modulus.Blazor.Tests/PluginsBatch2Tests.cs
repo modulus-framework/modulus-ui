@@ -45,6 +45,21 @@ public class PluginMarkupTests
     }
 
     [Fact]
+    public void ShellIcon_EveryBundledIcon_DrawsAnInlineSvg()
+    {
+        // Ant Design icons newer than the AntDesign package, and the Remix Icon fallbacks.
+        Assert.All(ExtraIconSvg.Svgs.Keys, name => Assert.NotNull(AntIconSvg.Svg(name)));
+
+        var html = ShellRenderer.Icon("team", "m-nav-icon");
+        Assert.StartsWith("<svg class=\"m-ti m-nav-icon m-ai\" data-m-icon=\"team\" focusable=\"false\"", html);
+        Assert.Contains("viewBox=\"64 64 896 896\"", html); // Ant Design
+        Assert.Contains("viewBox=\"0 0 24 24\"", ShellRenderer.Icon("ri:fingerprint")); // Remix Icon
+        Assert.EndsWith("</svg>", ShellRenderer.Icon("moon")); // newer than the AntDesign package
+        Assert.Equal(ShellRenderer.Icon("x").Replace("data-m-icon=\"x\"", ""), ShellRenderer.Icon("ant:x").Replace("data-m-icon=\"ant:x\"", ""));
+        Assert.DoesNotContain("<path", ShellRenderer.Icon("users")); // Tabler names are gone: an empty icon
+    }
+
+    [Fact]
     public void MediaPlayer_Video_HasTheStageCaptionsAndFullscreen()
     {
         var html = MediaPlayerHtml.Render(new MediaPlayerOptions

@@ -10,7 +10,7 @@
         <div class="m-card-body">
             @if (c.Decided)
             {
-                <div class="ant-alert ant-alert-success m-mb-16" role="status"><span class="ant-alert-icon m-text-success"><app-ti name="circle-check" /></span><div class="ant-alert-content"><div class="ant-alert-message">Your choice has been saved. <a href="/extra/cookie-banner">Show the banner again</a></div></div></div>
+                <div class="ant-alert ant-alert-success m-mb-16" role="status"><span class="ant-alert-icon m-text-success"><app-ti name="check-circle" /></span><div class="ant-alert-content"><div class="ant-alert-message">Your choice has been saved. <a href="/extra/cookie-banner">Show the banner again</a></div></div></div>
             }
             <form method="get" action="/extra/cookie-banner">
                 <input type="hidden" name="consent" value="custom" />
@@ -49,7 +49,7 @@
 @if (!c.Decided)
 {
     <div class="m-cookie-banner" role="dialog" aria-label="Cookie consent">
-        <span class="m-icon-tile m-tile-lg m-tile-orange-lt"><app-ti name="cookie" /></span>
+        <span class="m-icon-tile m-tile-lg m-tile-orange-lt"><app-ti name="ri:cookie" /></span>
         <div class="m-cookie-banner-text">
             <strong>We use cookies</strong>
             Some keep the site working; others help us understand usage and improve it. Choose what you allow — you can change this any time.

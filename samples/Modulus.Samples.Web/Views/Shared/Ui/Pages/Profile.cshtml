@@ -1,6 +1,6 @@
 @{
     (string Key, string Label, string Icon)[] Tabs =
-        [("profile", "Profile", "user"), ("teams", "Teams", "users-group"), ("projects", "Projects", "layout-grid"), ("connections", "Connections", "link")];
+        [("profile", "Profile", "user"), ("teams", "Teams", "ri:group"), ("projects", "Projects", "appstore"), ("connections", "Connections", "link")];
     var tab = Context.Request.Query["tab"].ToString();
     var Current = Tabs.Any(t => t.Key == tab) ? tab : "profile";
 }
@@ -11,13 +11,13 @@
         <div>
             <h1 class="m-profile-name">@CurrentUser.Name</h1>
             <div class="m-profile-meta">
-                <span><app-ti name="briefcase" />@CurrentUser.Title</span>
-                <span><app-ti name="map-pin" />San Francisco, US</span>
+                <span><app-ti name="ri:briefcase" />@CurrentUser.Title</span>
+                <span><app-ti name="environment" />San Francisco, US</span>
                 <span><app-ti name="calendar" />Joined April 2021</span>
             </div>
         </div>
         <div class="m-profile-actions">
-            <a class="ant-btn ant-btn-default" href="/pages/account-settings"><app-ti name="settings" /><span>Edit profile</span></a>
+            <a class="ant-btn ant-btn-default" href="/pages/account-settings"><app-ti name="setting" /><span>Edit profile</span></a>
             <a class="ant-btn ant-btn-primary" href="/apps/chat"><app-ti name="message" /><span>Message</span></a>
         </div>
     </div>
@@ -105,11 +105,11 @@
                             <div class="m-form-actions">
                                 @if (c.Connected)
                                 {
-                                    <a class="ant-btn ant-btn-primary" href="/pages/profile?tab=connections"><app-ti name="user-check" /><span>Connected</span></a>
+                                    <a class="ant-btn ant-btn-primary" href="/pages/profile?tab=connections"><app-ti name="ri:user-follow" /><span>Connected</span></a>
                                 }
                                 else
                                 {
-                                    <a class="ant-btn ant-btn-default" href="/pages/profile?tab=connections"><app-ti name="user-plus" /><span>Connect</span></a>
+                                    <a class="ant-btn ant-btn-default" href="/pages/profile?tab=connections"><app-ti name="user-add" /><span>Connect</span></a>
                                 }
                                 <a class="ant-btn ant-btn-default ant-btn-icon-only" href="/apps/email" aria-label="Email @c.Name"><app-ti name="mail" /></a>
                             </div>
@@ -126,16 +126,16 @@
                         <div class="m-card-body">
                             <dl class="m-dl">
                                 <dt><app-ti name="user" />Full name</dt><dd>@CurrentUser.Name</dd>
-                                <dt><app-ti name="circle-check" />Status</dt><dd><span class="m-badge m-badge-success-lt">Active</span></dd>
+                                <dt><app-ti name="check-circle" />Status</dt><dd><span class="m-badge m-badge-success-lt">Active</span></dd>
                                 <dt><app-ti name="crown" />Role</dt><dd>@CurrentUser.Role</dd>
                                 <dt><app-ti name="flag" />Country</dt><dd>United States</dd>
-                                <dt><app-ti name="language" />Languages</dt><dd>English, Korean</dd>
+                                <dt><app-ti name="translation" />Languages</dt><dd>English, Korean</dd>
                             </dl>
                             <div class="m-subheader m-mt-24 m-mb-8">Contacts</div>
                             <dl class="m-dl">
                                 <dt><app-ti name="phone" />Phone</dt><dd>+1 202 555 0111</dd>
                                 <dt><app-ti name="mail" />Email</dt><dd class="m-truncate">@CurrentUser.Email</dd>
-                                <dt><app-ti name="brand-slack" />Slack</dt><dd>@@serena</dd>
+                                <dt><app-ti name="slack" />Slack</dt><dd>@@serena</dd>
                             </dl>
                         </div>
                     </div>
@@ -143,9 +143,9 @@
                         <div class="m-card-header"><h2 class="m-card-title">Overview</h2></div>
                         <div class="m-card-body">
                             <dl class="m-dl">
-                                <dt><app-ti name="checks" />Tasks compiled</dt><dd>13.5k</dd>
-                                <dt><app-ti name="briefcase" />Projects</dt><dd>@SampleContent.Projects.Count</dd>
-                                <dt><app-ti name="users" />Connections</dt><dd>897</dd>
+                                <dt><app-ti name="ri:check-double" />Tasks compiled</dt><dd>13.5k</dd>
+                                <dt><app-ti name="ri:briefcase" />Projects</dt><dd>@SampleContent.Projects.Count</dd>
+                                <dt><app-ti name="team" />Connections</dt><dd>897</dd>
                             </dl>
                         </div>
                     </div>

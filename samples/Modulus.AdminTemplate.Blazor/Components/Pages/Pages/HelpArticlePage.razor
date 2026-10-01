@@ -26,11 +26,11 @@
                 <span class="m-muted">Was this article helpful?</span>
                 @if (_voted)
                 {
-                    <span class="m-text-success m-medium"><Ti Name="circle-check" /> Thanks for your feedback!</span>
+                    <span class="m-text-success m-medium"><Ti Name="check-circle" /> Thanks for your feedback!</span>
                 }
                 else
                 {
-                    <button type="button" class="ant-btn ant-btn-default ant-btn-sm" @onclick="() => _voted = true"><Ti Name="thumb-up" /><span>Yes</span></button>
+                    <button type="button" class="ant-btn ant-btn-default ant-btn-sm" @onclick="() => _voted = true"><Ti Name="like" /><span>Yes</span></button>
                     <button type="button" class="ant-btn ant-btn-default ant-btn-sm" @onclick="() => _voted = true"><span>No</span></button>
                 }
             </div>

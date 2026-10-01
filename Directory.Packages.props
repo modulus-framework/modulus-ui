@@ -14,5 +14,7 @@
     <PackageVersion Include="bunit" Version="2.11.3" />
     <!-- Test-only: decodes the QR codes Modulus draws. -->
     <PackageVersion Include="ZXing.Net" Version="0.16.11" />
+    <!-- Test-only: proves the pivot's grouped query translates to one SQL GROUP BY (ToQueryString, no database). -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
   </ItemGroup>
 </Project>

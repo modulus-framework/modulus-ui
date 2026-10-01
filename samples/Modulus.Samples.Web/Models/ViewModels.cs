@@ -19,7 +19,7 @@ public sealed record AccountSettingsPage(
     IReadOnlySet<string> ConnectedApps)
 {
     public static readonly (string Key, string Label, string Icon)[] Tabs =
-        [("account", "Account", "user"), ("security", "Security", "lock"), ("billing", "Billing & plans", "file-dollar"), ("notifications", "Notifications", "bell"), ("connections", "Connections", "link")];
+        [("account", "Account", "user"), ("security", "Security", "lock"), ("billing", "Billing & plans", "account-book"), ("notifications", "Notifications", "bell"), ("connections", "Connections", "link")];
 
     public static string Normalize(string? tab) => Tabs.Any(t => t.Key == tab) ? tab! : "account";
 

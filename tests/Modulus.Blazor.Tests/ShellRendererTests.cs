@@ -36,7 +36,7 @@ public class ShellRendererTests
     {
         var html = ShellRenderer.Topbar(View(new ShellContent
         {
-            Apps = [new("Email", "apps/email", "mail", "blue", "Inbox & sent"), new("Chat", "https://chat.example.com", "messages")],
+            Apps = [new("Email", "apps/email", "mail", "blue", "Inbox & sent"), new("Chat", "https://chat.example.com", "comment")],
             AppsHref = "apps",
         }));
 
@@ -55,7 +55,7 @@ public class ShellRendererTests
         var sales = new MenuItemDefinition("sales", "Sales", null, "shopping-cart");
         sales.Children.Add(new MenuItemDefinition("orders", "Orders", "apps/orders"));
         var apps = Enumerable.Range(1, 14)
-            .Select(i => new ShellApp($"App {i}", $"apps/{i}", "box") { Group = i <= 7 ? "Operations" : "Finance" })
+            .Select(i => new ShellApp($"App {i}", $"apps/{i}", "ri:box-3") { Group = i <= 7 ? "Operations" : "Finance" })
             .Prepend(new ShellApp("Sales", "apps/orders", "shopping-cart", "orange") { MenuKey = "sales", Group = "Operations" })
             .ToList();
         var view = new ShellView(new ModulusThemeOptions(), [sales], "apps/orders", new ShellContent { Apps = apps, AppLauncher = AppLauncherStyle.Overlay });
@@ -91,7 +91,7 @@ public class ShellRendererTests
             [
                 new("Sales", "apps/orders", "shopping-cart", "orange", "Orders & customers") { MenuKey = "sales", Group = "Sales & finance" },
                 new("Email", "apps/email", "mail", "azure") { Group = "Productivity" },
-                new("Invoicing", "apps/invoices", "file-invoice", "teal") { Group = "Sales & finance" },
+                new("Invoicing", "apps/invoices", "file-text", "teal") { Group = "Sales & finance" },
             ],
         });
 
@@ -113,7 +113,7 @@ public class ShellRendererTests
         var html = ShellRenderer.Topbar(View(new ShellContent
         {
             Tenants = Tenants,
-            TenantLinks = [new("Manage tenants", "settings/tenants", "settings")],
+            TenantLinks = [new("Manage tenants", "settings/tenants", "setting")],
         }));
 
         Assert.Contains("""<details class="m-dropdown m-tenant" data-m-tenants><summary class="m-tenant-toggle" aria-label="Switch tenant" aria-haspopup="listbox"><span class="m-avatar m-avatar-sm m-tenant-mark m-tenant-mark-solid m-av-1">AC</span>""", html);

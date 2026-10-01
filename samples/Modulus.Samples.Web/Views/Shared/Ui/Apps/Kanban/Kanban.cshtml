@@ -25,7 +25,7 @@
                         <div class="m-kanban-card-top">
                             <span class="m-badge m-badge-@SampleUi.KanbanLabelTone(t.Label)-lt">@t.Label</span>
                             <app-dropdown placement="bottomRight">
-                                <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Actions for @t.Title" title="Actions"><app-ti name="dots" /></button>
+                                <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Actions for @t.Title" title="Actions"><app-ti name="ellipsis" /></button>
                                 <dropdown-menu>
                                     @foreach (var target in SampleStore.KanbanColumns.Where(c => c.Id != t.Column))
                                     {
@@ -39,7 +39,7 @@
                         <div class="m-kanban-meta">
                             @if (due.Length > 0) { <span class="m-kanban-due@(late ? " late" : "")" title="@(late ? "Overdue" : "Due")"><app-ti name="calendar" />@due</span> }
                             @if (t.Comments > 0) { <span title="Comments"><app-ti name="message" />@t.Comments</span> }
-                            @if (t.Attachments > 0) { <span title="Attachments"><app-ti name="paperclip" />@t.Attachments</span> }
+                            @if (t.Attachments > 0) { <span title="Attachments"><app-ti name="paper-clip" />@t.Attachments</span> }
                             <span class="m-avatar-list">
                                 @foreach (var who in t.Assignees.Take(3))
                                 {

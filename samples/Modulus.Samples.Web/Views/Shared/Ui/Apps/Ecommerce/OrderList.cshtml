@@ -7,14 +7,14 @@
     var s = Model.Stats;
     (string Label, string Value, string Icon)[] strip =
     [
-        ("Pending payment", s.PendingPayment.ToString("N0"), "ant:field-time"),
-        ("Completed", s.Completed.ToString("N0"), "checks"),
-        ("Refunded", s.Refunded.ToString("N0"), "arrow-back-up"),
-        ("Failed", s.Failed.ToString("N0"), "ant:stop"),
+        ("Pending payment", s.PendingPayment.ToString("N0"), "field-time"),
+        ("Completed", s.Completed.ToString("N0"), "ri:check-double"),
+        ("Refunded", s.Refunded.ToString("N0"), "undo"),
+        ("Failed", s.Failed.ToString("N0"), "stop"),
     ];
 }
 <app-page-header pretitle="eCommerce" title="Orders">
-    <a class="ant-btn ant-btn-default" href="/dashboards/ecommerce"><app-ti name="chart-bar" /><span>Sales overview</span></a>
+    <a class="ant-btn ant-btn-default" href="/dashboards/ecommerce"><app-ti name="bar-chart" /><span>Sales overview</span></a>
 </app-page-header>
 
 <div id="orders-page" class="m-row-cards"
@@ -83,7 +83,7 @@
                                     @foreach (var o in Model.Page.Data)
                                     {
                                         <tr class="ant-table-row ant-table-row-level-0">
-                                            <td class="ant-table-cell@(grid.SortClass("Id"))"><a class="m-medium" href="@Base/@o.Id" hx-boost="false">@o.Number</a></td>
+                                            <td class="ant-table-cell@(grid.SortClass("Id"))"><a class="m-medium" href="@Base/@o.Id" hx-boost="false" data-m-page>@o.Number</a></td>
                                             <td class="ant-table-cell@(grid.SortClass(nameof(Order.PlacedAt)))"><span class="m-muted">@Fmt.DateTime(o.PlacedAt)</span></td>
                                             <td class="ant-table-cell@(grid.SortClass(nameof(Order.CustomerName)))">
                                                 <div class="m-entity">
@@ -96,7 +96,7 @@
                                             <td class="ant-table-cell@(grid.SortClass(nameof(Order.Total)))" style="text-align:right"><span class="m-num m-heading">@Fmt.Money(o.Total)</span></td>
                                             <td class="ant-table-cell" style="text-align:right">
                                                 <div class="m-row-actions">
-                                                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="@Base/@o.Id" hx-boost="false" aria-label="View order @o.Number" title="View"><app-ti name="eye" /></a>
+                                                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="@Base/@o.Id" hx-boost="false" data-m-page aria-label="View order @o.Number" title="View"><app-ti name="eye" /></a>
                                                 </div>
                                             </td>
                                         </tr>

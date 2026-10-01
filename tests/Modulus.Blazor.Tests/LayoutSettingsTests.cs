@@ -86,7 +86,7 @@ public class LayoutSettingsTests
     [Fact]
     public void Header_WrapsTopbarAndNavbar_AndTheSidebarHasFoldedFallbacks()
     {
-        var apps = new MenuItemDefinition("apps", "Apps", icon: "apps");
+        var apps = new MenuItemDefinition("apps", "Apps", icon: "appstore");
         apps.Children.Add(new MenuItemDefinition("mail", "Mail", "/mail"));
         var menu = new List<MenuItemDefinition> { new("home", "home", "/"), apps };
         var view = View(new ModulusThemeOptions(), menu);
@@ -104,7 +104,7 @@ public class LayoutSettingsTests
     [Fact]
     public void NestedMenus_DropdownSectionsThenFoldingGroups_SidebarTree_OpenAlongThePathToThePage()
     {
-        var settings = new MenuItemDefinition("settings", "Settings", icon: "settings");
+        var settings = new MenuItemDefinition("settings", "Settings", icon: "setting");
         var access = new MenuItemDefinition("access", "Users & companies");
         var rights = new MenuItemDefinition("rights", "Access rights");
         rights.Children.Add(new MenuItemDefinition("roles", "Roles", "apps/roles"));

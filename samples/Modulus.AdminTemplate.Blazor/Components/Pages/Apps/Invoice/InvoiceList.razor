@@ -74,7 +74,7 @@
                     <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/invoice/preview/@row.Id" aria-label="Preview invoice @row.Number" title="Preview"><Ti Name="eye" /></a>
                     <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/invoice/edit/@row.Id" aria-label="Edit invoice @row.Number" title="Edit"><Ti Name="edit" /></a>
                     <Popconfirm Title="@($"Delete invoice {row.Number}?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => DeleteAsync([row.Id])">
-                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete invoice @row.Number" title="Delete"><Ti Name="trash" /></button>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete invoice @row.Number" title="Delete"><Ti Name="delete" /></button>
                     </Popconfirm>
                 </div>
             </ActionColumn>
@@ -91,10 +91,10 @@
 
     private (string Label, string Value, string Icon)[] Strip =>
     [
-        ("Clients", _stats.Clients.ToString("N0"), "users"),
-        ("Invoices", _stats.Invoices.ToString("N0"), "file-invoice"),
-        ("Paid", Fmt.Money0(_stats.Paid), "circle-check"),
-        ("Unpaid", Fmt.Money0(_stats.Unpaid), "ant:clock-circle"),
+        ("Clients", _stats.Clients.ToString("N0"), "team"),
+        ("Invoices", _stats.Invoices.ToString("N0"), "file-text"),
+        ("Paid", Fmt.Money0(_stats.Paid), "check-circle"),
+        ("Unpaid", Fmt.Money0(_stats.Unpaid), "clock-circle"),
     ];
 
     protected override void OnInitialized() => _stats = Store.InvoiceStats();

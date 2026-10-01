@@ -76,7 +76,7 @@
                     <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/users/view/@row.Id" aria-label="View @row.Name" title="View"><Ti Name="eye" /></a>
                     <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Edit @row.Name" title="Edit" @onclick="() => Edit(row)"><Ti Name="edit" /></button>
                     <Popconfirm Title="Delete this user?" OkText="Delete" OnConfirm="() => DeleteAsync([row.Id])" Disabled="row.Id == CurrentUser.Id">
-                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @row.Name" title="Delete" disabled="@(row.Id == CurrentUser.Id)"><Ti Name="trash" /></button>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @row.Name" title="Delete" disabled="@(row.Id == CurrentUser.Id)"><Ti Name="delete" /></button>
                     </Popconfirm>
                 </div>
             </ActionColumn>

@@ -29,7 +29,7 @@
                     <div class="m-kpi-head">
                         <span class="m-subheader">@k.Label</span>
                         <span class="m-delta @(k.Delta >= 0 ? "m-delta-up" : "m-delta-down")" style="margin-left:auto">
-                            @(k.Delta >= 0 ? "+" : "")@k.Delta.ToString("0.0")% <Ti Name="@(k.Delta >= 0 ? "trending-up" : "trending-down")" />
+                            @(k.Delta >= 0 ? "+" : "")@k.Delta.ToString("0.0")% <Ti Name="@(k.Delta >= 0 ? "trending-up" : "fall")" />
                         </span>
                     </div>
                     <div class="m-kpi-value"><span class="m-h1">@k.Value</span></div>

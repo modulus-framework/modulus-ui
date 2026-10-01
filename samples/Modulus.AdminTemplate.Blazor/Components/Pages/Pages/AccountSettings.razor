@@ -53,7 +53,7 @@
                 <div class="m-card-header"><div><h2 class="m-card-title">Two-step verification</h2><p class="m-card-subtitle">Keep your account secure with an authentication step</p></div></div>
                 <div class="m-card-body">
                     <div class="m-flex m-gap-12" style="align-items:flex-start">
-                        <span class="m-icon-tile m-tile-@(_twoFactor ? "success" : "gray")-lt"><Ti Name="auth-2fa" /></span>
+                        <span class="m-icon-tile m-tile-@(_twoFactor ? "success" : "gray")-lt"><Ti Name="ri:lock-2" /></span>
                         <div style="flex:1">
                             <div class="m-h3">Two-factor authentication is @(_twoFactor ? "on" : "off")</div>
                             <p class="m-muted m-mt-4 m-mb-0">Two-factor authentication adds an additional layer of security to your account by requiring more than just a password to sign in.</p>
@@ -102,7 +102,7 @@
                             <p class="m-muted m-mt-4">Standard plan for small to medium businesses.</p>
                         </div>
                         <div>
-                            <div class="ant-alert ant-alert-warning m-mb-16" role="alert"><span class="ant-alert-icon m-text-warning"><Ti Name="alert-triangle" /></span><div class="ant-alert-content"><div class="ant-alert-message m-medium">We need your attention!</div><div class="ant-alert-description">Your plan requires an update.</div></div></div>
+                            <div class="ant-alert ant-alert-warning m-mb-16" role="alert"><span class="ant-alert-icon m-text-warning"><Ti Name="warning" /></span><div class="ant-alert-content"><div class="ant-alert-message m-medium">We need your attention!</div><div class="ant-alert-description">Your plan requires an update.</div></div></div>
                             <div class="m-plan-box">
                                 <div class="m-flex m-between m-small"><span class="m-medium">Days</span><span class="m-muted">@DaysUsed of 30 days</span></div>
                                 <div class="m-progress m-mt-8"><div class="m-progress-bar" style="width:@Fmt.Pct(DaysUsed, 30)%"></div></div>
@@ -230,7 +230,7 @@
                             }
                             else
                             {
-                                <button type="button" class="ant-btn ant-btn-default ant-btn-sm ant-btn-icon-only ant-btn-dangerous" aria-label="Disconnect @name" @onclick="() => DemoConnectionAsync(name)"><Ti Name="trash" /></button>
+                                <button type="button" class="ant-btn ant-btn-default ant-btn-sm ant-btn-icon-only ant-btn-dangerous" aria-label="Disconnect @name" @onclick="() => DemoConnectionAsync(name)"><Ti Name="delete" /></button>
                             }
                         </div>
                     }
@@ -280,7 +280,7 @@
             <div class="m-card m-danger-zone">
                 <div class="m-card-header"><h2 class="m-card-title">Delete account</h2></div>
                 <div class="m-card-body">
-                    <div class="ant-alert ant-alert-warning m-mb-16" role="alert"><span class="ant-alert-icon m-text-warning"><Ti Name="alert-triangle" /></span><div class="ant-alert-content"><div class="ant-alert-message m-medium">Are you sure you want to delete your account?</div><div class="ant-alert-description">Once you delete your account, there is no going back. Please be certain.</div></div></div>
+                    <div class="ant-alert ant-alert-warning m-mb-16" role="alert"><span class="ant-alert-icon m-text-warning"><Ti Name="warning" /></span><div class="ant-alert-content"><div class="ant-alert-message m-medium">Are you sure you want to delete your account?</div><div class="ant-alert-description">Once you delete your account, there is no going back. Please be certain.</div></div></div>
                     <Checkbox Checked="_confirmDelete" CheckedChanged="v => _confirmDelete = v">I confirm my account deactivation</Checkbox>
                     <div class="m-mt-16"><button type="button" class="ant-btn ant-btn-primary ant-btn-dangerous" disabled="@(!_confirmDelete)" @onclick="DeactivateAsync"><span>Deactivate account</span></button></div>
                 </div>
@@ -291,7 +291,7 @@
 
 @code {
     private static readonly (string Key, string Label, string Icon)[] Tabs =
-        [("account", "Account", "user"), ("security", "Security", "lock"), ("billing", "Billing & plans", "file-dollar"), ("notifications", "Notifications", "bell"), ("connections", "Connections", "link")];
+        [("account", "Account", "user"), ("security", "Security", "lock"), ("billing", "Billing & plans", "account-book"), ("notifications", "Notifications", "bell"), ("connections", "Connections", "link")];
 
     private static IReadOnlyList<(string Brand, string Name, string Number, string Expires, bool Primary)> Cards => SampleContent.PaymentCards;
     private static IReadOnlyList<(string Icon, string Name, string? Handle)> Socials => SampleContent.SocialAccounts;

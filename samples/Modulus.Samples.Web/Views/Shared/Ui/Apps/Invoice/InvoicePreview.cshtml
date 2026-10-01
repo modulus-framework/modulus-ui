@@ -20,7 +20,7 @@
                     <a class="ant-btn ant-btn-default" href="/apps/invoice/edit/@Model.Id"><app-ti name="edit" /><span>Edit</span></a>
                 </div>
                 <button type="button" class="ant-btn ant-btn-default ant-btn-block m-btn-success" disabled="@(Model.Balance == 0)"
-                        @@click="$store.drawer.load('@baseUrl/payment', 'Add payment')"><app-ti name="currency-dollar" /><span>Add payment</span></button>
+                        @@click="$store.drawer.load('@baseUrl/payment', 'Add payment')"><app-ti name="dollar" /><span>Add payment</span></button>
             </div>
         </div>
         <div class="m-card">

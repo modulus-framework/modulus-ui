@@ -41,7 +41,7 @@
         @if (_active is not { } a)
         {
             <div class="m-chat-empty">
-                <span class="m-icon-tile m-tile-primary-lt m-tile-round" style="width:64px;height:64px"><Ti Name="messages" /></span>
+                <span class="m-icon-tile m-tile-primary-lt m-tile-round" style="width:64px;height:64px"><Ti Name="comment" /></span>
                 <div class="m-h3" style="color:var(--m-heading)">Start a conversation</div>
                 <div>Pick a contact on the left to see your messages.</div>
             </div>
@@ -55,8 +55,8 @@
                     <div class="m-small m-muted">@a.Presence · @a.About</div>
                 </div>
                 <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Call" title="Call"><Ti Name="phone" /></button>
-                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Video call" title="Video call"><Ti Name="video" /></button>
-                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="More" title="More"><Ti Name="dots-vertical" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Video call" title="Video call"><Ti Name="video-camera" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="More" title="More"><Ti Name="more" /></button>
             </div>
             <div class="m-chat-log" role="log" aria-live="polite">
                 <div class="m-chat-log-inner">
@@ -81,7 +81,7 @@
                 </div>
             </div>
             <form class="m-chat-compose" @onsubmit="Send" autocomplete="off">
-                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Attach a file" title="Attach"><Ti Name="paperclip" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Attach a file" title="Attach"><Ti Name="paper-clip" /></button>
                 <input class="ant-input" @bind="_text" placeholder="Type your message…" aria-label="Message" maxlength="1000" />
                 <button type="submit" class="ant-btn ant-btn-primary"><Ti Name="send" /><span>Send</span></button>
             </form>

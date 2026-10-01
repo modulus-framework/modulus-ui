@@ -25,11 +25,11 @@
                     </div>
                     <div class="m-user-stats">
                         <div class="m-user-stat">
-                            <span class="m-icon-tile m-tile-primary-lt"><app-ti name="checks" /></span>
+                            <span class="m-icon-tile m-tile-primary-lt"><app-ti name="ri:check-double" /></span>
                             <div><div class="m-h3">@u.TasksDone.ToString("N0")</div><div class="m-xsmall m-muted">Tasks done</div></div>
                         </div>
                         <div class="m-user-stat">
-                            <span class="m-icon-tile m-tile-primary-lt"><app-ti name="briefcase" /></span>
+                            <span class="m-icon-tile m-tile-primary-lt"><app-ti name="ri:briefcase" /></span>
                             <div><div class="m-h3">@u.Projects</div><div class="m-xsmall m-muted">Projects</div></div>
                         </div>
                     </div>
@@ -54,7 +54,7 @@
                         <button type="button" class="ant-btn @(suspended ? "ant-btn-default" : "ant-btn-default ant-btn-dangerous")"
                                 hx-post="@baseUrl/status" hx-vals='{"status": "@(suspended ? "Active" : "Inactive")"}' hx-swap="none"
                                 hx-confirm="@(suspended ? $"Reactivate {u.Name}?" : $"Suspend {u.Name}? They won't be able to sign in.")" @(suspended ? "" : "data-confirm-danger") data-confirm-ok="@(suspended ? "Reactivate" : "Suspend")">
-                            <app-ti name="@(suspended ? "player-play" : "ban")" /><span>@(suspended ? "Reactivate" : "Suspend")</span>
+                            <app-ti name="@(suspended ? "ri:play" : "stop")" /><span>@(suspended ? "Reactivate" : "Suspend")</span>
                         </button>
                     }
                 </div>
@@ -70,7 +70,7 @@
                 <ul class="m-check-list" style="margin:16px 0 0">
                     @foreach (var f in plan.Features)
                     {
-                        <li><app-ti name="circle-check" />@f</li>
+                        <li><app-ti name="check-circle" />@f</li>
                     }
                 </ul>
                 <div class="m-flex m-between m-mt-16 m-small"><span class="m-heading m-medium">Days</span><span class="m-muted">@SampleContent.PlanDaysUsed of 30 days</span></div>
@@ -114,7 +114,7 @@
                     <div class="m-card-header"><div><h3 class="m-card-title">Two-step verification</h3><p class="m-card-subtitle">A second step after the password when signing in</p></div></div>
                     <div class="m-card-body">
                         <div class="m-flex m-gap-12">
-                            <span class="m-icon-tile m-tile-green-lt"><app-ti name="ant:mobile" /></span>
+                            <span class="m-icon-tile m-tile-green-lt"><app-ti name="mobile" /></span>
                             <div class="m-truncate">
                                 <div class="m-heading m-medium">SMS</div>
                                 <div class="m-small m-muted">@(u.Phone is { Length: > 0 } ? u.Phone : "No phone number on file")</div>

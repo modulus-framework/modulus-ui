@@ -1,0 +1,32 @@
+@* Pivot table in the manner of Odoo's pivot view; the same markup as the MVC <app-pivot-grid> (PivotHtml). Every header,
+   menu item and toolbar button is a link to the next PivotState, followed by enhanced navigation: the page reads the
+   state from its URL (PivotQuery.State) and runs the query again, so the component holds no state of its own. *@
+@using Modulus.Ui.Abstractions.Pivot
+@inject NavigationManager Navigation
+
+@((MarkupString)PivotHtml.Render(Result, Href ?? CurrentPage, CellHref, DownloadHref, Id, Label))
+
+@code {
+    /// <summary>The computed table (<c>PivotQuery.Run</c>).</summary>
+    [Parameter, EditorRequired] public PivotResult Result { get; set; } = default!;
+
+    /// <summary>The URL of a state; by default the current page with the state's query, its other query values kept.</summary>
+    [Parameter] public Func<PivotState, string>? Href { get; set; }
+
+    /// <summary>The drill-down link of a value cell, or null for none.</summary>
+    [Parameter] public Func<PivotCell, string?>? CellHref { get; set; }
+
+    /// <summary>The xlsx download of the current state (<c>PivotXlsx</c>); no button without it.</summary>
+    [Parameter] public string? DownloadHref { get; set; }
+
+    [Parameter] public string? Id { get; set; }
+
+    /// <summary>Accessible name of the table.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    private string CurrentPage(PivotState state)
+    {
+        var uri = new Uri(Navigation.Uri);
+        return PivotState.Link(uri.AbsolutePath, PivotState.ReadQuery(uri.Query), state);
+    }
+}

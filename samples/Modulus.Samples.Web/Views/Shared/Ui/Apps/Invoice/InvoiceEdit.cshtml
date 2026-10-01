@@ -62,7 +62,7 @@
                             <div class="ant-form-item-explain-error" x-show="error(i, 'Qty')" x-text="error(i, 'Qty')"></div>
                         </div>
                         <div class="m-invoice-editor-price m-num" x-text="fmt((+line.cost || 0) * (+line.qty || 0))"></div>
-                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" @@click="remove(i)" :aria-label="`Remove item ${i + 1}`" title="Remove"><app-ti name="x" /></button>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" @@click="remove(i)" :aria-label="`Remove item ${i + 1}`" title="Remove"><app-ti name="close" /></button>
                     </div>
                 </template>
                 <button type="button" class="ant-btn ant-btn-dashed" @@click="add()"><app-ti name="plus" /><span>Add item</span></button>
@@ -85,7 +85,7 @@
     <aside class="m-invoice-side">
         <div class="m-card">
             <div class="m-card-body m-invoice-actions">
-                <button type="submit" class="ant-btn ant-btn-primary ant-btn-block"><app-ti name="device-floppy" /><span>@(Model.Id is null ? "Create invoice" : "Save changes")</span></button>
+                <button type="submit" class="ant-btn ant-btn-primary ant-btn-block"><app-ti name="save" /><span>@(Model.Id is null ? "Create invoice" : "Save changes")</span></button>
                 @if (Model.Id is { } existing)
                 {
                     <a class="ant-btn ant-btn-default ant-btn-block" href="/apps/invoice/preview/@existing"><app-ti name="eye" /><span>Preview</span></a>

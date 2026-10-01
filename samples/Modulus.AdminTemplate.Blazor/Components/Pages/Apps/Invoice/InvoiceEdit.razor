@@ -53,7 +53,7 @@
                         <div><AntDesign.InputNumber TValue="decimal" @bind-Value="line.Cost" Min="0" Step="0.01m" Style="width:100%" aria-label="@($"Cost {i + 1}")" /></div>
                         <div><AntDesign.InputNumber TValue="int" @bind-Value="line.Qty" Min="1" Style="width:100%" aria-label="@($"Quantity {i + 1}")" /></div>
                         <div class="m-invoice-editor-price m-num">@Fmt.Money(line.Total)</div>
-                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" @onclick="() => RemoveLine(i)" aria-label="@($"Remove item {i + 1}")" title="Remove"><Ti Name="x" /></button>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" @onclick="() => RemoveLine(i)" aria-label="@($"Remove item {i + 1}")" title="Remove"><Ti Name="close" /></button>
                     </div>
                 }
                 <button type="button" class="ant-btn ant-btn-dashed" @onclick="AddLine"><Ti Name="plus" /><span>Add item</span></button>
@@ -76,7 +76,7 @@
     <aside class="m-invoice-side">
         <div class="m-card">
             <div class="m-card-body m-invoice-actions">
-                <button type="submit" class="ant-btn ant-btn-primary ant-btn-block"><Ti Name="device-floppy" /><span>@(Id is null ? "Create invoice" : "Save changes")</span></button>
+                <button type="submit" class="ant-btn ant-btn-primary ant-btn-block"><Ti Name="save" /><span>@(Id is null ? "Create invoice" : "Save changes")</span></button>
                 @if (Id is { } existing)
                 {
                     <a class="ant-btn ant-btn-default ant-btn-block" href="/apps/invoice/preview/@existing"><Ti Name="eye" /><span>Preview</span></a>

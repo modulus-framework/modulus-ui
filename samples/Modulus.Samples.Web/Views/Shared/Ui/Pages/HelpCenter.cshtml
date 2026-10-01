@@ -31,7 +31,7 @@
                     <li class="m-list-item">
                         <span class="m-icon-tile m-tile-sm m-tile-@SampleUi.Tone(category.Tint)-lt"><app-ti name="@category.Icon" /></span>
                         <div class="m-list-item-text"><a class="m-list-item-title" href="/pages/help-center/@article.Slug">@article.Title</a><span class="m-list-item-sub">@category.Title · @article.Excerpt</span></div>
-                        <app-ti name="chevron-right" />
+                        <app-ti name="right" />
                     </li>
                 }
             </ul>
@@ -67,7 +67,7 @@
                 <ul class="m-link-list">
                     @foreach (var a in c.Articles)
                     {
-                        <li><a href="/pages/help-center/@a.Slug"><app-ti name="chevron-right" />@a.Title</a></li>
+                        <li><a href="/pages/help-center/@a.Slug"><app-ti name="right" />@a.Title</a></li>
                     }
                 </ul>
             </div>
@@ -77,11 +77,11 @@
 
 <div class="m-card m-mt-24">
     <div class="m-card-body m-center">
-        <span class="m-icon-tile m-tile-lg m-tile-primary-lt" style="margin:0 auto 12px"><app-ti name="lifebuoy" /></span>
+        <span class="m-icon-tile m-tile-lg m-tile-primary-lt" style="margin:0 auto 12px"><app-ti name="ri:lifebuoy" /></span>
         <div class="m-h2">Still need help?</div>
         <p class="m-muted m-mt-4">Our specialists are always happy to help. Contact us during business hours, or email us 24/7.</p>
         <div class="m-status-actions m-mt-16">
-            <a class="ant-btn ant-btn-default" href="/apps/chat"><app-ti name="messages" /><span>Chat with us</span></a>
+            <a class="ant-btn ant-btn-default" href="/apps/chat"><app-ti name="comment" /><span>Chat with us</span></a>
             <a class="ant-btn ant-btn-primary" href="/apps/email"><app-ti name="mail" /><span>Contact support</span></a>
         </div>
     </div>

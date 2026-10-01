@@ -20,18 +20,18 @@ public static class UiShowcase
 
     public static readonly StatCard[] Stats =
     [
-        new("Revenue", "$48,250", "currency-dollar", "green", 12.4, "vs. $42,930 last month"),
-        new("New customers", "1,284", "users", "blue", 8.1, "vs. 1,188 last month"),
+        new("Revenue", "$48,250", "dollar", "green", 12.4, "vs. $42,930 last month"),
+        new("New customers", "1,284", "team", "blue", 8.1, "vs. 1,188 last month"),
         new("Orders", "3,642", "shopping-cart", "orange", -2.6, "vs. 3,739 last month"),
-        new("Refund rate", "1.8%", "ant:rollback", "red", -0.4, "vs. 2.2% last month"),
+        new("Refund rate", "1.8%", "rollback", "red", -0.4, "vs. 2.2% last month"),
     ];
 
     public static readonly (string Label, string Value, string Icon, string Tone, double Share)[] Usage =
     [
         ("Storage", "68.2 GB of 100 GB", "database", "blue", 0.68),
-        ("Bandwidth", "412 GB of 1 TB", "world", "green", 0.41),
+        ("Bandwidth", "412 GB of 1 TB", "global", "green", 0.41),
         ("API calls", "8.4M of 10M", "api", "orange", 0.84),
-        ("Seats", "22 of 25", "users", "purple", 0.88),
+        ("Seats", "22 of 25", "team", "purple", 0.88),
     ];
 
     public static readonly Goal[] Goals =
@@ -44,9 +44,9 @@ public static class UiShowcase
 
     public static readonly MeetingCard[] Meetings =
     [
-        new("Quarterly business review", "Today, 14:00 – 15:00", "presentation", "blue", ["Serena Park", "Omar Hartmann", "Yuki Tanaka"]),
-        new("Design critique", "Tomorrow, 10:30 – 11:15", "palette", "purple", ["Noah Tanaka", "Lena Fischer"]),
-        new("Hiring sync: backend", "Thu, 09:00 – 09:30", "user-plus", "green", ["Serena Park", "Marco Rossi"]),
+        new("Quarterly business review", "Today, 14:00 – 15:00", "fund-projection-screen", "blue", ["Serena Park", "Omar Hartmann", "Yuki Tanaka"]),
+        new("Design critique", "Tomorrow, 10:30 – 11:15", "ri:palette", "purple", ["Noah Tanaka", "Lena Fischer"]),
+        new("Hiring sync: backend", "Thu, 09:00 – 09:30", "user-add", "green", ["Serena Park", "Marco Rossi"]),
         new("Customer call: Globex", "Fri, 16:00 – 16:45", "phone", "orange", ["Aisha Khan", "Omar Hartmann", "Lena Fischer", "Noah Tanaka"]),
     ];
 

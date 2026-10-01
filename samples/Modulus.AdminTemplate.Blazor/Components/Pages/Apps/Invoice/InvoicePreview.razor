@@ -26,7 +26,7 @@
                     <a class="ant-btn ant-btn-default" href="/apps/invoice/print/@i.Id" target="_blank" rel="noopener"><Ti Name="printer" /><span>Print</span></a>
                     <a class="ant-btn ant-btn-default" href="/apps/invoice/edit/@i.Id"><Ti Name="edit" /><span>Edit</span></a>
                 </div>
-                <button type="button" class="ant-btn ant-btn-default ant-btn-block m-btn-success" disabled="@(i.Balance == 0)" @onclick="OpenPayment"><Ti Name="currency-dollar" /><span>Add payment</span></button>
+                <button type="button" class="ant-btn ant-btn-default ant-btn-block m-btn-success" disabled="@(i.Balance == 0)" @onclick="OpenPayment"><Ti Name="dollar" /><span>Add payment</span></button>
             </div>
         </div>
         <div class="m-card">

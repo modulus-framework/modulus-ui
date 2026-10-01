@@ -39,7 +39,7 @@
                                     </Menu>
                                 </Overlay>
                                 <ChildContent>
-                                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Actions for @t.Title" title="Actions"><Ti Name="dots" /></button>
+                                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Actions for @t.Title" title="Actions"><Ti Name="ellipsis" /></button>
                                 </ChildContent>
                             </Dropdown>
                         </div>
@@ -47,7 +47,7 @@
                         <div class="m-kanban-meta">
                             @if (due.Length > 0) { <span class="m-kanban-due@(late ? " late" : "")" title="@(late ? "Overdue" : "Due")"><Ti Name="calendar" />@due</span> }
                             @if (t.Comments > 0) { <span title="Comments"><Ti Name="message" />@t.Comments</span> }
-                            @if (t.Attachments > 0) { <span title="Attachments"><Ti Name="paperclip" />@t.Attachments</span> }
+                            @if (t.Attachments > 0) { <span title="Attachments"><Ti Name="paper-clip" />@t.Attachments</span> }
                             <span class="m-avatar-list">
                                 @foreach (var who in t.Assignees.Take(3))
                                 {

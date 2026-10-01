@@ -19,6 +19,8 @@
  *   - after each page: the drawer, modals, the navigation drawer and the launcher close, the sidebar keeps its scroll
  *     position and open groups, focus moves to #main and the title is announced to screen readers
  *   - a[download] and [data-m-reload] links always load normally
+ *   - a[data-m-page]: a page link inside a list's boost area (it keeps hx-boost="false" so the area leaves it alone,
+ *     and loads whole without SPA navigation) loads as a page navigation, like a menu link
  */
 (function () {
     'use strict';
@@ -94,6 +96,28 @@
     }
 
     var MAIN_SWAP = 'outerHTML show:window:top';
+
+    // A link inside a list's boost area that opens another page (a row's "View"): followed through a hidden link at
+    // the end of <body>, whose nearest hx-boost is <body>, so it swaps #main like a menu link. A whole page load would
+    // end full screen and reload the shell.
+    var pageLink = null;
+    document.addEventListener('click', function (e) {
+        if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        var a = e.target.closest ? e.target.closest('a[data-m-page][href]') : null;
+        if (!a || !window.htmx || body.getAttribute('hx-boost') !== 'true') return;
+        if (a.hasAttribute('download') || (a.target && a.target !== '_self')) return;
+        e.preventDefault();
+        if (!pageLink || !pageLink.isConnected) {
+            pageLink = document.createElement('a');
+            pageLink.hidden = true;
+            pageLink.tabIndex = -1;
+            pageLink.setAttribute('aria-hidden', 'true');
+            body.appendChild(pageLink);
+        }
+        pageLink.setAttribute('href', a.getAttribute('href'));
+        htmx.process(pageLink);
+        pageLink.click();
+    }, true);
 
     function hardNavigate(url, replace) {
         url = url || window.location.href;

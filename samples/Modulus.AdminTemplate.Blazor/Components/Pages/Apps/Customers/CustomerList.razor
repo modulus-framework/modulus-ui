@@ -75,7 +75,7 @@
                     <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/customers/@row.Id" aria-label="View @row.Name" title="View"><Ti Name="eye" /></a>
                     <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Edit @row.Name" title="Edit" @onclick="() => Edit(row)"><Ti Name="edit" /></button>
                     <Popconfirm Title="@($"Delete {row.Name}?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => DeleteAsync([row.Id])">
-                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @row.Name" title="Delete"><Ti Name="trash" /></button>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @row.Name" title="Delete"><Ti Name="delete" /></button>
                     </Popconfirm>
                 </div>
             </ActionColumn>
@@ -97,10 +97,10 @@
 
     private (string Label, string Value, string Note, string Icon, string Tone)[] Tiles =>
     [
-        ("Customers", _stats.Total.ToString("N0"), "Accounts with at least one order", "users", "primary"),
-        ("Active", _stats.Active.ToString("N0"), $"{Fmt.Percent(_stats.Active / (double)Math.Max(1, _stats.Total))} of all customers", "user-check", "green"),
+        ("Customers", _stats.Total.ToString("N0"), "Accounts with at least one order", "team", "primary"),
+        ("Active", _stats.Active.ToString("N0"), $"{Fmt.Percent(_stats.Active / (double)Math.Max(1, _stats.Total))} of all customers", "ri:user-follow", "green"),
         ("On trial", _stats.Trial.ToString("N0"), "Evaluating a paid plan", "hourglass", "azure"),
-        ("Lifetime revenue", Fmt.Money0(_stats.Revenue), $"{_stats.Churned} churned accounts", "currency-dollar", "yellow"),
+        ("Lifetime revenue", Fmt.Money0(_stats.Revenue), $"{_stats.Churned} churned accounts", "dollar", "yellow"),
     ];
 
     protected override void OnInitialized()

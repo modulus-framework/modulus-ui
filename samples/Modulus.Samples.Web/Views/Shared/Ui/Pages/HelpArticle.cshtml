@@ -19,8 +19,8 @@
         </div>
         <div class="m-card-footer m-feedback" x-data="{ voted: false }">
             <span class="m-muted">Was this article helpful?</span>
-            <span class="m-text-success m-medium" x-show="voted" x-cloak><app-ti name="circle-check" /> Thanks for your feedback!</span>
-            <button type="button" class="ant-btn ant-btn-default ant-btn-sm" x-show="!voted" x-on:click="voted = true"><app-ti name="thumb-up" /><span>Yes</span></button>
+            <span class="m-text-success m-medium" x-show="voted" x-cloak><app-ti name="check-circle" /> Thanks for your feedback!</span>
+            <button type="button" class="ant-btn ant-btn-default ant-btn-sm" x-show="!voted" x-on:click="voted = true"><app-ti name="like" /><span>Yes</span></button>
             <button type="button" class="ant-btn ant-btn-default ant-btn-sm" x-show="!voted" x-on:click="voted = true"><span>No</span></button>
         </div>
     </div>

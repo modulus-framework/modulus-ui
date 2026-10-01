@@ -6,7 +6,7 @@
     string Href(string lv) => "/extra/logs" + (lv == "" && search == "" ? "" : "?" + string.Join("&", new[] { lv == "" ? null : "level=" + lv, search == "" ? null : "q=" + Uri.EscapeDataString(search) }.Where(x => x is not null)));
 }
 <app-page-header pretitle="Extra" title="Logs" subtitle="Application log for today, newest first">
-    <a class="ant-btn ant-btn-default" href="@Href(level)"><app-ti name="refresh" /><span>Refresh</span></a>
+    <a class="ant-btn ant-btn-default" href="@Href(level)"><app-ti name="reload" /><span>Refresh</span></a>
     <a class="ant-btn ant-btn-default" href="/extra/logs"><app-ti name="download" /><span>Export</span></a>
 </app-page-header>
 
@@ -15,7 +15,7 @@
     {
         var n = ExtraContent.Logs.Count(l => l.Level == lv);
         <div class="m-card m-card-sm"><div class="m-card-body"><div class="m-stat">
-            <span class="m-icon-tile m-tile-@(lv switch { "error" => "red", "warn" => "yellow", "info" => "azure", _ => "gray" })-lt"><app-ti name="@(lv switch { "error" => "circle-x", "warn" => "alert-triangle", "info" => "info-circle", _ => "bug" })" /></span>
+            <span class="m-icon-tile m-tile-@(lv switch { "error" => "red", "warn" => "yellow", "info" => "azure", _ => "gray" })-lt"><app-ti name="@(lv switch { "error" => "close-circle", "warn" => "warning", "info" => "info-circle", _ => "bug" })" /></span>
             <div class="m-stat-text"><div class="m-stat-value">@n</div><div class="m-stat-sub">@(lv == "warn" ? "Warnings" : lv == "error" ? "Errors" : lv == "info" ? "Info" : "Debug")</div></div>
         </div></div></div>
     }

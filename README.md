@@ -256,7 +256,7 @@ Tag helpers. `/ui/components` in the MVC and Razor Pages samples shows each one;
 | Large data | `app-load-more` (infinite scroll), `app-virtual-table` (virtual scrolling, `modulus-virtual.js`) |
 | Charts | `app-line-chart`, `app-column-chart`, `app-bar-chart`, `app-donut-chart`, `app-heatmap`, `app-sparkline`, `app-mini-bar` and the business charts; `legend-toggle`, `links` |
 | Plugins | `app-editor` (Quill), `app-map` (Leaflet), `app-vector-map` (jsVectorMap), `app-media-player`, `app-sortable` / `app-sortable-item`, `app-lightbox` |
-| Icons | `app-icon` (Ant Design), `app-ti` (Tabler sprite, 270+ icons) |
+| Icons | `app-icon` (Ant Design), `app-ti` (an Ant Design outline icon by name, drawn inline like the shell's; `ri:` names for the few Remix Icon fallbacks) |
 
 Controls bind with `asp-for` (name, id, value and validation state) or a plain `name`. Any other attributes you add,
 such as `placeholder`, `hx-*` or `x-*`, go to the real `<input>`. Forms stay plain HTML and post normally.

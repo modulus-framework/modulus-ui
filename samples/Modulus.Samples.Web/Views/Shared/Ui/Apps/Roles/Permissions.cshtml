@@ -48,7 +48,7 @@
                                                     @@click="$store.drawer.load('/apps/permissions/form/@p.Id', 'Edit permission')"><app-ti name="edit" /></button>
                                             <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @p.Name" title="@(p.Core ? "Core permissions can't be deleted" : "Delete")" disabled="@p.Core"
                                                     hx-post="/apps/permissions/delete/@p.Id" hx-swap="none"
-                                                    hx-confirm="@($"Delete the “{p.Name}” permission?")" data-confirm-danger data-confirm-ok="Delete"><app-ti name="trash" /></button>
+                                                    hx-confirm="@($"Delete the “{p.Name}” permission?")" data-confirm-danger data-confirm-ok="Delete"><app-ti name="delete" /></button>
                                         </div>
                                     </td>
                                 </tr>

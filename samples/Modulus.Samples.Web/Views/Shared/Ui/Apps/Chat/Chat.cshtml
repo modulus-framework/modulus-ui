@@ -44,7 +44,7 @@
         @if (a is null)
         {
             <div class="m-chat-empty">
-                <span class="m-icon-tile m-tile-primary-lt m-tile-round" style="width:64px;height:64px"><app-ti name="messages" /></span>
+                <span class="m-icon-tile m-tile-primary-lt m-tile-round" style="width:64px;height:64px"><app-ti name="comment" /></span>
                 <div class="m-h3" style="color:var(--m-heading)">Start a conversation</div>
                 <div>Pick a contact on the left to see your messages.</div>
             </div>
@@ -58,8 +58,8 @@
                     <div class="m-small m-muted">@a.Presence · @a.About</div>
                 </div>
                 <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Call" title="Call"><app-ti name="phone" /></button>
-                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Video call" title="Video call"><app-ti name="video" /></button>
-                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="More" title="More"><app-ti name="dots-vertical" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Video call" title="Video call"><app-ti name="video-camera" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="More" title="More"><app-ti name="more" /></button>
             </div>
             <div class="m-chat-log" role="log" aria-live="polite">
                 <div class="m-chat-log-inner">
@@ -84,7 +84,7 @@
                 </div>
             </div>
             <form class="m-chat-compose" method="post" action="@Base/@a.Id/send" asp-antiforgery="true" hx-post="@Base/@a.Id/send" hx-push-url="false" autocomplete="off">
-                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Attach a file" title="Attach"><app-ti name="paperclip" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Attach a file" title="Attach"><app-ti name="paper-clip" /></button>
                 <input class="ant-input" name="text" placeholder="Type your message…" aria-label="Message" required maxlength="1000" />
                 <button type="submit" class="ant-btn ant-btn-primary"><app-ti name="send" /><span>Send</span></button>
             </form>

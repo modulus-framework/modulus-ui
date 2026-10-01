@@ -90,10 +90,10 @@ public sealed class Grid(HttpRequest request, ProTableRequest paging)
             last = page;
         }
         sb.Append(Arrow("next", current + 1, current == pages, "Next page", "M765.7 486.8L314.9 134.7A7.97 7.97 0 0 0 302 141v77.3c0 4.9 2.3 9.6 6.1 12.6l360 281.1-360 281.1c-3.9 3-6.1 7.7-6.1 12.6V883c0 6.7 7.7 10.4 12.9 6.3l450.8-352.1a31.96 31.96 0 0 0 0-50.4z"));
-        sb.Append("""<li class="ant-pagination-options"><select class="m-select m-select-sm" aria-label="Rows per page" onchange="this.nextElementSibling.href = this.value; this.nextElementSibling.click()">""");
+        sb.Append("""<li class="ant-pagination-options"><select class="m-select m-select-sm" aria-label="Rows per page" data-m-nav-select>""");
         foreach (var option in new[] { 10, 20, 50, 100 })
             sb.Append($"""<option value="{E(Href(("pageSize", option.ToString())))}"{(option == size ? " selected" : "")}>{option} / page</option>""");
-        sb.Append("""</select><a hidden aria-hidden="true" tabindex="-1"></a></li></ul>""");
+        sb.Append("""</select></li></ul>""");
         return new HtmlString(sb.ToString());
     }
 

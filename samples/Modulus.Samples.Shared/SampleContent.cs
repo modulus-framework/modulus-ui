@@ -18,19 +18,19 @@ public static class SampleContent
             new("What is the delivery cost?", "Delivery is free for orders over $250. Below that, a flat $12 fee applies. Express next-day delivery costs $24."),
             new("How can I track my shipment?", "You get a tracking link by email as soon as the parcel leaves our warehouse. It also appears on the order page."),
         ]),
-        new("returns", "Cancellation & return", "arrow-back-up", "Changed your mind?",
+        new("returns", "Cancellation & return", "undo", "Changed your mind?",
         [
             new("Can I cancel my order?", "Yes, until it's dispatched. Open the order and choose Cancel; the refund goes back to the original payment method."),
             new("What is the return policy?", "Unused hardware can be returned within 30 days for a full refund. Subscriptions can be cancelled any time and stay active until the period ends."),
             new("How long do refunds take?", "Refunds are issued within 2 business days of receiving the return. Your bank may take 3–5 more days to show the credit."),
         ]),
-        new("orders", "My orders", "shopping-bag", "Order changes and history",
+        new("orders", "My orders", "shopping", "Order changes and history",
         [
             new("Has my order been successful?", "You'll see it in Orders with the status Pending or later, and you'll receive a confirmation email within a few minutes."),
             new("Can I change my order after it's placed?", "Contact support before dispatch and we'll update items or the delivery address."),
             new("Where can I download past invoices?", "Every invoice is under Account settings → Billing & plans → Billing history, and on each order page."),
         ]),
-        new("product", "Product & services", "package", "About our products",
+        new("product", "Product & services", "product", "About our products",
         [
             new("Do you offer volume discounts?", "Yes. Orders of 50 seats or 20 devices get 10% off automatically; contact sales for larger volumes."),
             new("Is there a free trial?", "Every plan includes a 14-day free trial with all features. No card is required to start."),
@@ -42,9 +42,9 @@ public static class SampleContent
     [
         new("Basic", "For small teams getting started", "rocket", 0, 0, false,
             ["Up to 3 users", "10 GB storage", "Core dashboards", "Email support"]),
-        new("Standard", "For growing businesses", "bolt", 49, 39, true,
+        new("Standard", "For growing businesses", "thunderbolt", 49, 39, true,
             ["Up to 25 users", "100 GB storage", "All dashboards & apps", "Invoices and payments", "Priority support"]),
-        new("Enterprise", "For large organisations", "building", 149, 119, false,
+        new("Enterprise", "For large organisations", "ri:building", 149, 119, false,
             ["Unlimited users", "1 TB storage", "SSO and audit log", "Custom roles & permissions", "Dedicated success manager"]),
     ];
 
@@ -76,18 +76,18 @@ public static class SampleContent
             new("update-card", "Update a payment method", "Add, remove or set a default card.", ["Go to Account settings → Billing & plans → Payment methods."]),
             new("download-invoices", "Download invoices", "Every invoice is available as a printable page.", ["Open Invoices, choose an invoice and press Print or Download."]),
         ]),
-        new("security", "Security", "shield-lock", 3,
+        new("security", "Security", "ri:shield-keyhole", 3,
         [
             new("two-factor", "Turn on two-step verification", "Protect your account with an authenticator app.", ["Open Account settings → Security → Two-step verification and follow the steps."]),
             new("sessions", "Review active sessions", "See where you're signed in and sign out other devices.", ["The Recent devices table in Security lists every active session."]),
         ]),
-        new("apps", "Apps", "apps", 4,
+        new("apps", "Apps", "appstore", 4,
         [
             new("email", "Using Email", "Folders, labels, stars and bulk actions.", ["Select messages with the checkboxes to move, label or delete them in one go."]),
             new("kanban", "Using the Kanban board", "Plan work by dragging cards between columns.", ["Drag a card to another column to change its status; add tasks at the bottom of any column."]),
             new("calendar", "Using the Calendar", "Schedule events and filter by category.", ["Click a day to add an event, or an event to edit it. Use the filters to show only some categories."]),
         ]),
-        new("integrations", "Integrations", "plug", 5,
+        new("integrations", "Integrations", "ri:plug", 5,
         [
             new("api-keys", "Create an API key", "Connect your own tools to the REST API.", ["Open Account settings → Connections and create a key with the scopes you need."]),
             new("webhooks", "Receive webhooks", "Get notified when invoices are paid or orders ship.", ["Add an HTTPS endpoint and choose which events to send."]),
@@ -132,19 +132,19 @@ public static class SampleContent
 
     public static readonly IReadOnlyList<Project> Projects =
     [
-        new(1, "Modulus UI v2", "Internal", "Serena Park", ["Noah Tanaka", "Yuki Tanaka", "Omar Hartmann"], 78, 128, 164, DateTime.Today.AddDays(18), 42_000, 31_900, "components"),
-        new(2, "Northwind rollout", "Northwind", "Olivia Bennett", ["Serena Park", "Kwame Mensah"], 52, 46, 88, DateTime.Today.AddDays(40), 128_000, 58_400, "truck-delivery"),
+        new(1, "Modulus UI v2", "Internal", "Serena Park", ["Noah Tanaka", "Yuki Tanaka", "Omar Hartmann"], 78, 128, 164, DateTime.Today.AddDays(18), 42_000, 31_900, "block"),
+        new(2, "Northwind rollout", "Northwind", "Olivia Bennett", ["Serena Park", "Kwame Mensah"], 52, 46, 88, DateTime.Today.AddDays(40), 128_000, 58_400, "truck"),
         new(3, "Billing migration", "Internal", "Ingrid Lindqvist", ["Priya Silva", "Noah Tanaka"], 91, 71, 78, DateTime.Today.AddDays(6), 36_000, 34_200, "credit-card"),
-        new(4, "Mobile app", "Contoso", "Hiro Park", ["Yuki Tanaka", "Elena Rossi", "Mateo Reyes", "Aisha Khan"], 34, 39, 115, DateTime.Today.AddDays(75), 96_000, 21_300, "device-mobile"),
-        new(5, "Security review", "Woodgrove Bank", "Chloe Dubois", ["Serena Park"], 12, 4, 32, DateTime.Today.AddDays(28), 18_000, 1_900, "shield-check"),
+        new(4, "Mobile app", "Contoso", "Hiro Park", ["Yuki Tanaka", "Elena Rossi", "Mateo Reyes", "Aisha Khan"], 34, 39, 115, DateTime.Today.AddDays(75), 96_000, 21_300, "mobile"),
+        new(5, "Security review", "Woodgrove Bank", "Chloe Dubois", ["Serena Park"], 12, 4, 32, DateTime.Today.AddDays(28), 18_000, 1_900, "safety-certificate"),
     ];
 
     public static readonly IReadOnlyList<Team> Teams =
     [
-        new("Design", "Product design and research", "palette", 5, ["Yuki Tanaka", "Elena Rossi", "Hiro Park"], ["UX", "Figma"]),
+        new("Design", "Product design and research", "ri:palette", 5, ["Yuki Tanaka", "Elena Rossi", "Hiro Park"], ["UX", "Figma"]),
         new("Engineering", "Frontend, backend and infrastructure", "code", 1, ["Noah Tanaka", "Omar Hartmann", "Arjun Costa", "Lucas Novak"], ["Blazor", "htmx", ".NET"]),
-        new("Sales", "New business and renewals", "trending-up", 2, ["Mateo Reyes", "Priya Silva", "Kwame Mensah"], ["CRM", "EMEA"]),
-        new("Finance", "Billing, payroll and reporting", "report-money", 3, ["Ingrid Lindqvist", "Samuel Mensah"], ["Payroll"]),
+        new("Sales", "New business and renewals", "rise", 2, ["Mateo Reyes", "Priya Silva", "Kwame Mensah"], ["CRM", "EMEA"]),
+        new("Finance", "Billing, payroll and reporting", "account-book", 3, ["Ingrid Lindqvist", "Samuel Mensah"], ["Payroll"]),
     ];
 
     public static readonly IReadOnlyList<Connection> Connections =
@@ -160,26 +160,26 @@ public static class SampleContent
     /// <summary>Recent activity on the profile page (who is always the current user).</summary>
     public static IReadOnlyList<ActivityItem> ProfileActivity() =>
     [
-        new(CurrentUser.Name, "paid invoice", "#4981", DateTime.Now.AddMinutes(-12), "receipt"),
-        new(CurrentUser.Name, "created the project", "Security review", DateTime.Now.AddHours(-3), "briefcase"),
-        new(CurrentUser.Name, "added 3 members to", "Engineering", DateTime.Now.AddHours(-7), "users-group"),
+        new(CurrentUser.Name, "paid invoice", "#4981", DateTime.Now.AddMinutes(-12), "ri:bill"),
+        new(CurrentUser.Name, "created the project", "Security review", DateTime.Now.AddHours(-3), "ri:briefcase"),
+        new(CurrentUser.Name, "added 3 members to", "Engineering", DateTime.Now.AddHours(-7), "ri:group"),
         new(CurrentUser.Name, "shipped", "Modulus UI v2 beta", DateTime.Now.AddDays(-1), "rocket"),
         new(CurrentUser.Name, "commented on", "Billing migration", DateTime.Now.AddDays(-2), "message"),
     ];
 
     public static IReadOnlyList<LoginDevice> Devices() =>
     [
-        new("Chrome on Windows", "Desktop", "San Francisco, US", DateTime.Now.AddMinutes(-2), "brand-windows"),
-        new("Safari on iPhone", "Mobile", "San Francisco, US", DateTime.Now.AddHours(-5), "device-mobile"),
-        new("Chrome on macOS", "Laptop", "New York, US", DateTime.Now.AddDays(-2), "brand-apple"),
-        new("Edge on Windows", "Desktop", "London, UK", DateTime.Now.AddDays(-9), "brand-edge"),
+        new("Chrome on Windows", "Desktop", "San Francisco, US", DateTime.Now.AddMinutes(-2), "windows"),
+        new("Safari on iPhone", "Mobile", "San Francisco, US", DateTime.Now.AddHours(-5), "mobile"),
+        new("Chrome on macOS", "Laptop", "New York, US", DateTime.Now.AddDays(-2), "apple"),
+        new("Edge on Windows", "Desktop", "London, UK", DateTime.Now.AddDays(-9), "ri:edge"),
     ];
 
     public static readonly IReadOnlyList<(string Brand, string Name, string Number, string Expires, bool Primary)> PaymentCards =
-        [("brand-visa", "Serena Park", "4242", "12/28", true), ("brand-mastercard", "Serena Park", "5454", "03/27", false)];
+        [("ri:visa", "Serena Park", "4242", "12/28", true), ("ri:mastercard", "Serena Park", "5454", "03/27", false)];
 
     public static readonly IReadOnlyList<(string Icon, string Name, string? Handle)> SocialAccounts =
-        [("brand-github", "GitHub", "@serena-park"), ("brand-x", "X", null), ("brand-linkedin", "LinkedIn", "in/serenapark"), ("brand-dribbble", "Dribbble", null)];
+        [("github", "GitHub", "@serena-park"), ("x", "X", null), ("linkedin", "LinkedIn", "in/serenapark"), ("dribbble", "Dribbble", null)];
 
     /// <summary>The Standard plan renews on the first of next month.</summary>
     public static DateTime PlanRenewsOn => new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddMonths(1);
@@ -188,11 +188,11 @@ public static class SampleContent
 
     public static readonly IReadOnlyList<(string Name, string Description, string Icon, bool Connected)> ConnectedApps =
     [
-        ("Google", "Calendar and contacts", "brand-google", true),
-        ("Slack", "Notifications in your channels", "brand-slack", true),
-        ("GitHub", "Link commits to tasks", "brand-github", false),
-        ("Figma", "Embed designs in cards", "brand-figma", false),
-        ("Stripe", "Card payments for invoices", "brand-stripe", true),
+        ("Google", "Calendar and contacts", "google", true),
+        ("Slack", "Notifications in your channels", "slack", true),
+        ("GitHub", "Link commits to tasks", "github", false),
+        ("Figma", "Embed designs in cards", "ri:figma", false),
+        ("Stripe", "Card payments for invoices", "ri:bank-card", true),
     ];
 
     // User view (Apps → Users → a user) ----------------------------------------------------------
@@ -215,11 +215,11 @@ public static class SampleContent
         var projects = UserProjects(user);
         return
         [
-            new(user.Name, "completed 4 tasks in", projects[0].Name, DateTime.Now.AddMinutes(-(user.Id * 7 % 50 + 5)), "checks"),
-            new(user.Name, "uploaded", "brand-guidelines.pdf", DateTime.Now.AddHours(-(user.Id % 5 + 2)), "ant:upload"),
+            new(user.Name, "completed 4 tasks in", projects[0].Name, DateTime.Now.AddMinutes(-(user.Id * 7 % 50 + 5)), "ri:check-double"),
+            new(user.Name, "uploaded", "brand-guidelines.pdf", DateTime.Now.AddHours(-(user.Id % 5 + 2)), "upload"),
             new(user.Name, "commented on", projects[1].Name, DateTime.Now.AddHours(-(user.Id % 9 + 9)), "message"),
-            new(user.Name, "was added to", projects[2].Name, DateTime.Now.AddDays(-(user.Id % 4 + 1)), "user-plus"),
-            new(user.Name, "signed in from", "a new device", DateTime.Now.AddDays(-(user.Id % 6 + 5)), "device-laptop"),
+            new(user.Name, "was added to", projects[2].Name, DateTime.Now.AddDays(-(user.Id % 4 + 1)), "user-add"),
+            new(user.Name, "signed in from", "a new device", DateTime.Now.AddDays(-(user.Id % 6 + 5)), "laptop"),
         ];
     }
 

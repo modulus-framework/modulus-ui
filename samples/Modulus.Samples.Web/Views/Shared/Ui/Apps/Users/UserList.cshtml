@@ -109,7 +109,7 @@
                                                 <div class="m-entity">
                                                     <span class="m-avatar m-avatar-sm m-av-@u.Tint">@Fmt.Initials(u.Name)</span>
                                                     <div class="m-entity-text">
-                                                        <a class="m-entity-title" href="/apps/users/view/@u.Id" hx-boost="false">@u.Name</a>
+                                                        <a class="m-entity-title" href="/apps/users/view/@u.Id" hx-boost="false" data-m-page>@u.Name</a>
                                                         <span class="m-entity-desc">@u.Email</span>
                                                     </div>
                                                 </div>
@@ -120,12 +120,12 @@
                                             <td class="ant-table-cell"><span class="m-badge @SampleUi.UserBadge(u.Status)">@u.Status</span></td>
                                             <td class="ant-table-cell" style="text-align:right">
                                                 <div class="m-row-actions">
-                                                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/users/view/@u.Id" hx-boost="false" aria-label="View @u.Name" title="View"><app-ti name="eye" /></a>
+                                                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="/apps/users/view/@u.Id" hx-boost="false" data-m-page aria-label="View @u.Name" title="View"><app-ti name="eye" /></a>
                                                     <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Edit @u.Name" title="Edit"
                                                             @@click="$store.drawer.load('@Base/form/@u.Id', 'Edit user')"><app-ti name="edit" /></button>
                                                     <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @u.Name" title="Delete" disabled="@self"
                                                             hx-post="@Base/delete" hx-vals='{"ids": @u.Id}' hx-swap="none"
-                                                            hx-confirm="@($"Delete {u.Name}?")" data-confirm-danger data-confirm-ok="Delete"><app-ti name="trash" /></button>
+                                                            hx-confirm="@($"Delete {u.Name}?")" data-confirm-danger data-confirm-ok="Delete"><app-ti name="delete" /></button>
                                                 </div>
                                             </td>
                                         </tr>

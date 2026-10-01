@@ -93,7 +93,7 @@ public sealed class Product
     public int Stock { get; set; }
     public int Sold { get; set; }
     public ProductStatus Status { get; set; }
-    public string Icon { get; set; } = "package";
+    public string Icon { get; set; } = "product";
 
     public bool LowStock => Stock is > 0 and < 20;
     public bool OutOfStock => Stock == 0;

@@ -17,12 +17,12 @@
         @if (open)
         {
             <Popconfirm Title="@($"Cancel order {o.Number}?{(o.Payment == PaymentStatus.Paid ? " The payment will be refunded." : "")}")" OkText="Cancel order" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => SetStatusAsync(OrderStatus.Cancelled)">
-                <button type="button" class="ant-btn ant-btn-default ant-btn-dangerous"><Ti Name="x" /><span>Cancel order</span></button>
+                <button type="button" class="ant-btn ant-btn-default ant-btn-dangerous"><Ti Name="close" /><span>Cancel order</span></button>
             </Popconfirm>
         }
         @if (next is { } n)
         {
-            <button type="button" class="ant-btn ant-btn-primary" @onclick="() => SetStatusAsync(n)"><Ti Name="truck-delivery" /><span>@SampleUi.NextStatusAction(n)</span></button>
+            <button type="button" class="ant-btn ant-btn-primary" @onclick="() => SetStatusAsync(n)"><Ti Name="truck" /><span>@SampleUi.NextStatusAction(n)</span></button>
         }
     </Actions>
 </PageHeading>
@@ -74,7 +74,7 @@
                     @foreach (var (title, note, at, done) in SampleUi.OrderTimeline(o))
                     {
                         <li class="m-timeline-item">
-                            <span class="m-timeline-icon@(done ? " m-timeline-icon-done" : "")"><Ti Name="@(done ? "check" : "clock")" /></span>
+                            <span class="m-timeline-icon@(done ? " m-timeline-icon-done" : "")"><Ti Name="@(done ? "check" : "clock-circle")" /></span>
                             <div class="m-timeline-body">
                                 <div class="m-flex m-between"><strong>@title</strong><span class="m-timeline-time">@(at is { } t ? Fmt.DateTime(t) : "Pending")</span></div>
                                 <div class="m-small m-muted">@note</div>

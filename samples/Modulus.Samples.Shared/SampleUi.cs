@@ -64,12 +64,12 @@ public static class SampleUi
 
     public static string InvoiceIcon(InvoiceStatus s) => s switch
     {
-        InvoiceStatus.Paid => "circle-check",
+        InvoiceStatus.Paid => "check-circle",
         InvoiceStatus.Sent => "send",
-        InvoiceStatus.PartialPayment => "chart-pie",
-        InvoiceStatus.PastDue => "alert-circle",
+        InvoiceStatus.PartialPayment => "pie-chart",
+        InvoiceStatus.PastDue => "exclamation-circle",
         InvoiceStatus.Downloaded => "download",
-        _ => "device-floppy",
+        _ => "save",
     };
 
     public static string ProductBadge(ProductStatus s) => s switch
@@ -85,10 +85,10 @@ public static class SampleUi
 
     public static string CategoryIcon(string category) => category switch
     {
-        "Hardware" => "cpu",
+        "Hardware" => "ri:cpu",
         "Software" => "code",
-        "Services" => "ant:customer-service",
-        _ => "plug",
+        "Services" => "customer-service",
+        _ => "ri:plug",
     };
 
     public static string CustomerBadge(CustomerStatus s) => s switch
@@ -139,7 +139,7 @@ public static class SampleUi
 
     /// <summary>Email side menu: folders in order with their icons.</summary>
     public static readonly (MailFolder Folder, string Icon)[] MailFolders =
-        [(MailFolder.Inbox, "mail"), (MailFolder.Sent, "send"), (MailFolder.Draft, "file-text"), (MailFolder.Starred, "star"), (MailFolder.Spam, "ant:stop"), (MailFolder.Trash, "trash")];
+        [(MailFolder.Inbox, "mail"), (MailFolder.Sent, "send"), (MailFolder.Draft, "file-text"), (MailFolder.Starred, "star"), (MailFolder.Spam, "stop"), (MailFolder.Trash, "delete")];
 
     public static MailFolder ParseFolder(string? folder) => Enum.TryParse<MailFolder>(folder, true, out var f) ? f : MailFolder.Inbox;
 
@@ -164,17 +164,17 @@ public static class SampleUi
     /// <summary>The four stat tiles above the Users list.</summary>
     public static IReadOnlyList<(string Label, string Value, string Note, string Icon, string Tone)> UserStatTiles(UserStats s) =>
     [
-        ("Total users", s.Total.ToString("N0"), "All accounts in the workspace", "users", "primary"),
-        ("Paid users", s.PaidPlans.ToString("N0"), $"{Fmt.Percent(s.PaidPlans / (double)Math.Max(1, s.Total))} on a paid plan", "user-plus", "red"),
-        ("Active users", s.Active.ToString("N0"), "Signed in during the last 30 days", "user-check", "green"),
-        ("Pending users", s.Pending.ToString("N0"), "Invited, not signed in yet", "user-x", "yellow"),
+        ("Total users", s.Total.ToString("N0"), "All accounts in the workspace", "team", "primary"),
+        ("Paid users", s.PaidPlans.ToString("N0"), $"{Fmt.Percent(s.PaidPlans / (double)Math.Max(1, s.Total))} on a paid plan", "user-add", "red"),
+        ("Active users", s.Active.ToString("N0"), "Signed in during the last 30 days", "ri:user-follow", "green"),
+        ("Pending users", s.Pending.ToString("N0"), "Invited, not signed in yet", "user-delete", "yellow"),
     ];
 
     public static string RoleIcon(string role) => role switch
     {
         "Admin" => "crown",
         "Editor" => "edit",
-        "Author" => "pencil",
+        "Author" => "edit",
         "Maintainer" => "tool",
         _ => "user",
     };

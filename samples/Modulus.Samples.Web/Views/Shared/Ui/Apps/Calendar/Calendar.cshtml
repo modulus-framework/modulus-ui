@@ -48,8 +48,8 @@
     <section class="m-app-main" aria-label="@Model.Title">
         <div class="m-cal-toolbar">
             <div class="ant-btn-group" style="display:inline-flex">
-                <a class="ant-btn ant-btn-default ant-btn-icon-only" href="@Base@Model.Query(Model.Month.AddMonths(-1))" aria-label="Previous month" title="Previous month"><app-ti name="chevron-left" /></a>
-                <a class="ant-btn ant-btn-default ant-btn-icon-only" href="@Base@Model.Query(Model.Month.AddMonths(1))" aria-label="Next month" title="Next month"><app-ti name="chevron-right" /></a>
+                <a class="ant-btn ant-btn-default ant-btn-icon-only" href="@Base@Model.Query(Model.Month.AddMonths(-1))" aria-label="Previous month" title="Previous month"><app-ti name="left" /></a>
+                <a class="ant-btn ant-btn-default ant-btn-icon-only" href="@Base@Model.Query(Model.Month.AddMonths(1))" aria-label="Next month" title="Next month"><app-ti name="right" /></a>
             </div>
             <a class="ant-btn ant-btn-default" href="@Base@Model.Query(new DateTime(today.Year, today.Month, 1))"><span>Today</span></a>
             <h2 class="m-cal-title">@Model.Title</h2>

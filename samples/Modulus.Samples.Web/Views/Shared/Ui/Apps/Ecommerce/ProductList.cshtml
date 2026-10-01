@@ -7,10 +7,10 @@
     var s = Model.Stats;
     (string Label, string Value, string Icon)[] strip =
     [
-        ("Products", s.Total.ToString("N0"), "package"),
-        ("Published", s.Published.ToString("N0"), "world"),
-        ("Low stock", s.LowStock.ToString("N0"), "alert-triangle"),
-        ("Inventory value", Fmt.Money0(s.InventoryValue), "ant:shop"),
+        ("Products", s.Total.ToString("N0"), "product"),
+        ("Published", s.Published.ToString("N0"), "global"),
+        ("Low stock", s.LowStock.ToString("N0"), "warning"),
+        ("Inventory value", Fmt.Money0(s.InventoryValue), "shop"),
     ];
 }
 <app-page-header pretitle="eCommerce" title="Products">
@@ -126,7 +126,7 @@
                                                             @@click="$store.drawer.load('@Base/form/@p.Id', 'Edit product')"><app-ti name="edit" /></button>
                                                     <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @p.Name" title="Delete"
                                                             hx-post="@Base/delete" hx-vals='{"ids": @p.Id}' hx-swap="none"
-                                                            hx-confirm="@($"Delete {p.Name}?")" data-confirm-danger data-confirm-ok="Delete"><app-ti name="trash" /></button>
+                                                            hx-confirm="@($"Delete {p.Name}?")" data-confirm-danger data-confirm-ok="Delete"><app-ti name="delete" /></button>
                                                 </div>
                                             </td>
                                         </tr>

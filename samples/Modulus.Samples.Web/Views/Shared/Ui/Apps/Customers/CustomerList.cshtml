@@ -7,10 +7,10 @@
     var s = Model.Stats;
     (string Label, string Value, string Note, string Icon, string Tone)[] tiles =
     [
-        ("Customers", s.Total.ToString("N0"), "Accounts with at least one order", "users", "primary"),
-        ("Active", s.Active.ToString("N0"), $"{Fmt.Percent(s.Active / (double)Math.Max(1, s.Total))} of all customers", "user-check", "green"),
+        ("Customers", s.Total.ToString("N0"), "Accounts with at least one order", "team", "primary"),
+        ("Active", s.Active.ToString("N0"), $"{Fmt.Percent(s.Active / (double)Math.Max(1, s.Total))} of all customers", "ri:user-follow", "green"),
         ("On trial", s.Trial.ToString("N0"), "Evaluating a paid plan", "hourglass", "azure"),
-        ("Lifetime revenue", Fmt.Money0(s.Revenue), $"{s.Churned} churned accounts", "currency-dollar", "yellow"),
+        ("Lifetime revenue", Fmt.Money0(s.Revenue), $"{s.Churned} churned accounts", "dollar", "yellow"),
     ];
 }
 <app-page-header pretitle="eCommerce" title="Customers" subtitle="Companies buying from the store, their plan and lifetime value.">
@@ -113,7 +113,7 @@
                                                 <div class="m-entity">
                                                     <span class="m-avatar m-avatar-sm m-av-@Fmt.Tint(c.Name)">@Fmt.Initials(c.Name)</span>
                                                     <div class="m-entity-text">
-                                                        <a class="m-entity-title" href="@Base/@c.Id" hx-boost="false">@c.Name</a>
+                                                        <a class="m-entity-title" href="@Base/@c.Id" hx-boost="false" data-m-page>@c.Name</a>
                                                         <span class="m-entity-desc">@c.Email</span>
                                                     </div>
                                                 </div>
@@ -125,12 +125,12 @@
                                             <td class="ant-table-cell"><span class="m-badge @SampleUi.CustomerBadge(c.Status)">@c.Status</span></td>
                                             <td class="ant-table-cell" style="text-align:right">
                                                 <div class="m-row-actions">
-                                                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="@Base/@c.Id" hx-boost="false" aria-label="View @c.Name" title="View"><app-ti name="eye" /></a>
+                                                    <a class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" href="@Base/@c.Id" hx-boost="false" data-m-page aria-label="View @c.Name" title="View"><app-ti name="eye" /></a>
                                                     <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Edit @c.Name" title="Edit"
                                                             @@click="$store.drawer.load('@Base/form/@c.Id', 'Edit customer')"><app-ti name="edit" /></button>
                                                     <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @c.Name" title="Delete"
                                                             hx-post="@Base/delete" hx-vals='{"ids": @c.Id}' hx-swap="none"
-                                                            hx-confirm="@($"Delete {c.Name}?")" data-confirm-danger data-confirm-ok="Delete"><app-ti name="trash" /></button>
+                                                            hx-confirm="@($"Delete {c.Name}?")" data-confirm-danger data-confirm-ok="Delete"><app-ti name="delete" /></button>
                                                 </div>
                                             </td>
                                         </tr>

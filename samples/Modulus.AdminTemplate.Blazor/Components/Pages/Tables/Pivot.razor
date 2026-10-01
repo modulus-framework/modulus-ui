@@ -1,0 +1,134 @@
+@page "/tables/pivot"
+@using Modulus.Ui.Abstractions.Pivot
+@inject NavigationManager Navigation
+
+<PageTitle>Pivot · Modulus</PageTitle>
+
+@* The pivot of the 100,000 shipments, as in MVC and Razor Pages (Samples.Web Views/Shared/Ui/Tables/Pivot.cshtml). The
+   layout is in the URL: AppPivotGrid's links navigate here again with a new query, and the page runs the pivot of it. *@
+<PageHeading Pretitle="Tables" Title="Pivot" Subtitle="100,000 shipments grouped in one query: click a header to open it by a field, a measure to sort by it, a value to see its shipments." />
+
+<div class="ant-card m-table-card">
+    <div class="ant-card-body">
+        <div class="m-table-toolbar">
+            <div class="m-table-toolbar-title">
+                Shipments
+                <span class="m-small m-muted">@_total.ToString("N0") matching · query @_page.QueryMs.ToString("0.0") ms</span>
+            </div>
+            <div class="m-table-toolbar-actions">
+                <Input TValue="string" Value="@_keyword" ValueChanged="KeywordChanged" BindOnInput DebounceMilliseconds="300" AllowClear MaxLength="200" Placeholder="Reference or customer…" Class="m-table-toolbar-search" Prefix="@_searchIcon" aria-label="Search shipments" />
+                @if (_status is not null || !string.IsNullOrWhiteSpace(_city) || !string.IsNullOrWhiteSpace(_keyword))
+                {
+                    <button type="button" class="ant-btn ant-btn-text m-table-clear" title="Clear the search and filters" @onclick="ClearFilters"><Ti Name="close-circle" /><span>Clear</span></button>
+                }
+            </div>
+        </div>
+        <div class="m-table-filters">
+            <Select TItemValue="ShipmentStatus?" TItem="string" Value="_status" ValueChanged="StatusChanged" Placeholder="Status" AllowClear Style="width: 160px">
+                <SelectOptions>
+                    @foreach (var s in Enum.GetValues<ShipmentStatus>())
+                    {
+                        <SelectOption TItemValue="ShipmentStatus?" TItem="string" Value="s" Label="@s.ToString()" />
+                    }
+                </SelectOptions>
+            </Select>
+            <Select TItemValue="string" TItem="string" Value="_city" ValueChanged="CityChanged" Placeholder="City" AllowClear Style="width: 160px">
+                <SelectOptions>
+                    @foreach (var c in Shipments.Cities)
+                    {
+                        <SelectOption TItemValue="string" TItem="string" Value="c" Label="@c" />
+                    }
+                </SelectOptions>
+            </Select>
+        </div>
+
+        <AppPivotGrid Id="pivot" Result="_page.Result" CellHref="_page.CellHref" DownloadHref="@PivotTablePage.DownloadHref(_query)" Label="Shipments pivot" />
+    </div>
+</div>
+
+@code {
+    // Every key the page reads, so a link that changes any of them runs the pivot again.
+    [SupplyParameterFromQuery] public string? Rows { get; set; }
+    [SupplyParameterFromQuery] public string? Cols { get; set; }
+    [SupplyParameterFromQuery] public string? Measures { get; set; }
+    [SupplyParameterFromQuery] public string[]? Rx { get; set; }
+    [SupplyParameterFromQuery] public string? Ra { get; set; }
+    [SupplyParameterFromQuery] public string[]? Cx { get; set; }
+    [SupplyParameterFromQuery] public string? Ca { get; set; }
+    [SupplyParameterFromQuery] public string? Sort { get; set; }
+    [SupplyParameterFromQuery] public string? SortCol { get; set; }
+    [SupplyParameterFromQuery] public string? Desc { get; set; }
+    [SupplyParameterFromQuery] public string? Status { get; set; }
+    [SupplyParameterFromQuery] public string? City { get; set; }
+    [SupplyParameterFromQuery] public string? Keyword { get; set; }
+
+    private PivotTablePage _page = default!;
+    private List<KeyValuePair<string, string?>> _query = [];
+    private decimal _total;
+
+    // The filter boxes show these, not the query parameters: a choice shows at once and stays while the navigation
+    // to its URL runs, instead of flicking back to the old value until the new query arrives.
+    private ShipmentStatus? _status;
+    private string? _city;
+    private string? _keyword;
+    private readonly RenderFragment _searchIcon = @<Ti Name="search" />;
+
+    protected override void OnParametersSet()
+    {
+        _query = PivotState.ReadQuery(new Uri(Navigation.Uri).Query).ToList();
+        var filter = new ShipmentFilter(Enum.TryParse<ShipmentStatus>(Status, out var s) ? s : null, City, Keyword);
+        (_status, _city, _keyword) = (filter.Status, filter.City, filter.Keyword);
+        _page = PivotTablePage.Load(filter, _query);
+        _total = _page.Result.IsEmpty ? 0 : _page.Result.Value(PivotPath.Root, PivotPath.Root, PivotQuery<Shipment>.Count) ?? 0;
+    }
+
+    // AntD Select and Search can report their value again on render; only a real change navigates (else every render
+    // would navigate, and every navigation render again: the page would reload without end).
+    private void StatusChanged(ShipmentStatus? value)
+    {
+        if (value == _status) return;
+        _status = value;
+        Go("status", value?.ToString());
+    }
+
+    private void CityChanged(string? value)
+    {
+        if (Same(value, _city)) return;
+        _city = value;
+        Go("city", value);
+    }
+
+    private void KeywordChanged(string? value)
+    {
+        if (Same(value, _keyword)) return;
+        _keyword = value;
+        Go("keyword", value);
+    }
+
+    /// <summary>Drops the search and filters and keeps the pivot's layout.</summary>
+    private void ClearFilters()
+    {
+        (_status, _city, _keyword) = (null, null, null);
+        Navigate(Kept(q => q is not ("status" or "city" or "keyword")));
+    }
+
+    /// <summary>Changes one filter and keeps everything else (the pivot's layout too).</summary>
+    private void Go(string key, string? value)
+    {
+        var query = Kept(q => q != key);
+        if (!string.IsNullOrWhiteSpace(value)) query.Add(new(key, value));
+        Navigate(query);
+    }
+
+    private List<KeyValuePair<string, string>> Kept(Func<string, bool> keep) =>
+        _query.Where(q => keep(q.Key) && !string.IsNullOrEmpty(q.Value)).Select(q => new KeyValuePair<string, string>(q.Key, q.Value!)).ToList();
+
+    private void Navigate(List<KeyValuePair<string, string>> query)
+    {
+        var url = PivotTablePage.Path + (query.Count == 0 ? "" : "?" + PivotState.Encode(query));
+        if (Navigation.ToAbsoluteUri(url) != new Uri(Navigation.Uri)) Navigation.NavigateTo(url);
+    }
+
+    private static bool Same(string? a, string? b) =>
+        string.Equals(string.IsNullOrWhiteSpace(a) ? null : a.Trim(), string.IsNullOrWhiteSpace(b) ? null : b.Trim(), StringComparison.Ordinal);
+}

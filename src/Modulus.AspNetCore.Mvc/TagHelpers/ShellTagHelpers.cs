@@ -4,12 +4,16 @@ using Modulus.Ui.Abstractions.Shell;
 
 namespace Modulus.AspNetCore.Mvc.TagHelpers;
 
-// Tabler page pieces and the multi-series charts. Markup comes from the same renderers the Blazor
+// Named icons, the page header and the multi-series charts. Markup comes from the same renderers the Blazor
 // components use (ShellRenderer, ChartHtml), so both flavors output identical HTML.
 
-/// <summary>Tabler outline icon: <c>&lt;app-ti name="users" /&gt;</c>.</summary>
+/// <summary>
+/// Named icon: <c>&lt;app-ti name="team" /&gt;</c>. Draws an Ant Design outline icon inline, the way the shell draws its
+/// icons (<see cref="ShellRenderer.Icon"/>; <c>ri:</c> names are the Remix Icon fallbacks). For an Ant Design icon with
+/// a theme, spin or rotation, use <c>&lt;app-icon&gt;</c>.
+/// </summary>
 [HtmlTargetElement("app-ti", TagStructure = TagStructure.WithoutEndTag)]
-public class TablerIconTagHelper : TagHelper
+public class NamedIconTagHelper : TagHelper
 {
     public string Name { get; set; } = "";
 

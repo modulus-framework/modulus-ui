@@ -1,0 +1,52 @@
+@model PivotTablePage
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Modulus.Ui.Abstractions.Pivot
+@using Modulus.AspNetCore.Mvc.TagHelpers
+@{
+    var filter = Model.Filter;
+    var query = Context.Request.Query.SelectMany(q => q.Value.Select(v => new KeyValuePair<string, string?>(q.Key, v))).ToList();
+    // Clear drops the search and filters and keeps the layout; it shows only while one is set.
+    var clearHref = filter.IsEmpty ? null : PivotState.Link(PivotTablePage.Path, query.Where(q => q.Key is not ("status" or "city" or "keyword")), Model.Result.State);
+    var total = Model.Result.IsEmpty ? 0 : Model.Result.Value(PivotPath.Root, PivotPath.Root, PivotQuery<Shipment>.Count) ?? 0;
+}
+<app-page-header pretitle="Tables" title="Pivot" subtitle="100,000 shipments grouped in one query: click a header to open it by a field, a measure to sort by it, a value to see its shipments." />
+
+@* Every control of the pivot is a link to its next layout; the boost swaps this area only, and the URL keeps the layout
+   (back and forward step through it). *@
+<div id="pivot-page" class="m-row-cards"
+     hx-boost="true" hx-target="#pivot-page" hx-select="#pivot-page" hx-swap="outerHTML show:none" hx-push-url="true" hx-sync="#pivot-page:replace">
+    <div class="ant-card m-table-card">
+        <div class="ant-card-body">
+            <div class="m-table-toolbar">
+                <div class="m-table-toolbar-title">
+                    Shipments
+                    <span class="m-small m-muted">@total.ToString("N0") matching · query @Model.QueryMs.ToString("0.0") ms</span>
+                </div>
+                <div class="m-table-toolbar-actions">
+                    <span class="m-table-toolbar-search ant-input-affix-wrapper">
+                        <span class="ant-input-prefix"><app-ti name="search" /></span>
+                        <input id="pivot-keyword" class="ant-input" type="search" name="keyword" value="@filter.Keyword" maxlength="200" autocomplete="off"
+                               placeholder="Reference or customer…" aria-label="Search shipments" form="pivot-filter"
+                               @@input.debounce.300ms="$el.form.requestSubmit()" />
+                    </span>
+                    @if (clearHref is not null)
+                    {
+                        @Html.Raw(TableSettingsTagHelper.ClearButton(clearHref))
+                    }
+                </div>
+            </div>
+
+            @* The filters keep the layout: the pivot's own query values ride along as hidden inputs. *@
+            <form id="pivot-filter" class="m-table-filters" method="get" action="@PivotTablePage.Path" @@change="$el.requestSubmit()">
+                <app-select name="status" items="Enum.GetValues<ShipmentStatus>().Select(v => new SelectListItem(v.ToString(), v.ToString(), v == filter.Status))" placeholder="Status" aria-label="Status" />
+                <app-select name="city" items="Shipments.Cities.Select(c => new SelectListItem(c, c, c == filter.City))" placeholder="City" aria-label="City" />
+                @foreach (var (key, value) in Model.Result.State.ToQuery())
+                {
+                    <input type="hidden" name="@key" value="@value" />
+                }
+            </form>
+
+            <app-pivot-grid id="pivot" result="Model.Result" cell-href="Model.CellHref" download-href="@PivotTablePage.DownloadHref(query)" label="Shipments pivot" />
+        </div>
+    </div>
+</div>

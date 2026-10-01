@@ -47,19 +47,19 @@
     <div class="m-row-cards" style="align-content:start">
         @if (jobs.Count == 0)
         {
-            <div class="m-card"><div class="m-empty"><span class="m-empty-icon"><app-ti name="briefcase" /></span><p class="m-empty-title">No positions match</p><p class="m-empty-subtitle">Try fewer filters, or check back soon — we post new roles every week.</p><a class="ant-btn ant-btn-default" href="/extra/jobs"><span>Clear filters</span></a></div></div>
+            <div class="m-card"><div class="m-empty"><span class="m-empty-icon"><app-ti name="ri:briefcase" /></span><p class="m-empty-title">No positions match</p><p class="m-empty-subtitle">Try fewer filters, or check back soon — we post new roles every week.</p><a class="ant-btn ant-btn-default" href="/extra/jobs"><span>Clear filters</span></a></div></div>
         }
         @foreach (var j in jobs)
         {
             <div class="m-card">
                 <div class="m-card-body m-job">
-                    <span class="m-icon-tile m-tile-lg m-tile-@(SampleUi.Tone(Fmt.Tint(j.Department)))-lt"><app-ti name="briefcase" /></span>
+                    <span class="m-icon-tile m-tile-lg m-tile-@(SampleUi.Tone(Fmt.Tint(j.Department)))-lt"><app-ti name="ri:briefcase" /></span>
                     <div class="m-grow" style="min-width:0">
                         <a class="m-job-title" href="/extra/jobs?q=@Uri.EscapeDataString(j.Title)">@j.Title</a>@if (j.Featured) {<span class="m-badge m-badge-primary-lt m-ml-8">Featured</span>}
                         <div class="m-job-meta">
-                            <span><app-ti name="building" />@j.Department</span>
-                            <span><app-ti name="map-pin" />@j.Location</span>
-                            <span><app-ti name="clock" />@j.Type</span>
+                            <span><app-ti name="ri:building" />@j.Department</span>
+                            <span><app-ti name="environment" />@j.Location</span>
+                            <span><app-ti name="clock-circle" />@j.Type</span>
                         </div>
                         <div class="m-tag-list m-mt-8">
                             @foreach (var t in j.Tags)

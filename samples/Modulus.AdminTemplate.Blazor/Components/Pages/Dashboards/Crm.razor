@@ -5,8 +5,8 @@
 
 <PageHeading Pretitle="Dashboards" Title="CRM">
     <Actions>
-        <a class="ant-btn ant-btn-default" href="/apps/customers"><Ti Name="users" /><span>Customers</span></a>
-        <a class="ant-btn ant-btn-primary" href="/apps/calendar"><Ti Name="calendar-plus" /><span>Schedule meeting</span></a>
+        <a class="ant-btn ant-btn-default" href="/apps/customers"><Ti Name="team" /><span>Customers</span></a>
+        <a class="ant-btn ant-btn-primary" href="/apps/calendar"><Ti Name="calendar" /><span>Schedule meeting</span></a>
     </Actions>
 </PageHeading>
 
@@ -18,7 +18,7 @@
                 <div class="m-card-body">
                     <div class="m-kpi-head">
                         <span class="m-subheader">@k.Label</span>
-                        <span class="m-delta @(k.Delta >= 0 ? "m-delta-up" : "m-delta-down")" style="margin-left:auto">@Fmt.Delta(k.Delta) <Ti Name="@(k.Delta >= 0 ? "trending-up" : "trending-down")" /></span>
+                        <span class="m-delta @(k.Delta >= 0 ? "m-delta-up" : "m-delta-down")" style="margin-left:auto">@Fmt.Delta(k.Delta) <Ti Name="@(k.Delta >= 0 ? "trending-up" : "fall")" /></span>
                     </div>
                     <div class="m-kpi-value"><span class="m-h1">@k.Value</span></div>
                     <div class="m-kpi-foot">@k.Note</div>
@@ -129,7 +129,7 @@
                         <li class="m-list-item">
                             <span class="m-avatar m-avatar-sm m-avatar-rounded m-country">@c.Code</span>
                             <div class="m-list-item-text"><span class="m-list-item-title">@Fmt.Money0(c.Sales)</span><span class="m-list-item-sub">@c.Country</span></div>
-                            <span class="m-delta @(c.Change >= 0 ? "m-delta-up" : "m-delta-down")"><Ti Name="@(c.Change >= 0 ? "chevron-up" : "chevron-down")" />@Math.Abs(c.Change).ToString("0.0")%</span>
+                            <span class="m-delta @(c.Change >= 0 ? "m-delta-up" : "m-delta-down")"><Ti Name="@(c.Change >= 0 ? "chevron-up" : "down")" />@Math.Abs(c.Change).ToString("0.0")%</span>
                         </li>
                     }
                 </ul>
@@ -147,7 +147,7 @@
                         <li class="m-list-item">
                             <div class="m-date-tile"><span class="m-date-tile-month">@m.At.ToString("MMM")</span><span class="m-date-tile-day">@m.At.Day</span></div>
                             <div class="m-list-item-text"><span class="m-list-item-title">@m.Title</span><span class="m-list-item-sub">@m.With</span></div>
-                            <span class="m-badge"><Ti Name="clock" />@Fmt.Time(m.At)</span>
+                            <span class="m-badge"><Ti Name="clock-circle" />@Fmt.Time(m.At)</span>
                         </li>
                     }
                 </ul>

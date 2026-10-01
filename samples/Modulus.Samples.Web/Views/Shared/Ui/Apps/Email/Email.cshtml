@@ -11,7 +11,7 @@
     <div hidden hx-get="@current" hx-trigger="mail:refresh from:body" hx-push-url="false"></div>
     <aside class="m-app-side">
         <div class="m-app-side-head">
-            <button type="button" class="ant-btn ant-btn-primary ant-btn-block" @@click="$store.drawer.load('@Base/compose', 'Compose mail', 560)"><app-ti name="pencil" /><span>Compose</span></button>
+            <button type="button" class="ant-btn ant-btn-primary ant-btn-block" @@click="$store.drawer.load('@Base/compose', 'Compose mail', 560)"><app-ti name="edit" /><span>Compose</span></button>
         </div>
         <nav class="m-app-side-body" aria-label="Mail folders">
             <ul class="m-app-nav">
@@ -53,12 +53,12 @@
                 <form method="post" action="@Base/move@(Model.Scope)" asp-antiforgery="true" hx-boost="false" class="m-flex">
                     <input type="hidden" name="ids" value="@m.Id" />
                     <input type="hidden" name="to" value="@(m.Folder == MailFolder.Spam ? "Inbox" : "Spam")" />
-                    <button type="submit" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")" title="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")"><app-ti name="ant:stop" /></button>
+                    <button type="submit" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")" title="@(m.Folder == MailFolder.Spam ? "Not spam" : "Report spam")"><app-ti name="stop" /></button>
                 </form>
                 <form method="post" action="@Base/move@(Model.Scope)" asp-antiforgery="true" hx-boost="false" class="m-flex">
                     <input type="hidden" name="ids" value="@m.Id" />
                     <input type="hidden" name="to" value="Trash" />
-                    <button type="submit" class="ant-btn ant-btn-text ant-btn-icon-only m-danger-hover" aria-label="@(m.Folder == MailFolder.Trash ? "Delete forever" : "Move to trash")" title="@(m.Folder == MailFolder.Trash ? "Delete forever" : "Move to trash")"><app-ti name="trash" /></button>
+                    <button type="submit" class="ant-btn ant-btn-text ant-btn-icon-only m-danger-hover" aria-label="@(m.Folder == MailFolder.Trash ? "Delete forever" : "Move to trash")" title="@(m.Folder == MailFolder.Trash ? "Delete forever" : "Move to trash")"><app-ti name="delete" /></button>
                 </form>
             </div>
             <div class="m-app-scroll">
@@ -91,13 +91,13 @@
                         <div class="m-mail-attachments">
                             @foreach (var a in m.Attachments)
                             {
-                                <a class="m-mail-attachment" href="#" hx-boost="false" @@click.prevent><app-ti name="paperclip" /><span class="m-medium">@a.Name</span><span class="m-xsmall m-muted">@a.Size</span></a>
+                                <a class="m-mail-attachment" href="#" hx-boost="false" @@click.prevent><app-ti name="paper-clip" /><span class="m-medium">@a.Name</span><span class="m-xsmall m-muted">@a.Size</span></a>
                             }
                         </div>
                     }
                     <div class="m-flex m-gap-8 m-mt-24">
-                        <button type="button" class="ant-btn ant-btn-default" @@click="$store.drawer.load('@Base/compose?reply=@m.Id', 'Reply', 560)"><app-ti name="arrow-back-up" /><span>Reply</span></button>
-                        <button type="button" class="ant-btn ant-btn-default" @@click="$store.drawer.load('@Base/compose?forward=@m.Id', 'Forward', 560)"><app-ti name="arrow-forward-up" /><span>Forward</span></button>
+                        <button type="button" class="ant-btn ant-btn-default" @@click="$store.drawer.load('@Base/compose?reply=@m.Id', 'Reply', 560)"><app-ti name="undo" /><span>Reply</span></button>
+                        <button type="button" class="ant-btn ant-btn-default" @@click="$store.drawer.load('@Base/compose?forward=@m.Id', 'Forward', 560)"><app-ti name="redo" /><span>Forward</span></button>
                     </div>
                 </article>
             </div>
@@ -118,16 +118,16 @@
                 <app-checkbox aria-label="Select all messages" data-select-all @@change="toggleAll($event.target.checked)" />
                 <div class="m-flex m-gap-8" x-show="count > 0" x-cloak>
                     <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Mark as read" title="Mark as read"
-                            hx-post="@Base/read" hx-vals='{"read": true}' hx-include="#mail-list input[name='ids']:checked" hx-swap="none"><app-ti name="mail-opened" /></button>
+                            hx-post="@Base/read" hx-vals='{"read": true}' hx-include="#mail-list input[name='ids']:checked" hx-swap="none"><app-ti name="ri:mail-open" /></button>
                     <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Mark as unread" title="Mark as unread"
                             hx-post="@Base/read" hx-vals='{"read": false}' hx-include="#mail-list input[name='ids']:checked" hx-swap="none"><app-ti name="mail" /></button>
                     <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-danger-hover" aria-label="@(inTrash ? "Delete forever" : "Move to trash")" title="@(inTrash ? "Delete forever" : "Move to trash")"
                             hx-post="@Base/move" hx-vals='{"to": "Trash"}' hx-include="#mail-list input[name='ids']:checked" hx-swap="none"
-                            @(inTrash ? "hx-confirm=\"Delete the selected messages forever?\" data-confirm-danger data-confirm-ok=\"Delete\"" : "")><app-ti name="trash" /></button>
+                            @(inTrash ? "hx-confirm=\"Delete the selected messages forever?\" data-confirm-danger data-confirm-ok=\"Delete\"" : "")><app-ti name="delete" /></button>
                 </div>
                 <span class="m-spacer"></span>
                 <span class="m-small m-muted">@Model.Messages.Count @(Model.Messages.Count == 1 ? "message" : "messages")</span>
-                <a class="ant-btn ant-btn-text ant-btn-icon-only" href="@current" aria-label="Refresh" title="Refresh"><app-ti name="refresh" /></a>
+                <a class="ant-btn ant-btn-text ant-btn-icon-only" href="@current" aria-label="Refresh" title="Refresh"><app-ti name="reload" /></a>
             </div>
             <div class="m-app-scroll" id="mail-list">
                 @if (Model.Messages.Count == 0)
@@ -150,7 +150,7 @@
                             {
                                 <span class="m-app-dot" style="--c:@SampleUi.LabelColor(label)" title="@label"></span>
                             }
-                            @if (msg.Attachments.Count > 0) { <app-ti name="paperclip" /> }
+                            @if (msg.Attachments.Count > 0) { <app-ti name="paper-clip" /> }
                             <time datetime="@msg.At.ToString("o")">@(msg.At.Date == DateTime.Today ? Fmt.Time(msg.At) : msg.At.ToString("MMM d"))</time>
                         </span>
                     </div>

@@ -39,8 +39,8 @@
     <section class="m-app-main" aria-label="@_view.Title">
         <div class="m-cal-toolbar">
             <div class="ant-btn-group" style="display:inline-flex">
-                <button type="button" class="ant-btn ant-btn-default ant-btn-icon-only" aria-label="Previous month" title="Previous month" @onclick="() => Go(_month.AddMonths(-1))"><Ti Name="chevron-left" /></button>
-                <button type="button" class="ant-btn ant-btn-default ant-btn-icon-only" aria-label="Next month" title="Next month" @onclick="() => Go(_month.AddMonths(1))"><Ti Name="chevron-right" /></button>
+                <button type="button" class="ant-btn ant-btn-default ant-btn-icon-only" aria-label="Previous month" title="Previous month" @onclick="() => Go(_month.AddMonths(-1))"><Ti Name="left" /></button>
+                <button type="button" class="ant-btn ant-btn-default ant-btn-icon-only" aria-label="Next month" title="Next month" @onclick="() => Go(_month.AddMonths(1))"><Ti Name="right" /></button>
             </div>
             <button type="button" class="ant-btn ant-btn-default" @onclick="() => Go(new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1))"><span>Today</span></button>
             <h2 class="m-cal-title">@_view.Title</h2>

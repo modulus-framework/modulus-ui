@@ -3,7 +3,7 @@
 The plan for the Modulus UI admin template and where each piece stands. Update the status tables in the same commit
 as the work they describe.
 
-Last updated: 2026-09-30 · `main` at `a9820c3` + uncommitted grid and menu work, row drag and drop, Plugins batches 1 and 2, reference pages, localization, sign-in and packaging (written, not yet built or run) · CI red until the culture-test fix is pushed (see §5)
+Last updated: 2026-10-01 · `main` at `9605901` + uncommitted PivotGrid (written, not yet built or run) · the Modulus 2.0 roadmap is in §7
 
 **Legend:** ✅ done and verified · 🟡 in progress · ⬜ not started · ❌ failing · ➖ not applicable
 
@@ -42,7 +42,7 @@ Details are in [DESIGN.md](DESIGN.md).
 - **Shared code:** data, validation and page logic used by all three samples live in `Modulus.Samples.Shared`.
 - **Styling and icons:**
   - Styling uses AntD v4 CSS with a refresh layer: `modulus.css`, `modulus-pages.css` and `modulus-shell.css`.
-  - Icons come from a Tabler SVG sprite (`app-ti` / `Ti`).
+  - Icons are Ant Design icons drawn inline (`app-ti` / `Ti` take an Ant Design icon name; `ri:` Remix Icon names for the few Ant Design lacks).
 
 ## 3. Phases
 
@@ -66,6 +66,10 @@ Details are in [DESIGN.md](DESIGN.md).
 | 16 | Pro: M3 Fluid (Liquid) — `Modulus.AspNetCore.Fluid`, tag expander, Liquid layout, sample on 5103 | ⬜ |
 | 17 | Pro: M4 hardening — error policy, CSP nonce, compression and caching, observability | ⬜ |
 | 18 | Pro: M5 quality gates — parity snapshots, Playwright flows, performance budgets in CI | ⬜ |
+| 19 | 2.0: PivotGrid in the manner of Odoo's pivot view — `PivotQuery`/`PivotState`/`PivotResult`/`PivotHtml`/`PivotXlsx`, `AppPivotGrid`, `app-pivot-grid`, `/tables/pivot` (written, not yet built or run; see §7.1) | 🟡 |
+| 20 | 2.0: Spreadsheet (engine and licence decision first), with the widget init/destroy registry it needs (§7.2) | ⬜ |
+| 21 | 2.0: Document templates on Fluid (after phase 16), then Document Processing: PDF, Word and Excel output (§7.2) | ⬜ |
+| 22 | 2.0: User state — `IUiStateStore`, saved views (grid and pivot layouts), permission-aware columns (§7.2) | ⬜ |
 
 ## 4. Page inventory
 
@@ -131,6 +135,7 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 | Editable grid (schema-driven columns, in-place editors, expandable rows, pinned columns, add/remove columns) | `/tables/editable` | ✅ | ✅ | ✅ |
 | Nested grid (lazy child levels, per-level columns, 1–4 levels) | `/tables/nested` | ✅ | ✅ | ✅ |
 | Large data (100,000 rows: pages, infinite scroll, virtual table; `TableQuery`) — written, not yet built or run | `/tables/large` | 🟡 | 🟡 | 🟡 |
+| Pivot (Odoo pivot view over the 100,000 shipments: header group-bys with date intervals, Measures, Flip axis, Expand all, Download xlsx, sort by a measure, drill-down to Large data) — written, not yet built or run | `/tables/pivot`, `/tables/pivot/download` | 🟡 | 🟡 | 🟡 |
 
 ### Extra (Tabler extra pages)
 
@@ -209,8 +214,10 @@ Menu group *Plugins* in `AdminMenuContributor` (Data, Inputs, Interface), with o
 | Route sweep, dark mode | Same, with the dark theme | ✅ 44 × 3 (2026-09-27); the 22 `/extra/*` routes × 3 on 2026-09-28 |
 | Page scrolling | Mouse-wheel scroll on long pages; the page locks only while the drawer is open | ✅ all three samples |
 | Visual parity | Screenshot diff of Blazor vs MVC and Razor Pages at 1440 px | ✅ identical or accepted diffs only |
-| Icons | Every rendered `<use>` resolves in `tabler.svg` | ✅ 146 of 146 |
+| Icons | Every bundled icon draws an SVG, Tabler names draw nothing (`ShellIcon_EveryBundledIcon_DrawsAnInlineSvg`) | 🟡 written, not yet run |
 | CSV export | Same bytes and headers from all three samples | ✅ |
+| Pivot | `PivotTests` (state round trip, expand/collapse/flip/expand all, totals = LINQ sums, averages and maxima, `MaxGroups`, only open headers read, date labels, sort, markup, bUnit parity, xlsx, SQL `GROUP BY`s with parameters via EF Core `ToQueryString`) and `PivotTagHelperTests` (MVC = Blazor markup, `PivotState.Link`) | 🟡 written, not yet run |
+| Pivot download | The xlsx from all three samples opens in Excel and LibreOffice, with merged headers and bold totals | ⬜ |
 
 **Accepted visual differences:** these come from the controls, not the markup.
 - Text rendering in a native `<select>` vs an AntD `Select`.
@@ -238,10 +245,81 @@ Menu group *Plugins* in `AdminMenuContributor` (Data, Inputs, Interface), with o
 | NuGet packaging and versioning: `src/Directory.Build.props` (one `VersionPrefix`, SourceLink, symbols, README), other projects not packable; CI packs `-ci.<run>` prereleases as the `packages` artifact | Release | 🟡 written |
 | Nested menus organised like Odoo: navbar dropdowns are one narrow column with bold section headings (entries indented under them) and groups inside a section folding open in place; sidebar groups nest as folding branches, to any depth, instead of the multi-column dropdown. Every sample page belongs to a launcher app (Plugins and Extra added), so the current-app bar never falls back to the whole menu | Shell | 🟡 written |
 
-## 7. Change log
+## 7. Modulus 2.0 roadmap
+
+From the "Modulus 2.0" proposal reviewed on 2026-09-30. The proposal fits the framework (one renderer for Blazor and
+MVC, state in the URL, `[data-m-*]` roots started by `modulus-plugins.js`), but it was not adopted as written. This
+section is the to-do list: what is done, what is left, and what was dropped and why.
+
+### 7.1 PivotGrid (phase 19), written 2026-10-01, not yet built or run
+
+| Item | Where | Status |
+|---|---|---|
+| Registered fields and measures; one grouped query per row depth × column depth that has open headers, filtered to them (Odoo's way: closed headers are not read); `MaxGroups` cap over what shows | `Ui.Abstractions/Pivot/PivotQuery.cs`, `PivotResult.cs` | 🟡 written |
+| State in the query string (`rows`, `cols`, `measures`, `rx`/`ra`, `cx`/`ca`, `sort`, `sortcol`, `desc`); expand, expand by, collapse, flip, expand all, measures, sort; `PivotState.Link` keeps the page's own query values | `PivotState.cs` | 🟡 written |
+| Shared markup: toolbar, nested column headers, indented row headers, group-by dropdowns with a date-interval submenu, sortable measure headers, drill-down links, empty and too-many-groups states | `PivotHtml.cs` | 🟡 written |
+| xlsx download without a library (SpreadsheetML in a zip) | `PivotXlsx.cs` | 🟡 written |
+| Blazor `AppPivotGrid`, MVC `<app-pivot-grid>` | `Modulus.Blazor/Components/Pro/AppPivotGrid.razor`, `TagHelpers/PivotTagHelpers.cs` | 🟡 written |
+| Header dropdowns float out of the scrolling table: `modulus-shell.js` calls `placeDropdown` when a `details.m-dropdown` with a `.m-dropdown-panel` opens (and again when a date submenu opens) | `modulus-shell.js` | 🟡 written |
+| Busy state and scroll: a pivot link marks the pivot `m-pivot-busy` (a bar runs along the table, values fade) until the new markup replaces it; the table's scroll position and the page's scroll survive the replacement; MVC swaps with `show:none` | `modulus-shell.js`, `Views/Shared/Ui/Tables/Pivot.cshtml` | 🟡 written |
+| Pivot CSS (toolbar button group, table scrolling inside the card with sticky column and row headers, shaded row headers and totals, row hover, open menus above the sticky headers, indents) | `modulus-pages.css` *Pivot table* | 🟡 written |
+| Blazor filters without flicker: the Status, City and keyword boxes show their value at once instead of reverting until the navigation lands; Blazor `/tables/large` reads `?status=&city=&keyword=` and gets the City select and search MVC has, so the Blazor pivot drills down too (`CellHref`) | Blazor `Pages/Tables/Pivot.razor`, `Large.razor` | 🟡 written |
+| Sample `/tables/pivot` and `/tables/pivot/download` in all three apps; menu *Tables → Pivot* | `Samples.Shared/ShipmentPivot.cs`, `Views/Shared/Ui/Tables/Pivot.cshtml`, `TablesController`, `Pages/Tables/Pivot.cshtml`, Blazor `Pages/Tables/Pivot.razor` + `Program.cs` | 🟡 written |
+| Tests | `tests/Modulus.Blazor.Tests/PivotTests.cs`, `tests/Modulus.AspNetCore.Mvc.Tests/PivotTagHelperTests.cs` | 🟡 written |
+
+**Still to do or to check for the PivotGrid**
+1. ⬜ Build with 0 warnings and run the tests: `dotnet build Modulus.slnx -c Release`, `dotnet test --solution Modulus.slnx`, `dotnet run --project tools/antd-drift`.
+2. ⬜ Check that the `Microsoft.EntityFrameworkCore.SqlServer` test pin (`10.0.12` in `Directory.Packages.props`) exists on NuGet; change the version if not.
+3. ⬜ EF Core translation (`Queries_TranslateToGroupBysInSql_WithTheOpenHeadersAsParameters`): confirm that the `PivotKey` member-init key (also the empty key of the grand-total query), the open-header filters, the enum `long` casts and `DateOnly.DayNumber` (the week interval) translate. If the empty key does not, group the grand total by a constant instead. If `DayNumber` does not, give `PivotQuery.Date` a provider-neutral week key or drop Week for databases.
+4. 🟡 Blazor drill-down: written (Blazor Large reads its filters from the query; the pivot passes `CellHref`). Check that a value opens `/tables/large` filtered, in Pages and Virtual mode, and that back returns to the same pivot layout.
+   - Also check the busy bar: it clears on every link (the 15 s timer is only a fallback for a render that changed nothing), and the table keeps its scroll after expanding a header far down or to the right.
+5. ⬜ Blazor download link: confirm the interactive router does not intercept the `download` anchor (it carries `download` and `data-enhance-nav="false"`).
+6. ⬜ Route sweep of `/tables/pivot` on 5100, 5101 and 5102. Check:
+   - Header actions: expand, collapse, flip, expand all, measures, sort.
+   - Back and forward.
+   - The keyword and filters keep the layout.
+   - At 390 px: the toolbar wraps, the table scrolls and the row headers stay sticky.
+   - Dark mode.
+   - The header dropdown is not clipped by the table.
+7. ⬜ Screenshot parity, Blazor vs MVC at 1440 px (`/tables/pivot`).
+8. ⬜ Open the downloaded xlsx in Excel and LibreOffice.
+9. ⬜ README: add the pivot to the feature list and `app-pivot-grid` to the tag-helper table.
+10. ⬜ Later, only if asked (Odoo has these; the first cut does not): a "Compare" period, the graph view switch, "Insert in spreadsheet", per-user saved layouts (needs §7.2 `IUiStateStore`).
+
+### 7.2 The rest of the proposal
+
+| Proposal item | Decision | Status |
+|---|---|---|
+| Spreadsheet (formulas, multi-sheet, xlsx in and out) | Do after PivotGrid. Decide the engine and licence first: Handsontable and HyperFormula are not free for commercial use. Look at permissive engines (e.g. Jspreadsheet CE, Fortune-sheet) or a server-side formula engine. Its init/destroy goes through the widget registry below. | ⬜ |
+| Widget registry (`init`/`destroy` per `[data-m-*]` root) | Build it together with the Spreadsheet, not on its own. Today only Quill and jsVectorMap hold instances, and the `modulus-plugins.js` MutationObserver already starts and stops roots. | ⬜ |
+| Document templates and Document Processing (PDF, Word, Excel output, mail merge) | After Fluid (phase 16): templates in Liquid, rendered to HTML, then to PDF or DOCX. Pick the PDF engine (and its licence) at that point. | ⬜ |
+| `IUiStateStore` and saved views | A small store interface in `Ui.Abstractions` (per user, per page key), with a cookie default and a database sample. Saved views for the data table, editable grid and pivot. The pivot's state is already one query string, so a saved view is a named URL. | ⬜ |
+| Permission-aware columns | Filter columns and pivot fields with a policy callback (`Func<string, bool>` or `IAuthorizationService`) before rendering and before querying; never trust the query string. | ⬜ |
+| `DEPENDENCIES.md` | One page listing every vendored script (htmx, Alpine, Leaflet, Quill, jsVectorMap) and NuGet package, with its version, its licence and why it is used. | ⬜ |
+| Architecture rules (proposal §48) | Adopted in DESIGN.md *Component architecture rules*, adapted: rule 6 uses the `modulus-plugins.js` observer, not htmx `afterSwap`. | ✅ written |
+| htmx `afterSwap` lifecycle | Dropped: the MutationObserver in `modulus-plugins.js` already covers htmx swaps, Blazor renders and SPA navigation. | ➖ |
+| Package renames and a JS folder restructure | Dropped: no gain for the cost of breaking every consumer. Revisit only at a major version. | ➖ |
+| `IModulusPlugin` registry | Dropped for now: plugins are plain components and tag helpers, and a registry adds indirection without a use case. | ➖ |
+| Choosing the aggregation per request | Dropped: each measure has one fixed aggregate (`PivotAggregate`), like Odoo's field `aggregator`. Anything else lets the URL pick work the server did not plan for. | ➖ |
+
+**Order of work:**
+1. Finish §7.1 (build, tests, sweep).
+2. Stabilise the 🟡 work in §3–§6.
+3. Spreadsheet, with the widget registry.
+4. Fluid (phase 16).
+5. Document templates.
+6. Document Processing.
+
+`IUiStateStore` and saved views can start any time after §7.1.
+
+## 8. Change log
 
 | Date | Change |
 |---|---|
+| 2026-10-01 | Clear button fixed and added (written, not yet built or run). `<app-table-settings clear-href>` showed Clear on every list and reloaded the whole page: Razor passes `clear-href="@null"` to a string property as `""`, so the button always rendered, with an empty link htmx doesn't boost. Empty now means no button (also for `reload-href`). Pivot (MVC, Razor Pages, Blazor) and Blazor Large data now have the same Clear while a search or filter is set; on the pivot it keeps the layout. |
+| 2026-10-01 | Full-screen button in the header of all three samples (`ShellRenderer` `[data-m-fullscreen]`, `modulus-shell.js`): the whole app goes full screen through the browser's Fullscreen API, the icon and label follow the state (also after Escape), and the button hides where the browser has no such API (iPhone Safari). Full screen survives navigation in MVC and Razor Pages: the sample pager's page size (`select[data-m-nav-select]`) and the lists' row links to other pages (`a[data-m-page]`, followed by `modulus-spa.js` as page navigations) no longer load a whole page, and after any whole page load (a sign-in, a tenant switch, a form post) the next click or key press goes back to full screen (browsers end it on every page load and only a user gesture may start it). Blazor Pivot and Large data use the same search box as the other lists (an input with a search icon, searching as you type) instead of AntD Search with its button; an AntD Search in a table toolbar now matches the toolbar's height. Written, not yet built or run. |
+| 2026-10-01 | PivotGrid in the manner of Odoo's pivot view (written, not yet built or run; open items in §7.1). `PivotQuery<T>` (in `Modulus.Ui.Abstractions.Pivot`) registers the fields to group by (text, enum, and date by year, quarter, month, week or day) and the measures (sum, average, min, max; count is built in). As in Odoo it reads only what shows: one `GroupBy` per row depth × column depth that has open headers, filtered to the records under them, so a collapsed header costs one group. Every total comes from the database (averages as sum/count), capped by `MaxGroups`. `PivotState` keeps the whole layout in the query string, and every control is a link to the next state. A header opens on the next group-by or offers the unused ones (a date gets an interval submenu). A collapse drops unused group-bys, as in Odoo. The toolbar has Flip axis, Expand all and Measures, and a measure column sorts the rows. `PivotHtml` draws the table for both `AppPivotGrid` (Blazor) and `<app-pivot-grid>` (MVC), and `PivotXlsx` writes the download with no library. Sample `/tables/pivot` in all three apps over the 100,000 shipments, with drill-down to `/tables/large` (Blazor Large now reads its filters from the URL too). Header dropdowns now float out of scrolling boxes, and a pivot link shows a busy bar and keeps the table's scroll (`modulus-shell.js`). The Blazor filter boxes no longer flick back while their navigation runs. Tests in `PivotTests` and `PivotTagHelperTests`; EF Core SqlServer is a new test-only package that checks the SQL. The rest of the 2.0 proposal is planned in §7. |
+| 2026-09-30 | Icons are Ant Design only (written, not yet built or run). The Tabler sprite (`tabler.svg`) and `tools/tabler-icons` are gone. `ShellRenderer.Icon`, `<Ti>` and `<app-ti>` keep their names and markup but take an Ant Design icon name and draw it inline; every page, menu item, app, link and sample record was renamed from its Tabler name (`users` → `team`, `settings` → `setting`, `x` → `close`, `ant:` prefixes dropped), and a Tabler name now draws an empty icon. Six Ant Design icons newer than AntDesign 1.6.2 (moon, sun, truck, signature, product, x, from `@ant-design/icons-svg` 4.4.2) and 82 Remix Icon 4.9.1 fallbacks (`ri:` names: brands such as Visa, PayPal, Figma; fingerprint, cookie, plug, weather, media) are bundled in `ExtraIconSvg.g.cs`, generated by `tools/icons/build.sh` from `tools/icons/remix.txt`. The `app-ti` tag helper class is now `NamedIconTagHelper` (`ShellTagHelpers.cs`). CSS: `.m-ti` is a filled glyph (the stroke rules are gone). The search palette copies an icon by its `data-m-icon` name. |
 | 2026-09-30 | Docs brought up to date with the uncommitted work. README: large data, SPA navigation, plugins, localization, dark brand, row drag, `Paging`, nested menus; the theme options table corrected (Tabler defaults, `SiderWidth` 240) and completed; samples list, tag helper table, projects, NuGet packaging and known limitations updated. DESIGN: architecture, dark brand, localization, menu trees, *Plugins* section, sample sign-in, roadmap. UPGRADING: Leaflet, Quill and jsVectorMap, the `--write-dark-brand` step. Manifest: `CreatableSelect`, a *Grids* section (editable, nested, load more, virtual table) and a *Plugins* section (lightbox, editor, map, vector map, media player, sortable). |
 | 2026-09-30 | Row drag and drop in the data table, editable grid and every nested grid level, in all three apps (written, not yet built or run). A handle column (AntD `holder`) on each row: drag it, or focus it and press Up, Down, Home or End. The Sortable engine in `modulus-plugins.js` now also moves table rows (`data-m-sort-rows` on the element around the table, `data-m-sort-row` on the handle): handle only, expanded and nested rows travel with their row, a one-row table as the ghost, hidden (other page, filtered) rows skipped. Blazor reports the move and the component reorders (`EditableGrid.RowDraggable`/`OnRowMove`, `ProTable.OnRowMove` + `RowLabel`); MVC moves the DOM, so the grid posts its rows in the new order, and the data table posts `move` to `/tables/advanced/move` (MVC action and Razor Pages `OnPostMove`). Only the page's rows swap slots (`GridSchema.Reorder`, `SortMove.Within`, new `RowMove`); nested Save sets `NestedGridChanges.Ordered` and `NestedGridQuery.StoreOrder` keeps the order, with added rows where they were dropped. Handles are locked while a column sort is on. `NestedGridLevel.RowDraggable`; the Materials level sorts by header again. Tests: MVC handle markup and lock, Blazor reorder and lock, ordering helpers. Also: filter boxes and the column menu sit above antd's sorter click layer (clicking them no longer sorts); subtitle column search fix; `EditableGrid.HasRowChanges`. |
 | 2026-09-30 | Grid headers, toolbars and MVC cell editors (written, not yet built or run). Header cells keep the title, sorter, search icon and column menu on one line (the title's flex-basis is 0, so it ellipsises; before, the editable grid's search icon wrapped to a second line). Toolbar buttons, links included, centre the AntD icon and text with one 6px gap (Export CSV and Columns were misaligned on the data table page), and the data table page and `app-table-columns` use AntD icons instead of the Tabler sprite. Filter bars are slim (30px controls, equal columns); the editable grid drops its second "Clear filters" link (the toolbar Clear does it). MVC and Razor Pages editable and nested grids edit like Blazor: Select, Tag and Multi-select cells use the creatable select (`modulusCreatableSelect`, markup shared through `CreatableSelectTagHelper.Render`), with coloured options, a check on picked ones and "Create new …" posting `add-option`; Date cells use AntD's picker (`modulusPicker`); a pick or closing the list ends the edit (Escape on an open list closes it and keeps the value; on a closed one it cancels). Pinned columns no longer show scrolled content through them: in MVC and Razor Pages every Select-column cell matched the "lift an open editor" rule (the always-present Add option panel had no `hidden`), so it painted at z-index 6 over the pinned cells (z-index 2); the rule now lifts only a pinned cell with an open list (a scrolling cell's list already floats above the pinned columns, so an open editor no longer overlaps them either). In all apps, translucent tints on pinned cells (selected, new, sorted, hovered header, a child level's header) are layered over an opaque surface. |

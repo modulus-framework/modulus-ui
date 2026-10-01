@@ -31,32 +31,33 @@ public sealed record ShellView(ModulusThemeOptions Options, IReadOnlyList<MenuIt
 /// </summary>
 public static class ShellRenderer
 {
-    public const string IconSprite = "/_content/Modulus.Ui.Assets/icons/tabler.svg";
-
     /// <summary>Cookie the tenant switcher writes when a tenant has no link of its own.</summary>
     public const string TenantCookie = "modulus-tenant";
 
     /// <summary>Cookie holding the active tenants in multi-company mode, as comma-separated ids.</summary>
     public const string TenantsCookie = "modulus-tenants";
 
-    /// <summary>Prefix that names an Ant Design icon instead of a Tabler one, as in <c>"ant:api"</c> (menu items, apps, links).</summary>
+    /// <summary>Optional prefix of an Ant Design icon name, as in <c>"ant:api"</c>; <c>"api"</c> draws the same icon.</summary>
     public const string AntPrefix = "ant:";
 
     /// <summary>
-    /// Tabler outline icon: <c>&lt;svg class="m-ti"&gt;&lt;use href="…#ti-name"/&gt;&lt;/svg&gt;</c>. A name with the
-    /// <see cref="AntPrefix"/> renders that Ant Design icon inline instead (<c>class="m-ti m-ai"</c>, same size rules).
+    /// Prefix of a Remix Icon name, as in <c>"ri:fingerprint"</c>: the few concepts Ant Design has no icon for
+    /// (Apache License 2.0, https://remixicon.com), bundled in <see cref="ExtraIconSvg"/>.
+    /// </summary>
+    public const string RemixPrefix = "ri:";
+
+    /// <summary>
+    /// Ant Design icon, drawn inline: <c>&lt;svg class="m-ti m-ai" data-m-icon="name"&gt;…&lt;/svg&gt;</c>. The name is an
+    /// Ant Design outline icon name (<c>"team"</c>, <c>"setting"</c>, <c>"bar-chart"</c>) or a <see cref="RemixPrefix"/> name.
+    /// An unknown name renders an empty icon of the same size.
     /// </summary>
     public static string Icon(string name, string? cssClass = null)
     {
         var css = "m-ti" + (cssClass is null ? "" : " " + cssClass);
-        if (name.StartsWith(AntPrefix, StringComparison.Ordinal))
-        {
-            var svg = AntIconSvg.Svg(name[AntPrefix.Length..]);
-            return svg is null
-                ? $"""<svg class="{css} m-ai" data-m-icon="{E(name)}" aria-hidden="true" focusable="false"></svg>"""
-                : svg.Replace("<svg ", $"""<svg class="{css} m-ai" data-m-icon="{E(name)}" """, StringComparison.Ordinal);
-        }
-        return $"""<svg class="{css}" aria-hidden="true" focusable="false"><use href="{IconSprite}#ti-{E(name)}"></use></svg>""";
+        var svg = AntIconSvg.Svg(name.StartsWith(AntPrefix, StringComparison.Ordinal) ? name[AntPrefix.Length..] : name);
+        return svg is null
+            ? $"""<svg class="{css} m-ai" data-m-icon="{E(name)}" aria-hidden="true" focusable="false"></svg>"""
+            : svg.Replace("<svg ", $"""<svg class="{css} m-ai" data-m-icon="{E(name)}" """, StringComparison.Ordinal);
     }
 
     // Sidebar (vertical layout, and the navigation drawer on small screens) ------------------------
@@ -66,7 +67,7 @@ public static class ShellRenderer
         var app = FindApp(view);
         var sb = new StringBuilder();
         sb.Append("""<aside class="m-sidebar" id="m-sidebar" aria-label="Main navigation">""");
-        sb.Append("""<div class="m-sidebar-brand">""").Append(Brand(view.Options)).Append("""<button type="button" class="m-icon-btn m-sidebar-close" data-m-nav-close aria-label="Close navigation">""").Append(Icon("x")).Append("</button></div>");
+        sb.Append("""<div class="m-sidebar-brand">""").Append(Brand(view.Options)).Append("""<button type="button" class="m-icon-btn m-sidebar-close" data-m-nav-close aria-label="Close navigation">""").Append(Icon("close")).Append("</button></div>");
         sb.Append($"""<nav class="m-sidebar-nav m-nav-all{(app is null ? "" : " m-has-app")}"><ul class="m-snav">""");
         foreach (var item in view.Menu)
             SidebarItem(sb, item, view.Path, "");
@@ -80,7 +81,7 @@ public static class ShellRenderer
               .Append(AppMark(shellApp))
               .Append($"""<span class="m-sidebar-app-text"><span class="m-sidebar-app-name">{E(shellApp.Name)}</span>""")
               .Append(string.IsNullOrEmpty(shellApp.Description) ? "" : $"""<span class="m-sidebar-app-desc">{E(shellApp.Description)}</span>""")
-              .Append("</span>").Append(Icon("selector", "m-sidebar-app-chevron")).Append("</summary>");
+              .Append("</span>").Append(Icon("ri:expand-up-down", "m-sidebar-app-chevron")).Append("</summary>");
             ModuleMenu(sb, view, shellApp);
             sb.Append("</details></div>");
             sb.Append($"""<nav class="m-sidebar-nav m-nav-app" aria-label="{E(shellApp.Name)}" {tone}>""");
@@ -117,7 +118,7 @@ public static class ShellRenderer
         var open = IsActive(item, path);
         sb.Append($"""<li class="m-snav-item{(open ? " active" : "")}"><details class="m-snav-group"{(open ? " open" : "")}><summary class="m-snav-link">""")
           .Append(SnavIcon(item))
-          .Append($"""<span class="m-snav-title">{E(item.Label)}</span>""").Append(Icon("chevron-down", "m-snav-chevron"))
+          .Append($"""<span class="m-snav-title">{E(item.Label)}</span>""").Append(Icon("down", "m-snav-chevron"))
           .Append($"""</summary><ul class="m-snav-sub"><li class="m-snav-flyout-title" aria-hidden="true">{E(item.Label)}</li>""");
         SidebarChildren(sb, item, path, Join(trail, item.Label), 0);
         sb.Append("</ul></details></li>");
@@ -136,7 +137,7 @@ public static class ShellRenderer
             }
             var open = IsActive(child, path);
             sb.Append($"""<li class="m-snav-item m-snav-branch{(open ? " m-in-path" : "")}"><details class="m-snav-group"{(open ? " open" : "")}><summary class="m-snav-link">""")
-              .Append($"""<span class="m-snav-title">{E(child.Label)}</span>""").Append(Icon("chevron-down", "m-snav-chevron"))
+              .Append($"""<span class="m-snav-title">{E(child.Label)}</span>""").Append(Icon("down", "m-snav-chevron"))
               .Append($"""</summary><ul class="m-snav-sub" style="--m-depth:{depth + 1}">""");
             SidebarChildren(sb, child, path, Join(trail, child.Label), depth + 1);
             sb.Append("</ul></details></li>");
@@ -170,10 +171,10 @@ public static class ShellRenderer
         var c = view.Content;
         var sb = new StringBuilder();
         sb.Append("""<header class="m-topbar"><div class="m-container m-topbar-inner">""");
-        sb.Append("""<button type="button" class="m-icon-btn m-nav-toggle" data-m-nav-open aria-controls="m-sidebar" aria-label="Open navigation">""").Append(Icon("menu-2")).Append("</button>");
-        sb.Append("""<button type="button" class="m-icon-btn m-fold-toggle" data-m-fold-toggle aria-controls="m-sidebar" aria-label="Fold sidebar" title="Fold sidebar">""").Append(Icon("layout-sidebar")).Append("</button>");
+        sb.Append("""<button type="button" class="m-icon-btn m-nav-toggle" data-m-nav-open aria-controls="m-sidebar" aria-label="Open navigation">""").Append(Icon("menu")).Append("</button>");
+        sb.Append("""<button type="button" class="m-icon-btn m-fold-toggle" data-m-fold-toggle aria-controls="m-sidebar" aria-label="Fold sidebar" title="Fold sidebar">""").Append(Icon("menu-fold")).Append("</button>");
         if (HasLauncher(c))
-            sb.Append("""<button type="button" class="m-icon-btn m-launcher-btn" data-m-launcher-open aria-controls="m-launcher" aria-haspopup="dialog" aria-label="All apps" title="All apps">""").Append(Icon("grid-dots")).Append("</button>");
+            sb.Append("""<button type="button" class="m-icon-btn m-launcher-btn" data-m-launcher-open aria-controls="m-launcher" aria-haspopup="dialog" aria-label="All apps" title="All apps">""").Append(Icon("appstore")).Append("</button>");
         sb.Append(Brand(view.Options, "m-topbar-brand"));
 
         if (c.SearchPlaceholder is { } placeholder)
@@ -191,10 +192,13 @@ public static class ShellRenderer
         // The utility buttons share one tray, so the row reads as search, tools, then company and account.
         sb.Append("""<div class="m-topbar-tools">""");
         if (!HasLauncher(c)) AppSwitcher(sb, c);
+        // Full screen for the whole app (the browser's Fullscreen API); modulus-shell.js shows it where the browser allows it.
+        sb.Append("""<button type="button" class="m-icon-btn m-fullscreen-btn" data-m-fullscreen aria-pressed="false" aria-label="Full screen" title="Full screen">""")
+          .Append(Icon("fullscreen", "m-show-windowed")).Append(Icon("fullscreen-exit", "m-show-fullscreen")).Append("</button>");
         sb.Append("""<button type="button" class="m-icon-btn" data-m-theme-toggle aria-label="Toggle dark mode">""")
           .Append(Icon("moon", "m-show-light")).Append(Icon("sun", "m-show-dark")).Append("</button>");
         if (view.Options.ShowCustomizer)
-            sb.Append("""<button type="button" class="m-icon-btn" data-m-customizer-open aria-controls="m-customizer" aria-label="Theme settings">""").Append(Icon("palette")).Append("</button>");
+            sb.Append("""<button type="button" class="m-icon-btn" data-m-customizer-open aria-controls="m-customizer" aria-label="Theme settings">""").Append(Icon("ri:palette")).Append("</button>");
 
         Activities(sb, c);
 
@@ -243,7 +247,7 @@ public static class ShellRenderer
           .Append("""<span class="m-user-avatar">""").Append(Avatar(user)).Append("""<span class="m-user-presence" aria-hidden="true"></span></span>""")
           .Append($"""<span class="m-user-text"><span class="m-user-name">{E(user.Name)}</span>""")
           .Append(user.Subtitle is null ? "" : $"""<span class="m-user-subtitle">{E(user.Subtitle)}</span>""")
-          .Append("</span>").Append(Icon("chevron-down", "m-user-chevron"))
+          .Append("</span>").Append(Icon("down", "m-user-chevron"))
           .Append("""</summary><div class="m-dropdown-menu m-dropdown-end" role="menu">""")
           .Append($"""<div class="m-user-head">{Avatar(user, "md")}<span class="m-user-text"><span class="m-user-name">{E(user.Name)}</span>""")
           .Append(user.Subtitle is null ? "" : $"""<span class="m-user-subtitle">{E(user.Subtitle)}</span>""")
@@ -299,7 +303,7 @@ public static class ShellRenderer
           .Append(current.Subtitle is null ? "" : $"""<span class="m-tenant-subtitle">{E(current.Subtitle)}</span>""")
           .Append("</span>")
           .Append(active.Count > 1 ? $"""<span class="m-tenant-more" title="{active.Count - 1} more active">+{active.Count - 1}</span>""" : "")
-          .Append(Icon("selector", "m-tenant-chevron"))
+          .Append(Icon("ri:expand-up-down", "m-tenant-chevron"))
           .Append("""</summary><div class="m-dropdown-menu m-tenant-menu">""");
         // The tenant in use heads the menu (SAP's and Oracle's context header), with how many are active.
         sb.Append("""<div class="m-tenant-current">""").Append(TenantMark(current, tenants, solid: true))
@@ -371,7 +375,7 @@ public static class ShellRenderer
     {
         if (c.Apps is not { Count: > 0 } apps) return;
         var many = apps.Count > AppFilterThreshold;
-        sb.Append("""<details class="m-dropdown m-apps"><summary class="m-icon-btn" aria-label="Apps">""").Append(Icon("grid-dots"))
+        sb.Append("""<details class="m-dropdown m-apps"><summary class="m-icon-btn" aria-label="Apps">""").Append(Icon("appstore"))
           .Append($"""</summary><div class="m-dropdown-menu m-dropdown-end m-dropdown-card m-apps-menu{(many ? " m-apps-menu-wide" : "")}" data-m-app-menu>""")
           .Append($"""<div class="m-dropdown-card-header"><span class="m-dropdown-card-title">Apps</span>{AppCount(apps)}</div>""");
         if (many) AppFilter(sb);
@@ -419,7 +423,7 @@ public static class ShellRenderer
         var due = activities.Sum(a => a.Late + a.Today);
         var late = activities.Any(a => a.Late > 0);
         sb.Append("""<details class="m-dropdown m-activities" data-m-activities><summary class="m-icon-btn" aria-label="Activities">""")
-          .Append(Icon("clock"))
+          .Append(Icon("clock-circle"))
           .Append(due > 0 ? $"""<span class="m-icon-badge{(late ? " m-icon-badge-danger" : "")}" aria-hidden="true">{(due > 99 ? "99+" : due.ToString(System.Globalization.CultureInfo.InvariantCulture))}</span><span class="m-sr-only">{due} due</span>""" : "")
           .Append("""</summary><div class="m-dropdown-menu m-dropdown-end m-dropdown-card m-activity-menu">""")
           .Append("""<div class="m-dropdown-card-header"><span class="m-dropdown-card-title">Activities</span></div>""");
@@ -467,7 +471,7 @@ public static class ShellRenderer
         sb.Append("""<div class="m-launcher" id="m-launcher" data-m-launcher hidden>""")
           .Append("""<div class="m-launcher-panel" role="dialog" aria-modal="true" aria-label="Apps"><div class="m-launcher-inner">""")
           .Append(Brand(view.Options, "m-launcher-brand"))
-          .Append("""<button type="button" class="m-icon-btn m-launcher-close" data-m-launcher-close aria-label="Close">""").Append(Icon("x")).Append("</button>")
+          .Append("""<button type="button" class="m-icon-btn m-launcher-close" data-m-launcher-close aria-label="Close">""").Append(Icon("close")).Append("</button>")
           // Hidden until the user types, as in Odoo; it still takes focus so typing lands in it.
           .Append("""<div class="m-launcher-search">""").Append(Icon("search"))
           .Append("""<input type="search" class="m-launcher-input" data-m-launcher-search placeholder="Search apps and menus…" aria-label="Search apps and menus" autocomplete="off" spellcheck="false" />""")
@@ -552,7 +556,7 @@ public static class ShellRenderer
     private static void ModuleSwitcher(StringBuilder sb, ShellView view, ShellApp current)
     {
         sb.Append($"""<li class="m-hnav-app"><details class="m-dropdown m-module-switch"><summary class="m-hnav-app-link" aria-label="{E(current.Name)}, switch module">""")
-          .Append(AppMark(current)).Append($"""<span class="m-hnav-app-name">{E(current.Name)}</span>""").Append(Icon("chevron-down", "m-hnav-app-chevron"))
+          .Append(AppMark(current)).Append($"""<span class="m-hnav-app-name">{E(current.Name)}</span>""").Append(Icon("down", "m-hnav-app-chevron"))
           .Append("</summary>");
         ModuleMenu(sb, view, current);
         sb.Append("</details></li>");
@@ -589,9 +593,9 @@ public static class ShellRenderer
         {
             sb.Append("""<div class="m-app-menu-foot">""");
             if (launcher)
-                sb.Append("""<button type="button" class="m-dropdown-item" data-m-launcher-open aria-controls="m-launcher">""").Append(Icon("layout-grid")).Append("All apps</button>");
+                sb.Append("""<button type="button" class="m-dropdown-item" data-m-launcher-open aria-controls="m-launcher">""").Append(Icon("appstore")).Append("All apps</button>");
             if (view.Content.AppsHref is { } all)
-                sb.Append($"""<a class="m-dropdown-item" href="{Url(all)}">""").Append(Icon("apps")).Append("View all apps</a>");
+                sb.Append($"""<a class="m-dropdown-item" href="{Url(all)}">""").Append(Icon("appstore")).Append("View all apps</a>");
             sb.Append("</div>");
         }
         sb.Append("</div>");
@@ -627,7 +631,7 @@ public static class ShellRenderer
 
         sb.Append($"""<li class="m-hnav-item{(active ? " active" : "")}"><details class="m-dropdown"><summary class="m-hnav-link">""")
           .Append(icon)
-          .Append($"""<span>{E(item.Label)}</span>""").Append(Icon("chevron-down", "m-hnav-chevron"))
+          .Append($"""<span>{E(item.Label)}</span>""").Append(Icon("down", "m-hnav-chevron"))
           .Append("""</summary><div class="m-dropdown-menu m-tree">""");
         DropdownItems(sb, item, path);
         sb.Append("</div></details></li>");
@@ -657,7 +661,7 @@ public static class ShellRenderer
             var open = IsActive(child, path);
             sb.Append($"""<details class="m-tree-group{(open ? " m-in-path" : "")}"{(open ? " open" : "")}><summary class="m-dropdown-item">""")
               .Append(child.Icon is null ? "" : Icon(child.Icon))
-              .Append($"""<span class="m-tree-label">{E(child.Label)}</span>""").Append(Icon("chevron-down", "m-tree-chevron"))
+              .Append($"""<span class="m-tree-label">{E(child.Label)}</span>""").Append(Icon("down", "m-tree-chevron"))
               .Append($"""</summary><div class="m-tree-sub" style="--m-depth:{depth + 1}">""");
             DropdownItems(sb, child, path, depth + 1);
             sb.Append("</div></details>");
@@ -707,19 +711,19 @@ public static class ShellRenderer
         sb.Append("""<div class="m-offcanvas" id="m-customizer" data-m-customizer hidden>""")
           .Append("""<div class="m-offcanvas-backdrop" data-m-customizer-close></div>""")
           .Append("""<aside class="m-offcanvas-panel m-customizer-panel" role="dialog" aria-modal="true" aria-labelledby="m-customizer-title">""")
-          .Append("""<div class="m-offcanvas-header"><span class="m-customizer-mark">""").Append(Icon("palette")).Append("</span>")
+          .Append("""<div class="m-offcanvas-header"><span class="m-customizer-mark">""").Append(Icon("ri:palette")).Append("</span>")
           .Append("""<div class="m-customizer-heading"><h2 class="m-offcanvas-title" id="m-customizer-title">Theme settings</h2>""")
           .Append("""<p class="m-offcanvas-subtitle">Saved in this browser and applied instantly.</p></div>""")
-          .Append("""<button type="button" class="m-icon-btn" data-m-customizer-close aria-label="Close">""").Append(Icon("x")).Append("</button></div>")
+          .Append("""<button type="button" class="m-icon-btn" data-m-customizer-close aria-label="Close">""").Append(Icon("close")).Append("</button></div>")
           // Two panes, so neither is a long scroll: how the app looks, and how its shell is laid out.
           .Append("""<div class="m-setting-tabs" role="tablist" aria-label="Theme settings">""")
-          .Append("""<button type="button" class="m-setting-tab" role="tab" id="m-setting-tab-theme" aria-controls="m-setting-pane-theme" aria-selected="true" data-m-customizer-tab="theme">""").Append(Icon("brush")).Append("Appearance</button>")
-          .Append("""<button type="button" class="m-setting-tab" role="tab" id="m-setting-tab-layout" aria-controls="m-setting-pane-layout" aria-selected="false" tabindex="-1" data-m-customizer-tab="layout">""").Append(Icon("layout-dashboard")).Append("Layout</button>")
+          .Append("""<button type="button" class="m-setting-tab" role="tab" id="m-setting-tab-theme" aria-controls="m-setting-pane-theme" aria-selected="true" data-m-customizer-tab="theme">""").Append(Icon("ri:brush")).Append("Appearance</button>")
+          .Append("""<button type="button" class="m-setting-tab" role="tab" id="m-setting-tab-layout" aria-controls="m-setting-pane-layout" aria-selected="false" tabindex="-1" data-m-customizer-tab="layout">""").Append(Icon("dashboard")).Append("Layout</button>")
           .Append("</div>")
           .Append("""<form class="m-offcanvas-body" data-m-customizer-form>""")
           .Append("""<div class="m-setting-pane" id="m-setting-pane-theme" role="tabpanel" aria-labelledby="m-setting-tab-theme">""");
 
-        Choice(sb, "Color mode", "mode", view.Mode ?? "system", [("light", "Light", Icon("sun")), ("dark", "Dark", Icon("moon")), ("system", "System", Icon("device-desktop"))]);
+        Choice(sb, "Color mode", "mode", view.Mode ?? "system", [("light", "Light", Icon("sun")), ("dark", "Dark", Icon("moon")), ("system", "System", Icon("desktop"))]);
 
         sb.Append("""<fieldset class="m-setting"><legend class="m-setting-label">Color scheme</legend><div class="m-swatches">""");
         foreach (var (name, hex) in o.ColorPresets)
@@ -741,7 +745,7 @@ public static class ShellRenderer
         }
         sb.Append("</div></fieldset>");
 
-        Choice(sb, "Density", "density", Lower(o.Density), [("compact", "Compact", Icon("list")), ("comfortable", "Comfortable", Icon("layout-list"))]);
+        Choice(sb, "Density", "density", Lower(o.Density), [("compact", "Compact", Icon("unordered-list")), ("comfortable", "Comfortable", Icon("ri:list-view"))]);
         Choice(sb, "Font family", "font", Lower(o.Font),
         [
             ("sans", "Inter", """<span class="m-font-preview m-font-sans">Aa</span>"""),
@@ -785,7 +789,7 @@ public static class ShellRenderer
         Choice(sb, "Direction", "dir", Lower(o.Direction),
             [("ltr", "Left to right", Mini(basePick)), ("rtl", "Right to left", Mini(basePick with { Dir = "rtl" }))]);
 
-        sb.Append("""</div></form><div class="m-offcanvas-footer m-customizer-footer"><button type="button" class="ant-btn ant-btn-default" data-m-customizer-reset>""").Append(Icon("refresh")).Append("""<span>Reset</span></button>""")
+        sb.Append("""</div></form><div class="m-offcanvas-footer m-customizer-footer"><button type="button" class="ant-btn ant-btn-default" data-m-customizer-reset>""").Append(Icon("reload")).Append("""<span>Reset</span></button>""")
           .Append("""<button type="button" class="ant-btn ant-btn-primary" data-m-customizer-close><span>Done</span></button></div>""")
           .Append("</aside></div>");
         return sb.ToString();

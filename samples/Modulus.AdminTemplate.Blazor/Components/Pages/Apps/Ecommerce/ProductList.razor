@@ -78,7 +78,7 @@
                 <div class="m-row-actions">
                     <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Edit @row.Name" title="Edit" @onclick="() => Edit(row)"><Ti Name="edit" /></button>
                     <Popconfirm Title="@($"Delete {row.Name}?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => DeleteAsync([row.Id])">
-                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @row.Name" title="Delete"><Ti Name="trash" /></button>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @row.Name" title="Delete"><Ti Name="delete" /></button>
                     </Popconfirm>
                 </div>
             </ActionColumn>
@@ -117,10 +117,10 @@
 
     private (string Label, string Value, string Icon)[] Strip =>
     [
-        ("Products", _stats.Total.ToString("N0"), "package"),
-        ("Published", _stats.Published.ToString("N0"), "world"),
-        ("Low stock", _stats.LowStock.ToString("N0"), "alert-triangle"),
-        ("Inventory value", Fmt.Money0(_stats.InventoryValue), "ant:shop"),
+        ("Products", _stats.Total.ToString("N0"), "product"),
+        ("Published", _stats.Published.ToString("N0"), "global"),
+        ("Low stock", _stats.LowStock.ToString("N0"), "warning"),
+        ("Inventory value", Fmt.Money0(_stats.InventoryValue), "shop"),
     ];
 
     protected override void OnInitialized() => _stats = Store.ProductStats();

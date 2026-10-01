@@ -46,7 +46,7 @@
                                             <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Edit @p.Name" title="Edit"
                                                     @onclick="() => Edit(p)"><Ti Name="edit" /></button>
                                             <Popconfirm Title="@($"Delete the “{p.Name}” permission?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => DeleteAsync(p)" Disabled="p.Core">
-                                                <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @p.Name" title="@(p.Core ? "Core permissions can't be deleted" : "Delete")" disabled="@p.Core"><Ti Name="trash" /></button>
+                                                <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only m-danger-hover" aria-label="Delete @p.Name" title="@(p.Core ? "Core permissions can't be deleted" : "Delete")" disabled="@p.Core"><Ti Name="delete" /></button>
                                             </Popconfirm>
                                         </div>
                                     </td>

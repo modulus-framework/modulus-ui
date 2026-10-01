@@ -621,6 +621,11 @@
       }
     },
     "Grids": {
+      "PivotGrid": {
+        "status": "modulus",
+        "note": "AppPivotGrid (Components/Pro): Odoo-style pivot over PivotQuery (one GROUP BY, roll-up in memory), layout in the URL, xlsx download; PivotHtml shared",
+        "mvc": "app-pivot-grid"
+      },
       "EditableGrid": {
         "status": "modulus",
         "note": "EditableGrid (Components/Pro): schema-driven columns (GridColumn), in-place editors, pinned columns, row drag; GridSchema shared",

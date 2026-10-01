@@ -1,7 +1,7 @@
 @* Finance, sales, receivables, inventory and operations on one page, built from the business charts. The Blazor sample renders the same page. *@
 <app-page-header pretitle="Dashboards" title="ERP analytics" subtitle="Fiscal year 2026 · all entities · figures in USD">
-    <a class="ant-btn" href="/ui/charts"><app-ti name="chart-pie" /><span>All charts</span></a>
-    <a class="ant-btn ant-btn-primary" href="/apps/invoice/list"><app-ti name="file-invoice" /><span>Open invoices</span></a>
+    <a class="ant-btn" href="/ui/charts"><app-ti name="pie-chart" /><span>All charts</span></a>
+    <a class="ant-btn ant-btn-primary" href="/apps/invoice/list"><app-ti name="file-text" /><span>Open invoices</span></a>
 </app-page-header>
 
 <div class="m-row-cards">
@@ -14,7 +14,7 @@
                     <div class="m-kpi-head">
                         <span class="m-subheader">@k.Label</span>
                         <span class="m-delta @(good ? "m-delta-up" : "m-delta-down")" style="margin-left:auto">
-                            @(k.Delta >= 0 ? "+" : "")@k.Delta.ToString("0.0")% <app-ti name="@(k.Delta >= 0 ? "trending-up" : "trending-down")" />
+                            @(k.Delta >= 0 ? "+" : "")@k.Delta.ToString("0.0")% <app-ti name="@(k.Delta >= 0 ? "trending-up" : "fall")" />
                         </span>
                     </div>
                     <div class="m-kpi-value"><span class="m-h1">@k.Value</span></div>
