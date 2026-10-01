@@ -79,6 +79,19 @@ public class TablesController : SampleController
         return Page("Data table", "Tables/Advanced", EmployeeTablePage.Load(WithSearches(query), request, hide));
     }
 
+    /// <summary>Data grid: the typed orders table (columns discovered from the row type) over the nested orders-and-lines grid.</summary>
+    [HttpGet("data-grid")]
+    public IActionResult DataGrid([FromServices] PurchaseStore store, [FromQuery] ProTableRequest request) =>
+        Page("Data grid", "Tables/DataGrid", PurchaseGridActions.Page(store, Request.Query, request));
+
+    [HttpGet("data-grid/level")]
+    public IActionResult DataGridLevel([FromServices] PurchaseStore store) => PartialView(DataGridLevelView, PurchaseGridActions.Get(store, Request.Query));
+
+    [HttpPost("data-grid/level")]
+    public IActionResult DataGridLevelPost([FromServices] PurchaseStore store) => PartialView(DataGridLevelView, PurchaseGridActions.Post(store, Request, Response));
+
+    private const string DataGridLevelView = "~/Views/Shared/Ui/Tables/_NestedLevel.cshtml";
+
     /// <summary>Nested grid: the top level; expanded rows load theirs from nested/level.</summary>
     [HttpGet("nested")]
     public IActionResult Nested([FromServices] GarmentStore store) => Page("Nested grid", "Tables/Nested", GarmentGridActions.Page(store, Request.Query));

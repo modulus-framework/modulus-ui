@@ -1,0 +1,76 @@
+@page "/tables/data-grid"
+@inject PurchaseStore Store
+@inject IMessageService Message
+
+<PageTitle>Data grid · Modulus</PageTitle>
+
+@* One tag, three ways. The first grid is typed: its columns, their searches and the sort come from PurchaseOrder itself
+   (DataGridAuto), and the database pattern does the filtering, sorting and paging. The second is the same type
+   client-side: the query runs once and the grid pages in memory. The third is schema-driven: a NestedGrid whose
+   levels also start from the types' discovered columns (SchemaColumns), served from the same store.
+   MVC and Razor Pages render their grids with <app-table> and <app-nested-grid> (Views/Shared/Ui/Tables). *@
+<PageHeading Pretitle="Tables" Title="Data grid" Subtitle="One tag: the columns come from the row type, on the server or in memory — and the same grid turns into a schema-driven nested table." />
+
+<div class="m-stack">
+    <ModulusDataGrid TItem="PurchaseOrder" @ref="_typed"
+                     HeaderTitle="Purchase orders"
+                     Tooltip="Every column, its search and the sort were discovered from the row type"
+                     Query="Store.Orders.AsQueryable()"
+                     DefaultSortField="number"
+                     Selectable
+                     RowSelectable="o => o.Status != PurchaseStatus.Received">
+        <TitleExtra><span class="m-muted m-small">server-side</span></TitleExtra>
+        <ToolBar>
+            <Button Type="@ButtonType.Primary" Icon="plus" OnClick="AddAsync">New order</Button>
+        </ToolBar>
+        <BatchActions Context="rows">
+            <Button Type="@ButtonType.Link" Danger OnClick="@(() => RemoveAsync(rows))">Delete</Button>
+        </BatchActions>
+        @* A typed row expands into the schema engine: its lines, zero-config and read-only. *@
+        <RowDetail>
+            <ModulusDataGrid TItem="GridRecord" Settings="PurchaseGrid.LinesSettings" HeaderTitle="Lines"
+                             Load="request => Task.FromResult(Store.LinesPage(context.Id, request))" />
+        </RowDetail>
+    </ModulusDataGrid>
+
+    <ModulusDataGrid TItem="PurchaseOrder"
+                     HeaderTitle="Same type, in memory"
+                     Tooltip="ServerSide off: the query runs once, then paging, sorting and searching happen in the browser"
+                     Query="Store.Orders.AsQueryable()"
+                     ServerSide="false"
+                     PageSize="5">
+        <TitleExtra><span class="m-muted m-small">client-side</span></TitleExtra>
+    </ModulusDataGrid>
+
+    <ModulusDataGrid TItem="GridRecord"
+                     Settings="PurchaseGrid.Settings"
+                     HeaderTitle="Orders and lines"
+                     Tooltip="The schema engine over the same types: every level searched, sorted and editable"
+                     Load="LoadAsync"
+                     Save="SaveAsync" />
+</div>
+
+@code {
+    private ModulusDataGrid<PurchaseOrder>? _typed;
+
+    private Task<NestedGridPage> LoadAsync(NestedGridRequest request) => Task.FromResult(Store.Load(PurchaseGrid.Settings, request));
+
+    private Task SaveAsync(NestedGridChanges changes)
+    {
+        Store.Save(changes);
+        _ = Message.SuccessAsync("Saved");
+        return Task.CompletedTask;
+    }
+
+    private async Task AddAsync()
+    {
+        Store.AddOrder();
+        await _typed!.ReloadAsync();
+    }
+
+    private async Task RemoveAsync(IReadOnlyList<PurchaseOrder> rows)
+    {
+        Store.Remove(rows);
+        await _typed!.ReloadAsync();
+    }
+}

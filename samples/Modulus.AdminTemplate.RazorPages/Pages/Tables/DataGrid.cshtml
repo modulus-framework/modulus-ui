@@ -1,0 +1,6 @@
+@page "/tables/data-grid/{handler?}"
+@model DataGridModel
+@{
+    ViewData["Title"] = "Data grid";
+}
+<partial name="Ui/Tables/DataGrid" model="Model.Grid" />

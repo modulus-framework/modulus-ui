@@ -132,6 +132,7 @@ public sealed class AdminMenuContributor : IMenuContributor
                     Link("form-business", "Business fields", "forms/business", "form")),
                 Section("tables", "Tables",
                     Link("tables", "Data table", "tables/advanced", "table"),
+                    Link("data-grid", "Data grid", "tables/data-grid", "ri:table"),
                     Link("editable-grid", "Editable grid", "tables/editable", "ri:table"),
                     Link("nested-grid", "Nested grid", "tables/nested", "ri:stack"),
                     Link("large-data", "Large data", "tables/large", "database"),

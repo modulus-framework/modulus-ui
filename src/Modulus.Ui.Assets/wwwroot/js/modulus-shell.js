@@ -1433,6 +1433,71 @@
     document.addEventListener('scroll', syncStuck, { capture: true, passive: true });
     window.addEventListener('resize', syncStuck);
 
+    // ---- Pivot table: scroll horizontally with mouse wheel, drag to pan ----
+    document.addEventListener('wheel', function (e) {
+        if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+        var box = e.target instanceof Element ? e.target.closest('.m-pivot-table .ant-table-content') : null;
+        if (!box) return;
+        var canScrollY = box.scrollHeight > Math.ceil(box.clientHeight);
+        var canScrollX = box.scrollWidth > Math.ceil(box.clientWidth);
+        if (!canScrollY && canScrollX) {
+            e.preventDefault();
+            box.scrollLeft += e.deltaY;
+        }
+    }, { passive: false });
+
+    var pivotDrag = null;
+    document.addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'touch' || e.button !== 0 || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return;
+        var t = e.target instanceof Element ? e.target : null;
+        var box = t ? t.closest('.m-pivot-table .ant-table-content') : null;
+        if (!box || t.closest('a, button, details, summary, input, .m-resizable, .m-col-resize-grip, .ant-table-thead')) return;
+        
+        var rect = box.getBoundingClientRect();
+        if (e.clientX >= rect.right - Math.max(0, box.offsetWidth - box.clientWidth) || 
+            e.clientY >= rect.bottom - Math.max(0, box.offsetHeight - box.clientHeight)) {
+            return;
+        }
+        
+        pivotDrag = {
+            box: box,
+            startX: e.clientX,
+            startY: e.clientY,
+            scrollL: box.scrollLeft,
+            scrollT: box.scrollTop,
+            dragged: false
+        };
+    });
+
+    document.addEventListener('pointermove', function (e) {
+        if (!pivotDrag) return;
+        var dx = e.clientX - pivotDrag.startX;
+        var dy = e.clientY - pivotDrag.startY;
+        if (!pivotDrag.dragged && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
+            pivotDrag.dragged = true;
+            pivotDrag.box.style.cursor = 'grabbing';
+            pivotDrag.box.style.userSelect = 'none';
+        }
+        if (pivotDrag.dragged) {
+            pivotDrag.box.scrollLeft = pivotDrag.scrollL - dx;
+            pivotDrag.box.scrollTop = pivotDrag.scrollT - dy;
+        }
+    });
+
+    function endPivotDrag() {
+        if (!pivotDrag) return;
+        if (pivotDrag.dragged) {
+            pivotDrag.box.style.cursor = '';
+            pivotDrag.box.style.userSelect = '';
+            var prevent = function (ev) { ev.stopPropagation(); ev.preventDefault(); pivotDrag.box.removeEventListener('click', prevent, true); };
+            pivotDrag.box.addEventListener('click', prevent, true);
+            setTimeout(function () { pivotDrag.box.removeEventListener('click', prevent, true); }, 0);
+        }
+        pivotDrag = null;
+    }
+    document.addEventListener('pointerup', endPivotDrag);
+    document.addEventListener('pointercancel', endPivotDrag);
+
     // ---- Resizable columns: drag the right edge of a header cell in any .m-resizable table ----
     // The grip is one bar on <body>, placed over the edge under the pointer, so nothing is injected into markup
     // that Blazor or htmx own. Dragging sets the <col> width (and grows the table), re-pins sticky columns, and

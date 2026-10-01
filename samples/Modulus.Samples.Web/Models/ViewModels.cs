@@ -169,6 +169,9 @@ public sealed record EmployeeTablePage(ProTableResponse<Employee> Page, ProTable
     public bool Shows(string column) => !Hidden.Contains(column);
 }
 
+/// <summary>Data grid page: one page of the purchase orders (columns discovered from the row type) and the top of the nested orders-and-lines grid.</summary>
+public sealed record PurchaseTablePage(ProTableResponse<PurchaseOrder> Page, ProTableRequest Request, NestedLevelModel Top);
+
 /// <summary>Editable grid page: the schema and rows (saved, or as posted), cell errors and whether they differ from the saved grid.</summary>
 public sealed record ProjectGridPage(List<GridColumn> Columns, List<GridRecord> Rows, IReadOnlyList<GridError> Errors, bool Dirty)
 {

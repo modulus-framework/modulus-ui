@@ -636,6 +636,11 @@
         "note": "NestedGrid (Components/Pro): any depth from NestedGridSettings, lazily loaded child levels, per-level save",
         "mvc": "app-nested-grid"
       },
+      "DataGrid": {
+        "status": "modulus",
+        "note": "ModulusDataGrid (Components/Pro): one tag, two engines — typed mode discovers the columns from TItem (DataGridAuto shared: search/sort/range/paging over an IQueryable, client grids paged in memory) and schema mode runs NestedGridSettings + Load/Save",
+        "mvc": "Blazor only (the typed engine builds on ProTable); MVC keeps its htmx tables"
+      },
       "LoadMore": {
         "status": "modulus",
         "note": "Infinite scroll over TableQuery; Blazor uses Virtualize",

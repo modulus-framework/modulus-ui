@@ -42,6 +42,7 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddSingleton<SampleStore>();
 builder.Services.AddSingleton<ProjectGridStore>();
 builder.Services.AddSingleton<GarmentStore>();
+builder.Services.AddSingleton<PurchaseStore>();
 
 var app = builder.Build();
 

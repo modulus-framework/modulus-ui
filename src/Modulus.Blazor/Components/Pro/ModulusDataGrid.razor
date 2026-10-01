@@ -1,0 +1,264 @@
+@*
+    The pro data grid in one tag: toolbar, header sort and column search on the server, paging, selection, row
+    detail and export, around either engine.
+
+    Typed (zero config): the columns come from the row type itself (DataGridAuto — simple properties, a complex
+    object's simple properties flattened one level, an Id-like row key), and the TableQuery it builds sorts and
+    searches on the database:
+        <ModulusDataGrid TItem="PurchaseOrder" HeaderTitle="Purchase orders" Query="_db.PurchaseOrders" />
+    Server-side by default; ServerSide="false" materializes the query once and pages, sorts and searches in memory.
+    Configure adds sorts and searches to the query, Where appends to the queryable before it runs.
+
+    Schema-driven (any depth): over GridRecord rows it renders a NestedGrid from NestedGridSettings; every level
+    has its own columns, search, sort, paging and Save, loaded from the server:
+        <ModulusDataGrid TItem="GridRecord" Settings="PoGrid.Settings" Load="LoadAsync" Save="SaveAsync" />
+
+    The header parameters (HeaderTitle, ToolBar …) are shared; the rest of the ProTable surface (Query, Selectable,
+    RowDetail …) belongs to the typed engine. ReloadAsync reloads the current page; the schema engine reloads itself.
+*@
+@typeparam TItem
+@attribute [CascadingTypeParameter(nameof(TItem))]
+@using System.Globalization
+@using Modulus.Ui.Abstractions.Data
+@using Modulus.Ui.Abstractions.Plugins
+
+@if (Schema)
+{
+    <NestedGrid Settings="Settings" Load="Load" Save="Save" HeaderTitle="@HeaderTitle" @key="Settings" />
+}
+else
+{
+    <ProTable TItem="TItem"
+              @ref="_table"
+              Request="LoadAsync"
+              RowKey="_rowKey"
+              HeaderTitle="@HeaderTitle"
+              Tooltip="@Tooltip"
+              TitleExtra="@TitleExtra"
+              ToolBar="@ToolBar"
+              Filters="@Filters"
+              FiltersActive="FiltersActive"
+              OnClearFilters="OnClearFilters"
+              Selectable="Selectable"
+              RowSelectable="RowSelectable"
+              BatchActions="@BatchActions"
+              RowDetail="@RowDetail"
+              RowExpandable="RowExpandable"
+              OnRowMove="OnRowMove"
+              RowLabel="RowLabel"
+              PageSize="PageSize"
+              Size="Size"
+              ScrollX="@ScrollX"
+              Resizable="EnableColumnResize"
+              ColumnSettings="EnableColumnChooser"
+              FilterRow="EnableFiltering"
+              Exportable="Exportable"
+              ExportFileName="@ExportFileName"
+              Id="@Id"
+              Class="@Class"
+              Columns="Columns ?? AutoColumns" />
+}
+
+@code {
+    // ---- Schema-driven engine: NestedGrid settings over GridRecord rows ----
+
+    /// <summary>Renders a <see cref="NestedGrid"/> from these settings (with <c>ModulusDataGrid&lt;GridRecord&gt;</c>) instead of the typed engine.</summary>
+    [Parameter] public NestedGridSettings? Settings { get; set; }
+
+    /// <summary>With <see cref="Settings"/>: loads one page of a level (the child levels ask the first time their parent row expands).</summary>
+    [Parameter] public Func<NestedGridRequest, Task<NestedGridPage>>? Load { get; set; }
+
+    /// <summary>With <see cref="Settings"/>: saves a level's page; the grid reloads it afterwards.</summary>
+    [Parameter] public Func<NestedGridChanges, Task>? Save { get; set; }
+
+    // ---- Typed engine: the row type and its queryable ----
+
+    /// <summary>The rows: filtered, sorted and paged by the database, or in memory with <see cref="ServerSide"/> off.</summary>
+    [Parameter] public IQueryable<TItem>? Query { get; set; }
+
+    /// <summary>The database does the work (default). False: the query runs once and paging, sorting and searching happen in memory.</summary>
+    [Parameter] public bool ServerSide { get; set; } = true;
+
+    /// <summary>Extra sorts and column searches on the query the grid builds from the row type.</summary>
+    [Parameter] public Action<TableQuery<TItem>>? Configure { get; set; }
+
+    /// <summary>Appended to the queryable before it runs (a tenancy or security filter).</summary>
+    [Parameter] public Func<IQueryable<TItem>, IQueryable<TItem>>? Where { get; set; }
+
+    /// <summary>Counts asynchronously for the total, e.g. <c>(q, ct) =&gt; q.CountAsync(ct)</c> (Entity Framework Core).</summary>
+    [Parameter] public Func<IQueryable<TItem>, CancellationToken, Task<int>>? CountAsync { get; set; }
+
+    /// <summary>Sorted by this column key when the request does not sort (a discovered key, "customerName").</summary>
+    [Parameter] public string? DefaultSortField { get; set; }
+
+    /// <summary>With <see cref="DefaultSortField"/>: descending.</summary>
+    [Parameter] public bool DefaultSortDescending { get; set; }
+
+    /// <summary>Column headers sort (the caret click cycles ascending, descending, unsorted).</summary>
+    [Parameter] public bool EnableSorting { get; set; } = true;
+
+    /// <summary>Column headers search, as a filter row under the titles (ColumnSearch: contains, =exact, !exclude, &gt;100, 10..20).</summary>
+    [Parameter] public bool EnableFiltering { get; set; } = true;
+
+    /// <summary>Column widths resize by dragging a header's edge.</summary>
+    [Parameter] public bool EnableColumnResize { get; set; } = true;
+
+    /// <summary>A Columns button that shows or hides columns; the choice is remembered per table in the browser.</summary>
+    [Parameter] public bool EnableColumnChooser { get; set; } = true;
+
+    /// <summary>Own columns instead of the discovered ones (PropertyColumn, ActionColumn …).</summary>
+    [Parameter] public RenderFragment<TItem>? Columns { get; set; }
+
+    // ---- Table surface (the typed engine; HeaderTitle, ToolBar and the toolbar buttons are shared) ----
+
+    [Parameter] public string? HeaderTitle { get; set; }
+
+    [Parameter] public string? Tooltip { get; set; }
+
+    /// <summary>Content after the title (a count badge, a summary).</summary>
+    [Parameter] public RenderFragment? TitleExtra { get; set; }
+
+    /// <summary>Filter controls shown in a row under the toolbar; the typed grid also clears them with the toolbar's Clear button.</summary>
+    [Parameter] public RenderFragment? Filters { get; set; }
+
+    /// <summary>The page's own search or filters (outside the table) are set: shows the toolbar's Clear button.</summary>
+    [Parameter] public bool FiltersActive { get; set; }
+
+    /// <summary>Clears the page's own search and filters; the Clear button then clears the column searches and loads page 1.</summary>
+    [Parameter] public EventCallback OnClearFilters { get; set; }
+
+    /// <summary>Buttons shown right of the title.</summary>
+    [Parameter] public RenderFragment? ToolBar { get; set; }
+
+    /// <summary>Adds a checkbox column and the selection bar.</summary>
+    [Parameter] public bool Selectable { get; set; }
+
+    /// <summary>With <see cref="Selectable"/>: rows for which this returns false get a disabled checkbox.</summary>
+    [Parameter] public Func<TItem, bool>? RowSelectable { get; set; }
+
+    /// <summary>Actions for the selection bar; receives the selected rows.</summary>
+    [Parameter] public RenderFragment<IReadOnlyList<TItem>>? BatchActions { get; set; }
+
+    /// <summary>Content of an expanded row (an expand column is added). Without it rows do not expand.</summary>
+    [Parameter] public RenderFragment<TItem>? RowDetail { get; set; }
+
+    /// <summary>With <see cref="RowDetail"/>: which rows can expand (default: all).</summary>
+    [Parameter] public Func<TItem, bool>? RowExpandable { get; set; }
+
+    /// <summary>Rows drag by a handle to a new place on the page; store <see cref="RowMove.Order"/>; the page reloads afterwards.</summary>
+    [Parameter] public EventCallback<RowMove> OnRowMove { get; set; }
+
+    /// <summary>With <see cref="OnRowMove"/>: the name read out when a row moves (default "row").</summary>
+    [Parameter] public Func<TItem, string>? RowLabel { get; set; }
+
+    [Parameter] public int PageSize { get; set; } = 10;
+
+    [Parameter] public TableSize Size { get; set; } = TableSize.Middle;
+
+    [Parameter] public string? ScrollX { get; set; }
+
+    /// <summary>An Export CSV button that saves the rows shown (this page, in the visible columns).</summary>
+    [Parameter] public bool Exportable { get; set; } = true;
+
+    /// <summary>File name of the export, without ".csv" (defaults to the title).</summary>
+    [Parameter] public string? ExportFileName { get; set; }
+
+    /// <summary>Id of the table's card; it also keys the remembered columns (defaults to one made from the title).</summary>
+    [Parameter] public string? Id { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+
+    // ---- The engines ----
+
+    private bool Schema => Settings is not null;
+
+    private ProTable<TItem>? _table;
+    private IReadOnlyList<DataGridAutoColumn<TItem>> _columns = [];
+    private Func<TItem, object> _rowKey = default!;
+
+    protected override void OnInitialized()
+    {
+        if (Schema) return;
+        _columns = DataGridAuto.Columns<TItem>();
+        _rowKey = DataGridAuto.RowKeyOf<TItem>();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Schema)
+        {
+            if (typeof(TItem) != typeof(GridRecord))
+                throw new InvalidOperationException(
+                    "<ModulusDataGrid> renders NestedGrid settings over GridRecord rows; use ModulusDataGrid<GridRecord> with Settings, or drop Settings for the typed grid.");
+            if (Load is null)
+                throw new InvalidOperationException("<ModulusDataGrid> with Settings needs Load, which serves each level's page.");
+            return;
+        }
+        if (Query is null)
+            throw new InvalidOperationException(
+                "<ModulusDataGrid> needs Query (an IQueryable<TItem>), or the schema engine: Settings with ModulusDataGrid<GridRecord>.");
+        if (Columns is null && _columns.Count == 0)
+            throw new InvalidOperationException(
+                $"{typeof(TItem).Name} has no columns a grid could discover; pass Columns, or give it simple properties.");
+    }
+
+    private async Task<ProTableResponse<TItem>> LoadAsync(ProTableRequest request)
+    {
+        var query = DataGridAuto.Query<TItem>(DefaultSortField, DefaultSortDescending, !ServerSide);
+        Configure?.Invoke(query);
+        if (!ServerSide) return Page(query.Page(ClientRows(), request));
+        var source = Where is null ? Query! : Where(Query!);
+        return Page(await query.PageAsync(source, request, CountMode.Exact, CountAsync));
+
+        static ProTableResponse<TItem> Page(TablePage<TItem> page) => new() { Data = page.Items, Total = page.Total ?? 0 };
+    }
+
+    // The in-memory source: the queryable (with Where) materialized once, until one of them changes.
+    private IQueryable<TItem>? _rowsOf;
+    private Func<IQueryable<TItem>, IQueryable<TItem>>? _rowsWhere;
+    private IQueryable<TItem> _rows = null!;
+
+    private IQueryable<TItem> ClientRows()
+    {
+        if (!ReferenceEquals(_rowsOf, Query) || !ReferenceEquals(_rowsWhere, Where))
+        {
+            _rowsOf = Query;
+            _rowsWhere = Where;
+            _rows = (Where is null ? Query! : Where(Query!)).ToList().AsQueryable();
+        }
+        return _rows;
+    }
+
+    /// <summary>Reloads the current page, or page 1 when <paramref name="resetPage"/> is true (after a search). The schema engine reloads itself.</summary>
+    public Task ReloadAsync(bool resetPage = false) => _table is null ? Task.CompletedTask : _table.ReloadAsync(resetPage);
+
+    // The discovered columns as a table: a boxed property column per column, its header sorting and searching, its cells formatted.
+    private RenderFragment<TItem> AutoColumns => _ => builder =>
+    {
+        foreach (var column in _columns)
+        {
+            var c = column;
+            builder.OpenComponent<PropertyColumn<TItem, object?>>(0);
+            builder.AddAttribute(1, "Property", c.Boxed);
+            builder.AddAttribute(2, "TitleTemplate", HeaderOf(c));
+            if (c.Width is { } width) builder.AddAttribute(3, "Width", width.ToString(CultureInfo.InvariantCulture));
+            if (c.AlignRight) builder.AddAttribute(4, "Align", ColumnAlign.Right);
+            // AntDesign renders a column's cells through CellRender (ChildContent is not per row): the row comes
+            // typed through the cell's RowData, and the discovered column formats it.
+            builder.AddAttribute(5, "CellRender", (RenderFragment<AntDesign.TableModels.CellData<object?>>)(
+                cell => cellBuilder => cellBuilder.AddContent(0, c.Text(((AntDesign.TableModels.RowData<TItem>)cell.RowData).Data))));
+            builder.CloseComponent();
+        }
+    };
+
+    private RenderFragment HeaderOf(DataGridAutoColumn<TItem> column) => builder =>
+    {
+        builder.OpenComponent<ColumnHeader>(0);
+        builder.AddAttribute(1, "Key", column.Key);
+        builder.AddAttribute(2, "Title", column.Title);
+        builder.AddAttribute(3, "Kind", column.Kind);
+        builder.AddAttribute(4, "Sortable", EnableSorting);
+        builder.AddAttribute(5, "Searchable", EnableFiltering);
+        builder.CloseComponent();
+    };
+}
