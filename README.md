@@ -368,4 +368,5 @@ CI packs `-ci.<run>` prereleases as the `packages` artifact; a local `dotnet pac
 - [docs/UPGRADING.md](docs/UPGRADING.md): upgrading AntDesign, htmx, Alpine.js and the plugin libraries safely, and
   turning on SPA navigation
 - [docs/PLAN.md](docs/PLAN.md): the plan, page inventory, verification results and change log
+- Roadmap: what is planned next — [docs/PLAN.md](docs/PLAN.md) §7 (Modulus 2.0) and §7.3 (ERP UI roadmap)
 - `manifest/antd-coverage.json`: component-by-component coverage, verified in CI

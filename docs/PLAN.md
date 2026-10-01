@@ -3,7 +3,7 @@
 The plan for the Modulus UI admin template and where each piece stands. Update the status tables in the same commit
 as the work they describe.
 
-Last updated: 2026-10-01 · `main` at `9605901` + uncommitted PivotGrid (written, not yet built or run) · the Modulus 2.0 roadmap is in §7
+Last updated: 2026-10-01 · `main` at `9605901` + uncommitted PivotGrid (written, not yet built or run) · the Modulus 2.0 roadmap is in §7, the ERP UI roadmap in §7.3
 
 **Legend:** ✅ done and verified · 🟡 in progress · ⬜ not started · ❌ failing · ➖ not applicable
 
@@ -70,6 +70,10 @@ Details are in [DESIGN.md](DESIGN.md).
 | 20 | 2.0: Spreadsheet (engine and licence decision first), with the widget init/destroy registry it needs (§7.2) | ⬜ |
 | 21 | 2.0: Document templates on Fluid (after phase 16), then Document Processing: PDF, Word and Excel output (§7.2) | ⬜ |
 | 22 | 2.0: User state — `IUiStateStore`, saved views (grid and pivot layouts), permission-aware columns (§7.2) | ⬜ |
+| 23 | 2.0: Grid engine — multi-column sort, group-by with group headers, footers and aggregates, multi-level headers, Excel-style checkbox filter menu, row states (dirty, error, locked), ERP batch toolbar (Approve / Reject / Print), TreeGrid mode on `NestedGrid` (self-referencing rows: BOMs, chart of accounts), pivot UI extensions (§7.3) | ⬜ |
+| 24 | 2.0: QueryBuilder UI component — visual WHERE builder over registered fields, one serialisable filter model feeding `ColumnSearch` / `TableQuery` (§7.3) | ⬜ |
+| 25 | 2.0: Import wizard UI — upload, column mapping, validation preview and commit as components, the import itself in a server callback (§7.3) | ⬜ |
+| 26 | 2.0: Printing components — `@page` setup, repeated table headers, grid, invoice and label print styles (§7.3) | ⬜ |
 
 ## 4. Page inventory
 
@@ -244,6 +248,9 @@ Menu group *Plugins* in `AdminMenuContributor` (Data, Inputs, Interface), with o
 | Update GitHub Actions off Node 20: `checkout@v7`, `setup-dotnet@v6`, `upload-artifact@v7`, `github-script@v9` in both workflows | CI | 🟡 awaiting CI |
 | NuGet packaging and versioning: `src/Directory.Build.props` (one `VersionPrefix`, SourceLink, symbols, README), other projects not packable; CI packs `-ci.<run>` prereleases as the `packages` artifact | Release | 🟡 written |
 | Nested menus organised like Odoo: navbar dropdowns are one narrow column with bold section headings (entries indented under them) and groups inside a section folding open in place; sidebar groups nest as folding branches, to any depth, instead of the multi-column dropdown. Every sample page belongs to a launcher app (Plugins and Extra added), so the current-app bar never falls back to the whole menu | Shell | 🟡 written |
+| Structure tidy-ups (namespaces unchanged, no consumer break): the `ProTable`, `EditableGrid` and `NestedGrid` code (with the shared `ColumnSearch` and `Paging`) into a `Grids/` folder in `Ui.Abstractions`, the form binding (`EditableGridForm`, `NestedGridForm`, `ColumnSearchQuery`) into `FormBinding/`; test files foldered to match | Layout | ✅ |
+| Pin the SDK in `global.json` (`version` 10.0.400, `rollForward: latestFeature`) so local builds and CI agree; `TestResults/` stays ignored | Repo | ✅ |
+| Banked for a major version, with §7.2's no-renames decision: `Modulus.Ui.Abstractions` → `Modulus.Core`; splitting `modulus.css` and `modulus-widgets.js` behind a pack-time concat | 2.0+ | ⬜ |
 
 ## 7. Modulus 2.0 roadmap
 
@@ -312,10 +319,51 @@ section is the to-do list: what is done, what is left, and what was dropped and 
 
 `IUiStateStore` and saved views can start any time after §7.1.
 
+### 7.3 ERP UI roadmap (adopted 2026-10-01)
+
+Radzen, Syncfusion and DevExpress were reviewed as feature inventories — which ERP screens and components ship
+there — and an ERP Report Studio design as the product side of the same ground. **Modulus adopts the UI
+capabilities only.** The scope rule stays as it has always been: Modulus is a UI framework — components, tag
+helpers, theming, markup, and the query shaping the grids need (`TableQuery`, `PivotQuery`). Product-level work
+(report definitions and scheduling, document pipelines beyond phase 21, any data store of its own) belongs to the
+apps built on Modulus; the ERP Report Studio is a separate future solution that will consume Modulus packages for
+its UI. Nothing of it is planned in this repo.
+
+**P0 — the ERP interaction spine (phases 22–26 in §3):**
+
+- **Grid engine (23):** multi-column sort; group-by with group headers, footers and aggregates; multi-level
+  headers; an Excel-style checkbox filter menu per column; row states (dirty, error, locked, read-only) on the
+  editable grid; an ERP batch toolbar (Approve / Reject / Print on the selection); TreeGrid mode on `NestedGrid`
+  for self-referencing flat rows (BOMs, chart of accounts) with per-level aggregates. Pivot UI extensions
+  (derived-measure display) ride along.
+- **QueryBuilder component (24):** a visual WHERE builder over registered fields (field, operator, value, and/or
+  groups) that emits one serialisable filter model, plugs into `ColumnSearch` / `TableQuery`, and renders in both
+  flavours from one renderer, like every other component.
+- **Import wizard (25):** upload → column mapping → validation preview → commit, as components; the server
+  callback owns the actual import.
+- **Printing (26):** `@page` setup, repeated table headers, and grid, invoice and label print styles; the
+  invoice sample page already sketches the invoice part.
+- **User state (22):** `IUiStateStore`, saved views, permission-aware columns (§7.2, unchanged).
+
+**P1 — the component tier** (each: one renderer, both flavours, a sample page, tests): Kanban and Scheduler
+promoted from sample pages to library components; Gantt; a PDF viewer (pdf.js, Apache-2.0); file manager;
+dashboard layout (drag-resize tiles, saved through `IUiStateStore`); barcode (Code128, EAN-13) beside the QR
+encoder; rich-text tables in `AppRichText`; a workflow and audit UI kit (`ApprovalTimeline`, a workflow-history /
+audit drawer, `StatusBadge` — extending `AppStatusBar` and `WorkflowStage`); a multi-column, paged `AppLookup`
+(dialog and dropdown); dynamic schema-driven forms (a `FormSchema` driving the business fields).
+
+**P2:** diagramming, AI-assist hooks (natural-language filters compiling to the QueryBuilder's model), chat UI.
+None planned yet.
+
+**Order of work:** the §7.2 order stands (finish §7.1, stabilise the 🟡 work, Spreadsheet, Fluid, document
+templates, Document Processing); the P0 phases follow that, P1 items as needed.
+
 ## 8. Change log
 
 | Date | Change |
 |---|---|
+| 2026-10-01 | Structure tidy-ups from §6 done: the grid code (`ProTableModels`, `DataGrid`, `NestedGrid`, `TableColumns`, plus the shared `ColumnSearch` and `Paging`) moved into `src/Modulus.Ui.Abstractions/Grids/`, the MVC form binding (`EditableGridForm`, `NestedGridForm`, `ColumnSearchQuery`) into `src/Modulus.AspNetCore.Mvc/FormBinding/`, and the test files into matching folders (`Grids/` in `Modulus.Blazor.Tests`, `FormBinding/` in `Modulus.AspNetCore.Mvc.Tests`). Namespaces unchanged, no consumer break; all moves are git renames. `global.json` pins the SDK (10.0.400, `rollForward: latestFeature`) so local builds and CI agree. Build and tests verified: the same failures before and after (the five pre-existing PivotGrid-era failures, see §5 and §7.1). |
+| 2026-10-01 | ERP UI roadmap adopted (§7.3); docs only. Radzen, Syncfusion and DevExpress were reviewed as feature inventories, and an ERP Report Studio design as the product side of the same ground. Scope rule recorded: Modulus is a UI framework and takes the UI capabilities only — the grid engine (phase 23), a QueryBuilder component (24), an import wizard UI (25) and printing components (26) join phase 22 (`IUiStateStore`, saved views); P1 lists the component tier (Kanban, Scheduler, Gantt, PDF viewer, file manager, dashboard layout, barcode, rich-text tables, workflow/audit kit, lookup upgrade, dynamic forms), P2 the rest. Report definitions, scheduling, document pipelines and any product data layer stay out of this repo; the Report Studio is a separate future solution that will consume Modulus packages. DESIGN §1, §2 and §4 and the README documentation list were brought in line; §6 recorded the structure tidy-ups and the SDK pin. |
 | 2026-10-01 | Clear button fixed and added (written, not yet built or run). `<app-table-settings clear-href>` showed Clear on every list and reloaded the whole page: Razor passes `clear-href="@null"` to a string property as `""`, so the button always rendered, with an empty link htmx doesn't boost. Empty now means no button (also for `reload-href`). Pivot (MVC, Razor Pages, Blazor) and Blazor Large data now have the same Clear while a search or filter is set; on the pivot it keeps the layout. |
 | 2026-10-01 | Full-screen button in the header of all three samples (`ShellRenderer` `[data-m-fullscreen]`, `modulus-shell.js`): the whole app goes full screen through the browser's Fullscreen API, the icon and label follow the state (also after Escape), and the button hides where the browser has no such API (iPhone Safari). Full screen survives navigation in MVC and Razor Pages: the sample pager's page size (`select[data-m-nav-select]`) and the lists' row links to other pages (`a[data-m-page]`, followed by `modulus-spa.js` as page navigations) no longer load a whole page, and after any whole page load (a sign-in, a tenant switch, a form post) the next click or key press goes back to full screen (browsers end it on every page load and only a user gesture may start it). Blazor Pivot and Large data use the same search box as the other lists (an input with a search icon, searching as you type) instead of AntD Search with its button; an AntD Search in a table toolbar now matches the toolbar's height. Written, not yet built or run. |
 | 2026-10-01 | PivotGrid in the manner of Odoo's pivot view (written, not yet built or run; open items in §7.1). `PivotQuery<T>` (in `Modulus.Ui.Abstractions.Pivot`) registers the fields to group by (text, enum, and date by year, quarter, month, week or day) and the measures (sum, average, min, max; count is built in). As in Odoo it reads only what shows: one `GroupBy` per row depth × column depth that has open headers, filtered to the records under them, so a collapsed header costs one group. Every total comes from the database (averages as sum/count), capped by `MaxGroups`. `PivotState` keeps the whole layout in the query string, and every control is a link to the next state. A header opens on the next group-by or offers the unused ones (a date gets an interval submenu). A collapse drops unused group-bys, as in Odoo. The toolbar has Flip axis, Expand all and Measures, and a measure column sorts the rows. `PivotHtml` draws the table for both `AppPivotGrid` (Blazor) and `<app-pivot-grid>` (MVC), and `PivotXlsx` writes the download with no library. Sample `/tables/pivot` in all three apps over the 100,000 shipments, with drill-down to `/tables/large` (Blazor Large now reads its filters from the URL too). Header dropdowns now float out of scrolling boxes, and a pivot link shows a busy bar and keeps the table's scroll (`modulus-shell.js`). The Blazor filter boxes no longer flick back while their navigation runs. Tests in `PivotTests` and `PivotTagHelperTests`; EF Core SqlServer is a new test-only package that checks the SQL. The rest of the 2.0 proposal is planned in §7. |

@@ -13,6 +13,7 @@ Why Modulus is built the way it is, and which conventions come from which Ant De
 | **antd v5 / token system** | React, CSS-in-JS | Seed → map → alias tokens, `@ant-design/colors` palette algorithm, 6 px radius, softer elevation | Palette algorithm ported to C# (`AntPalette`, tested against official palettes); v5 visual refresh layered over the v4 CSS |
 | **Refine** (`@refinedev/antd`) | React | Headless data/resource layer under Ant Design; "list/create/edit/show" resource conventions; the UI never owns data access | Pro components call back into app code (`Request`, `OnFinish`); samples keep data in a store/service, and the UI only receives delegates |
 | **ABP Framework** (Blazorise/Ant themes) | .NET | Modular apps: `IMenuContributor`, permission-gated menu items, theme as a swappable module | `IMenuContributor` / `MenuConfigurationContext` / `RequiredPolicy`, so every module contributes menus to both flavors once |
+| **Radzen / Syncfusion / DevExpress** (reviewed 2026-10-01) | Commercial .NET component suites | Feature inventories for ERP apps: ERP grids (grouping, multi-level headers, Excel-style filters, saved layouts), query builders, import/export, scheduler, gantt, kanban, reporting, document processing | Their UI capabilities as the checklist for the ERP UI roadmap (PLAN §7.3) — not their product scope. Modulus stays a UI framework; data pipelines, report scheduling and product stores belong to the apps built on it |
 
 ### Findings that shaped the build
 
@@ -257,6 +258,28 @@ Expand all and Download.
 - **Download** is `PivotXlsx`: SpreadsheetML written into a zip, with no library. It has the same headers (merged),
   indented row labels and bold totals.
 
+### The ERP UI map
+
+The ERP suites in §1 were reviewed as feature inventories. This is the UI surface they imply and where Modulus
+stands (2026-10-01; PLAN §7.3 has the plan):
+
+| ERP UI surface | Modulus today | Planned |
+|---|---|---|
+| Data grid: grouping, aggregates, multi-level headers, saved layouts | `ProTable`, `EditableGrid`, `NestedGrid`, column picker, density; single-column sort | Phase 23 grid engine: multi-sort, group headers/footers/aggregates, multi-level headers, checkbox filter menu, row states |
+| Pivot analysis | `PivotQuery` / `AppPivotGrid` (written, §7.1) | Pivot UI extensions (derived-measure display) |
+| Tree / BOM grids | `NestedGrid` (parent → child levels, lazy load) | Phase 23: TreeGrid mode — self-referencing flat rows, per-level aggregates |
+| Query builder / advanced filtering | `QueryFilter`, filter row, `ColumnSearch` | Phase 24 QueryBuilder component |
+| Import | — | Phase 25 import wizard UI |
+| Scheduler, gantt, kanban | Calendar and Kanban sample pages | P1: promoted to library components; Gantt |
+| Lookups | `AppLookup` (type-ahead, "Search more…" dialog) | P1: multi-column, paged dialog |
+| Workflow UI | `AppStatusBar`, `WorkflowStage` | P1: `ApprovalTimeline`, history/audit drawer, `StatusBadge` |
+| Saved layouts per user | grid/pivot state in the URL; column picker in localStorage | Phase 22 `IUiStateStore` + saved views |
+| Printing | invoice print page, `@media print` basics | Phase 26 printing components |
+
+Out of scope for the framework, on purpose: report definitions and scheduling, document pipelines beyond phase 21,
+and any product data store. The ERP Report Studio reviewed on 2026-10-01 is a separate future solution that will
+consume Modulus packages for this UI surface.
+
 ### Component architecture rules
 
 Adapted from the 2.0 proposal; new components follow them.
@@ -334,3 +357,6 @@ See [PLAN.md](PLAN.md) for status. Not started:
 - Replace `AntIcons` reflection if AntDesign makes its icon store public.
 - Modulus 2.0: Spreadsheet (with a widget init/destroy registry), document templates and Document Processing,
   `IUiStateStore` with saved views, and permission-aware columns. See PLAN.md §7 for the decisions and order.
+- ERP UI roadmap (adopted 2026-10-01): the grid engine, a QueryBuilder component, an import wizard UI and
+  printing components (phases 22–26), then the P1 component tier. Scope rule: UI capabilities only — no product
+  data layer, scheduling or document pipelines in this framework. See PLAN.md §7.3.
