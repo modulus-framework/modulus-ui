@@ -260,8 +260,9 @@ public class PivotTests
             if (level.RowDepth + level.ColumnDepth > 0) Assert.Contains("GROUP BY", sql);
         }
         var deepest = levels.Single(l => l.RowDepth == 2 && l.ColumnDepth == 1).Groups.ToQueryString();
-        Assert.DoesNotContain("'Oslo'", deepest); // a parameter, not SQL text
-        Assert.Contains("@", deepest);
+        var statement = deepest[deepest.IndexOf("SELECT", StringComparison.Ordinal)..]; // the DECLARE prefix names the parameter's value
+        Assert.DoesNotContain("'Oslo'", statement); // a parameter, not SQL text
+        Assert.Contains("@", statement);
     }
 
     private sealed class ShipmentDb : DbContext

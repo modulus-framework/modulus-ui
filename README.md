@@ -74,8 +74,17 @@ pixel-for-pixel where the controls allow it.
       .SearchText("customer", o => o.Customer)
       .DefaultSort("date", descending: true);
 
-  var page = await Orders.PageAsync(db.Orders, request, CountMode.Exact, (q, ct) => q.CountAsync(ct), ct);
-  ```
+   var page = await Orders.PageAsync(db.Orders, request, CountMode.Exact, (q, ct) => q.CountAsync(ct), ct);
+   ```
+- **Pivot grid** in the manner of Odoo's pivot view (`AppPivotGrid` / `app-pivot-grid`, one `PivotHtml` renderer):
+  `PivotQuery<T>` registers the dimensions (text, enum, dates by year, quarter, month, week or day) and the measures
+  (sum, average, min, max; count is built in). As in Odoo only open headers are read: one grouped `IQueryable` per row
+  depth × column depth that has open headers, filtered to the records under them, so a collapsed header costs one group
+  and every total comes from the database (averages as sum/count), capped by `MaxGroups`. The whole layout lives in the
+  URL (`PivotState`): every control is a link — expand a header on the next group-by (a date field gets an interval
+  submenu), collapse, flip axis, expand all, pick the measures, sort by one. Value cells drill down
+  (`CellHref` / `cell-href`; the sample opens `/tables/large` filtered) and `PivotXlsx` writes the xlsx download
+  (merged headers, bold totals) with no library. `/tables/pivot` pivots the 100,000 shipments in all three samples.
 - **SPA navigation for MVC and Razor Pages** (`ModulusThemeOptions.SpaNavigation`): links and forms in the shell load
   through htmx `hx-boost`. The server answers with only the page body, the sidebar and the header, so scripts and
   Alpine state stay loaded. It aborts stale navigations, shows a progress bar, prefetches on hover (`SpaPrefetch`),
@@ -252,7 +261,7 @@ Tag helpers. `/ui/components` in the MVC and Razor Pages samples shows each one;
 | Data entry | `app-form-item` (`asp-for` + validation), `app-input` (affixes, addons, clear, password, datalist AutoComplete), `app-input-search`, `app-textarea` (count), `app-input-number`, `app-select`, `app-date-picker` (date/week/month/time), `app-range-picker`, `app-checkbox`, `app-checkbox-group`, `app-radio-group`, `app-switch`, `app-slider`, `app-rate`, `app-segmented`, `app-upload`, `app-cascader`, `app-tree-select`, `app-transfer`, `app-auto-complete`, `app-mentions`, `app-input-group` (compact), `app-color-picker` (hex/rgb, alpha, presets, clear), `app-creatable-select` ("Add item" row with tag colours; `add-href` saves new options) |
 | Data display | `app-card` (`app-card-cover`, `app-card-meta`, `app-card-action`), `app-comment` / `comment-action`, `app-countdown`, `app-image-group` (shared preview), `app-avatar` / `app-avatar-group`, `app-badge` / `app-badge-ribbon`, `app-tag`, `app-statistic`, `app-descriptions`, `app-table` (`hidden-columns`, `density`, `scroll-x`, `table-footer`), `app-table-columns` (column picker), `app-table-settings` (reload, density), `app-list`, `app-timeline`, `app-collapse` / `app-panel`, `app-image`, `app-tooltip`, `app-popover`, `app-empty`, `app-tree` (checkable), `app-calendar`, `app-carousel` / `carousel-slide`, `app-qr-code` (icon, status), `app-tour` / `tour-step` |
 | Feedback | `app-alert`, `app-progress` (line/circle/dashboard), `app-result`, `app-skeleton`, `app-spin`, `app-modal`, `app-drawer` (right/left/top/bottom), `app-watermark`; plus `Response.HxMessage`, `HxNotify`, `HxCloseModal` and `hx-confirm` |
-| Pro | `app-page-container`, `app-page-header`, `app-statistic-card`, `app-trend`, `app-editable-grid` (`grid-toolbar`, `grid-title-extra`, `grid-filters`, `grid-batch`, `grid-summary`, `row-draggable`; read posts with `EditableGridForm.Read` / `Apply`), `app-nested-grid` (one level per request; state and saves through `NestedGridForm`) |
+| Pro | `app-page-container`, `app-page-header`, `app-statistic-card`, `app-trend`, `app-editable-grid` (`grid-toolbar`, `grid-title-extra`, `grid-filters`, `grid-batch`, `grid-summary`, `row-draggable`; read posts with `EditableGridForm.Read` / `Apply`), `app-nested-grid` (one level per request; state and saves through `NestedGridForm`), `app-pivot-grid` (Odoo-style pivot: expand/flip/measures/sort in the URL, `cell-href` drill-down, xlsx download) |
 | Large data | `app-load-more` (infinite scroll), `app-virtual-table` (virtual scrolling, `modulus-virtual.js`) |
 | Charts | `app-line-chart`, `app-column-chart`, `app-bar-chart`, `app-donut-chart`, `app-heatmap`, `app-sparkline`, `app-mini-bar` and the business charts; `legend-toggle`, `links` |
 | Plugins | `app-editor` (Quill), `app-map` (Leaflet), `app-vector-map` (jsVectorMap), `app-media-player`, `app-sortable` / `app-sortable-item`, `app-lightbox` |

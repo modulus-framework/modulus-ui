@@ -29,7 +29,7 @@
     /// <summary>ISO code of the country shown for an empty value, and preferred for shared codes (+1, +7).</summary>
     [Parameter] public string DefaultCountry { get; set; } = "US";
 
-    /// <summary>The country list; null uses <see cref="All"/>.</summary>
+    /// <summary>The country list; null uses <see cref="Country.All"/>.</summary>
     [Parameter] public IReadOnlyList<Country>? Countries { get; set; }
 
     [Parameter] public string? Placeholder { get; set; }

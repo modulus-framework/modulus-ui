@@ -318,7 +318,7 @@ public class EditableGridTests : BunitContext
     }
 
     [Fact]
-    public void DraggedRow_ReordersRows_MarksDirty_AndReportsThePageOrder()
+    public async Task DraggedRow_ReordersRows_MarksDirty_AndReportsThePageOrder()
     {
         var rows = Rows();
         Modulus.Ui.Abstractions.Plugins.RowMove? moved = null;
@@ -330,7 +330,7 @@ public class EditableGridTests : BunitContext
         Assert.NotNull(cut.Find("[data-m-sort-rows][data-m-sort-mode='event']"));
 
         // What modulus-plugins.js writes after r2 is dropped on top.
-        cut.Find("input[data-m-sort-result]").Change("""{"id":"r2","from":"x","to":"x","index":0}""");
+        await cut.Find("input[data-m-sort-result]").ChangeAsync("""{"id":"r2","from":"x","to":"x","index":0}""");
 
         Assert.Equal(["r2", "r1"], rows.Select(r => r.Id));
         Assert.Equal(["r2", "r1"], moved!.Order);
@@ -404,14 +404,14 @@ public class EditableGridTests : BunitContext
     ];
 
     [Fact]
-    public void Toolbar_LooksLikeTheDataTable_SearchColumnsExportFiltersAndSelection()
+    public async Task Toolbar_LooksLikeTheDataTable_SearchColumnsExportFiltersAndSelection()
     {
         var cut = Render<EditableGrid>(p => p.Add(g => g.Columns, RichColumns()).Add(g => g.Rows, RichRows()).Add(g => g.HeaderTitle, "Projects"));
 
         Assert.Contains("m-resizable", cut.Find(".m-grid").ClassList);
         // The search box opens from its icon; Columns and Export CSV are labelled buttons; density sits in the More menu.
         Assert.Empty(cut.FindAll(".m-grid-search"));
-        cut.Find("[data-m-search-toggle]").Click();
+        await cut.Find("[data-m-search-toggle]").ClickAsync(new());
         Assert.Equal("Search projects…", cut.Find(".m-grid-search input").GetAttribute("placeholder"));
         Assert.Equal("Columns", cut.Find(".m-table-columns-toggle").GetAttribute("aria-label"));
         Assert.Equal("Columns", cut.Find(".m-table-columns-toggle").TextContent.Trim());
@@ -425,18 +425,18 @@ public class EditableGridTests : BunitContext
     }
 
     [Fact]
-    public void FilterRow_ShowsTheColumnSearchesUnderTheHeaders_AndFilters()
+    public async Task FilterRow_ShowsTheColumnSearchesUnderTheHeaders_AndFilters()
     {
         var cut = Render<EditableGrid>(p => p.Add(g => g.Columns, RichColumns()).Add(g => g.Rows, RichRows()));
         Assert.Empty(cut.FindAll(".m-th-filter"));
         Assert.Equal(3, cut.FindAll(".m-th-search").Count);
 
-        cut.Find(".m-table-filter-toggle").Click();
+        await cut.Find(".m-table-filter-toggle").ClickAsync(new());
 
         Assert.Equal("true", cut.Find(".m-table-filter-toggle").GetAttribute("aria-pressed"));
         Assert.Equal(3, cut.FindAll(".m-th-filter").Count); // name, owner, priority (email is hidden)
         Assert.Empty(cut.FindAll(".m-th-search"));
-        cut.FindAll(".m-th-filter")[1].Change("Ann");
+        await cut.FindAll(".m-th-filter")[1].ChangeAsync("Ann");
 
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("tbody tr.ant-table-row")));
         Assert.Contains("m-th-filter-active", cut.FindAll(".m-th-filter")[1].ClassName);
@@ -500,18 +500,18 @@ public class EditableGridTests : BunitContext
     }
 
     [Fact]
-    public void SelectingRows_ShowsTheBatchBar_AndSetValueUpdatesEverySelectedRow()
+    public async Task SelectingRows_ShowsTheBatchBar_AndSetValueUpdatesEverySelectedRow()
     {
         var rows = RichRows();
         var cut = Render<EditableGrid>(p => p.Add(g => g.Columns, RichColumns()).Add(g => g.Rows, rows));
         Assert.Empty(cut.FindAll(".m-grid-batch"));
 
         // Re-find the boxes each time: every change renders the rows again.
-        for (var i = 0; i < 2; i++) cut.FindAll("tbody td.ant-table-selection-column input")[i].Change(true);
+        for (var i = 0; i < 2; i++) await cut.FindAll("tbody td.ant-table-selection-column input")[i].ChangeAsync(true);
 
         cut.WaitForAssertion(() => Assert.Contains("Selected 2 rows", cut.Find(".m-grid-batch").TextContent));
         Assert.Equal(["Owner", "Priority"], cut.FindAll(".m-grid-batch-set optgroup").Select(g => g.GetAttribute("label")));
-        cut.Find(".m-grid-batch-set").Change("priority=high");
+        await cut.Find(".m-grid-batch-set").ChangeAsync("priority=high");
 
         cut.WaitForAssertion(() => Assert.Equal(["high", "high"], rows.Select(r => $"{r["priority"]}")));
         Assert.NotEmpty(cut.FindAll(".m-grid-dirty"));

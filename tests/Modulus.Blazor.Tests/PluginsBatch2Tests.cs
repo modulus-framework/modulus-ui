@@ -52,7 +52,7 @@ public class PluginMarkupTests
 
         var html = ShellRenderer.Icon("team", "m-nav-icon");
         Assert.StartsWith("<svg class=\"m-ti m-nav-icon m-ai\" data-m-icon=\"team\" focusable=\"false\"", html);
-        Assert.Contains("viewBox=\"64 64 896 896\"", html); // Ant Design
+        Assert.Contains("viewBox=\"0 0 1024 1024\"", html); // Ant Design (team is one of the newer 1024-grid icons)
         Assert.Contains("viewBox=\"0 0 24 24\"", ShellRenderer.Icon("ri:fingerprint")); // Remix Icon
         Assert.EndsWith("</svg>", ShellRenderer.Icon("moon")); // newer than the AntDesign package
         Assert.Equal(ShellRenderer.Icon("x").Replace("data-m-icon=\"x\"", ""), ShellRenderer.Icon("ant:x").Replace("data-m-icon=\"ant:x\"", ""));
@@ -197,7 +197,7 @@ public class PluginComponentTests : BunitContext
     private sealed record Item(string Id, string Name);
 
     [Fact]
-    public void AppSortable_RendersItemsWithHandles_AndReportsMoves()
+    public async Task AppSortable_RendersItemsWithHandles_AndReportsMoves()
     {
         SortMove? reported = null;
         var cut = Render<AppSortable<Item>>(p => p
@@ -218,7 +218,7 @@ public class PluginComponentTests : BunitContext
         Assert.Equal("Move Beta", cut.FindAll("[data-m-sort-handle]")[1].GetAttribute("aria-label"));
         Assert.Equal("m-sort-help-todo", cut.Find("[data-m-sort-handle]").GetAttribute("aria-describedby"));
 
-        cut.Find("[data-m-sort-result]").Change("{\"id\":\"a\",\"from\":\"todo\",\"to\":\"todo\",\"index\":1}");
+        await cut.Find("[data-m-sort-result]").ChangeAsync("{\"id\":\"a\",\"from\":\"todo\",\"to\":\"todo\",\"index\":1}");
         Assert.Equal(new SortMove("a", "todo", "todo", 1), reported);
     }
 

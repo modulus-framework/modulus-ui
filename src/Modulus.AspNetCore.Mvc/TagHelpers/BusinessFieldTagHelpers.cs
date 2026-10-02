@@ -569,7 +569,7 @@ public class SignaturePadTagHelper : BoundControlTagHelper
 
 /// <summary>
 /// Rich text (notes, terms and conditions): a formatting toolbar over an editable area; posts HTML. The initial value
-/// is cleaned with <see cref="RichText.Sanitize"/>; clean what is posted on the server as well.
+/// is cleaned with <see cref="RichText.Sanitize(string?)"/>; clean what is posted on the server as well.
 /// <code>&lt;app-rich-text asp-for="Notes" placeholder="Terms and conditions" /&gt;</code>
 /// </summary>
 [HtmlTargetElement("app-rich-text", TagStructure = TagStructure.WithoutEndTag)]

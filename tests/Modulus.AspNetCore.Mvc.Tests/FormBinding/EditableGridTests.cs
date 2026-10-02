@@ -240,7 +240,7 @@ public class EditableGridTagHelperTests
         Assert.Contains("""x-text="changesText()">Unsaved changes</span>""", html);
         Assert.Contains("""title="Save (Ctrl+S)" data-m-grid-save>""", html);
         // Each searchable header also has its box for the filter row (shown while the row is on).
-        Assert.Contains("""class="ant-input ant-input-sm m-th-filter" type="text" value="" placeholder="Filter…" aria-label="Filter Name" """.TrimEnd(), html);
+        Assert.Contains("""class="ant-input ant-input-sm m-th-filter" type="text" value="" placeholder="Filter&#x2026;" aria-label="Filter Name" """.TrimEnd(), html);
         Assert.Contains("""placeholder="e.g. &gt;100 or 10..50" aria-label="Filter Budget" """.TrimEnd(), html);
         Assert.Contains("""<select class="m-select" aria-label="Status" data-filter="status" @change="setFilter('status', $el.value)"><option value="">Any status</option><option value="a">Active</option><option value="d">Done</option></select>""", html);
         // Columns and Export CSV are labelled buttons in the toolbar.

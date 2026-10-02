@@ -389,7 +389,8 @@ public sealed class PivotQuery<T>
             var (lambda, text) = KeyOf(levels[i]);
             bindings.Add(Expression.Bind(typeof(PivotKey).GetProperty((text ? "S" : "N") + i)!, Rebind(lambda, x)));
         }
-        var keySelector = Expression.Lambda<Func<T, PivotKey>>(Expression.MemberInit(Expression.New(typeof(PivotKey)), bindings), x);
+        var keySelector = Expression.Lambda<Func<T, PivotKey>>(
+            bindings.Count > 0 ? Expression.MemberInit(Expression.New(typeof(PivotKey)), bindings) : Expression.New(typeof(PivotKey)), x);
         var grouped = source.GroupBy(keySelector);
 
         var g = Expression.Parameter(typeof(IGrouping<PivotKey, T>), "g");

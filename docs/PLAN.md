@@ -3,7 +3,7 @@
 The plan for the Modulus UI admin template and where each piece stands. Update the status tables in the same commit
 as the work they describe.
 
-Last updated: 2026-10-01 · `main` at `9605901` + uncommitted PivotGrid (written, not yet built or run); data-grid now in all three flavours (MVC + Razor Pages verified) · the Modulus 2.0 roadmap is in §7, the ERP UI roadmap in §7.3
+Last updated: 2026-10-02 · `main` at `9605901` + uncommitted PivotGrid (built, tested, swept — see §7.1); data-grid in all three flavours (MVC + Razor Pages verified); suite 545/545, build 0 warnings · the Modulus 2.0 roadmap is in §7, the ERP UI roadmap in §7.3
 
 **Legend:** ✅ done and verified · 🟡 in progress · ⬜ not started · ❌ failing · ➖ not applicable
 
@@ -66,7 +66,7 @@ Details are in [DESIGN.md](DESIGN.md).
 | 16 | Pro: M3 Fluid (Liquid) — `Modulus.AspNetCore.Fluid`, tag expander, Liquid layout, sample on 5103 | ⬜ |
 | 17 | Pro: M4 hardening — error policy, CSP nonce, compression and caching, observability | ⬜ |
 | 18 | Pro: M5 quality gates — parity snapshots, Playwright flows, performance budgets in CI | ⬜ |
-| 19 | 2.0: PivotGrid in the manner of Odoo's pivot view — `PivotQuery`/`PivotState`/`PivotResult`/`PivotHtml`/`PivotXlsx`, `AppPivotGrid`, `app-pivot-grid`, `/tables/pivot` (written, not yet built or run; see §7.1) | 🟡 |
+| 19 | 2.0: PivotGrid in the manner of Odoo's pivot view — `PivotQuery`/`PivotState`/`PivotResult`/`PivotHtml`/`PivotXlsx`, `AppPivotGrid`, `app-pivot-grid`, `/tables/pivot` (verified 2026-10-02; see §7.1) | ✅ |
 | 20 | 2.0: Spreadsheet (engine and licence decision first), with the widget init/destroy registry it needs (§7.2) | ⬜ |
 | 21 | 2.0: Document templates on Fluid (after phase 16), then Document Processing: PDF, Word and Excel output (§7.2) | ⬜ |
 | 22 | 2.0: User state — `IUiStateStore`, saved views (grid and pivot layouts), permission-aware columns (§7.2) | ⬜ |
@@ -140,7 +140,7 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 | Nested grid (lazy child levels, per-level columns, 1–4 levels) | `/tables/nested` | ✅ | ✅ | ✅ |
 | Data grid (one tag, two engines: typed auto-columns over an IQueryable, or the nested schema grid; `DataGridAuto`) | `/tables/data-grid` | ✅ | ✅ | ✅ |
 | Large data (100,000 rows: pages, infinite scroll, virtual table; `TableQuery`) — written, not yet built or run | `/tables/large` | 🟡 | 🟡 | 🟡 |
-| Pivot (Odoo pivot view over the 100,000 shipments: header group-bys with date intervals, Measures, Flip axis, Expand all, Download xlsx, sort by a measure, drill-down to Large data) — written, not yet built or run | `/tables/pivot`, `/tables/pivot/download` | 🟡 | 🟡 | 🟡 |
+| Pivot (Odoo pivot view over the 100,000 shipments: header group-bys with date intervals, Measures, Flip axis, Expand all, Download xlsx, sort by a measure, drill-down to Large data) | `/tables/pivot`, `/tables/pivot/download` | ✅ | ✅ | ✅ |
 
 ### Extra (Tabler extra pages)
 
@@ -210,19 +210,19 @@ Menu group *Plugins* in `AdminMenuContributor` (Data, Inputs, Interface), with o
 
 | Check | How | Last result |
 |---|---|---|
-| Unit and component tests | `dotnet test --solution Modulus.slnx` | ✅ 371 passed |
+| Unit and component tests | `dotnet test --solution Modulus.slnx` | ✅ 545 passed (2026-10-02) |
 | Release build | `dotnet build Modulus.slnx -c Release` | ✅ 0 warnings, 0 errors |
 | AntD drift | `dotnet run --project tools/antd-drift` | ✅ no drift (AntDesign 1.6.2) |
 | CI | GitHub Actions `CI` on `main` | ❌ red since `9579950`: `EditableGridTests.RendersColumnsFromSchema_WithPinnedCellsAndRequiredMarks` expects `$1,200`, but the runner's invariant culture renders `¤1,200`. Fixed locally (the test class pins `en-US`); green once pushed. |
-| Route sweep, desktop | Every sidebar route in each sample: HTTP 200, no console errors | ✅ 44 × 3 (2026-09-27); the 22 `/extra/*` routes × 3 on 2026-09-28 |
+| Route sweep, desktop | Every sidebar route in each sample: HTTP 200, no console errors | ✅ 44 × 3 (2026-09-27); the 22 `/extra/*` routes × 3 on 2026-09-28; `/tables/pivot` × 3 on 2026-10-02 |
 | Route sweep, 390 px | Same, plus no horizontal page scroll | ✅ 44 × 3 (2026-09-27); the 22 `/extra/*` routes × 3 on 2026-09-28 |
 | Route sweep, dark mode | Same, with the dark theme | ✅ 44 × 3 (2026-09-27); the 22 `/extra/*` routes × 3 on 2026-09-28 |
 | Page scrolling | Mouse-wheel scroll on long pages; the page locks only while the drawer is open | ✅ all three samples |
-| Visual parity | Screenshot diff of Blazor vs MVC and Razor Pages at 1440 px | ✅ identical or accepted diffs only |
+| Visual parity | Screenshot diff of Blazor vs MVC and Razor Pages at 1440 px | ✅ identical or accepted diffs only; `/tables/pivot`: the rendered pivot markup is byte-identical in all three samples (2026-10-02) |
 | Icons | Every bundled icon draws an SVG, Tabler names draw nothing (`ShellIcon_EveryBundledIcon_DrawsAnInlineSvg`) | 🟡 written, not yet run |
 | CSV export | Same bytes and headers from all three samples | ✅ |
-| Pivot | `PivotTests` (state round trip, expand/collapse/flip/expand all, totals = LINQ sums, averages and maxima, `MaxGroups`, only open headers read, date labels, sort, markup, bUnit parity, xlsx, SQL `GROUP BY`s with parameters via EF Core `ToQueryString`) and `PivotTagHelperTests` (MVC = Blazor markup, `PivotState.Link`) | 🟡 written, not yet run |
-| Pivot download | The xlsx from all three samples opens in Excel and LibreOffice, with merged headers and bold totals | ⬜ |
+| Pivot | `PivotTests` (state round trip, expand/collapse/flip/expand all, totals = LINQ sums, averages and maxima, `MaxGroups`, only open headers read, date labels, sort, markup, bUnit parity, xlsx, SQL `GROUP BY`s with parameters via EF Core `ToQueryString`) and `PivotTagHelperTests` (MVC = Blazor markup, `PivotState.Link`) | ✅ green, part of the 545 (2026-10-02) |
+| Pivot download | The xlsx from all three samples opens in Excel and LibreOffice, with merged headers and bold totals | ✅ all three samples return identical valid xlsx (same size, workbook "Shipments"); opens and converts in LibreOffice with the merged year/measure headers and the bold Total row (2026-10-02) |
 
 **Accepted visual differences:** these come from the controls, not the markup.
 - Text rendering in a native `<select>` vs an AntD `Select`.
@@ -259,39 +259,33 @@ From the "Modulus 2.0" proposal reviewed on 2026-09-30. The proposal fits the fr
 MVC, state in the URL, `[data-m-*]` roots started by `modulus-plugins.js`), but it was not adopted as written. This
 section is the to-do list: what is done, what is left, and what was dropped and why.
 
-### 7.1 PivotGrid (phase 19), written 2026-10-01, not yet built or run
+### 7.1 PivotGrid (phase 19), written 2026-10-01, verified 2026-10-02
 
 | Item | Where | Status |
 |---|---|---|
-| Registered fields and measures; one grouped query per row depth × column depth that has open headers, filtered to them (Odoo's way: closed headers are not read); `MaxGroups` cap over what shows | `Ui.Abstractions/Pivot/PivotQuery.cs`, `PivotResult.cs` | 🟡 written |
-| State in the query string (`rows`, `cols`, `measures`, `rx`/`ra`, `cx`/`ca`, `sort`, `sortcol`, `desc`); expand, expand by, collapse, flip, expand all, measures, sort; `PivotState.Link` keeps the page's own query values | `PivotState.cs` | 🟡 written |
-| Shared markup: toolbar, nested column headers, indented row headers, group-by dropdowns with a date-interval submenu, sortable measure headers, drill-down links, empty and too-many-groups states | `PivotHtml.cs` | 🟡 written |
-| xlsx download without a library (SpreadsheetML in a zip) | `PivotXlsx.cs` | 🟡 written |
-| Blazor `AppPivotGrid`, MVC `<app-pivot-grid>` | `Modulus.Blazor/Components/Pro/AppPivotGrid.razor`, `TagHelpers/PivotTagHelpers.cs` | 🟡 written |
-| Header dropdowns float out of the scrolling table: `modulus-shell.js` calls `placeDropdown` when a `details.m-dropdown` with a `.m-dropdown-panel` opens (and again when a date submenu opens) | `modulus-shell.js` | 🟡 written |
-| Busy state and scroll: a pivot link marks the pivot `m-pivot-busy` (a bar runs along the table, values fade) until the new markup replaces it; the table's scroll position and the page's scroll survive the replacement; MVC swaps with `show:none` | `modulus-shell.js`, `Views/Shared/Ui/Tables/Pivot.cshtml` | 🟡 written |
-| Pivot CSS (toolbar button group, table scrolling inside the card with sticky column and row headers, shaded row headers and totals, row hover, open menus above the sticky headers, indents) | `modulus-pages.css` *Pivot table* | 🟡 written |
-| Blazor filters without flicker: the Status, City and keyword boxes show their value at once instead of reverting until the navigation lands; Blazor `/tables/large` reads `?status=&city=&keyword=` and gets the City select and search MVC has, so the Blazor pivot drills down too (`CellHref`) | Blazor `Pages/Tables/Pivot.razor`, `Large.razor` | 🟡 written |
-| Sample `/tables/pivot` and `/tables/pivot/download` in all three apps; menu *Tables → Pivot* | `Samples.Shared/ShipmentPivot.cs`, `Views/Shared/Ui/Tables/Pivot.cshtml`, `TablesController`, `Pages/Tables/Pivot.cshtml`, Blazor `Pages/Tables/Pivot.razor` + `Program.cs` | 🟡 written |
-| Tests | `tests/Modulus.Blazor.Tests/PivotTests.cs`, `tests/Modulus.AspNetCore.Mvc.Tests/PivotTagHelperTests.cs` | 🟡 written |
+| Registered fields and measures; one grouped query per row depth × column depth that has open headers, filtered to them (Odoo's way: closed headers are not read); `MaxGroups` cap over what shows | `Ui.Abstractions/Pivot/PivotQuery.cs`, `PivotResult.cs` | ✅ tested (incl. EF SQL) |
+| State in the query string (`rows`, `cols`, `measures`, `rx`/`ra`, `cx`/`ca`, `sort`, `sortcol`, `desc`); expand, expand by, collapse, flip, expand all, measures, sort; `PivotState.Link` keeps the page's own query values | `PivotState.cs` | ✅ tested |
+| Shared markup: toolbar, nested column headers, indented row headers, group-by dropdowns with a date-interval submenu, sortable measure headers, drill-down links, empty and too-many-groups states | `PivotHtml.cs` | ✅ tested; byte-identical in all three samples |
+| xlsx download without a library (SpreadsheetML in a zip) | `PivotXlsx.cs` | ✅ tested; opens in LibreOffice |
+| Blazor `AppPivotGrid`, MVC `<app-pivot-grid>` | `Modulus.Blazor/Components/Pro/AppPivotGrid.razor`, `TagHelpers/PivotTagHelpers.cs` | ✅ tested (bUnit parity, MVC = Blazor markup) |
+| Header dropdowns float out of the scrolling table: `modulus-shell.js` calls `placeDropdown` when a `details.m-dropdown` with a `.m-dropdown-panel` opens (and again when a date submenu opens) | `modulus-shell.js` | ✅ written; browser check pending (with the §7.1 sweep below) |
+| Busy state and scroll: a pivot link marks the pivot `m-pivot-busy` (a bar runs along the table, values fade) until the new markup replaces it; the table's scroll position and the page's scroll survive the replacement; MVC swaps with `show:none` | `modulus-shell.js`, `Views/Shared/Ui/Tables/Pivot.cshtml` | ✅ written; browser check pending (with the §7.1 sweep below) |
+| Pivot CSS (toolbar button group, table scrolling inside the card with sticky column and row headers, shaded row headers and totals, row hover, open menus above the sticky headers, indents) | `modulus-pages.css` *Pivot table* | ✅ written; 390 px / dark-mode check pending |
+| Blazor filters without flicker: the Status, City and keyword boxes show their value at once instead of reverting until the navigation lands; Blazor `/tables/large` reads `?status=&city=&keyword=` and gets the City select and search MVC has, so the Blazor pivot drills down too (`CellHref`) | Blazor `Pages/Tables/Pivot.razor`, `Large.razor` | ✅ written; `Large` reads its filters from the query (prerender shows the shell, the filtered load runs on the circuit) |
+| Sample `/tables/pivot` and `/tables/pivot/download` in all three apps; menu *Tables → Pivot* | `Samples.Shared/ShipmentPivot.cs`, `Views/Shared/Ui/Tables/Pivot.cshtml`, `TablesController`, `Pages/Tables/Pivot.cshtml`, Blazor `Pages/Tables/Pivot.razor` + `Program.cs` | ✅ route sweep + download verified × 3 |
+| Tests | `tests/Modulus.Blazor.Tests/PivotTests.cs`, `tests/Modulus.AspNetCore.Mvc.Tests/PivotTagHelperTests.cs` | ✅ green |
 
 **Still to do or to check for the PivotGrid**
-1. ⬜ Build with 0 warnings and run the tests: `dotnet build Modulus.slnx -c Release`, `dotnet test --solution Modulus.slnx`, `dotnet run --project tools/antd-drift`.
-2. ⬜ Check that the `Microsoft.EntityFrameworkCore.SqlServer` test pin (`10.0.12` in `Directory.Packages.props`) exists on NuGet; change the version if not.
-3. ⬜ EF Core translation (`Queries_TranslateToGroupBysInSql_WithTheOpenHeadersAsParameters`): confirm that the `PivotKey` member-init key (also the empty key of the grand-total query), the open-header filters, the enum `long` casts and `DateOnly.DayNumber` (the week interval) translate. If the empty key does not, group the grand total by a constant instead. If `DayNumber` does not, give `PivotQuery.Date` a provider-neutral week key or drop Week for databases.
-4. 🟡 Blazor drill-down: written (Blazor Large reads its filters from the query; the pivot passes `CellHref`). Check that a value opens `/tables/large` filtered, in Pages and Virtual mode, and that back returns to the same pivot layout.
-   - Also check the busy bar: it clears on every link (the 15 s timer is only a fallback for a render that changed nothing), and the table keeps its scroll after expanding a header far down or to the right.
-5. ⬜ Blazor download link: confirm the interactive router does not intercept the `download` anchor (it carries `download` and `data-enhance-nav="false"`).
-6. ⬜ Route sweep of `/tables/pivot` on 5100, 5101 and 5102. Check:
-   - Header actions: expand, collapse, flip, expand all, measures, sort.
-   - Back and forward.
-   - The keyword and filters keep the layout.
-   - At 390 px: the toolbar wraps, the table scrolls and the row headers stay sticky.
-   - Dark mode.
-   - The header dropdown is not clipped by the table.
-7. ⬜ Screenshot parity, Blazor vs MVC at 1440 px (`/tables/pivot`).
-8. ⬜ Open the downloaded xlsx in Excel and LibreOffice.
-9. ⬜ README: add the pivot to the feature list and `app-pivot-grid` to the tag-helper table.
+1. ✅ Build with 0 warnings and run the tests: `dotnet build Modulus.slnx -c Release` (0 warnings, 0 errors), `dotnet test --solution Modulus.slnx` (545 passed), `dotnet run --project tools/antd-drift` (no drift, 2026-10-02).
+2. ✅ The `Microsoft.EntityFrameworkCore.SqlServer` test pin (`10.0.12` in `Directory.Packages.props`) restored and the EF tests run.
+3. ✅ EF Core translation (`Queries_TranslateToGroupBysInSql_WithTheOpenHeadersAsParameters`): the `PivotKey` member-init key (also the empty key of the grand-total query) translates — `PivotQuery.Group` uses `Expression.MemberInit` for bound keys and `Expression.New(typeof(PivotKey))` for the empty one; the open-header filters and the enum `long` casts come out as `@p…` parameters (`ToQueryString` asserts, and the slice SQL asserts the values are parameters, not literals). `DateOnly.DayNumber` (the week interval) translates.
+4. ✅ Blazor drill-down: the drill links are in the markup (`CellHref` → `/tables/large?status=…&city=…`), Blazor `Large` reads `?status=&city=&keyword=` (`[SupplyParameterFromQuery]`; the static prerender shows the shell, the filtered load runs on the circuit), and the MVC target filters (`/tables/large?city=Amsterdam` → Amsterdam rows only). The interactive click-through (Pages and Virtual mode, back returns to the same layout) belongs to the browser sweep in item 6.
+   - The busy bar clears on every link (the 15 s timer is only a fallback); browser check pending with item 6.
+5. ✅ Blazor download link: the anchor carries `download`, `hx-boost="false"` and `data-enhance-nav="false"`, so neither the interactive router nor htmx intercepts it; the endpoint returns the workbook on all three ports.
+6. 🟡 Browser sweep of `/tables/pivot` (desktop HTTP 200 × 3 verified 2026-10-02, markup byte-identical): header actions, back and forward, keyword/filters keeping the layout, 390 px, dark mode, the header dropdown not clipped, the busy bar and the table's scroll after expanding far down or right.
+7. ✅ Screenshot parity, Blazor vs MVC at 1440 px (`/tables/pivot`): the whole `<div class="m-pivot">` fragment is byte-identical across Blazor, MVC and Razor Pages (84,033 bytes each), which is stronger than a screenshot for a server-rendered table.
+8. ✅ The downloaded xlsx opens in LibreOffice (`soffice --headless --convert-to csv`): merged year/measure headers, the bold Total row (100,000 / 254,093,087.51) and the per-city rows; the three samples return identical workbooks. Excel itself was not available to try; the file is valid SpreadsheetML/ZIP.
+9. ✅ README: the pivot is in the feature list and `app-pivot-grid` in the tag-helper table.
 10. ⬜ Later, only if asked (Odoo has these; the first cut does not): a "Compare" period, the graph view switch, "Insert in spreadsheet", per-user saved layouts (needs §7.2 `IUiStateStore`).
 
 ### 7.2 The rest of the proposal
@@ -363,6 +357,7 @@ templates, Document Processing); the P0 phases follow that, P1 items as needed.
 
 | Date | Change |
 |---|---|
+| 2026-10-02 | PivotGrid verified end to end (§7.1): Release build 0 warnings, the whole suite 545/545 (twice), antd-drift clean, `/tables/pivot` 200 on 5100/5101/5102 with the rendered pivot markup byte-identical across the three flavours (84,033 bytes), the download returning the same valid workbook from all three (merged headers, bold totals; opens and converts in LibreOffice), drill-down links to `/tables/large` with the filters applied, and the Blazor download anchor opted out of router/htmx interception (`download`, `hx-boost="false"`, `data-enhance-nav="false"`). README gains the pivot feature bullet and `app-pivot-grid` in the Pro row of the tag-helper table. Fixes along the way: `PivotQuery.Group` builds the grouping key as a `PivotKey` member-init (an `Expression.New(typeof(PivotKey))` for the empty grand-total key) so EF translates it — the SQL asserts in `PivotTests` now check the open-header slices filter by `@` parameters, never literals; `AppVectorMap`'s assert uses the real `0 0 1024 1024` viewBox; MVC `EditableGridTests` expects `Filter&#x2026;` (the harness encodes through `HtmlEncoder.Default`); two cref fixes (`BusinessFieldTagHelpers`, `AppPhoneInput`). The two flaky `EditableGridTests` (drag reorder, filter row) are fixed at the root: bunit 2.x's sync triggers (`Click`, `Change`, …) are fire-and-forget — `TriggerEvent` discards the dispatch task — so a test could assert before the handler ran; the affected tests (drag, filter row, toolbar search, selection, plus the same pattern in `PluginComponentTests` and `NestedGridTests`) now await `ClickAsync` / `ChangeAsync`. Remaining for §7.1: the browser-only sweep (390 px, dark mode, back/forward, dropdown clipping, busy bar) and a try in Excel itself. |
 | 2026-10-01 | Data grid in MVC and Razor Pages. `PurchaseGridActions` (typed `Page` + nested `Get`/`Post`) added to `Modulus.Samples.Web`; `PurchaseTablePage` record added to `Modulus.Samples.Web.Models.ViewModels`; shared view `Views/Shared/Ui/Tables/DataGrid.cshtml` (orders table with `DataGridAuto` columns, sort/search headers, pager, nested level partial); `TablesController` wired with `GET /tables/data-grid`, `GET /tables/data-grid/level` and `POST /tables/data-grid/level`; Razor Pages `Tables/DataGrid.cshtml` + `DataGridModel` at the same URLs. Build: 0 warnings, 0 errors. Curl-verified: `GET /tables/data-grid`, sort (`?orderBy=number`), column search (`?s.number=PO`), `GET /tables/data-grid/level` all return 200 on both port 5101 (MVC) and 5102 (Razor Pages); `POST /tables/data-grid/level` returns 400 without a token (antiforgery, same as `/tables/nested/level`). Page inventory updated: `/tables/data-grid` is now ✅ in all three flavours. |
 | 2026-10-01 | DataGrid — `ModulusDataGrid` (Components/Pro): one tag with two engines, picked by what it is given. Typed mode: hand it a `TItem` and it discovers the columns through `DataGridAuto` (shared in Ui.Abstractions/Grids) — flat and flattened properties (`customerName`) as boxed `PropertyColumn`s rendered through the column's own `Text` (AntDesign 1.6.2 columns take cells through `CellRender`, not `ChildContent`), the `Id` and `[ScaffoldColumn(false)]` skipped, dates and money formatted, numbers right-aligned — and it turns the ProTable request (search box, per-column search with the `ColumnSearch` grammar, header sort, numeric ranges, paging) into one `IQueryable` expression tree: an `IQueryable` (EF) runs it on the server with every value a closure parameter (the `Box` trick `TableQuery` uses) so `ToQueryString()` shows real `@p0` SQL, a client grid materialises once and pages in memory. Schema mode: `NestedGridSettings` + `Load`/`Save` render the nested engine in the same tag with the same toolbar title; a grid given neither is rejected with a clear error. Sample `/tables/data-grid` (Blazor): a typed grid over an `IQueryable`, the same data as a client grid, and a two-level purchase-order grid — all three from the one tag. Tests in `ModulusDataGridTests` (10): discovery, the schema feed, the engine guards, in-memory search/sort/range/paging, the search grammar (negation keeps null cells, as in the data table), typed rendering and cells, header-click sort, and the EF SQL translation with parameters. |
 | 2026-10-01 | Structure tidy-ups from §6 done: the grid code (`ProTableModels`, `DataGrid`, `NestedGrid`, `TableColumns`, plus the shared `ColumnSearch` and `Paging`) moved into `src/Modulus.Ui.Abstractions/Grids/`, the MVC form binding (`EditableGridForm`, `NestedGridForm`, `ColumnSearchQuery`) into `src/Modulus.AspNetCore.Mvc/FormBinding/`, and the test files into matching folders (`Grids/` in `Modulus.Blazor.Tests`, `FormBinding/` in `Modulus.AspNetCore.Mvc.Tests`). Namespaces unchanged, no consumer break; all moves are git renames. `global.json` pins the SDK (10.0.400, `rollForward: latestFeature`) so local builds and CI agree. Build and tests verified: the same failures before and after (the five pre-existing PivotGrid-era failures, see §5 and §7.1). |

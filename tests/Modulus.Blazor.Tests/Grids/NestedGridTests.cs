@@ -125,7 +125,7 @@ public class NestedGridTests : BunitContext
     }
 
     [Fact]
-    public void NestedGrid_FilterRowSearchesOnTheServer()
+    public async Task NestedGrid_FilterRowSearchesOnTheServer()
     {
         var settings = Settings();
         settings.Levels[0].Columns = [Name, new GridColumn { Key = "kind", Title = "Kind", Type = GridCellType.Select, Filterable = true, Options = [new("a", "A")] }];
@@ -140,7 +140,7 @@ public class NestedGridTests : BunitContext
         Assert.Single(cut.FindAll("input.m-th-filter"));
         Assert.Empty(cut.FindAll(".m-grid-search"));
         // The level's own search folds into one icon while it is empty; a click opens the box.
-        cut.Find(".m-table-search-toggle").Click();
+        await cut.Find(".m-table-search-toggle").ClickAsync(new());
         Assert.Single(cut.FindAll(".m-nested-search"));
     }
 
