@@ -125,6 +125,18 @@ public static class EmployeeDirectory
     /// Whether an employee matches a column search of the data table: the text shown in that column (the employee
     /// column also has the email), with comparisons for the start date and the salary.
     /// </summary>
+    /// <summary>
+    /// The checkbox list of a column's filter menu, each value with how many employees have it (all of them, as in
+    /// Excel). Null for a column searched by typing.
+    /// </summary>
+    public static IReadOnlyList<ColumnValue>? SearchValues(string field) => field switch
+    {
+        nameof(Employee.Department) => ColumnSearch.ValuesOf(All.Select(e => e.Department)),
+        nameof(Employee.Office) => ColumnSearch.ValuesOf(All.Select(e => e.Office)),
+        nameof(Employee.Status) => ColumnSearch.ValuesOf(All.Select(e => StatusLabel(e.Status))),
+        _ => null,
+    };
+
     public static bool ColumnMatches(Employee e, string field, string? search) => field switch
     {
         nameof(Employee.Name) => ColumnSearch.Matches(search, $"{e.Name} {e.Email}"),
@@ -147,6 +159,13 @@ public static class EmployeeDirectory
         [nameof(Employee.Salary)] = e => e.Salary,
         [nameof(Employee.Status)] = e => StatusLabel(e.Status),
     };
+
+    /// <summary>Bands over the data table's column titles (a multi-level header); keys are the sort fields.</summary>
+    public static readonly HeaderGroup[] HeaderBands =
+    [
+        new("Job", nameof(Employee.Position), nameof(Employee.Department), nameof(Employee.Office)),
+        new("Employment", nameof(Employee.StartDate), nameof(Employee.Salary), nameof(Employee.Status)),
+    ];
 
     /// <summary>The fields the data table can group by (the "Group by" menu); keys are the sort fields.</summary>
     public static readonly TableColumn[] GroupFields =

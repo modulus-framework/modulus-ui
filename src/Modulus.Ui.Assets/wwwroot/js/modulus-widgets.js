@@ -769,15 +769,44 @@
             };
         });
 
+        // ColumnSearch.ValueList: "=a|b" is one of the values, "!=a|b" none of them ("!=a" alone is "not exactly a").
+        function valueList(q) {
+            q = String(q || '').trim();
+            var exclude = q.indexOf('!=') === 0;
+            if (exclude ? q.length < 3 : q.length < 2 || q[0] !== '=' || q.indexOf('|') < 0) return null;
+            return { exclude: exclude, values: q.slice(exclude ? 2 : 1).split('|').map(function (v) { return v.trim().toLowerCase(); }) };
+        }
+        // ColumnSearch.ValueQuery: '' when every value (or none) is picked, else the shorter of "=picked" and "!=others".
+        function valueQuery(picked, values) {
+            if (!picked.length || picked.length >= values.length) return '';
+            var off = values.filter(function (v) { return picked.indexOf(v) < 0; });
+            function list(prefix, vs) { return prefix + (vs.length === 1 && vs[0] === '' ? '|' : vs.join('|')); }
+            var include = list('=', picked), exclude = list('!=', off);
+            return exclude.length < include.length ? exclude : include;
+        }
+        function markCheck(box) {
+            box.closest('.ant-checkbox').classList.toggle('ant-checkbox-checked', box.checked);
+            box.closest('.ant-checkbox-wrapper').classList.toggle('ant-checkbox-wrapper-checked', box.checked);
+        }
+
         // The column search box of a table header (ColumnHeader.cs): position: fixed under its icon, so the table's
         // scroll box doesn't clip it. With data-search-href it asks the server (htmx, using the host's hx-target and
-        // hx-swap, or the ones it inherits); otherwise it raises m-col-search for the grid around it.
+        // hx-swap, or the ones it inherits); otherwise it raises m-col-search for the grid around it. With data-values
+        // the box is a checkbox list (the Excel-style filter menu): the box narrows it and OK applies the values that
+        // are checked and shown, as a value list.
         Alpine.data('columnSearch', function () {
             return {
                 open: false,
                 style: '',
+                init: function () {
+                    if (!this.$refs.values) return;
+                    this._boxes = Array.prototype.slice.call(this.$refs.values.querySelectorAll('input[data-value]'));
+                    this._current = this.$root.getAttribute('data-search') || '';
+                    this.sync();
+                },
                 toggle: function () { if (this.open) this.close(); else this.show(); },
                 show: function () {
+                    if (this._boxes) { this.pick(this._current); this.$refs.input.value = ''; this.narrow(); }
                     var self = this, r = this.$refs.trigger.getBoundingClientRect(), width = 248;
                     var left = Math.max(8, Math.min(r.right - width, document.documentElement.clientWidth - width - 8));
                     this.style = 'position: fixed; top: ' + Math.round(r.bottom + 6) + 'px; left: ' + Math.round(left) + 'px; width: ' + width + 'px; z-index: 1050;';
@@ -792,23 +821,65 @@
                     window.removeEventListener('scroll', this._scroll, { capture: true });
                 },
                 destroy: function () { this.close(); },
-                apply: function () { this.submit(this.$refs.input.value.trim()); },
+                apply: function () {
+                    if (!this._boxes) { this.submit(this.$refs.input.value.trim()); return; }
+                    var text = function (b) { return b.value; }, shown = this.shown();
+                    var picked = shown.filter(function (b) { return b.checked; });
+                    if (!picked.length) return;
+                    var all = this._boxes.map(text), on = picked.map(text);
+                    var off = all.filter(function (v) { return on.indexOf(v) < 0; });
+                    var label = function (vs) { return vs.map(function (v) { return v || '(Blanks)'; }).join(', '); };
+                    var q = valueQuery(on, all);
+                    this.submit(q, q.indexOf('!=') === 0 ? 'Not ' + label(off) : label(on));
+                },
                 reset: function () { this.$refs.input.value = ''; this.submit(''); },
+                // The checkbox list: the boxes not hidden by the search box, which narrows the list by its text.
+                shown: function () { return this._boxes.filter(function (b) { return !b.closest('label').hidden; }); },
+                narrow: function () {
+                    var t = this.$refs.input.value.trim().toLowerCase(), count = 0;
+                    this._boxes.forEach(function (b) {
+                        var hide = !!t && b.getAttribute('data-text').toLowerCase().indexOf(t) < 0;
+                        b.closest('label').hidden = hide;
+                        if (!hide) count++;
+                    });
+                    this.$refs.none.hidden = count > 0;
+                    this.sync();
+                },
+                selectAll: function (on) { this.shown().forEach(function (b) { b.checked = on; }); this.sync(); },
+                // The boxes' classes, Select all (checked, or part-checked, for the values shown) and OK (off with none).
+                sync: function () {
+                    this._boxes.forEach(markCheck);
+                    var shown = this.shown(), n = shown.filter(function (b) { return b.checked; }).length, all = this.$refs.all;
+                    all.checked = shown.length > 0 && n === shown.length;
+                    all.indeterminate = n > 0 && n < shown.length;
+                    markCheck(all);
+                    all.closest('.ant-checkbox').classList.toggle('ant-checkbox-indeterminate', all.indeterminate);
+                    this.$refs.ok.disabled = n === 0;
+                },
+                // ColumnSearch.Picked: check the values a search keeps (all for none, or a typed one).
+                pick: function (q) {
+                    q = String(q || '').trim();
+                    var list = valueList(q) || (q.length > 1 && q[0] === '=' ? { exclude: false, values: [q.slice(1).trim().toLowerCase()] } : null);
+                    this._boxes.forEach(function (b) { b.checked = !list || (list.values.indexOf(b.value.trim().toLowerCase()) >= 0) !== list.exclude; });
+                    this.sync();
+                },
                 // The box in the filter row (Enter, or leaving it): the same search as the popup's.
                 applyInline: function () {
                     var value = this.$refs.inline.value.trim();
-                    if (value === (this.$refs.trigger.classList.contains('active') ? this.$refs.input.value.trim() : '')) return;
-                    this.$refs.input.value = value;
+                    var current = this._boxes ? this._current : this.$refs.trigger.classList.contains('active') ? this.$refs.input.value.trim() : '';
+                    if (value === current) return;
+                    if (!this._boxes) this.$refs.input.value = value;
                     this.submit(value);
                 },
-                submit: function (value) {
+                submit: function (value, label) {
+                    if (this._boxes) { this._current = value; this.pick(value); }
                     var host = this.$root, key = host.getAttribute('data-key'), href = host.getAttribute('data-search-href');
                     this.close();
                     if (this.$refs.inline) {
                         var inline = this.$refs.inline;
                         // A select (option columns) shows a query typed in the popup as an extra choice.
                         if (inline.tagName === 'SELECT' && value && !Array.prototype.some.call(inline.options, function (o) { return o.value === value; }))
-                            inline.add(new Option(value, value));
+                            inline.add(new Option(label || value, value));
                         inline.value = value;
                         this.$refs.inline.classList.toggle('m-th-filter-active', !!value);
                     }
@@ -895,6 +966,8 @@
             function columnMatch(q, text, k, raw) {
                 q = String(q || '').trim();
                 if (!q) return true;
+                var list = valueList(q);
+                if (list) return (list.values.indexOf(String(text || '').trim().toLowerCase()) >= 0) !== list.exclude;
                 var result = k === 'Number' ? compare(q, num(raw), parseNum) : k === 'Date' ? compare(q, parseDate(raw || ''), parseDate) : null;
                 if (result !== null) return result;
                 var t = String(text || '').toLowerCase();
@@ -1324,7 +1397,8 @@
                         var sc = cfg.columns[sk], value = rowValue(tr, sk), text = format(sc, value), sub = sc.sub ? rowValue(tr, sc.sub) : '';
                         // With a subtitle, as GridSchema.ColumnMatches: contains and =exact match the cell or the cell
                         // with its subtitle; !exclude needs neither to contain it.
-                        var ok = !sub ? columnMatch(s[sk], text, kind(sc), value)
+                        // A value list compares the cell alone.
+                        var ok = !sub || valueList(s[sk]) ? columnMatch(s[sk], text, kind(sc), value)
                             : /^\s*!/.test(s[sk]) ? columnMatch(s[sk], text + ' ' + sub, kind(sc), value)
                             : columnMatch(s[sk], text, kind(sc), value) || columnMatch(s[sk], text + ' ' + sub, kind(sc), value);
                         if (!ok) return false;

@@ -15,7 +15,7 @@
     </Actions>
 </PageHeading>
 
-<EditableGrid @ref="_grid" Columns="_columns" Rows="_rows" HeaderTitle="Projects" OnSave="Save" OnDiscard="Discard">
+<EditableGrid @ref="_grid" Columns="_columns" Rows="_rows" HeaderTitle="Projects" HeaderGroups="ProjectGridStore.HeaderBands" OnSave="Save" OnDiscard="Discard">
     <TitleExtra>
         <span class="m-badge m-badge-gray-lt">@_rows.Count</span>
     </TitleExtra>

@@ -11,10 +11,11 @@
 @* Rows drag by their handle to a new place (not while a column sort is on); EmployeeDirectory keeps the order.
    The search, filters, hidden columns, sort, column searches and page are in the URL (UrlState), with the MVC page's
    keys, so the Views dropdown saves the layout and back and forward step through it. Shift+click on a header adds a
-   sort (MultiSort), and Group by groups the rows by department, office or status with payroll subtotals. *@
+   sort (MultiSort), and Group by groups the rows by department, office or status with payroll subtotals.
+   HeaderGroups puts Job and Employment bands over the column titles; a hidden column narrows its band. *@
 <ProTable TItem="Employee" @ref="_table" HeaderTitle="Employees" Request="LoadAsync" RowKey="e => e.Id" Selectable ScrollX="1140" FilterRow ColumnSettings="false" Exportable="false"
           OnRowMove="MoveRow" RowLabel="e => e.Name" UrlState UrlQuery="PageQuery" OnUrlChanged="ReadQuery" MultiSort
-          GroupFields="EmployeeDirectory.GroupFields">
+          GroupFields="EmployeeDirectory.GroupFields" HeaderGroups="EmployeeDirectory.HeaderBands">
     <TitleExtra>
         <span class="m-badge m-badge-gray-lt">@_summary.Count</span>
         <span class="m-small m-muted m-medium" style="font-weight:400">avg. salary @Fmt.Money0(_summary.AverageSalary)</span>
@@ -94,11 +95,11 @@
             <ChildContent>@row.Position</ChildContent>
         </PropertyColumn>
         <PropertyColumn Hidden="@(!Shows("department"))" Property="e => e.Department" Width="150" Class="@SortClass(nameof(Employee.Department))">
-            <TitleTemplate><ColumnHeader Key="@nameof(Employee.Department)" Title="Department" /></TitleTemplate>
+            <TitleTemplate><ColumnHeader Key="@nameof(Employee.Department)" Title="Department" Values="EmployeeDirectory.SearchValues(nameof(Employee.Department))" /></TitleTemplate>
             <ChildContent>@row.Department</ChildContent>
         </PropertyColumn>
         <PropertyColumn Hidden="@(!Shows("office"))" Property="e => e.Office" Width="150" Class="@SortClass(nameof(Employee.Office))">
-            <TitleTemplate><ColumnHeader Key="@nameof(Employee.Office)" Title="Office" /></TitleTemplate>
+            <TitleTemplate><ColumnHeader Key="@nameof(Employee.Office)" Title="Office" Values="EmployeeDirectory.SearchValues(nameof(Employee.Office))" /></TitleTemplate>
             <ChildContent><span class="m-flex m-gap-6"><Icon Type="@(row.Office == "Remote" ? "home" : "environment")" />@row.Office</span></ChildContent>
         </PropertyColumn>
         <PropertyColumn Hidden="@(!Shows("start"))" Property="e => e.StartDate" Width="130" Class="@($"m-muted{SortClass(nameof(Employee.StartDate))}")">
@@ -110,7 +111,7 @@
             <ChildContent><span class="m-num m-heading">@Fmt.Money0(row.Salary)</span></ChildContent>
         </PropertyColumn>
         <PropertyColumn Property="e => e.Status" Width="120" Class="@SortClass(nameof(Employee.Status))">
-            <TitleTemplate><ColumnHeader Key="@nameof(Employee.Status)" Title="Status" /></TitleTemplate>
+            <TitleTemplate><ColumnHeader Key="@nameof(Employee.Status)" Title="Status" Values="EmployeeDirectory.SearchValues(nameof(Employee.Status))" /></TitleTemplate>
             <ChildContent><span class="m-badge @EmployeeDirectory.StatusBadge(row.Status)">@EmployeeDirectory.StatusLabel(row.Status)</span></ChildContent>
         </PropertyColumn>
     </Columns>

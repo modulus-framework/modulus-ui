@@ -92,6 +92,10 @@ pixel-for-pixel where the controls allow it.
   `Total(…)` sort by the group first and read each group's row count and sums, averages, minima or maxima in one SQL
   `GROUP BY`, so every group gets a header row (collapsible) and a subtotal row, with totals under the table. MVC
   renders the same rows with `TableGroups.HeaderRow` / `FooterRow`.
+- **Multi-level headers:** `HeaderGroups` on `ProTable` and `EditableGrid` puts titled bands ("Job", "Employment")
+  over neighbouring columns, by column key, on as many levels as you need; a hidden column narrows its band. MVC
+  has `header-groups` on `<app-editable-grid>`, and other tables write the same rows with
+  `HeaderGroups.Rows(shownColumns, groups)` at the top of the `<thead>`.
 - **Saved views and field access** (`Modulus.Ui.Abstractions.State`): `AppSavedViews` / `app-saved-views` is a
   "Views" dropdown. A signed-in user names the current layout (its query string), stars one view as the default and
   deletes views. Views are kept per user in `IUiStateStore`; the default is in memory, so register your own store to

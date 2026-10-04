@@ -21,10 +21,11 @@ public static class ColumnHeader
     /// <param name="choices">Choices of the column's box in the filter row (a select instead of a text box); see <see cref="GridSchema.SearchChoices"/>.</param>
     /// <param name="sortAddHref">Multi-sort: the URL of a Shift+click, which adds this column to the other sorts (<see cref="SortKeys.Click"/>; modulus-shell.js follows it).</param>
     /// <param name="sortRank">The column's place among several sorts (<see cref="SortKeys.Rank"/>), shown by the carets; 0 for none.</param>
+    /// <param name="values">The column's checkbox list (the Excel-style filter menu) in place of the search box: a search box that narrows the list, Select all, and one checkbox per value; see <see cref="GridSchema.SearchValues"/> and <see cref="ColumnSearch.ValuesOf"/>.</param>
     public static string Content(string key, string title, ColumnKind kind = ColumnKind.Text, bool required = false,
         bool sortable = true, SortDirection sort = SortDirection.None, string? sortHref = null, string? sortAttributes = null,
         bool searchable = true, string? search = null, string? searchHref = null, string? searchAttributes = null, string? extra = null,
-        IReadOnlyList<ColumnChoice>? choices = null, string? sortAddHref = null, int sortRank = 0)
+        IReadOnlyList<ColumnChoice>? choices = null, string? sortAddHref = null, int sortRank = 0, IReadOnlyList<ColumnValue>? values = null)
     {
         var label = Html.E(title) + (required ? """<span class="m-grid-required" aria-hidden="true">*</span>""" : "");
         string head;
@@ -44,7 +45,7 @@ public static class ColumnHeader
         }
         else head = $"""<span class="ant-table-column-title m-th-title">{label}</span>""";
 
-        return $"""<span class="m-th" data-key="{Html.E(key)}">{head}{(searchable ? Search(key, title, kind, search, searchHref, searchAttributes, choices) : "")}{extra}</span>""";
+        return $"""<span class="m-th" data-key="{Html.E(key)}">{head}{(searchable ? Search(key, title, kind, search, searchHref, searchAttributes, choices, values is { Count: > 0 } ? values : null) : "")}{extra}</span>""";
     }
 
     /// <summary>Classes for the <c>&lt;th&gt;</c> of a sortable column (with a leading space).</summary>
@@ -56,18 +57,23 @@ public static class ColumnHeader
         !sortable ? "" : $" aria-sort=\"{sort switch { SortDirection.Ascending => "ascending", SortDirection.Descending => "descending", _ => "none" }}\"";
 
     // The search icon and its box (Alpine columnSearch in modulus-widgets.js places it under the icon, position: fixed).
-    private static string Search(string key, string title, ColumnKind kind, string? search, string? searchHref, string? attributes, IReadOnlyList<ColumnChoice>? choices)
+    private static string Search(string key, string title, ColumnKind kind, string? search, string? searchHref, string? attributes, IReadOnlyList<ColumnChoice>? choices,
+        IReadOnlyList<ColumnValue>? values)
     {
         var active = !string.IsNullOrWhiteSpace(search);
         var t = Html.E(title);
         var href = searchHref is null ? "" : $" data-search-href=\"{Html.E(searchHref)}\"";
-        return $"""<span class="m-th-search-host" x-data="columnSearch" data-key="{Html.E(key)}"{href}{attributes} @click.outside="close()" @keydown.escape.stop="close()">""" +
-               $"""<span class="{Html.Cx("ant-table-filter-trigger", "m-th-search", active ? "active" : null)}" role="button" tabindex="0" title="Search {t}" aria-label="Search {t}{(active ? $": {Html.E(search)}" : "")}" aria-haspopup="dialog" :aria-expanded="open" x-ref="trigger" @click.stop.prevent="toggle()" @keydown.enter.prevent="toggle()" @keydown.space.prevent="toggle()">{AntIcons.Span("search")}</span>""" +
+        // With a checkbox list the box narrows the list (it starts empty); the search applied is in data-search.
+        var mode = values is null ? "" : $" data-values data-search=\"{Html.E(search?.Trim())}\"";
+        return $"""<span class="m-th-search-host" x-data="columnSearch" data-key="{Html.E(key)}"{href}{mode}{attributes} @click.outside="close()" @keydown.escape.stop="close()">""" +
+               $"""<span class="{Html.Cx("ant-table-filter-trigger", "m-th-search", active ? "active" : null)}" role="button" tabindex="0" title="Search {t}" aria-label="Search {t}{(active ? $": {Html.E(ColumnSearch.Describe(search))}" : "")}" aria-haspopup="dialog" :aria-expanded="open" x-ref="trigger" @click.stop.prevent="toggle()" @keydown.enter.prevent="toggle()" @keydown.space.prevent="toggle()">{AntIcons.Span("search")}</span>""" +
                $"""<div class="ant-dropdown m-col-search-drop" role="dialog" aria-label="Search {t}" x-show="open" x-cloak :style="style" @click.stop>""" +
                $"""<div class="ant-table-filter-dropdown m-col-search"><div class="m-col-search-body">""" +
-               $"""<input class="ant-input ant-input-sm" type="text" value="{Html.E(search)}" placeholder="Search {Html.E(title.ToLowerInvariant())}" aria-label="Search {t}" autocomplete="off" maxlength="{ColumnSearch.MaxLength}" x-ref="input" @keydown.enter.prevent.stop="apply()" />""" +
-               $"""<div class="m-col-search-hint">{Html.E(ColumnSearch.Hint(kind))}</div></div>""" +
-               """<div class="ant-table-filter-dropdown-btns"><button type="button" class="ant-btn ant-btn-link ant-btn-sm" @click="reset()"><span>Reset</span></button><button type="button" class="ant-btn ant-btn-primary ant-btn-sm" @click="apply()"><span>Search</span></button></div>""" +
+               (values is null
+                   ? $"""<input class="ant-input ant-input-sm" type="text" value="{Html.E(search)}" placeholder="Search {Html.E(title.ToLowerInvariant())}" aria-label="Search {t}" autocomplete="off" maxlength="{ColumnSearch.MaxLength}" x-ref="input" @keydown.enter.prevent.stop="apply()" />""" +
+                     $"""<div class="m-col-search-hint">{Html.E(ColumnSearch.Hint(kind))}</div></div>""" +
+                     """<div class="ant-table-filter-dropdown-btns"><button type="button" class="ant-btn ant-btn-link ant-btn-sm" @click="reset()"><span>Reset</span></button><button type="button" class="ant-btn ant-btn-primary ant-btn-sm" @click="apply()"><span>Search</span></button></div>"""
+                   : ValueList(t, title, search, values)) +
                "</div></div>" +
                // The filter row under the headers (shown when the table's filter row is on): the same search, typed in
                // place, or picked from a select for option columns.
@@ -76,6 +82,30 @@ public static class ColumnHeader
                    : FilterSelect(t, title, search, active, choices)) +
                "</span>";
     }
+
+    // The checkbox list: a box that narrows it, Select all (the values shown), a checkbox per value with its count.
+    // OK applies the values checked and shown, as Excel does; nothing checked disables it.
+    private static string ValueList(string encodedTitle, string title, string? search, IReadOnlyList<ColumnValue> values)
+    {
+        var picked = ColumnSearch.Picked(search, values.Select(v => v.Text));
+        var items = string.Concat(values.Select(v =>
+        {
+            var text = v.Text.Length == 0 ? ColumnSearch.BlankText : v.Text;
+            var count = v.Count is { } n ? $"""<span class="m-col-value-count">{n:N0}</span>""" : "";
+            return Check("m-col-value", picked.Contains(v.Text), $""" value="{Html.E(v.Text)}" data-value data-text="{Html.E(text)}" @change="sync()" """.TrimEnd(),
+                $"""<span class="m-col-value-text">{Html.E(text)}</span>{count}""");
+        }));
+        var all = picked.Count == values.Count;
+        return $"""<input class="ant-input ant-input-sm" type="search" placeholder="Search {Html.E(title.ToLowerInvariant())}" aria-label="Search the values of {encodedTitle}" autocomplete="off" maxlength="{ColumnSearch.MaxLength}" x-ref="input" @input="narrow()" @keydown.enter.prevent.stop="apply()" />""" +
+               $"""<div class="m-col-values" role="group" aria-label="Values of {encodedTitle}" x-ref="values">""" +
+               Check("m-col-value-all", all, """ x-ref="all" @change="selectAll($event.target.checked)" """.TrimEnd(), "Select all") +
+               $"""<div class="m-col-values-list">{items}</div><div class="m-col-values-empty" x-ref="none" hidden>No matching values</div></div></div>""" +
+               """<div class="ant-table-filter-dropdown-btns"><button type="button" class="ant-btn ant-btn-link ant-btn-sm" @click="reset()"><span>Reset</span></button><button type="button" class="ant-btn ant-btn-primary ant-btn-sm" x-ref="ok" @click="apply()"><span>OK</span></button></div>""";
+    }
+
+    // An Ant Design checkbox; modulus-widgets.js keeps its -checked classes in step with the box.
+    private static string Check(string className, bool on, string inputAttributes, string label) =>
+        $"""<label class="{Html.Cx("ant-checkbox-wrapper", className, on ? "ant-checkbox-wrapper-checked" : null)}"><span class="{Html.Cx("ant-checkbox", on ? "ant-checkbox-checked" : null)}"><input type="checkbox" class="ant-checkbox-input"{(on ? " checked" : "")}{inputAttributes} /><span class="ant-checkbox-inner"></span></span><span class="m-col-value-label">{label}</span></label>""";
 
     private static string FilterSelect(string encodedTitle, string title, string? search, bool active, IReadOnlyList<ColumnChoice> choices)
     {

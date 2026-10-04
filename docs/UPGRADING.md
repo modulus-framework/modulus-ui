@@ -159,6 +159,20 @@ Nothing breaks. `ProTableRequest` gained `GroupBy` (bound from `?groupBy=`); `Pr
 
 A `Request` callback that ignores `GroupBy` still works: the table shows its rows without group headers.
 
+## Multi-level headers (`HeaderGroups`)
+
+Nothing breaks: tables without groups render as before. To add bands over columns:
+
+- Blazor: set `HeaderGroups` on the `ProTable` or `EditableGrid`, e.g.
+  `[new HeaderGroup("Job", "Position", "Department"), new HeaderGroup("Pay", "Salary")]`; `{ Level = 1 }` puts a band a row higher. Keys are a
+  `PropertyColumn`'s property name or a `GridColumn.Key`, matched without regard to case.
+- MVC and Razor Pages: set `header-groups` on `<app-editable-grid>`. In your own tables, write
+  `@Html.Raw(HeaderGroups.Rows(shown, groups))` first in the `<thead>`, where `shown`
+  is the shown columns in order with null for the checkbox and other untitled columns (see the sample's
+  `Tables/Advanced.cshtml`).
+
+A custom script that reads `thead tr` should pick the leaf row with `thead tr:not(.m-header-bands)`.
+
 ## Icons
 
 Names Ant Design has no icon for are Tabler outline icons with a `tb:` prefix (`ShellRenderer.TablerPrefix`), listed in

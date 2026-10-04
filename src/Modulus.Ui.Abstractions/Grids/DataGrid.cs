@@ -437,6 +437,27 @@ public static class GridSchema
         return choices.Count == 0 ? null : choices;
     }
 
+    /// <summary>
+    /// The values of a column's checkbox list (the Excel-style filter menu), for Select, Tag and Switch columns: the
+    /// option labels in their order, then any other text the cells have, then blanks. With <paramref name="rows"/>
+    /// each value has its count (a table searched on the client); without, no counts (searched on the server). Null
+    /// for other columns, or when there are no options.
+    /// </summary>
+    public static IReadOnlyList<ColumnValue>? SearchValues(GridColumn column, IEnumerable<GridRecord>? rows = null, CultureInfo? culture = null)
+    {
+        if (column.Type is not (GridCellType.Select or GridCellType.Tag or GridCellType.Switch)) return null;
+        var labels = FilterOptions(column).Select(o => o.Label.Trim())
+            .Where(l => l.Length > 0 && l.IndexOf(ColumnSearch.ValueSeparator) < 0)
+            .Distinct(StringComparer.CurrentCultureIgnoreCase).Take(ColumnSearch.MaxValues).ToList();
+        if (labels.Count == 0) return null;
+        if (rows is null) return [.. labels.Select(l => new ColumnValue(l))];
+        var cells = ColumnSearch.ValuesOf(rows.Select(r => Format(column, r[column.Key], culture)));
+        var counts = cells.ToDictionary(v => v.Text, v => v.Count ?? 0, StringComparer.CurrentCultureIgnoreCase);
+        var known = new HashSet<string>(labels, StringComparer.CurrentCultureIgnoreCase);
+        return [.. labels.Select(l => new ColumnValue(l, counts.GetValueOrDefault(l))),
+            .. cells.Where(v => !known.Contains(v.Text))];
+    }
+
     /// <summary>How a column search compares the column: numbers and dates by value, everything else as text.</summary>
     public static ColumnKind Kind(GridColumn column) => column.Type switch
     {
@@ -451,7 +472,7 @@ public static class GridSchema
         var value = row[column.Key];
         var text = Format(column, value, culture);
         var kind = Kind(column);
-        if (column.SubtitleKey is not { } sub || string.IsNullOrEmpty(row[sub]))
+        if (column.SubtitleKey is not { } sub || string.IsNullOrEmpty(row[sub]) || ColumnSearch.IsValueList(query))
             return ColumnSearch.Matches(query, text, kind, Number(value), Date(value));
         // With a subtitle: "contains" and "=exact" match the cell or the cell with its subtitle (so a filter-row
         // choice, =Label, still matches), and "!exclude" needs neither to contain it.

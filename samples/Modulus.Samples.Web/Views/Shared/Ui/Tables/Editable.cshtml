@@ -37,7 +37,7 @@
 
 <form method="post" hx-post hx-target="#projects" hx-select="#projects" hx-swap="outerHTML">
     <app-editable-grid id="projects" name="grid" columns="Model.Columns" rows="Model.Rows" header-title="Projects"
-                       errors="Model.Errors" dirty="Model.Dirty" row-detail="detail">
+                       errors="Model.Errors" dirty="Model.Dirty" row-detail="detail" header-groups="ProjectGridStore.HeaderBands">
         <grid-title-extra><span class="m-badge m-badge-gray-lt">@Model.Rows.Count</span></grid-title-extra>
         <grid-summary>
             <span>Projects <strong>@totals.Count</strong></span>

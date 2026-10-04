@@ -21,6 +21,11 @@
     var groupTitle = EmployeeDirectory.GroupFields.FirstOrDefault(f => f.Key == Model.Request.GroupBy)?.Title;
     var groupBy = EmployeeDirectory.GroupFields.Select(f => new SelectListItem(f.Title, f.Key, f.Key == Model.Request.GroupBy));
     IReadOnlyList<TableGroupSpan> spans = groupTitle is null ? [] : TableGroups.Spans(Model.Page.Groups, Model.Page.Data.Count);
+    // Job and Employment bands over the column titles (a multi-level header), over the columns shown, as ProTable renders them.
+    string?[] shown = [null, null, null, nameof(Employee.Name),
+        ..new[] { ("position", nameof(Employee.Position)), ("department", nameof(Employee.Department)), ("office", nameof(Employee.Office)), ("start", nameof(Employee.StartDate)), ("salary", nameof(Employee.Salary)) }
+            .Where(c => Model.Shows(c.Item1)).Select(c => c.Item2),
+        nameof(Employee.Status)];
     TableGroupSpan? SpanAt(int index)
     {
         foreach (var s in spans) if (index >= s.First && index <= s.Last) return s;
@@ -115,6 +120,7 @@
                 <col style="@ColStyle("120px")" />
             </colgroup>
             <thead class="ant-table-thead">
+                @Html.Raw(HeaderGroups.Rows(shown, EmployeeDirectory.HeaderBands))
                 <tr>
                     <th class="ant-table-cell m-row-drag-cell"><span class="m-sr-only">Reorder</span></th>
                     <th class="ant-table-cell ant-table-selection-column">
@@ -123,11 +129,11 @@
                     <th class="ant-table-cell ant-table-row-expand-icon-cell"></th>
                     @grid.SortTh(nameof(Employee.Name), "Employee", searchable: true, multiSort: true)
                     @grid.SortTh(nameof(Employee.Position), "Position", col: "position", searchable: true, multiSort: true)
-                    @grid.SortTh(nameof(Employee.Department), "Department", col: "department", searchable: true, multiSort: true)
-                    @grid.SortTh(nameof(Employee.Office), "Office", col: "office", searchable: true, multiSort: true)
+                    @grid.SortTh(nameof(Employee.Department), "Department", col: "department", multiSort: true, values: EmployeeDirectory.SearchValues(nameof(Employee.Department)))
+                    @grid.SortTh(nameof(Employee.Office), "Office", col: "office", multiSort: true, values: EmployeeDirectory.SearchValues(nameof(Employee.Office)))
                     @grid.SortTh(nameof(Employee.StartDate), "Start date", col: "start", searchable: true, kind: ColumnKind.Date, multiSort: true)
                     @grid.SortTh(nameof(Employee.Salary), "Salary", "text-align: right", col: "salary", searchable: true, kind: ColumnKind.Number, multiSort: true)
-                    @grid.SortTh(nameof(Employee.Status), "Status", searchable: true, multiSort: true)
+                    @grid.SortTh(nameof(Employee.Status), "Status", multiSort: true, values: EmployeeDirectory.SearchValues(nameof(Employee.Status)))
                 </tr>
             </thead>
             <tbody class="ant-table-tbody">

@@ -1215,8 +1215,9 @@
             th.classList.contains('m-grid-actions') || th.classList.contains('ant-table-cell-scrollbar');
     }
     // The card's own header cells: { index (1-based, as nth-child), label, th }, without the checkbox, expand and actions cells.
+    // A multi-level header's band rows (tr.m-header-bands) sit above the column titles and are skipped.
     function tableColumns(card) {
-        var head = ownHead(card), row = head && head.querySelector('tr');
+        var head = ownHead(card), row = head && head.querySelector('tr:not(.m-header-bands)');
         if (!row) return [];
         var cols = [];
         Array.prototype.forEach.call(row.children, function (th, i) {
@@ -1237,13 +1238,29 @@
         var key = tableKey(card), hidden = readHiddenCols(card), id = '#' + CSS.escape(key);
         var rules = tableColumns(card).filter(function (c) { return hidden.indexOf(c.label) >= 0; }).map(function (c) {
             var n = ':nth-child(' + c.index + ')';
-            return id + ' :is(thead, tbody, tfoot) > tr:not(.ant-table-expanded-row):not(.ant-table-placeholder) > ' + n + ':not(.ant-table-expanded-row *), ' +
+            return id + ' :is(thead, tbody, tfoot) > tr:not(.ant-table-expanded-row):not(.ant-table-placeholder):not(.m-header-bands) > ' + n + ':not(.ant-table-expanded-row *), ' +
                 id + ' colgroup > col' + n + ':not(.ant-table-expanded-row *) { display: none; }';
         }).join('\n');
+        narrowBands(card, tableColumns(card).filter(function (c) { return hidden.indexOf(c.label) >= 0; }).map(function (c) { return c.index; }));
         var style = document.getElementById(key + '-cols');
         if (!rules) { if (style) style.remove(); return; }
         if (!style) { style = document.createElement('style'); style.id = key + '-cols'; document.head.appendChild(style); }
         if (style.textContent !== rules) style.textContent = rules;
+    }
+    // A band spans the columns under it (data-m-span): each hidden one narrows it, and a band with none left hides.
+    function narrowBands(card, hiddenIndexes) {
+        var head = ownHead(card);
+        if (!head) return;
+        head.querySelectorAll('tr.m-header-bands').forEach(function (tr) {
+            var pos = 1;
+            Array.prototype.forEach.call(tr.children, function (cell) {
+                var span = parseInt(cell.getAttribute('data-m-span'), 10) || cell.colSpan || 1, shown = span;
+                hiddenIndexes.forEach(function (i) { if (i >= pos && i < pos + span) shown--; });
+                cell.colSpan = Math.max(1, shown);
+                cell.hidden = shown === 0;
+                pos += span;
+            });
+        });
     }
     function applyAllHiddenCols() {
         document.querySelectorAll('[data-m-table-columns]').forEach(function (b) { var card = tableCard(b); if (card) applyHiddenCols(card); });
@@ -1565,7 +1582,7 @@
     var grip = null, gripTh = null, drag = null;
     function resizableTh(th) {
         return !!th && th.colSpan === 1 && !!th.closest('.m-resizable .ant-table-thead') &&
-            !th.matches('.ant-table-selection-column, .ant-table-row-expand-icon-cell, .m-grid-actions, .m-no-resize');
+            !th.matches('.ant-table-selection-column, .ant-table-row-expand-icon-cell, .m-grid-actions, .m-no-resize, .m-header-band');
     }
     function columnIndex(cell) {
         var i = 0;
@@ -1578,7 +1595,7 @@
     }
     // Sticky offsets follow the header widths: a left-pinned cell sits after every column before it, a right-pinned one before every column after it.
     function syncSticky(table) {
-        var head = table.querySelector('.ant-table-thead > tr');
+        var head = table.querySelector('.ant-table-thead > tr:not(.m-header-bands)');
         if (!head) return;
         var widths = [];
         Array.prototype.forEach.call(head.children, function (th) { widths.push(th.getBoundingClientRect().width); });

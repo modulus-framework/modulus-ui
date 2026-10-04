@@ -127,6 +127,9 @@ public class EditableGridTagHelper : TagHelper
     /// <summary>With <see cref="SortHref"/> or <see cref="SearchHref"/>: the element the htmx response replaces (outerHTML).</summary>
     public string? ServerTarget { get; set; }
 
+    /// <summary>Bands over the column titles (a multi-level header): <see cref="HeaderGroup"/>s over <see cref="GridColumn.Key"/>s.</summary>
+    public IReadOnlyList<HeaderGroup>? HeaderGroups { get; set; }
+
     private const int ExpandWidth = 48;
     private const int SelectionWidth = 48;
     private const int ActionsWidth = 64;
@@ -250,7 +253,7 @@ public class EditableGridTagHelper : TagHelper
         if (detail) sb.Append("""<col class="ant-table-expand-icon-col" style="width: 48px;">""");
         foreach (var c in visible) sb.Append($"""<col style="width: {c.Width ?? 150}px; min-width: {c.Width ?? 150}px;">""");
         if (AllowDeleteRow) sb.Append($"""<col style="width: {ActionsWidth}px; min-width: {ActionsWidth}px;">""");
-        sb.Append($"""</colgroup><thead class="ant-table-thead{(filterRowOpen ? " m-filter-row-on" : "")}"><tr>""");
+        sb.Append($"""</colgroup><thead class="ant-table-thead{(filterRowOpen ? " m-filter-row-on" : "")}">{BandRows(visible, detail)}<tr>""");
         if (RowDraggable)
             sb.Append($"""<th class="{Html.Cx("ant-table-cell", "m-row-drag-cell", hasLeft ? "ant-table-cell-fix-left" : null)}"{(hasLeft ? " style=\"position: sticky; left: 0px;\"" : "")}><span class="m-sr-only">Reorder</span></th>""");
         if (Selectable)
@@ -295,6 +298,14 @@ public class EditableGridTagHelper : TagHelper
 
     // ---- Headers: sorting and column search, in the browser or (the nested grid) on the server ----
 
+    // The band rows over the shown columns: the drag handle, checkbox and expand columns lead, the delete column ends.
+    private string BandRows(IReadOnlyList<GridColumn> visible, bool detail) =>
+        Modulus.Ui.Abstractions.HeaderGroups.Rows(
+            [.. Enumerable.Repeat<string?>(null, (RowDraggable ? 1 : 0) + (Selectable ? 1 : 0) + (detail ? 1 : 0)),
+             .. visible.Select(c => (string?)c.Key),
+             .. (AllowDeleteRow ? new string?[] { null } : [])],
+            HeaderGroups);
+
     private int DragWidth => RowDraggable ? SortableHtml.RowHandleWidth : 0;
 
     // A server sort (the nested grid) decides the order, so rows don't drag.
@@ -317,7 +328,8 @@ public class EditableGridTagHelper : TagHelper
             // The link is "#": a level's endpoint answers with a fragment, so only htmx follows it.
             sortable: Sortable, sort: SortOf(c.Key), sortHref: sortHref is null ? null : "#", sortAttributes: sortAttributes,
             searchable: ColumnSearchable, search: Searches?.GetValueOrDefault(c.Key), searchHref: SearchHref?.Invoke(c.Key), searchAttributes: SearchHref is null ? null : hx,
-            extra: menu, choices: GridSchema.SearchChoices(c));
+            // Option columns get a checkbox list; searched here, with each value's count (the server's level can't count).
+            extra: menu, choices: GridSchema.SearchChoices(c), values: GridSchema.SearchValues(c, SearchHref is null ? Rows : null));
     }
 
     // ---- Rows and cells ----

@@ -49,7 +49,8 @@
                             }
                         </div>
                     </div>
-                    <app-table-settings reload-href="@grid.Current" clear-href="@grid.ClearLink("keyword", "status", "city")" />
+                    @* No density menu: the virtual table's rows have a fixed height. *@
+                    <app-table-settings reload-href="@grid.Current" clear-href="@grid.ClearLink("keyword", "status", "city")" density="false" />
                 </div>
             </div>
 

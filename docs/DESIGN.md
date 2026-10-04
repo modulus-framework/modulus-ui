@@ -321,6 +321,21 @@ Expand all and Download.
   stronger with a corner mark, added rows blue, the row being edited with a primary bar. A cell error stays red on
   top. The marks live in the page (Blazor state, or classes `modulus-widgets.js` adds) until a save or discard.
 
+### Multi-level headers (phase 23)
+
+- **Bands are drawn from the shown columns.** A `HeaderGroup` names its column keys and a level; `HeaderGroups.Bands`
+  walks the shown columns in order and merges neighbours under the same group, so a band never spans a column it
+  doesn't own: hiding one narrows it, a column moved between two of its own splits it, and a band with nothing shown
+  is gone. Checkbox, expand, drag and delete columns are untitled cells.
+- **Ant Design's column groups are not used:** they nest the column components, so a band would be part of the
+  column definitions instead of a layer over them, and the column picker, resizing and saved layouts would have to
+  know about it. ProTable and EditableGrid use `HeaderTemplate` instead: the band rows (one per level, outermost
+  first) above Ant Design's own header row. ProTable reads its shown columns after the first render (the columns
+  register while it renders) and renders the bands again when they change.
+- **One markup for both flavours** (`HeaderGroups.Rows`). Each band carries its full span in `data-m-span`, so the
+  MVC column picker (`modulus-shell.js`) can narrow or hide it in the browser without a round trip; the picker,
+  resizing and sticky headers all read the leaf row (`tr:not(.m-header-bands)`).
+
 ### The ERP UI map
 
 The ERP suites in §1 were reviewed as feature inventories. This is the UI surface they imply and where Modulus

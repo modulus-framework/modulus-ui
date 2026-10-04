@@ -44,13 +44,15 @@ public sealed class Grid(HttpRequest request, ProTableRequest paging)
     /// </summary>
     /// <param name="col">Column-picker key (<c>data-col</c>) when the column is optional.</param>
     /// <param name="multiSort">Shift+click adds the column to the other sorts (<c>thenBy</c>); the server must apply <see cref="ProTableRequest.Sorts"/>.</param>
-    public IHtmlContent SortTh(string field, string title, string? style = null, string? col = null, bool searchable = false, ColumnKind kind = ColumnKind.Text, bool multiSort = false)
+    /// <param name="values">A checkbox list (the Excel-style filter menu) in place of the search box; implies searchable.</param>
+    public IHtmlContent SortTh(string field, string title, string? style = null, string? col = null, bool searchable = false, ColumnKind kind = ColumnKind.Text, bool multiSort = false,
+        IReadOnlyList<ColumnValue>? values = null)
     {
         var sorts = multiSort ? Paging.Sorts : Paging.Sorts.Take(1).ToList();
         var current = SortKeys.Of(sorts, field);
-        var content = ColumnHeader.Content(field, title, kind, sort: current, sortHref: SortHref(sorts, field, add: false), searchable: searchable,
+        var content = ColumnHeader.Content(field, title, kind, sort: current, sortHref: SortHref(sorts, field, add: false), searchable: searchable || values is not null,
             search: Searches.GetValueOrDefault(field), searchHref: Href((ColumnSearch.Prefix + field, null)),
-            sortAddHref: multiSort ? SortHref(sorts, field, add: true) : null, sortRank: multiSort ? SortKeys.Rank(sorts, field) : 0);
+            sortAddHref: multiSort ? SortHref(sorts, field, add: true) : null, sortRank: multiSort ? SortKeys.Rank(sorts, field) : 0, values: values);
         return new HtmlString(
             $"""<th{(col is null ? "" : $" data-col=\"{E(col)}\"")} class="ant-table-cell{ColumnHeader.ThClass(true, current)}"{ColumnHeader.AriaSort(true, current)}{(style is null ? "" : $" style=\"{style}\"")}>{content}</th>""");
     }

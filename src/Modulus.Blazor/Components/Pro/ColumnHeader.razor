@@ -2,8 +2,9 @@
     The header of a table column as every Modulus table renders it: the title, Ant Design's sorter carets (a click
     cycles ascending, descending, unsorted; with Shift, the column joins the table's other sorts and shows its place
     among them) and a search icon that opens a column search box (ColumnSearch: contains,
-    =exact, !exclude, and >, <=, a..b for numbers and dates). The table around it (ProTable, EditableGrid) does the
-    sorting and searching. The MVC twin is ColumnHeader.cs, with the same DOM.
+    =exact, !exclude, and >, <=, a..b for numbers and dates), or, with Values, a checkbox list (the Excel-style filter
+    menu). The table around it (ProTable, EditableGrid) does the sorting and searching. The MVC twin is
+    ColumnHeader.cs, with the same DOM.
 
     <PropertyColumn Property="e => e.Name">
         <TitleTemplate><ColumnHeader Key="Name" Title="Employee" /></TitleTemplate>
@@ -67,21 +68,30 @@
             <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight" Visible="_open" VisibleChanged="OpenChanged" OverlayClassName="m-col-search-drop">
                 <Overlay>
                     <div class="ant-table-filter-dropdown m-col-search" role="dialog" aria-label="@($"Search {Title}")">
-                        <div class="m-col-search-body">
-                            <input @ref="_input" class="ant-input ant-input-sm" type="text" value="@_draft" placeholder="@($"Search {Title.ToLowerInvariant()}")"
-                                   aria-label="@($"Search {Title}")" autocomplete="off" maxlength="@ColumnSearch.MaxLength"
-                                   @oninput="e => _draft = e.Value?.ToString()" @onkeydown="InputKeyAsync" />
-                            <div class="m-col-search-hint">@ColumnSearch.Hint(Kind)</div>
-                        </div>
-                        <div class="ant-table-filter-dropdown-btns">
-                            <button type="button" class="ant-btn ant-btn-link ant-btn-sm" @onclick="ResetAsync"><span>Reset</span></button>
-                            <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" @onclick="ApplyAsync"><span>Search</span></button>
-                        </div>
+                        @if (Values is { Count: > 0 } values)
+                        {
+                            @* A new list each time it opens (_opens), with the search applied checked. *@
+                            <ColumnValueList @key="_opens" Title="@Title" Values="values" Query="@Host.SearchOf(Key)"
+                                             OnApply="SearchAsync" OnReset="ResetAsync" OnClose="() => _open = false" />
+                        }
+                        else
+                        {
+                            <div class="m-col-search-body">
+                                <input @ref="_input" class="ant-input ant-input-sm" type="text" value="@_draft" placeholder="@($"Search {Title.ToLowerInvariant()}")"
+                                       aria-label="@($"Search {Title}")" autocomplete="off" maxlength="@ColumnSearch.MaxLength"
+                                       @oninput="e => _draft = e.Value?.ToString()" @onkeydown="InputKeyAsync" />
+                                <div class="m-col-search-hint">@ColumnSearch.Hint(Kind)</div>
+                            </div>
+                            <div class="ant-table-filter-dropdown-btns">
+                                <button type="button" class="ant-btn ant-btn-link ant-btn-sm" @onclick="ResetAsync"><span>Reset</span></button>
+                                <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" @onclick="ApplyAsync"><span>Search</span></button>
+                            </div>
+                        }
                     </div>
                 </Overlay>
                 <ChildContent>
                     <span class="@($"ant-table-filter-trigger m-th-search{(active ? " active" : "")}")" role="button" tabindex="0" title="@($"Search {Title}")"
-                          aria-label="@($"Search {Title}{(active ? $": {value}" : "")}")" aria-haspopup="dialog" aria-expanded="@(_open ? "true" : "false")"
+                          aria-label="@($"Search {Title}{(active ? $": {ColumnSearch.Describe(value)}" : "")}")" aria-haspopup="dialog" aria-expanded="@(_open ? "true" : "false")"
                           @onkeydown="TriggerKey">
                         <Icon Type="search" />
                     </span>
@@ -111,6 +121,12 @@
     /// <summary>Choices of the column's box in the filter row (a select instead of a text box); see <c>GridSchema.SearchChoices</c>.</summary>
     [Parameter] public IReadOnlyList<ColumnChoice>? Choices { get; set; }
 
+    /// <summary>
+    /// The column's checkbox list (the Excel-style filter menu) in place of the search box: one checkbox per value,
+    /// with its count when known; see <c>GridSchema.SearchValues</c> and <c>ColumnSearch.ValuesOf</c>.
+    /// </summary>
+    [Parameter] public IReadOnlyList<ColumnValue>? Values { get; set; }
+
     /// <summary>More header content after the search icon (a column menu).</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
@@ -123,6 +139,7 @@
     private const string LockedText = "Save or discard your changes first";
 
     private bool _open, _focus;
+    private int _opens;
     private string? _draft;
     private ElementReference _input;
 
@@ -153,7 +170,8 @@
         if (open && !_open)
         {
             _draft = Host?.SearchOf(Key);
-            _focus = true;
+            _opens++;
+            _focus = Values is not { Count: > 0 }; // the checkbox list focuses its own box
         }
         _open = open;
     }
@@ -164,10 +182,12 @@
         else if (e.Key == "Escape") _open = false;
     }
 
-    private async Task ApplyAsync()
+    private Task ApplyAsync() => SearchAsync(string.IsNullOrWhiteSpace(_draft) ? null : _draft.Trim());
+
+    private async Task SearchAsync(string? query)
     {
         _open = false;
-        if (Host is not null) await Host.SearchAsync(Key, string.IsNullOrWhiteSpace(_draft) ? null : _draft.Trim());
+        if (Host is not null) await Host.SearchAsync(Key, query);
     }
 
     private async Task FilterChangedAsync(ChangeEventArgs e)
@@ -180,7 +200,7 @@
     private async Task ResetAsync()
     {
         _draft = null;
-        await ApplyAsync();
+        await SearchAsync(null);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

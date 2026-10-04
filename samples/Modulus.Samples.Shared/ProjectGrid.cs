@@ -62,6 +62,10 @@ public sealed class ProjectGridStore
         new("design", "Design", "magenta"), new("infra", "Infrastructure", "gold"),
     ];
 
+    /// <summary>Header bands over the money and the dates (a multi-level header).</summary>
+    public static readonly HeaderGroup[] HeaderBands =
+        [new("Money", "budget", "spent", "progress"), new("Schedule", "start", "due")];
+
     public static List<GridColumn> SeedColumns() =>
     [
         new() { Key = "project", Title = "Project", Type = GridCellType.Text, Width = 220, Fixed = GridFixed.Left, Required = true },

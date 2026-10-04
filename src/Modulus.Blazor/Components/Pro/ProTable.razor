@@ -20,6 +20,8 @@
     Request callback returns the page's groups and totals (TableQuery does, see TableQuery.Group and Total), and each
     group gets a header row (toggle, value, row count, totals) and, where it ends, a subtotal row; totals over every row
     show under the table.
+    With HeaderGroups, bands over the column titles make a multi-level header (HeaderGroup: a title over column keys,
+    a PropertyColumn's property name; Level 1 bands sit above level 0). Hidden columns narrow their band.
 *@
 @typeparam TItem
 @attribute [CascadingTypeParameter(nameof(TItem))]
@@ -142,6 +144,7 @@
            ExpandTemplate="ExpandFragment"
            RowExpandable="RowExpandableFor"
            RowTemplate="GroupRowTemplate"
+           HeaderTemplate="BandedHeader"
            FooterTemplate="TotalsFooter"
            PaginationTemplate="PaginationWithTotal"
            ChildContent="RowCells" />
@@ -268,6 +271,12 @@
 
     /// <summary>With <see cref="GroupFields"/>: a subtotal row after each group that ends on the page (when there are totals).</summary>
     [Parameter] public bool GroupFooters { get; set; } = true;
+
+    /// <summary>
+    /// Bands over the column titles (a multi-level header): each <see cref="HeaderGroup"/> spans the shown columns whose
+    /// property names it lists. Bands of <see cref="HeaderGroup.Level"/> 1 sit above those of level 0.
+    /// </summary>
+    [Parameter] public IReadOnlyList<HeaderGroup>? HeaderGroups { get; set; }
 
     /// <summary>With <see cref="UrlState"/>: the page's own query pairs (its search, filters, hidden columns) written beside the table's.</summary>
     [Parameter] public Func<IEnumerable<KeyValuePair<string, string?>>>? UrlQuery { get; set; }
@@ -595,6 +604,27 @@
             </tr>
         }
     };
+
+    // ---- Multi-level header (HeaderGroups): band rows above Ant Design's header row ----
+
+    private string _bands = "";
+
+    private string BandRows => _grid is null ? "" : Modulus.Ui.Abstractions.HeaderGroups.Rows(_grid.ShownColumns(), HeaderGroups);
+
+    // The columns register while the table first renders, and a hidden column changes them: render the bands again when they move.
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (HeaderGroups is not { Count: > 0 }) return;
+        var bands = BandRows;
+        if (bands == _bands) return;
+        _bands = bands;
+        StateHasChanged();
+    }
+
+    private RenderFragment<TItem>? BandedHeader => HeaderGroups is not { Count: > 0 } ? null : model => @<text>
+        @((MarkupString)BandRows)
+        <TableRow>@RowCells(model)</TableRow>
+    </text>;
 
     private RenderFragment? TotalsFooter => _totals is { Count: > 0 } totals ? @<text>@((MarkupString)TableGroups.Totals(totals, _total))</text> : null;
 }

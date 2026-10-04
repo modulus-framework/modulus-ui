@@ -6,6 +6,7 @@
     Like the data table it has a search box, a filter row (Filterable columns), row selection with a batch bar
     (set a value, export, delete) and CSV export. Every column header sorts (ascending, descending, unsorted) and
     has a column search (ColumnHeader). Rows drag by their handle to a new place (RowDraggable).
+    HeaderGroups adds bands over the column titles (a multi-level header) by column key.
 
     <EditableGrid Columns="_columns" Rows="_rows" HeaderTitle="Projects" OnSave="SaveAsync">
         <RowDetail>…@context["notes"]…</RowDetail>
@@ -228,64 +229,9 @@
            RowExpandable="RowExpandableFor"
            SelectedRows="_selected"
            SelectedRowsChanged="rows => _selected = rows.ToList()"
-           RowClassName="RowClass">
-        <ChildContent>
-            @if (RowDraggable)
-            {
-                <ActionColumn Title="" Width="@SortableHtml.RowHandleWidth.ToString(CultureInfo.InvariantCulture)" Align="ColumnAlign.Center" Class="m-row-drag-cell"
-                              Fixed="@(Columns.Any(c => !c.Hidden && c.Fixed == GridFixed.Left) ? ColumnFixPlacement.Left : null)">
-                    @((MarkupString)SortableHtml.RowHandle(context.Id, RowLabel(context), HelpId, DragLocked))
-                </ActionColumn>
-            }
-            @if (Selectable)
-            {
-                <Selection Width="48" Fixed="@(Columns.Any(c => !c.Hidden && c.Fixed == GridFixed.Left) ? ColumnFixPlacement.Left : null)" />
-            }
-            @foreach (var column in GridSchema.Visible(Columns))
-            {
-                var c = column;
-                <ActionColumn Title="@c.Title" Width="@((c.Width ?? 150).ToString(CultureInfo.InvariantCulture))"
-                              Fixed="@Fix(c.Fixed)" Align="@(c.AlignRight ? ColumnAlign.Right : ColumnAlign.Left)" Class="@TdClass(c)">
-                    <TitleTemplate>
-                        <ColumnHeader Key="@c.Key" Title="@c.Title" Kind="GridSchema.Kind(c)" Required="c.Required" Sortable="Sortable" Searchable="ColumnSearchable" Choices="GridSchema.SearchChoices(c)">
-                            @if (AllowColumnEdit)
-                            {
-                                <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight">
-                                    <Overlay>
-                                        <Menu Selectable="false">
-                                            @if (c.Fixed != GridFixed.Left) { <MenuItem Icon="pushpin" OnClick="() => Pin(c, GridFixed.Left)">Pin left</MenuItem> }
-                                            @if (c.Fixed != GridFixed.Right) { <MenuItem Icon="pushpin" OnClick="() => Pin(c, GridFixed.Right)">Pin right</MenuItem> }
-                                            @if (c.Fixed != GridFixed.None) { <MenuItem Icon="close" OnClick="() => Pin(c, GridFixed.None)">Unpin</MenuItem> }
-                                            <MenuDivider />
-                                            <MenuItem Icon="arrow-left" OnClick="() => Move(c, -1)">Move left</MenuItem>
-                                            <MenuItem Icon="arrow-right" OnClick="() => Move(c, 1)">Move right</MenuItem>
-                                            <MenuItem Icon="eye-invisible" OnClick="() => SetHidden(c, true)">Hide column</MenuItem>
-                                            <MenuDivider />
-                                            <MenuItem Icon="delete" Class="ant-dropdown-menu-item-danger" OnClick="() => RemoveColumn(c)">Remove column</MenuItem>
-                                        </Menu>
-                                    </Overlay>
-                                    <ChildContent>
-                                        <button type="button" class="m-grid-th-menu" aria-label="@($"{c.Title} column options")"><Icon Type="more" /></button>
-                                    </ChildContent>
-                                </Dropdown>
-                            }
-                        </ColumnHeader>
-                    </TitleTemplate>
-                    <ChildContent>
-                        @Cell(context, c)
-                    </ChildContent>
-                </ActionColumn>
-            }
-            @if (AllowDeleteRow)
-            {
-                <ActionColumn Title="" Width="64" Fixed="ColumnFixPlacement.Right" Align="ColumnAlign.Center" Class="m-grid-actions">
-                    <Popconfirm Title="@("Delete this row?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => DeleteRow(context)">
-                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only ant-btn-dangerous" aria-label="Delete row" title="Delete row"><Icon Type="delete" /></button>
-                    </Popconfirm>
-                </ActionColumn>
-            }
-        </ChildContent>
-    </Table>
+           RowClassName="RowClass"
+           HeaderTemplate="BandedHeader"
+           ChildContent="RowCells" />
     </CascadingValue>
     </div>
 
@@ -759,6 +705,82 @@
         _view = Shown();
         StateHasChanged();
     }
+
+    private RenderFragment<GridRecord> RowCells => context => @<text>
+    @if (RowDraggable)
+    {
+        <ActionColumn Title="" Width="@SortableHtml.RowHandleWidth.ToString(CultureInfo.InvariantCulture)" Align="ColumnAlign.Center" Class="m-row-drag-cell"
+                      Fixed="@(Columns.Any(c => !c.Hidden && c.Fixed == GridFixed.Left) ? ColumnFixPlacement.Left : null)">
+            @((MarkupString)SortableHtml.RowHandle(context.Id, RowLabel(context), HelpId, DragLocked))
+        </ActionColumn>
+    }
+    @if (Selectable)
+    {
+        <Selection Width="48" Fixed="@(Columns.Any(c => !c.Hidden && c.Fixed == GridFixed.Left) ? ColumnFixPlacement.Left : null)" />
+    }
+    @foreach (var column in GridSchema.Visible(Columns))
+    {
+        var c = column;
+        <ActionColumn Title="@c.Title" Width="@((c.Width ?? 150).ToString(CultureInfo.InvariantCulture))"
+                      Fixed="@Fix(c.Fixed)" Align="@(c.AlignRight ? ColumnAlign.Right : ColumnAlign.Left)" Class="@TdClass(c)">
+            <TitleTemplate>
+                <ColumnHeader Key="@c.Key" Title="@c.Title" Kind="GridSchema.Kind(c)" Required="c.Required" Sortable="Sortable" Searchable="ColumnSearchable" Choices="GridSchema.SearchChoices(c)"
+                              Values="GridSchema.SearchValues(c, OnColumnSearch.HasDelegate ? null : Rows)">
+                    @if (AllowColumnEdit)
+                    {
+                        <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight">
+                            <Overlay>
+                                <Menu Selectable="false">
+                                    @if (c.Fixed != GridFixed.Left) { <MenuItem Icon="pushpin" OnClick="() => Pin(c, GridFixed.Left)">Pin left</MenuItem> }
+                                    @if (c.Fixed != GridFixed.Right) { <MenuItem Icon="pushpin" OnClick="() => Pin(c, GridFixed.Right)">Pin right</MenuItem> }
+                                    @if (c.Fixed != GridFixed.None) { <MenuItem Icon="close" OnClick="() => Pin(c, GridFixed.None)">Unpin</MenuItem> }
+                                    <MenuDivider />
+                                    <MenuItem Icon="arrow-left" OnClick="() => Move(c, -1)">Move left</MenuItem>
+                                    <MenuItem Icon="arrow-right" OnClick="() => Move(c, 1)">Move right</MenuItem>
+                                    <MenuItem Icon="eye-invisible" OnClick="() => SetHidden(c, true)">Hide column</MenuItem>
+                                    <MenuDivider />
+                                    <MenuItem Icon="delete" Class="ant-dropdown-menu-item-danger" OnClick="() => RemoveColumn(c)">Remove column</MenuItem>
+                                </Menu>
+                            </Overlay>
+                            <ChildContent>
+                                <button type="button" class="m-grid-th-menu" aria-label="@($"{c.Title} column options")"><Icon Type="more" /></button>
+                            </ChildContent>
+                        </Dropdown>
+                    }
+                </ColumnHeader>
+            </TitleTemplate>
+            <ChildContent>
+                @Cell(context, c)
+            </ChildContent>
+        </ActionColumn>
+    }
+    @if (AllowDeleteRow)
+    {
+        <ActionColumn Title="" Width="64" Fixed="ColumnFixPlacement.Right" Align="ColumnAlign.Center" Class="m-grid-actions">
+            <Popconfirm Title="@("Delete this row?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => DeleteRow(context)">
+                <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only ant-btn-dangerous" aria-label="Delete row" title="Delete row"><Icon Type="delete" /></button>
+            </Popconfirm>
+        </ActionColumn>
+    }
+    </text>;
+
+    /// <summary>Bands over the column titles (a multi-level header): <see cref="HeaderGroup"/>s over <see cref="GridColumn.Key"/>s.</summary>
+    [Parameter] public IReadOnlyList<HeaderGroup>? HeaderGroups { get; set; }
+
+    // The shown columns in order: the drag handle, expand and checkbox columns lead, the delete column ends.
+    private IEnumerable<string?> ShownColumns()
+    {
+        if (RowDraggable) yield return null;
+        if (RowDetail is not null) yield return null;
+        if (Selectable) yield return null;
+        foreach (var c in GridSchema.Visible(Columns)) yield return c.Key;
+        if (AllowDeleteRow) yield return null;
+    }
+
+    private RenderFragment<GridRecord>? BandedHeader => HeaderGroups is not { Count: > 0 } ? null : model => @<text>
+        @((MarkupString)Modulus.Ui.Abstractions.HeaderGroups.Rows(ShownColumns(), HeaderGroups))
+        <TableRow>@RowCells(model)</TableRow>
+    </text>;
 
     private RenderFragment<RowData<GridRecord>>? ExpandFragment => RowDetail is null ? null : row => RowDetail(row.Data);
 

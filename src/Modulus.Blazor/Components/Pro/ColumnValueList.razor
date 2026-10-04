@@ -1,0 +1,130 @@
+@*
+    The checkbox list of a column header's search (the Excel-style filter menu, see ColumnHeader): a box that narrows
+    the list, Select all (the values shown), and a checkbox per value with its count. OK applies the values checked and
+    shown, as Excel does, as a value list (ColumnSearch.ValueQuery); nothing checked disables it. Its own component, so
+    it re-renders on its own events inside AntD's dropdown overlay. The MVC twin is ColumnHeader.ValueList.
+*@
+
+<div class="m-col-search-body">
+    <input @ref="_input" class="ant-input ant-input-sm" type="search" value="@_draft" placeholder="@($"Search {Title.ToLowerInvariant()}")"
+           aria-label="@($"Search the values of {Title}")" autocomplete="off" maxlength="@ColumnSearch.MaxLength"
+           @oninput="e => _draft = e.Value?.ToString()" @onkeydown="KeyAsync" />
+    <div class="m-col-values" role="group" aria-label="@($"Values of {Title}")">
+        <label class="@($"ant-checkbox-wrapper m-col-value-all{(_all ? " ant-checkbox-wrapper-checked" : "")}")">
+            <span class="@($"ant-checkbox{(_all ? " ant-checkbox-checked" : _some ? " ant-checkbox-indeterminate" : "")}")">
+                <input type="checkbox" class="ant-checkbox-input" checked="@_all" aria-checked="@(_some ? "mixed" : _all ? "true" : "false")" @onchange="e => SelectAll(e.Value is true)" />
+                <span class="ant-checkbox-inner"></span>
+            </span>
+            <span class="m-col-value-label">Select all</span>
+        </label>
+        <div class="m-col-values-list">
+            @foreach (var v in _shown)
+            {
+                var text = v.Text;
+                var check = _picked.Contains(text);
+                <label class="@($"ant-checkbox-wrapper m-col-value{(check ? " ant-checkbox-wrapper-checked" : "")}")" @key="text">
+                    <span class="@($"ant-checkbox{(check ? " ant-checkbox-checked" : "")}")">
+                        <input type="checkbox" class="ant-checkbox-input" value="@text" checked="@check" @onchange="e => Toggle(text, e.Value is true)" />
+                        <span class="ant-checkbox-inner"></span>
+                    </span>
+                    <span class="m-col-value-label">
+                        <span class="m-col-value-text">@(text.Length == 0 ? ColumnSearch.BlankText : text)</span>
+                        @if (v.Count is { } n)
+                        {
+                            <span class="m-col-value-count">@n.ToString("N0")</span>
+                        }
+                    </span>
+                </label>
+            }
+        </div>
+        @if (_shown.Count == 0)
+        {
+            <div class="m-col-values-empty">No matching values</div>
+        }
+    </div>
+</div>
+<div class="ant-table-filter-dropdown-btns">
+    <button type="button" class="ant-btn ant-btn-link ant-btn-sm" @onclick="() => OnReset.InvokeAsync()"><span>Reset</span></button>
+    <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" disabled="@(_on == 0)" @onclick="ApplyAsync"><span>OK</span></button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    [Parameter, EditorRequired] public IReadOnlyList<ColumnValue> Values { get; set; } = [];
+
+    /// <summary>The search applied: its values start checked (<see cref="ColumnSearch.Picked"/>).</summary>
+    [Parameter] public string? Query { get; set; }
+
+    /// <summary>OK: the value list to search by, or null for every value.</summary>
+    [Parameter] public EventCallback<string?> OnApply { get; set; }
+
+    [Parameter] public EventCallback OnReset { get; set; }
+
+    /// <summary>Escape in the box.</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private HashSet<string> _picked = new(StringComparer.CurrentCultureIgnoreCase);
+    private string? _draft;
+    private ElementReference _input;
+    private List<ColumnValue> _shown = [];
+    private int _on;
+    private bool _all, _some;
+
+    protected override void OnInitialized() =>
+        _picked = new(ColumnSearch.Picked(Query, Values.Select(v => v.Text)), StringComparer.CurrentCultureIgnoreCase);
+
+    protected override void OnParametersSet() => Count();
+
+    protected override bool ShouldRender()
+    {
+        Count();
+        return true;
+    }
+
+    // The values shown (the box narrows them) and how many of them are checked, for Select all and OK.
+    private void Count()
+    {
+        _shown = [.. ColumnSearch.Narrow(Values, _draft)];
+        _on = _shown.Count(v => _picked.Contains(v.Text));
+        _all = _shown.Count > 0 && _on == _shown.Count;
+        _some = _on > 0 && !_all;
+    }
+
+    private void Toggle(string text, bool on)
+    {
+        if (on) _picked.Add(text); else _picked.Remove(text);
+    }
+
+    private void SelectAll(bool on)
+    {
+        foreach (var v in _shown) Toggle(v.Text, on);
+    }
+
+    private async Task ApplyAsync()
+    {
+        var on = _shown.Where(v => _picked.Contains(v.Text)).Select(v => v.Text).ToList();
+        if (on.Count == 0) return;
+        await OnApply.InvokeAsync(ColumnSearch.ValueQuery(on, Values.Select(v => v.Text)));
+    }
+
+    private async Task KeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await ApplyAsync();
+        else if (e.Key == "Escape") await OnClose.InvokeAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            // The overlay renders on the next frame; a missed focus just leaves the box unfocused.
+            await Task.Delay(50);
+            await _input.FocusAsync();
+        }
+        catch (Exception e) when (e is JSException or InvalidOperationException or ObjectDisposedException)
+        {
+        }
+    }
+}

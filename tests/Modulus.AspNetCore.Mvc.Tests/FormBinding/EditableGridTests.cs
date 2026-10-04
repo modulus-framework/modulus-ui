@@ -387,4 +387,19 @@ public class EditableGridTagHelperTests
         Assert.Contains("<p class=\"detail\">p2</p>", html);
         Assert.Contains("ant-table-row-expand-icon", html);
     }
+
+    [Fact]
+    public async Task Renders_HeaderBands_OverTheShownColumns()
+    {
+        var grid = Grid();
+        // Notes is hidden, so Plan covers Status and Budget only.
+        grid.HeaderGroups = [new HeaderGroup("Plan", "status", "budget", "notes")];
+        var html = await RenderAsync(grid);
+
+        // Drag handle + checkbox + Name, Plan, Owner + delete.
+        Assert.Contains("""<thead class="ant-table-thead"><tr class="m-header-bands"><td class="ant-table-cell m-header-band m-header-band-empty" colspan="3" data-m-span="3"></td>"""
+            + """<th class="ant-table-cell m-header-band" scope="colgroup" colspan="2" data-m-span="2">Plan</th>"""
+            + """<td class="ant-table-cell m-header-band m-header-band-empty" colspan="2" data-m-span="2"></td></tr><tr>""", html);
+        Assert.DoesNotContain("m-header-bands", await RenderAsync(Grid()));
+    }
 }

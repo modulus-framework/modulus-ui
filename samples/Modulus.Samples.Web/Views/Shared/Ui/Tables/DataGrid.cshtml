@@ -8,7 +8,7 @@
 <app-page-header pretitle="Tables" title="Data grid" subtitle="One tag: the columns come from the row type, on the server or in memory — and the same grid turns into a schema-driven nested table."></app-page-header>
 
 <div class="m-stack">
-    <div id="orders" class="ant-card m-table-card" hx-boost="true" hx-target="#orders" hx-select="#orders" hx-swap="outerHTML" hx-push-url="true">
+    <div id="orders" class="ant-card m-table-card" x-data="tableSelection" hx-boost="true" hx-target="#orders" hx-select="#orders" hx-swap="outerHTML" hx-push-url="true">
         <div class="ant-card-body">
             <div class="m-table-toolbar">
                 <div class="m-table-toolbar-title">
@@ -54,7 +54,7 @@
         </div>
     </div>
 
-    <div class="ant-card m-table-card">
+    <div class="ant-card m-table-card" x-data="tableSelection">
         <div class="ant-card-body">
             <div class="m-table-toolbar">
                 <div class="m-table-toolbar-title">

@@ -323,7 +323,8 @@ a:hover { color: var(--m-primary-hover); }
 
 code, kbd, pre, samp { font-family: var(--m-font-mono); }
 
-::selection { background: var(--m-primary-bg-hover); }
+/* Selected text keeps the text colour: AntD's white would vanish on the pale highlight (a cell editor selects its value). */
+::selection { color: var(--m-text); background: var(--m-primary-bg-hover); }
 
 :focus-visible { outline: 2px solid var(--m-primary); outline-offset: 1px; }
 .ant-input:focus-visible,
@@ -968,6 +969,17 @@ td[style*="text-align: right"] .m-grid-cell, .m-grid-td.ant-table-cell[style*="r
 .m-col-search-body .ant-input { width: 100%; }
 .m-col-search-hint { margin-top: 6px; color: var(--m-text-tertiary); font-size: 12px; line-height: 1.4; }
 .m-col-search .ant-table-filter-dropdown-btns { display: flex; justify-content: space-between; padding: 7px 8px; border-top: 1px solid var(--m-split); background: transparent; }
+/* The checkbox list of a column (the Excel-style filter menu). */
+.m-col-values { margin-top: 8px; }
+.m-col-values .ant-checkbox-wrapper { display: flex; align-items: center; width: 100%; margin: 0; padding: 3px 4px; border-radius: 4px; line-height: 1.4; }
+.m-col-values .ant-checkbox-wrapper:hover { background: var(--m-fill-secondary); }
+.m-col-values .ant-checkbox-wrapper[hidden] { display: none; }
+.m-col-values .ant-checkbox + .m-col-value-label { flex: 1; min-width: 0; display: flex; gap: 8px; padding-inline: 8px 0; }
+.m-col-value-all { border-bottom: 1px solid var(--m-split); border-radius: 4px 4px 0 0 !important; margin-bottom: 2px !important; }
+.m-col-values-list { max-height: 220px; overflow-y: auto; overscroll-behavior: contain; }
+.m-col-value-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-col-value-count { color: var(--m-text-tertiary); font-size: 12px; font-variant-numeric: tabular-nums; }
+.m-col-values-empty { padding: 6px 4px; color: var(--m-text-tertiary); font-size: 12px; }
 .m-grid-required { margin-left: 2px; color: var(--m-error); }
 .m-grid-th-menu { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--m-text-tertiary); cursor: pointer; opacity: 0; transition: opacity 0.15s, background 0.15s; }
 .ant-table-thead > tr > th:hover .m-grid-th-menu, .m-grid-th-menu:focus-visible, .m-grid-th-menu[aria-expanded="true"], .ant-dropdown-open.m-grid-th-menu { opacity: 1; }
@@ -1023,6 +1035,10 @@ tr.m-group-collapsed { display: none; }
 .ant-table-footer .m-table-totals { margin: -16px; border-top: 0; }
 .m-table-group.active { border-color: var(--m-primary); color: var(--m-primary); }
 .m-table-group .anticon + span { margin-left: 8px; }
+/* Multi-level headers (HeaderGroups): band rows above the column titles; an empty cell runs on into the title below it. */
+.ant-table-thead > tr.m-header-bands > :is(th, td) { padding-top: 6px; padding-bottom: 6px; text-align: center; background: var(--m-bg-subtle); border-bottom: 1px solid var(--m-split); }
+.ant-table-thead > tr.m-header-bands > th.m-header-band { color: var(--m-text-secondary); font-weight: 600; box-shadow: inset 1px 0 0 var(--m-split), inset -1px 0 0 var(--m-split); }
+.ant-table-thead > tr.m-header-bands > td.m-header-band-empty { border-bottom-color: transparent; }
 /* Resizable columns (modulus-shell.js): a grip over the header's right edge. */
 .m-col-resize-grip { position: fixed; z-index: 1060; width: 8px; cursor: col-resize; touch-action: none; }
 .m-col-resize-grip::after { content: ""; position: absolute; top: 20%; bottom: 20%; left: 3px; width: 2px; border-radius: 1px; background: var(--m-primary); opacity: 0.6; }
@@ -2048,7 +2064,7 @@ html[data-theme='dark'] :is(.ant-color-picker-color-block, .ant-color-picker-pre
 /* ---- Plugins: media player, WYSIWYG editor, maps, sortable (driven by modulus-plugins.js) ---- */
 
 /* Media player: a native <video>/<audio> with Ant Design controls. */
-.m-media { position: relative; display: block; width: 100%; color: var(--m-text); outline: 0; }
+.m-media { position: relative; display: block; width: 100%; min-width: 0; color: var(--m-text); outline: 0; }
 .m-media:focus-visible { box-shadow: var(--m-focus-ring); }
 .m-media-video { overflow: hidden; border-radius: var(--m-radius-lg); background: #000; color: #fff; }
 .m-media-stage { position: relative; aspect-ratio: var(--m-media-ratio, 16 / 9); }
@@ -2108,7 +2124,7 @@ html[data-theme='dark'] :is(.ant-color-picker-color-block, .ant-color-picker-pre
 .m-media-audio .m-media-btn { color: var(--m-text-secondary); }
 .m-media-audio .m-media-btn:hover { color: var(--m-text); }
 @media (max-width: 575px) {
-    .m-media-volume, .m-media-time-sep, .m-media [data-m-player-duration] { display: none; }
+    .m-media-volume, .m-media-time-sep, .m-media [data-m-player-duration], .m-media [data-m-player-cmd="back"], .m-media [data-m-player-cmd="forward"] { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .m-media-spinner svg { animation-duration: 3s; } }
 
@@ -2510,6 +2526,8 @@ select.m-select.m-th-filter { padding-right: 22px; background-position: right 6p
 .m-grid .ant-table-tbody > tr.m-grid-row-new > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(var(--m-primary-bg), var(--m-primary-bg)) var(--m-bg-container); }
 .m-grid .ant-table-tbody > tr.m-grid-row-dirty > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(var(--m-warning-bg), var(--m-warning-bg)) var(--m-bg-container); }
 .m-grid .ant-table-tbody > tr.m-grid-row-dirty:hover > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(var(--m-warning-bg-strong), var(--m-warning-bg-strong)) var(--m-bg-container); }
+/* The row being edited: its tint over an opaque fill, so the editors scrolling under the pinned cells stay hidden. */
+.m-grid .ant-table-tbody > tr:is(.m-grid-row-editing, :has(> td .m-grid-cell-editing:not([hidden]))) > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(color-mix(in srgb, var(--m-primary) 5%, transparent), color-mix(in srgb, var(--m-primary) 5%, transparent)) var(--m-bg-container); }
 .ant-table-tbody > tr > td.ant-table-column-sort:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(var(--m-fill), var(--m-fill)) var(--m-bg-container); }
 .ant-table-tbody > tr.ant-table-row:hover > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: var(--m-bg-subtle); }
 .ant-table-thead > tr > th:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background-color: var(--m-bg-subtle); }
