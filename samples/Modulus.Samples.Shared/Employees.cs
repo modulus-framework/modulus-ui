@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text;
 using Modulus.Ui.Abstractions;
+using Modulus.Ui.Abstractions.Data;
+using Modulus.Ui.Abstractions.Pivot;
 
 namespace Modulus.Samples.Shared;
 
@@ -63,7 +65,7 @@ public static class EmployeeDirectory
     /// <summary>A row dragged on the page <paramref name="request"/> shows (the MVC table posts the move): stores the page's new order.</summary>
     public static void Move(EmployeeQuery query, ProTableRequest request, Modulus.Ui.Abstractions.Plugins.SortMove move)
     {
-        if (request.SortField is not null) return; // a column sort decides the order then
+        if (request.SortField is not null || request.GroupBy is not null) return; // a column sort (or grouping) decides the order then
         Reorder(move.Within(Query(query, request).Data.Select(e => Key(e.Id))));
     }
 
@@ -135,19 +137,46 @@ public static class EmployeeDirectory
         _ => true,
     };
 
+    private static readonly Dictionary<string, Func<Employee, object?>> Sorters = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [nameof(Employee.Name)] = e => e.Name,
+        [nameof(Employee.Position)] = e => e.Position,
+        [nameof(Employee.Department)] = e => e.Department,
+        [nameof(Employee.Office)] = e => e.Office,
+        [nameof(Employee.StartDate)] = e => e.StartDate,
+        [nameof(Employee.Salary)] = e => e.Salary,
+        [nameof(Employee.Status)] = e => StatusLabel(e.Status),
+    };
+
+    /// <summary>The fields the data table can group by (the "Group by" menu); keys are the sort fields.</summary>
+    public static readonly TableColumn[] GroupFields =
+        [new(nameof(Employee.Department), "Department"), new(nameof(Employee.Office), "Office"), new(nameof(Employee.Status), "Status")];
+
+    // Grouped pages: the group's rows together, a header with each group's count and salary totals, totals over everything.
+    private static readonly TableQuery<Employee> Grouped = TableQuery<Employee>.By(e => e.Id)
+        .Sort(nameof(Employee.Name), e => e.Name)
+        .Sort(nameof(Employee.Position), e => e.Position)
+        .Sort(nameof(Employee.Department), e => e.Department)
+        .Sort(nameof(Employee.Office), e => e.Office)
+        .Sort(nameof(Employee.StartDate), e => e.StartDate)
+        .Sort(nameof(Employee.Salary), e => e.Salary)
+        .Sort(nameof(Employee.Status), e => e.Status)
+        .Group(nameof(Employee.Department))
+        .Group(nameof(Employee.Office))
+        .Group(nameof(Employee.Status), v => v is EmployeeStatus s ? StatusLabel(s) : "(none)")
+        .Total("salary", "Payroll", e => e.Salary, decimals: 0)
+        .Total("salary", "Average salary", e => e.Salary, PivotAggregate.Average, decimals: 0);
+
     public static ProTableResponse<Employee> Query(EmployeeQuery query, ProTableRequest request)
     {
         var rows = Filter(query);
+        if (request.GroupBy is { } group && Grouped.CanGroup(group))
+            return Grouped.Page(rows.AsQueryable(), request).ToResponse();
         var rank = _rank;
+        // Every sort of the request in turn (Shift+click adds one: department, then salary, …).
         rows = request.SortField is null
             ? rows.OrderBy(e => rank.GetValueOrDefault(e.Id, int.MaxValue))
-            : rows.SortBy(request, nameof(Employee.Name), e => e.Name)
-                  .SortBy(request, nameof(Employee.Position), e => e.Position)
-                  .SortBy(request, nameof(Employee.Department), e => e.Department)
-                  .SortBy(request, nameof(Employee.Office), e => e.Office)
-                  .SortBy(request, nameof(Employee.StartDate), e => e.StartDate)
-                  .SortBy(request, nameof(Employee.Salary), e => e.Salary)
-                  .SortBy(request, nameof(Employee.Status), e => StatusLabel(e.Status));
+            : rows.SortBy(request, Sorters);
         return rows.ToPage(request);
     }
 

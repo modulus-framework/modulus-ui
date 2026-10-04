@@ -10,9 +10,11 @@
 
 @* Rows drag by their handle to a new place (not while a column sort is on); EmployeeDirectory keeps the order.
    The search, filters, hidden columns, sort, column searches and page are in the URL (UrlState), with the MVC page's
-   keys, so the Views dropdown saves the layout and back and forward step through it. *@
+   keys, so the Views dropdown saves the layout and back and forward step through it. Shift+click on a header adds a
+   sort (MultiSort), and Group by groups the rows by department, office or status with payroll subtotals. *@
 <ProTable TItem="Employee" @ref="_table" HeaderTitle="Employees" Request="LoadAsync" RowKey="e => e.Id" Selectable ScrollX="1140" FilterRow ColumnSettings="false" Exportable="false"
-          OnRowMove="MoveRow" RowLabel="e => e.Name" UrlState UrlQuery="PageQuery" OnUrlChanged="ReadQuery">
+          OnRowMove="MoveRow" RowLabel="e => e.Name" UrlState UrlQuery="PageQuery" OnUrlChanged="ReadQuery" MultiSort
+          GroupFields="EmployeeDirectory.GroupFields">
     <TitleExtra>
         <span class="m-badge m-badge-gray-lt">@_summary.Count</span>
         <span class="m-small m-muted m-medium" style="font-weight:400">avg. salary @Fmt.Money0(_summary.AverageSalary)</span>

@@ -41,6 +41,9 @@
     --m-primary-fg: #fff;
     --m-success: var(--ant-success-color, #2fb344);
     --m-warning: var(--ant-warning-color, #f59f00);
+    /* Edited rows and cells in the grids (light amber; the cell twice as strong as its row). */
+    --m-warning-bg: color-mix(in srgb, var(--m-warning) 8%, transparent);
+    --m-warning-bg-strong: color-mix(in srgb, var(--m-warning) 18%, transparent);
     --m-error: var(--ant-error-color, #d63939);
     --m-info: #4299e1;
 
@@ -103,6 +106,8 @@ html[data-theme='dark'] {
     --m-primary-bg-hover: color-mix(in srgb, var(--m-primary) 26%, transparent);
     --m-success: #2fb344;
     --m-warning: #f59f00;
+    --m-warning-bg: color-mix(in srgb, var(--m-warning) 12%, transparent);
+    --m-warning-bg-strong: color-mix(in srgb, var(--m-warning) 26%, transparent);
     --m-error: #e05252;
 
     --m-bg-layout: #111827;
@@ -948,6 +953,8 @@ td[style*="text-align: right"] .m-grid-cell, .m-grid-td.ant-table-cell[style*="r
 .m-th > .ant-table-column-sorters > .ant-table-column-title, .m-th-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ant-table-thead > tr > th:has(.m-th-sort) { cursor: pointer; }
 .ant-table-thead > tr > th:has(.m-th-sort):hover { background: var(--m-fill-secondary); }
+/* Multi-sort: each sorted column's place among the sorts, a small number after its carets. */
+.m-th-sort-rank { display: inline-flex; align-items: center; justify-content: center; flex: none; min-width: 14px; height: 14px; margin-left: 2px; padding: 0 3px; border-radius: 7px; background: var(--m-primary-bg); color: var(--m-primary); font-size: 10px; font-weight: 600; line-height: 1; font-variant-numeric: tabular-nums; }
 .ant-table-thead > tr > th.ant-table-column-sort, .ant-table-thead > tr > th:has(.ant-table-column-sorter-up.active, .ant-table-column-sorter-down.active) { background: var(--m-fill-secondary); }
 .m-th-search-host { display: inline-flex; flex: none; }
 .m-th .ant-table-filter-trigger.m-th-search { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin: 0; padding: 0; border-radius: 4px; color: var(--m-text-quaternary); font-size: 12px; cursor: pointer; transition: color 0.15s, background 0.15s; }
@@ -996,6 +1003,26 @@ td[style*="text-align: right"] .m-grid-cell, .m-grid-td.ant-table-cell[style*="r
 @media (max-width: 767px) { .m-row-detail { grid-template-columns: minmax(0, 1fr); } }
 .m-row-detail .ant-descriptions-item-label { color: var(--m-text-tertiary); }
 tr[data-detail-for][hidden] { display: none; }
+/* Grouped rows (TableGroups): a header row per group with a toggle, a subtotal row, totals under the table. */
+.ant-table-tbody > tr.m-group-row > td, .ant-table-tbody > tr.m-group-row:hover > td { padding-top: 8px; padding-bottom: 8px; background: var(--m-fill-secondary); }
+.m-group-row > td, .m-group-footer > td, .m-table-totals { font-size: 13px; }
+.m-group-toggle { display: inline-flex; align-items: center; justify-content: center; margin: 0 8px 0 0; padding: 0; border: 0; background: none; color: inherit; vertical-align: middle; cursor: pointer; }
+.m-group-toggle .ant-table-row-expand-icon { float: none; margin: 0; pointer-events: none; }
+.m-group-toggle:focus-visible { outline: 2px solid var(--m-primary); outline-offset: 2px; border-radius: 4px; }
+.m-group-label { vertical-align: middle; }
+.m-group-field { color: var(--m-text-tertiary); }
+.m-group-count, .m-group-more { margin-left: 10px; color: var(--m-text-tertiary); vertical-align: middle; }
+.m-group-more { font-style: italic; }
+.m-group-totals { display: inline-flex; flex-wrap: wrap; gap: 4px 16px; margin-left: 16px; vertical-align: middle; }
+.m-group-total-title { color: var(--m-text-tertiary); }
+.m-group-total-value { font-variant-numeric: tabular-nums; font-weight: 600; }
+.ant-table-tbody > tr.m-group-footer > td { padding-top: 6px; padding-bottom: 6px; background: var(--m-bg-subtle); text-align: right; }
+.m-group-footer .m-group-totals { margin-left: 16px; }
+tr.m-group-collapsed { display: none; }
+.m-table-totals { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; padding: 10px 16px; border-top: 1px solid var(--m-border-secondary); background: var(--m-bg-subtle); }
+.ant-table-footer .m-table-totals { margin: -16px; border-top: 0; }
+.m-table-group.active { border-color: var(--m-primary); color: var(--m-primary); }
+.m-table-group .anticon + span { margin-left: 8px; }
 /* Resizable columns (modulus-shell.js): a grip over the header's right edge. */
 .m-col-resize-grip { position: fixed; z-index: 1060; width: 8px; cursor: col-resize; touch-action: none; }
 .m-col-resize-grip::after { content: ""; position: absolute; top: 20%; bottom: 20%; left: 3px; width: 2px; border-radius: 1px; background: var(--m-primary); opacity: 0.6; }
@@ -2253,8 +2280,26 @@ tr.m-sort-placeholder-row > td { padding: 0 !important; border: 1px dashed var(-
 .ant-table-thead.m-filter-row-on .m-th-search { display: none !important; }
 .ant-table-thead.m-filter-row-on > tr > th, .ant-table-thead:has(.m-th-filter-on) > tr > th { vertical-align: top; }
 
-/* Changed rows: a thin warning bar at the start of the row until the grid is saved. */
+/* Edit states, until the grid is saved or discarded (every editable and nested grid, Blazor and MVC):
+   - a changed row is tinted amber with an amber bar at its start, and each changed cell is tinted twice as strong
+     with a corner mark (Excel's changed-cell triangle);
+   - an added row is tinted blue (above) with a blue bar;
+   - the row whose cell is open in an editor has a primary bar and a faint primary tint.
+   A cell error (red) wins over the changed tint. */
+.m-grid .ant-table-tbody > tr.m-grid-row-dirty > td { background: var(--m-warning-bg); }
 .m-grid .ant-table-tbody > tr.m-grid-row-dirty > td:first-child { box-shadow: inset 3px 0 0 var(--m-warning); }
+.m-grid .ant-table-tbody > tr.m-grid-row-new > td:first-child { box-shadow: inset 3px 0 0 var(--m-primary); }
+.m-grid .ant-table-tbody > tr:is(.m-grid-row-editing, :has(> td .m-grid-cell-editing:not([hidden]))) > td { background: color-mix(in srgb, var(--m-primary) 5%, transparent); }
+.m-grid .ant-table-tbody > tr:is(.m-grid-row-editing, :has(> td .m-grid-cell-editing:not([hidden]))) > td:first-child { box-shadow: inset 3px 0 0 var(--m-primary); }
+.m-grid .ant-table-tbody > tr.m-grid-row-dirty:hover > td, .m-grid .ant-table-tbody > tr.m-grid-row-dirty > td.ant-table-cell-row-hover { background: var(--m-warning-bg-strong); }
+.m-grid :is(.m-grid-cell-dirty, td.m-grid-td-dirty .m-grid-cell):not(.m-grid-cell-error, .m-grid-cell-editing) { position: relative; background: var(--m-warning-bg-strong); }
+.m-grid :is(.m-grid-cell-dirty, td.m-grid-td-dirty .m-grid-cell):not(.m-grid-cell-error, .m-grid-cell-editing)::after {
+    content: ""; position: absolute; top: 0; right: 0; border-style: solid; border-width: 0 7px 7px 0;
+    border-color: transparent var(--m-warning) transparent transparent; border-top-right-radius: var(--m-radius-sm, 4px); pointer-events: none;
+}
+@media (forced-colors: active) {
+    .m-grid :is(.m-grid-cell-dirty, td.m-grid-td-dirty .m-grid-cell):not(.m-grid-cell-error, .m-grid-cell-editing) { outline: 1px dashed CanvasText; outline-offset: -2px; }
+}
 
 /* The expand control as a chevron (▶ collapsed, ▼ expanded) instead of Ant Design's plus box. */
 .m-table-card .ant-table-row-expand-icon { position: relative; width: 22px; height: 22px; border: 0; border-radius: 4px; background: transparent; color: var(--m-text-tertiary); transform: none; }
@@ -2463,6 +2508,8 @@ select.m-select.m-th-filter { padding-right: 22px; background-position: right 6p
 .ant-table-tbody > tr > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background-color: var(--m-bg-container); }
 .ant-table-tbody > tr.ant-table-row-selected > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right),
 .m-grid .ant-table-tbody > tr.m-grid-row-new > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(var(--m-primary-bg), var(--m-primary-bg)) var(--m-bg-container); }
+.m-grid .ant-table-tbody > tr.m-grid-row-dirty > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(var(--m-warning-bg), var(--m-warning-bg)) var(--m-bg-container); }
+.m-grid .ant-table-tbody > tr.m-grid-row-dirty:hover > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(var(--m-warning-bg-strong), var(--m-warning-bg-strong)) var(--m-bg-container); }
 .ant-table-tbody > tr > td.ant-table-column-sort:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(var(--m-fill), var(--m-fill)) var(--m-bg-container); }
 .ant-table-tbody > tr.ant-table-row:hover > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: var(--m-bg-subtle); }
 .ant-table-thead > tr > th:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background-color: var(--m-bg-subtle); }

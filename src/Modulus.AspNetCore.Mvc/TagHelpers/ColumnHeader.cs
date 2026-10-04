@@ -19,21 +19,27 @@ public static class ColumnHeader
     /// <param name="searchAttributes">Extra attributes of the search box's host (<c>hx-target</c>, <c>hx-swap</c>, used by its request).</param>
     /// <param name="extra">Markup after the search icon (a column menu button).</param>
     /// <param name="choices">Choices of the column's box in the filter row (a select instead of a text box); see <see cref="GridSchema.SearchChoices"/>.</param>
+    /// <param name="sortAddHref">Multi-sort: the URL of a Shift+click, which adds this column to the other sorts (<see cref="SortKeys.Click"/>; modulus-shell.js follows it).</param>
+    /// <param name="sortRank">The column's place among several sorts (<see cref="SortKeys.Rank"/>), shown by the carets; 0 for none.</param>
     public static string Content(string key, string title, ColumnKind kind = ColumnKind.Text, bool required = false,
         bool sortable = true, SortDirection sort = SortDirection.None, string? sortHref = null, string? sortAttributes = null,
         bool searchable = true, string? search = null, string? searchHref = null, string? searchAttributes = null, string? extra = null,
-        IReadOnlyList<ColumnChoice>? choices = null)
+        IReadOnlyList<ColumnChoice>? choices = null, string? sortAddHref = null, int sortRank = 0)
     {
         var label = Html.E(title) + (required ? """<span class="m-grid-required" aria-hidden="true">*</span>""" : "");
         string head;
         if (sortable)
         {
-            var state = sort switch { SortDirection.Ascending => " (ascending)", SortDirection.Descending => " (descending)", _ => "" };
+            var place = sortRank > 0 ? $", sort {sortRank}" : "";
+            var state = sort switch { SortDirection.Ascending => $" (ascending{place})", SortDirection.Descending => $" (descending{place})", _ => "" };
             var carets = $"""<span class="ant-table-column-sorter ant-table-column-sorter-full"><span class="ant-table-column-sorter-inner">{AntIcons.Span("caret-up", IconThemeType.Outline, Html.Cx("ant-table-column-sorter-up", sort == SortDirection.Ascending ? "active" : null))}{AntIcons.Span("caret-down", IconThemeType.Outline, Html.Cx("ant-table-column-sorter-down", sort == SortDirection.Descending ? "active" : null))}</span></span>""";
-            var body = $"""<span class="ant-table-column-title">{label}</span>{carets}""";
-            var aria = $""" title="Sort by {Html.E(title)}" aria-label="Sort by {Html.E(title)}{state}" """.TrimEnd();
+            var rank = sortRank > 0 ? $"""<span class="m-th-sort-rank" aria-hidden="true">{sortRank}</span>""" : "";
+            var body = $"""<span class="ant-table-column-title">{label}</span>{carets}{rank}""";
+            var hint = sortAddHref is null ? "" : " (Shift+click to add)";
+            var aria = $""" title="Sort by {Html.E(title)}{hint}" aria-label="Sort by {Html.E(title)}{state}" """.TrimEnd();
+            var add = sortAddHref is null ? "" : $" data-sort-add-href=\"{Html.E(sortAddHref)}\"";
             head = sortHref is not null
-                ? $"""<a class="ant-table-column-sorters m-th-sort" href="{Html.E(sortHref)}"{aria}{sortAttributes}>{body}</a>"""
+                ? $"""<a class="ant-table-column-sorters m-th-sort" href="{Html.E(sortHref)}"{add}{aria}{sortAttributes}>{body}</a>"""
                 : $"""<span class="ant-table-column-sorters m-th-sort" role="button" tabindex="0"{aria}{sortAttributes}>{body}</span>""";
         }
         else head = $"""<span class="ant-table-column-title m-th-title">{label}</span>""";

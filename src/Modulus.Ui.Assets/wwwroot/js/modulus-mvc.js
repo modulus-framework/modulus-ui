@@ -518,4 +518,24 @@
         button.setAttribute('aria-expanded', open ? 'true' : 'false');
         button.setAttribute('aria-label', open ? 'Collapse row' : 'Expand row');
     });
+
+    // Grouped rows of server-rendered tables (TableGroups.HeaderRow): a [data-m-group-toggle] button hides or shows
+    // the rows of its tbody marked data-m-group="{key}" (a class, so a row detail keeps its own hidden state).
+    document.addEventListener('click', function (e) {
+        var button = e.target instanceof Element ? e.target.closest('[data-m-group-toggle]') : null;
+        var body = button && button.closest('tbody');
+        if (!body) return;
+        var key = button.getAttribute('data-m-group-toggle');
+        var open = button.getAttribute('aria-expanded') === 'false';
+        body.querySelectorAll('tr[data-m-group]').forEach(function (tr) {
+            if (tr.getAttribute('data-m-group') === key) tr.classList.toggle('m-group-collapsed', !open);
+        });
+        button.setAttribute('aria-expanded', open ? 'true' : 'false');
+        button.setAttribute('aria-label', (button.getAttribute('aria-label') || '').replace(/^(Expand|Collapse) /, open ? 'Collapse ' : 'Expand '));
+        var icon = button.querySelector('.ant-table-row-expand-icon');
+        if (icon) {
+            icon.classList.toggle('ant-table-row-expand-icon-expanded', open);
+            icon.classList.toggle('ant-table-row-expand-icon-collapsed', !open);
+        }
+    });
 })();

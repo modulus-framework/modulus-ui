@@ -228,7 +228,7 @@
            RowExpandable="RowExpandableFor"
            SelectedRows="_selected"
            SelectedRowsChanged="rows => _selected = rows.ToList()"
-           RowClassName="@(r => r.Data.Id == _newRowId ? "m-grid-row-new" : _changedRows.Contains(r.Data.Id) ? "m-grid-row-dirty" : "")">
+           RowClassName="RowClass">
         <ChildContent>
             @if (RowDraggable)
             {
@@ -522,6 +522,17 @@
     private int _deletedRows;
     private readonly Dictionary<string, string?> _filters = new(StringComparer.Ordinal);
     private readonly HashSet<string> _addedIds = new(StringComparer.Ordinal);
+
+    // Cells changed since the last save (tinted, with a corner mark), beside their row's tint.
+    private readonly HashSet<(string Row, string Key)> _changedCells = [];
+
+    // Added rows are tinted blue, changed rows amber, and the row being edited has a primary bar.
+    private string RowClass(RowData<GridRecord> r)
+    {
+        var id = r.Data.Id;
+        var state = _addedIds.Contains(id) || id == _newRowId ? "m-grid-row-new" : _changedRows.Contains(id) ? "m-grid-row-dirty" : "";
+        return _editing?.Row == id ? (state + " m-grid-row-editing").TrimStart() : state;
+    }
     private List<GridRecord> _selected = [];
     private int _batchVersion;
     private DotNetObjectReference<EditableGrid>? _self;
@@ -583,6 +594,7 @@
     {
         if (!_addedIds.Remove(id)) _deletedRows++;
         _changedRows.Remove(id);
+        _changedCells.RemoveWhere(c => c.Row == id);
     }
 
     private async Task SearchChanged(string? keyword)
@@ -740,6 +752,7 @@
         _newRowId = null;
         _addedIds.Clear();
         _changedRows.Clear();
+        _changedCells.Clear();
         _deletedRows = 0;
         _selected = [];
         _schemaVersion++;
@@ -786,7 +799,8 @@
         var error = _errors.GetValueOrDefault((row.Id, c.Key));
         var editing = _editing == (row.Id, c.Key);
         var direct = c.Type is GridCellType.Switch or GridCellType.Rating;
-        var cls = $"m-grid-cell{(c.Editable && !direct ? " m-grid-cell-editable" : "")}{(error is not null ? " m-grid-cell-error" : "")}{(editing ? " m-grid-cell-editing" : "")}";
+        var changed = _changedCells.Contains((row.Id, c.Key)) && !_addedIds.Contains(row.Id);
+        var cls = $"m-grid-cell{(c.Editable && !direct ? " m-grid-cell-editable" : "")}{(changed ? " m-grid-cell-dirty" : "")}{(error is not null ? " m-grid-cell-error" : "")}{(editing ? " m-grid-cell-editing" : "")}";
 
         if (editing && c.Editable)
         {
@@ -795,7 +809,7 @@
         else
         {
             <div class="@cls" title="@error" tabindex="@(c.Editable && !direct ? 0 : -1)" role="@(c.Editable && !direct ? "button" : null)"
-                 aria-label="@(c.Editable && !direct ? $"Edit {c.Title}: {GridSchema.Format(c, value)}" : null)"
+                 aria-label="@(c.Editable && !direct ? $"Edit {c.Title}: {GridSchema.Format(c, value)}{(changed ? " (changed)" : "")}" : null)"
                  @onclick="() => BeginEdit(row, c)" @onkeydown="e => OnCellKey(e, row, c)">
                 @View(row, c, value)
             </div>
@@ -1009,6 +1023,7 @@
         if (normalized == row[c.Key]) return;
         row[c.Key] = normalized;
         _changedRows.Add(row.Id);
+        _changedCells.Add((row.Id, c.Key));
         // Re-validate the cell once it has been flagged, so the message clears as soon as it is fixed.
         if (_errors.ContainsKey((row.Id, c.Key)))
         {
@@ -1128,6 +1143,7 @@
             _newRowId = null;
             _addedIds.Clear();
             _changedRows.Clear();
+            _changedCells.Clear();
             _deletedRows = 0;
         }
         finally

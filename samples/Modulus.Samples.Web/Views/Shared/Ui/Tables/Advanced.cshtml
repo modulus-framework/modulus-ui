@@ -13,10 +13,19 @@
     var visible = 3 + EmployeeDirectory.OptionalColumns.Count(c => Model.Shows(c.Key));
     // Rows drag by their handle (modulus-plugins.js moves the row, then the hidden "move" input posts it); a column sort locks them.
     // (data-m-sort-disabled is written with Html.Raw: Razor keeps a data-* attribute even when its value is null.)
-    var dragLocked = Model.Request.SortField is not null;
+    var dragLocked = Model.Request.SortField is not null || Model.Request.GroupBy is not null;
     const string DragHelp = "employees-drag-help";
     // Same colgroup as the Blazor ProTable renders.
     string ColStyle(string width) => $"width: {width}; min-width: {width};";
+    // Group by (?groupBy=): a header row before each group's first row, a subtotal after its last, totals under the table.
+    var groupTitle = EmployeeDirectory.GroupFields.FirstOrDefault(f => f.Key == Model.Request.GroupBy)?.Title;
+    var groupBy = EmployeeDirectory.GroupFields.Select(f => new SelectListItem(f.Title, f.Key, f.Key == Model.Request.GroupBy));
+    IReadOnlyList<TableGroupSpan> spans = groupTitle is null ? [] : TableGroups.Spans(Model.Page.Groups, Model.Page.Data.Count);
+    TableGroupSpan? SpanAt(int index)
+    {
+        foreach (var s in spans) if (index >= s.First && index <= s.Last) return s;
+        return null;
+    }
     // Label tags after the name, in the colours picked when the labels were added.
     Microsoft.AspNetCore.Html.IHtmlContent LabelTags(int id) => new Microsoft.AspNetCore.Html.HtmlString(string.Concat(EmployeeLabels.Of(id).Select(EmployeeLabels.Find).OfType<GridOption>()
         .Select(l => $"<span class=\"ant-tag ant-tag-{l.Color} m-label-tag\">{System.Net.WebUtility.HtmlEncode(l.Label)}</span>")));
@@ -58,6 +67,7 @@
             <app-select name="office" items="Items(EmployeeDirectory.Offices, q.Office)" placeholder="All offices" aria-label="Office" />
             <app-select name="status" items="statuses" placeholder="Any status" aria-label="Status" />
             <app-creatable-select name="label" options="EmployeeLabels.Options" value="@q.Label" placeholder="Any label" add-placeholder="Label name" create-text="Create new label" add-href="@Base/labels" allow-clear aria-label="Label" />
+            <app-select name="groupBy" items="groupBy" placeholder="No grouping" aria-label="Group by" />
             @if (Model.Request.SortField is { } sortField)
             {
                 <input type="hidden" name="sortField" value="@sortField" />
@@ -111,13 +121,13 @@
                         <app-checkbox aria-label="Select all rows" data-select-all @@change="toggleAll($event.target.checked)" />
                     </th>
                     <th class="ant-table-cell ant-table-row-expand-icon-cell"></th>
-                    @grid.SortTh(nameof(Employee.Name), "Employee", searchable: true)
-                    @grid.SortTh(nameof(Employee.Position), "Position", col: "position", searchable: true)
-                    @grid.SortTh(nameof(Employee.Department), "Department", col: "department", searchable: true)
-                    @grid.SortTh(nameof(Employee.Office), "Office", col: "office", searchable: true)
-                    @grid.SortTh(nameof(Employee.StartDate), "Start date", col: "start", searchable: true, kind: ColumnKind.Date)
-                    @grid.SortTh(nameof(Employee.Salary), "Salary", "text-align: right", col: "salary", searchable: true, kind: ColumnKind.Number)
-                    @grid.SortTh(nameof(Employee.Status), "Status", searchable: true)
+                    @grid.SortTh(nameof(Employee.Name), "Employee", searchable: true, multiSort: true)
+                    @grid.SortTh(nameof(Employee.Position), "Position", col: "position", searchable: true, multiSort: true)
+                    @grid.SortTh(nameof(Employee.Department), "Department", col: "department", searchable: true, multiSort: true)
+                    @grid.SortTh(nameof(Employee.Office), "Office", col: "office", searchable: true, multiSort: true)
+                    @grid.SortTh(nameof(Employee.StartDate), "Start date", col: "start", searchable: true, kind: ColumnKind.Date, multiSort: true)
+                    @grid.SortTh(nameof(Employee.Salary), "Salary", "text-align: right", col: "salary", searchable: true, kind: ColumnKind.Number, multiSort: true)
+                    @grid.SortTh(nameof(Employee.Status), "Status", searchable: true, multiSort: true)
                 </tr>
             </thead>
             <tbody class="ant-table-tbody">
@@ -125,9 +135,16 @@
                 {
                     <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="@(visible + 2)"><div class="m-table-empty">No employees match these filters</div></td></tr>
                 }
-                @foreach (var e in Model.Page.Data)
+                @for (var i = 0; i < Model.Page.Data.Count; i++)
                 {
-                    <tr class="ant-table-row ant-table-row-level-0" data-row-key="@e.Id">
+                    var e = Model.Page.Data[i];
+                    var span = SpanAt(i);
+                    var inGroup = span is { } g ? Html.Raw(TableGroups.RowAttribute(g.Group)) : null;
+                    if (span is { } head && head.First == i)
+                    {
+                        @Html.Raw(TableGroups.HeaderRow(head.Group, groupTitle, visible + 2))
+                    }
+                    <tr class="ant-table-row ant-table-row-level-0" data-row-key="@e.Id"@inGroup>
                         <td class="ant-table-cell m-row-drag-cell">@Html.Raw(SortableHtml.RowHandle(e.Id.ToString(), e.Name, DragHelp, dragLocked))</td>
                         <td class="ant-table-cell ant-table-selection-column"><app-checkbox name="ids" value="@e.Id.ToString()" aria-label="@($"Select {e.Name}")" /></td>
                         <td class="ant-table-cell ant-table-row-expand-icon-cell"><button type="button" class="ant-table-row-expand-icon ant-table-row-expand-icon-collapsed" aria-label="Expand row" aria-expanded="false" data-toggle-detail></button></td>
@@ -145,7 +162,7 @@
                         <td class="ant-table-cell@(grid.SortClass(nameof(Employee.Status)))"><span class="m-badge @EmployeeDirectory.StatusBadge(e.Status)">@EmployeeDirectory.StatusLabel(e.Status)</span></td>
                     </tr>
                     @* The expanded row, as ProTable's RowDetail renders it on the Blazor page. *@
-                    <tr class="ant-table-expanded-row ant-table-expanded-row-level-1" data-detail-for="@e.Id" hidden>
+                    <tr class="ant-table-expanded-row ant-table-expanded-row-level-1" data-detail-for="@e.Id"@inGroup hidden>
                         <td class="ant-table-cell" colspan="@(visible + 2)">
                             <div class="m-row-detail">
                                 <div class="m-entity">
@@ -161,9 +178,13 @@
                             </div>
                         </td>
                     </tr>
+                    if (span is { } foot && foot.Last == i)
+                    {
+                        @Html.Raw(TableGroups.FooterRow(foot.Group, visible + 2))
+                    }
                 }
             </tbody>
-            <table-footer>@grid.Pager(Model.Page.Total)</table-footer>
+            <table-footer>@Html.Raw(TableGroups.Totals(Model.Page.Totals, Model.Page.Total))@grid.Pager(Model.Page.Total)</table-footer>
         </app-table>
     </div>
 </div>

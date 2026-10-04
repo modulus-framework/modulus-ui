@@ -45,9 +45,16 @@
                     <input type="file" name="file" accept=".docx" form="document-import" class="m-sr-only" data-m-file-submit />
                     <app-icon type="upload" /><span>Import docx</span>
                 </label>
+                <button type="button" class="ant-btn ant-btn-default" data-m-print="document" title="Print the document (Ctrl+P in it)"><app-icon type="printer" /><span>Print</span></button>
                 <button type="submit" form="document-form" formaction="@PluginsContent.DocumentDownloadUrl" data-m-reload class="ant-btn ant-btn-default"><app-icon type="download" /><span>Download docx</span></button>
                 <a class="ant-btn ant-btn-default" href="@PluginsContent.DocumentUrl(view)"><span>Reset</span></a>
                 <button type="submit" form="document-form" class="ant-btn ant-btn-primary"><app-icon type="save" /><span>Save</span></button>
+            </div>
+        }
+        else
+        {
+            <div class="m-sheet-bar-actions">
+                <button type="button" class="ant-btn ant-btn-default" data-m-print="contract-readonly"><app-icon type="printer" /><span>Print</span></button>
             </div>
         }
     </div>

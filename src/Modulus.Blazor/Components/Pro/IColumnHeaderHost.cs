@@ -12,6 +12,18 @@ public interface IColumnHeaderHost
 
     Task SortAsync(string key);
 
+    /// <summary>
+    /// A header click with Shift (or Ctrl/Cmd) held when <paramref name="add"/>: the column joins the other sorts
+    /// (<see cref="SortKeys.Click"/>). A table without <see cref="MultiSort"/> sorts by the one column.
+    /// </summary>
+    Task SortAsync(string key, bool add) => SortAsync(key);
+
+    /// <summary>Whether Shift+click adds a sort (the header says so in its tooltip).</summary>
+    bool MultiSort => false;
+
+    /// <summary>The column's place among several sorts (a small number by its carets), or 0.</summary>
+    int SortRank(string key) => 0;
+
     string? SearchOf(string key);
 
     /// <summary>Sets (or, when <paramref name="value"/> is empty, clears) a column's search.</summary>

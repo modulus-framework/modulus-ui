@@ -131,6 +131,34 @@ On a Blazor `ProTable`, set `UrlState` (plus `UrlQuery` and `OnUrlChanged` for t
 layout is in the URL and `AppSavedViews` can save it. Saved views no longer keep the page number (`current` is
 dropped like `page`); views saved earlier with one still open, on that page.
 
+## Multi-column sort (`thenBy`)
+
+Nothing breaks. `ProTableRequest` gained `ThenBy` (text, bound from `?thenBy=`) and `Sorts` (the whole list); a
+request without `thenBy` sorts exactly as before. To offer Shift+click sorting:
+
+- Blazor: set `MultiSort` on the `ProTable`. Your `Request` callback must apply `request.Sorts`: `TableQuery` does,
+  and for in-memory rows use `rows.SortBy(request, keys)` with a field → key dictionary instead of a chain of
+  single-field `SortBy` calls (which only read the first sort).
+- MVC and Razor Pages: pass `sortAddHref` and `sortRank` to `ColumnHeader.Content` (see the sample's
+  `Grid.SortTh(…, multiSort: true)`), and apply `request.Sorts` in the action as above.
+
+A custom `IColumnHeaderHost` keeps compiling: the new members (`SortAsync(key, add)`, `MultiSort`, `SortRank`) have
+defaults that keep one sort.
+
+## Group by (`groupBy`)
+
+Nothing breaks. `ProTableRequest` gained `GroupBy` (bound from `?groupBy=`); `ProTableResponse` gained `Groups` and
+`Totals`, null unless set. To offer grouping:
+
+- Register the fields and totals on your `TableQuery`: `.Group("department")` (the field must have a `Sort`) and
+  `.Total("salary", "Payroll", e => e.Salary)`, and return `page.ToResponse()` so the groups and totals reach the table.
+- Blazor: set `GroupFields` on the `ProTable` (or `ModulusDataGrid`) to the fields the menu offers.
+- MVC and Razor Pages: write `TableGroups.HeaderRow` before a group's first row, `TableGroups.RowAttribute` on its
+  rows, `TableGroups.FooterRow` after its last and `TableGroups.Totals` under the table (see the sample's
+  `Tables/Advanced.cshtml`); `modulus-mvc.js` handles the toggles.
+
+A `Request` callback that ignores `GroupBy` still works: the table shows its rows without group headers.
+
 ## Icons
 
 Names Ant Design has no icon for are Tabler outline icons with a `tb:` prefix (`ShellRenderer.TablerPrefix`), listed in

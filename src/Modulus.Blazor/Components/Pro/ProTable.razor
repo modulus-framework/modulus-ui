@@ -16,6 +16,10 @@
     With UrlState, the page, sort and column searches live in the URL (the MVC grids' keys, see ProTableUrl), beside the
     page's own filters (UrlQuery, read back in OnUrlChanged): back and forward step through them, a link opens the table
     as it was, and AppSavedViews can save the layout.
+    With GroupFields, a "Group by" menu groups the rows by one of them (the request's GroupBy, ?groupBy= in the URL): the
+    Request callback returns the page's groups and totals (TableQuery does, see TableQuery.Group and Total), and each
+    group gets a header row (toggle, value, row count, totals) and, where it ends, a subtotal row; totals over every row
+    show under the table.
 *@
 @typeparam TItem
 @attribute [CascadingTypeParameter(nameof(TItem))]
@@ -38,6 +42,24 @@
         </div>
         <div class="m-table-toolbar-actions">
             @ToolBar
+            @if (GroupFields is { Count: > 0 })
+            {
+                <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight">
+                    <Overlay>
+                        <Menu SelectedKeys="@(new[] { _groupBy ?? "" })" OnMenuItemClicked="OnGroupBy">
+                            <MenuItem Key="">No grouping</MenuItem>
+                            @foreach (var field in GroupFields)
+                            {
+                                <MenuItem Key="@field.Key">@field.Title</MenuItem>
+                            }
+                        </Menu>
+                    </Overlay>
+                    <ChildContent>
+                        <button type="button" class="@($"ant-btn ant-btn-default m-table-group{(_groupBy is null ? "" : " active")}")" aria-haspopup="menu"
+                                title="Group the rows by a column"><Icon Type="group" /><span>@(GroupTitle is { } title ? $"Group: {title}" : "Group by")</span></button>
+                    </ChildContent>
+                </Dropdown>
+            }
             @if (FiltersActive || _searches is not null)
             {
                 @* One click clears the column searches and, through OnClearFilters, the page's own search and filters. *@
@@ -101,7 +123,8 @@
         @((MarkupString)SortableHtml.RowsHelp(HelpId))
     }
     <CascadingValue Value="HeaderScope">
-    <Table TItem="TItem"
+    <GroupingTable TItem="TItem"
+           @ref="_grid"
            DataSource="_data"
            Total="_total"
            RemoteDataSource="true"
@@ -118,26 +141,30 @@
            SelectedRowsChanged="rows => _selected = rows"
            ExpandTemplate="ExpandFragment"
            RowExpandable="RowExpandableFor"
-           PaginationTemplate="PaginationWithTotal">
-        <ChildContent>
-            @if (Draggable)
-            {
-                <ActionColumn Title="" Width="@SortableHtml.RowHandleWidth.ToString(System.Globalization.CultureInfo.InvariantCulture)" Align="ColumnAlign.Center" Class="m-row-drag-cell">
-                    @((MarkupString)SortableHtml.RowHandle(IdOf(context), RowLabel?.Invoke(context) ?? "row", HelpId, DragLocked))
-                </ActionColumn>
-            }
-            @if (Selectable)
-            {
-                <Selection Width="48" Disabled="@(RowSelectable is not null && !RowSelectable(context))" />
-            }
-            @Columns?.Invoke(context)
-        </ChildContent>
-    </Table>
+           RowTemplate="GroupRowTemplate"
+           FooterTemplate="TotalsFooter"
+           PaginationTemplate="PaginationWithTotal"
+           ChildContent="RowCells" />
     </CascadingValue>
     </div>
 </Card>
 
 @code {
+    // The cells of a row: the drag handle, the checkbox and the page's columns.
+    private RenderFragment<TItem> RowCells => context => @<text>
+        @if (Draggable)
+        {
+            <ActionColumn Title="" Width="@SortableHtml.RowHandleWidth.ToString(System.Globalization.CultureInfo.InvariantCulture)" Align="ColumnAlign.Center" Class="m-row-drag-cell">
+                @((MarkupString)SortableHtml.RowHandle(IdOf(context), RowLabel?.Invoke(context) ?? "row", HelpId, DragLocked))
+            </ActionColumn>
+        }
+        @if (Selectable)
+        {
+            <Selection Width="48" Disabled="@(RowSelectable is not null && !RowSelectable(context))" />
+        }
+        @Columns?.Invoke(context)
+    </text>;
+
     [Parameter] public string? HeaderTitle { get; set; }
 
     [Parameter] public string? Tooltip { get; set; }
@@ -225,6 +252,23 @@
     /// </summary>
     [Parameter] public bool UrlState { get; set; }
 
+    /// <summary>
+    /// Shift+click on a header adds that column to the sort (<see cref="ProTableRequest.Sorts"/>, at most
+    /// <see cref="SortKeys.Max"/>): the request then carries <c>ThenBy</c>, which <c>TableQuery</c> and the
+    /// <c>SortBy(request, keys)</c> helper apply.
+    /// </summary>
+    [Parameter] public bool MultiSort { get; set; }
+
+    /// <summary>
+    /// Fields the rows can group by (a "Group by" menu in the toolbar): the request then carries
+    /// <see cref="ProTableRequest.GroupBy"/>, and the response's <see cref="ProTableResponse{T}.Groups"/> become group
+    /// header rows (and <see cref="ProTableResponse{T}.Totals"/> a line under the table). Rows can't be dragged while grouped.
+    /// </summary>
+    [Parameter] public IReadOnlyList<TableColumn>? GroupFields { get; set; }
+
+    /// <summary>With <see cref="GroupFields"/>: a subtotal row after each group that ends on the page (when there are totals).</summary>
+    [Parameter] public bool GroupFooters { get; set; } = true;
+
     /// <summary>With <see cref="UrlState"/>: the page's own query pairs (its search, filters, hidden columns) written beside the table's.</summary>
     [Parameter] public Func<IEnumerable<KeyValuePair<string, string?>>>? UrlQuery { get; set; }
 
@@ -236,8 +280,8 @@
 
     private bool Draggable => OnRowMove.HasDelegate && RowKey is not null;
 
-    // A column sort decides the order, so a drop would not stay where it was put.
-    private bool DragLocked => _sortField is not null;
+    // A column sort (or a grouping) decides the order, so a drop would not stay where it was put.
+    private bool DragLocked => _sortField is not null || _groupBy is not null;
 
     private string HelpId => $"{TableId}-drag-help";
 
@@ -271,6 +315,7 @@
     private TableSize _size;
     private string? _sortField;
     private Modulus.Ui.Abstractions.SortDirection _sortOrder;
+    private string? _thenBy;
     private int _loadVersion;
 
     protected override async Task OnInitializedAsync()
@@ -293,7 +338,8 @@
     {
         _urlQuery = QueryOf(Navigation.Uri);
         var request = ProTableUrl.Read(_urlQuery, PageSize);
-        (_pageIndex, _pageSize, _sortField, _sortOrder, _searches) = (request.Current, request.PageSize, request.SortField, request.SortOrder, request.Searches);
+        (_pageIndex, _pageSize, _sortField, _sortOrder, _thenBy, _searches) = (request.Current, request.PageSize, request.SortField, request.SortOrder, MultiSort ? request.ThenBy : null, request.Searches);
+        _groupBy = GroupFields?.FirstOrDefault(f => string.Equals(f.Key, request.GroupBy, StringComparison.OrdinalIgnoreCase))?.Key;
         if (OnUrlChanged.HasDelegate) await OnUrlChanged.InvokeAsync(_urlQuery);
     }
 
@@ -313,7 +359,18 @@
     }
 
     /// <summary>With <see cref="UrlState"/>: writes the current state to the URL (after a change the table does not load for, such as a hidden column).</summary>
-    public void SyncUrl() => WriteUrl(new ProTableRequest { Current = _pageIndex, PageSize = _pageSize, SortField = _sortField, SortOrder = _sortOrder, Searches = _searches });
+    public void SyncUrl() => WriteUrl(CurrentRequest);
+
+    private ProTableRequest CurrentRequest => new()
+    {
+        Current = _pageIndex,
+        PageSize = _pageSize,
+        SortField = _sortField,
+        SortOrder = _sortOrder,
+        ThenBy = _thenBy,
+        GroupBy = _groupBy,
+        Searches = _searches,
+    };
 
     private void WriteUrl(ProTableRequest request)
     {
@@ -348,6 +405,7 @@
         {
             var sort = query.SortModel.FirstOrDefault(s => s.SortDirection != AntDesign.SortDirection.None);
             _sortField = sort?.FieldName;
+            _thenBy = null;
             _sortOrder = sort?.SortDirection switch
             {
                 AntDesign.SortDirection.Ascending => Modulus.Ui.Abstractions.SortDirection.Ascending,
@@ -366,23 +424,22 @@
         StateHasChanged();
         try
         {
-            var request = new ProTableRequest
-            {
-                Current = _pageIndex,
-                PageSize = _pageSize,
-                SortField = _sortField,
-                SortOrder = _sortOrder,
-                Searches = _searches,
-            };
+            var request = CurrentRequest;
             WriteUrl(request);
             var response = await Request(request);
             if (version != _loadVersion) return;
             _data = response.Data;
             _total = response.Total;
+            SetGroups(response);
         }
         finally
         {
-            if (version == _loadVersion) _loading = false;
+            // Also when called from code (ReloadAsync, GroupByAsync), not only from an event that renders afterwards.
+            if (version == _loadVersion)
+            {
+                _loading = false;
+                StateHasChanged();
+            }
         }
     }
 
@@ -406,7 +463,7 @@
     {
         get
         {
-            var state = $"{_filterRow}|{_sortField}|{_sortOrder}|{string.Join('|', (_searches ?? new Dictionary<string, string?>()).Select(s => $"{s.Key}={s.Value}"))}";
+            var state = $"{_filterRow}|{_sortField}|{_sortOrder}|{_thenBy}|{string.Join('|', (_searches ?? new Dictionary<string, string?>()).Select(s => $"{s.Key}={s.Value}"))}";
             if (_headerScope is null || state != _headerState)
             {
                 _headerState = state;
@@ -416,14 +473,23 @@
         }
     }
 
-    public Modulus.Ui.Abstractions.SortDirection SortOf(string key) =>
-        string.Equals(_sortField, key, StringComparison.OrdinalIgnoreCase) ? _sortOrder : Modulus.Ui.Abstractions.SortDirection.None;
+    /// <summary>Every sort in order (the first, then each Shift+click one).</summary>
+    public IReadOnlyList<SortKey> Sorts => CurrentRequest.Sorts;
+
+    public Modulus.Ui.Abstractions.SortDirection SortOf(string key) => SortKeys.Of(Sorts, key);
+
+    public int SortRank(string key) => MultiSort ? SortKeys.Rank(Sorts, key) : 0;
+
+    bool IColumnHeaderHost.MultiSort => MultiSort;
 
     /// <summary>A header click: ascending, descending, then unsorted; back to page 1.</summary>
-    public async Task SortAsync(string key)
+    public Task SortAsync(string key) => SortAsync(key, add: false);
+
+    /// <summary>A header click; with <paramref name="add"/> (Shift+click, <see cref="MultiSort"/>) the other sorts stay.</summary>
+    public async Task SortAsync(string key, bool add)
     {
-        _sortOrder = ColumnSearch.NextSort(SortOf(key));
-        _sortField = _sortOrder == Modulus.Ui.Abstractions.SortDirection.None ? null : key;
+        var request = new ProTableRequest { Sorts = SortKeys.Click(Sorts, key, add && MultiSort) };
+        (_sortField, _sortOrder, _thenBy) = (request.SortField, request.SortOrder, request.ThenBy);
         await ReloadAsync(resetPage: true);
     }
 
@@ -453,4 +519,82 @@
     }
 
     private void OnDensity(MenuItem item) => _size = Enum.Parse<TableSize>(item.Key);
+
+    // ---- Grouping (GroupFields): header and footer rows around each group, totals under the table ----
+
+    private GroupingTable<TItem>? _grid;
+    private string? _groupBy;
+    private IReadOnlyList<TableGroupSpan> _spans = [];
+    private IReadOnlyList<TableTotal>? _totals;
+    private Dictionary<object, int> _rowIndex = new();
+    private readonly HashSet<string> _collapsed = new(StringComparer.Ordinal);
+
+    /// <summary>The field the rows group by, or null.</summary>
+    public string? GroupBy => _groupBy;
+
+    private string? GroupTitle => GroupFields?.FirstOrDefault(f => f.Key == _groupBy)?.Title;
+
+    /// <summary>Groups the rows by <paramref name="field"/> (one of <see cref="GroupFields"/>), or stops grouping (null); loads page 1.</summary>
+    public async Task GroupByAsync(string? field)
+    {
+        _groupBy = GroupFields?.FirstOrDefault(f => string.Equals(f.Key, field, StringComparison.OrdinalIgnoreCase))?.Key;
+        _collapsed.Clear();
+        await ReloadAsync(resetPage: true);
+    }
+
+    private Task OnGroupBy(MenuItem item) => GroupByAsync(item.Key is { Length: > 0 } key ? key : null);
+
+    private void SetGroups(ProTableResponse<TItem> response)
+    {
+        var rows = response.Data as IReadOnlyList<TItem> ?? response.Data.ToList();
+        _spans = _groupBy is null ? [] : TableGroups.Spans(response.Groups, rows.Count);
+        _totals = response.Totals;
+        // Rows are found by reference: two equal records are still two rows.
+        _rowIndex = typeof(TItem).IsValueType ? new() : new(ReferenceEqualityComparer.Instance);
+        for (var i = 0; i < rows.Count; i++) if (rows[i] is { } row) _rowIndex.TryAdd(row, i);
+        if (_spans.Count == 0) _collapsed.Clear();
+    }
+
+    private void ToggleGroup(string key)
+    {
+        if (!_collapsed.Remove(key)) _collapsed.Add(key);
+    }
+
+    private int GroupColumns => (_grid?.ColumnCount ?? 1) + (RowDetail is not null ? 1 : 0);
+
+    private TableGroupSpan? SpanAt(int index)
+    {
+        foreach (var span in _spans) if (index >= span.First && index <= span.Last) return span;
+        return null;
+    }
+
+    // Each row as Ant Design renders it, with its group's header before the first and the subtotal after the last.
+    private RenderFragment<AntDesign.TableModels.RowData<TItem>>? GroupRowTemplate => _spans.Count == 0 ? null : row => __builder =>
+    {
+        var index = row.Data is { } data && _rowIndex.TryGetValue(data, out var i) ? i : -1;
+        var span = SpanAt(index);
+        var collapsed = span is { } open && _collapsed.Contains(open.Group.Key);
+        if (span is { } head && head.First == index)
+        {
+            var group = head.Group;
+            <tr class="ant-table-row m-group-row" data-m-group-head="@group.Key">
+                <td class="ant-table-cell" colspan="@GroupColumns">
+                    <button type="button" class="m-group-toggle" aria-expanded="@(collapsed ? "false" : "true")" aria-label="@TableGroups.ToggleLabel(group, collapsed)"
+                            @onclick="() => ToggleGroup(group.Key)"><span class="@($"ant-table-row-expand-icon ant-table-row-expand-icon-{(collapsed ? "collapsed" : "expanded")}")" aria-hidden="true"></span></button>@((MarkupString)TableGroups.HeaderContent(group, GroupTitle))
+                </td>
+            </tr>
+        }
+        if (!collapsed)
+        {
+            <TableRow>@RowCells(row.Data)</TableRow>
+        }
+        if (span is { } foot && foot.Last == index && !collapsed && GroupFooters && TableGroups.HasFooter(foot.Group))
+        {
+            <tr class="m-group-footer">
+                <td class="ant-table-cell" colspan="@GroupColumns">@((MarkupString)TableGroups.FooterContent(foot.Group))</td>
+            </tr>
+        }
+    };
+
+    private RenderFragment? TotalsFooter => _totals is { Count: > 0 } totals ? @<text>@((MarkupString)TableGroups.Totals(totals, _total))</text> : null;
 }

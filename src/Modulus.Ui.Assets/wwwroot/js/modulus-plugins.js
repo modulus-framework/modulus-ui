@@ -22,6 +22,8 @@
  *                          sheets JSON in data-sheets, edits back to [data-m-sheet-value] with a change event.
  *   [data-m-doc]           document editor on Univer Docs (Word-style ribbon, A4 pages; pages only with data-readonly);
  *                          the document JSON in data-doc, edits back to [data-m-doc-value] with a change event.
+ *   [data-m-print]         prints the spreadsheet or document whose id it names (the editors' ribbons have a Print
+ *                          button and take Ctrl+P too): the content as HTML in a hidden frame, not the canvas.
  *   [data-m-file-submit]   a file input that submits its form as soon as a file is picked.
  *   [data-m-copy]          copies its value to the clipboard on click.
  */
@@ -1070,6 +1072,7 @@
             api.createWorkbook(data);
             return data.id;
         },
+        ready: function (api, app, readonly) { if (!readonly) univerPrintButton(api, app); },
         snapshot: function (root) { return root._mUniver ? JSON.stringify(sheetSnapshot(root)) : null; }
     };
 
@@ -1274,7 +1277,7 @@
             if (readonly) return [u.UniverDocsCorePreset({ container: app, header: false, toolbar: false, menu: false, contextMenu: false, disableAutoFocus: true })];
             return [u.UniverDocsCorePreset({ container: app, disableAutoFocus: true }), u.UniverDocsDrawingPreset(), u.UniverDocsHyperLinkPreset()];
         },
-        ready: function (api, app, readonly) { if (!readonly) docFullscreenButton(api, app); },
+        ready: function (api, app, readonly) { if (!readonly) { docFullscreenButton(api, app); univerPrintButton(api, app); } },
         load: function (api, root, readonly) {
             var data = json(root, 'data-doc', null);
             if (!data || !data.body) data = docBlank();
@@ -1287,6 +1290,395 @@
     };
 
     function initDoc(root) { univerEditor(root, DOC); }
+
+    // ---- Print (the spreadsheet and the document) ----------------------------------------------------------
+    // Univer's own printing is a Pro plugin, so printing is ours: the sheets (every visible sheet, a page break between
+    // them, the frozen rows repeated on each page) or the document (its page size and margins, headings, lists, tables,
+    // links and images) become plain HTML in a hidden frame, and the browser prints that. The editors get a Print button
+    // on the ribbon and take Ctrl+P while focused; any [data-m-print="{editor id}"] button prints too, also read-only
+    // ones without a ribbon, and before Univer has started (from the JSON in the markup).
+
+    var PRINT_ICON = 'ModulusPrintIcon';
+
+    function esc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
+    }
+
+    function printFrame(title, css, body) {
+        var frame = document.createElement('iframe');
+        frame.setAttribute('aria-hidden', 'true');
+        frame.tabIndex = -1;
+        frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+        document.body.appendChild(frame);
+        var w = frame.contentWindow, d = w.document;
+        d.open();
+        d.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(title) + '</title><style>' + css + '</style></head><body>' + body + '</body></html>');
+        d.close();
+        var done = false, remove = function () { if (!done) { done = true; setTimeout(function () { frame.remove(); }, 0); } };
+        var go = function () {
+            w.addEventListener('afterprint', remove);
+            w.focus();
+            w.print();
+            setTimeout(remove, 60000); // a browser that never says afterprint
+        };
+        // Images (a document's pictures) must have loaded, or they print blank.
+        var images = Array.prototype.slice.call(d.images).filter(function (img) { return !img.complete; });
+        if (!images.length) { setTimeout(go, 50); return; }
+        var left = images.length, once = function () { if (--left === 0) go(); };
+        images.forEach(function (img) { img.addEventListener('load', once); img.addEventListener('error', once); });
+        setTimeout(function () { if (left > 0) { left = 0; go(); } }, 5000);
+    }
+
+    function printTitle(root, fallback) {
+        return root.getAttribute('aria-label') || document.title || fallback;
+    }
+
+    // A Univer style (cell or text run) as CSS.
+    function univerCss(st) {
+        if (!st) return '';
+        var css = '';
+        if (st.ff) css += 'font-family:' + esc(st.ff) + ';';
+        if (st.fs) css += 'font-size:' + (+st.fs) + 'pt;';
+        if (st.bl === 1) css += 'font-weight:700;';
+        if (st.it === 1) css += 'font-style:italic;';
+        var deco = (st.ul && st.ul.s === 1 ? ' underline' : '') + (st.st && st.st.s === 1 ? ' line-through' : '');
+        if (deco) css += 'text-decoration:' + deco.trim() + ';';
+        if (st.cl && st.cl.rgb) css += 'color:' + esc(st.cl.rgb) + ';';
+        if (st.bg && st.bg.rgb) css += 'background:' + esc(st.bg.rgb) + ';';
+        return css;
+    }
+
+    // -- The sheets --
+
+    var PRINT_SHEET_CSS = '@page{margin:12mm}body{margin:0;font:10pt/1.3 Arial,Helvetica,sans-serif;color:#000}' +
+        'h1{font-size:12pt;margin:0 0 6px}section+section{break-before:page}' +
+        'table{border-collapse:collapse;table-layout:fixed}td{padding:1px 4px;border:1px solid #d4d4d4;white-space:nowrap;overflow:hidden;vertical-align:bottom}' +
+        'table.m-print-nogrid td{border-color:transparent}thead{display:table-header-group}tr{break-inside:avoid}' +
+        '.n{text-align:right}.b{text-align:center}.w{white-space:pre-wrap;word-break:break-word}.m-print-empty{color:#666}';
+
+    var BORDER_SIDES = { t: 'top', b: 'bottom', l: 'left', r: 'right' };
+
+    function sheetCellCss(st) {
+        if (!st) return '';
+        var css = univerCss(st);
+        if (st.ht === 1) css += 'text-align:left;'; else if (st.ht === 2) css += 'text-align:center;'; else if (st.ht === 3) css += 'text-align:right;';
+        if (st.vt === 1) css += 'vertical-align:top;'; else if (st.vt === 2) css += 'vertical-align:middle;';
+        Object.keys(st.bd || {}).forEach(function (k) {
+            var b = st.bd[k];
+            if (!BORDER_SIDES[k] || !b || !b.s) return;
+            // Univer's border styles: 1 thin, 2 hair, 3 dotted, 4 dashed, … 7 double, 8 medium, 13 thick.
+            var width = b.s === 13 ? 3 : b.s === 8 || b.s === 9 || b.s === 10 || b.s === 11 || b.s === 12 ? 2 : 1;
+            var line = b.s === 3 ? 'dotted' : b.s === 4 || b.s === 9 ? 'dashed' : b.s === 7 ? 'double' : 'solid';
+            css += 'border-' + BORDER_SIDES[k] + ':' + (line === 'double' ? 3 : width) + 'px ' + line + ' ' + esc((b.cl && b.cl.rgb) || '#000') + ';';
+        });
+        return css;
+    }
+
+    // The sheets as the workbook holds them now: every value as the grid shows it (formula results, number formats).
+    function sheetPrintModel(root) {
+        var wb = root._mUniver && root._mUniver.univerAPI.getActiveWorkbook();
+        if (!wb) {
+            // Not started yet: the sheets from the markup, formulas as written.
+            return json(root, 'data-sheets', []).map(function (s) {
+                return { name: s.name, cellData: sheetCellData(s), styles: {}, columnData: sheetWorksheet(s, 0).columnData, frozenRows: s.frozenRows || 0 };
+            });
+        }
+        var snap = typeof wb.save === 'function' ? wb.save() : wb.getSnapshot();
+        return (snap.sheetOrder || Object.keys(snap.sheets || {})).map(function (id) {
+            var s = (snap.sheets || {})[id] || {};
+            if (s.hidden === 1) return null;
+            var display = null;
+            try { display = { sheet: wb.getSheetBySheetId(id) }; } catch (e) { /* values from the snapshot */ }
+            return { name: s.name, cellData: s.cellData || {}, styles: snap.styles || {}, columnData: s.columnData || {}, rowData: s.rowData || {},
+                defaultColumnWidth: s.defaultColumnWidth, mergeData: s.mergeData || [], frozenRows: (s.freeze && s.freeze.ySplit) || 0,
+                gridlines: s.showGridlines !== 0, display: display };
+        }).filter(Boolean);
+    }
+
+    function sheetPrintSection(s) {
+        var cells = s.cellData || {}, maxR = -1, maxC = -1;
+        Object.keys(cells).forEach(function (r) {
+            Object.keys(cells[r] || {}).forEach(function (c) {
+                var cell = cells[r][c];
+                if (!cell || (cell.f == null && (cell.v == null || cell.v === '') && !cell.p)) return;
+                maxR = Math.max(maxR, +r);
+                maxC = Math.max(maxC, +c);
+            });
+        });
+        var title = '<h1>' + esc(s.name || 'Sheet') + '</h1>';
+        if (maxR < 0) return '<section>' + title + '<p class="m-print-empty">This sheet is empty.</p></section>';
+        (s.mergeData || []).forEach(function (m) { maxR = Math.max(maxR, m.endRow); maxC = Math.max(maxC, m.endColumn); });
+
+        var values = null;
+        if (s.display && s.display.sheet) {
+            try { values = s.display.sheet.getRange(0, 0, maxR + 1, maxC + 1).getDisplayValues(); } catch (e) { values = null; }
+        }
+        var spans = {}, covered = {};
+        (s.mergeData || []).forEach(function (m) {
+            spans[m.startRow + ':' + m.startColumn] = { rows: m.endRow - m.startRow + 1, cols: m.endColumn - m.startColumn + 1 };
+            for (var r = m.startRow; r <= m.endRow; r++)
+                for (var c = m.startColumn; c <= m.endColumn; c++)
+                    if (r !== m.startRow || c !== m.startColumn) covered[r + ':' + c] = true;
+        });
+        var colHidden = function (c) { return s.columnData[c] && s.columnData[c].hd === 1; };
+        var rowHidden = function (r) { return s.rowData && s.rowData[r] && s.rowData[r].hd === 1; };
+
+        var cols = '', width = 0;
+        for (var c = 0; c <= maxC; c++) {
+            if (colHidden(c)) continue;
+            var w = Math.round((s.columnData[c] && s.columnData[c].w) || s.defaultColumnWidth || SHEET_COL_WIDTH);
+            width += w;
+            cols += '<col style="width:' + w + 'px">';
+        }
+        var head = '', body = '';
+        for (var r = 0; r <= maxR; r++) {
+            if (rowHidden(r)) continue;
+            var h = s.rowData && s.rowData[r] && s.rowData[r].h;
+            var tr = '<tr' + (h ? ' style="height:' + Math.round(h) + 'px"' : '') + '>';
+            for (c = 0; c <= maxC; c++) {
+                if (colHidden(c) || covered[r + ':' + c]) continue;
+                var cell = (cells[r] || {})[c] || null;
+                var st = cell && cell.s ? (typeof cell.s === 'string' ? s.styles[cell.s] : cell.s) : null;
+                if (r < (s.frozenRows || 0) && !st) st = { bl: 1 };
+                var raw = cell ? (cell.v != null ? cell.v : cell.f || '') : '';
+                var text = values && values[r] && values[r][c] != null ? values[r][c] : raw;
+                if (cell && cell.p && cell.p.body && text === '') text = (cell.p.body.dataStream || '').replace(/[\r\n]+$/, '');
+                var kind = typeof (cell && cell.v) === 'number' || (cell && cell.f && typeof text === 'string' && /^-?[\d.,\s%$€£¥()-]+$/.test(text)) ? ' n'
+                    : typeof (cell && cell.v) === 'boolean' ? ' b' : '';
+                var span = spans[r + ':' + c], attrs = '';
+                if (span) attrs += (span.rows > 1 ? ' rowspan="' + span.rows + '"' : '') + (span.cols > 1 ? ' colspan="' + span.cols + '"' : '');
+                var cls = (kind + (st && st.tb === 3 ? ' w' : '')).trim();
+                tr += '<td' + attrs + (cls ? ' class="' + cls + '"' : '') + (st ? ' style="' + sheetCellCss(st) + '"' : '') + '>' + esc(text) + '</td>';
+            }
+            tr += '</tr>';
+            if (r < (s.frozenRows || 0)) head += tr; else body += tr;
+        }
+        // A wide sheet shrinks to the page's width (about 700 px of A4 portrait at 12 mm margins).
+        var zoom = width > 700 ? ' style="zoom:' + Math.max(0.4, 700 / width).toFixed(3) + '"' : '';
+        return '<section' + zoom + '>' + title + '<table' + (s.gridlines === false ? ' class="m-print-nogrid"' : '') + ' style="width:' + width + 'px"><colgroup>' + cols + '</colgroup>' +
+            (head ? '<thead>' + head + '</thead>' : '') + '<tbody>' + body + '</tbody></table></section>';
+    }
+
+    function printSheet(root) {
+        printFrame(printTitle(root, 'Spreadsheet'), PRINT_SHEET_CSS, sheetPrintModel(root).map(sheetPrintSection).join(''));
+    }
+
+    // -- The document --
+
+    // Univer Docs' stream markers (see Modulus.Documents.UniverDocument).
+    var D_PARA = '\r', D_SECTION = '\n', D_TABLE = '\u001A', D_ROW = '\u001B', D_CELL = '\u001C', D_CELL_END = '\u001D',
+        D_ROW_END = '\u000E', D_TABLE_END = '\u000F', D_BLOCK = '\b', D_PAGE = '\f', D_END = '\0';
+
+    function docPrintHtml(data) {
+        var body = data.body || {}, stream = body.dataStream || '', ds = data.documentStyle || {};
+        var paragraphs = {};
+        (body.paragraphs || []).forEach(function (p) { paragraphs[p.startIndex] = p; });
+        var runs = (body.textRuns || []).filter(function (r) { return r.ts; }).sort(function (a, b) { return a.st - b.st; });
+        var links = (body.customRanges || []).filter(function (r) { return r.rangeType === 0 && r.properties && r.properties.url; });
+        var blocks = {};
+        (body.customBlocks || []).forEach(function (b) { blocks[b.startIndex] = b.blockId; });
+        var tables = {};
+        (body.tables || []).forEach(function (t) { tables[t.startIndex] = t.tableId; });
+        var drawings = data.drawings || {}, tableSource = data.tableSource || {};
+        var lists = {}, i = 0;
+
+        var runAt = function (k) {
+            for (var n = 0; n < runs.length && runs[n].st <= k; n++) if (k < runs[n].ed) return runs[n].ts;
+            return null;
+        };
+        var linkAt = function (k) {
+            for (var n = 0; n < links.length; n++) if (k >= links[n].startIndex && k <= links[n].endIndex) return links[n].properties.url;
+            return null;
+        };
+        var image = function (k) {
+            var d = drawings[blocks[k]];
+            if (!d || !d.source || d.imageSourceType === 'UUID') return '';
+            var size = (d.docTransform && d.docTransform.size) || d.transform || {};
+            var dims = (size.width ? 'width:' + Math.round(size.width) + 'px;' : '') + (size.height ? 'height:' + Math.round(size.height) + 'px;' : '');
+            return '<img src="' + esc(d.source) + '" alt="' + esc(d.description || d.title || '') + '" style="max-width:100%;' + dims + '">';
+        };
+
+        // The text between two paragraph marks, a span wherever the style or the link changes.
+        var text = function (from, to) {
+            var out = '', key = null, open = '', buf = '';
+            var flush = function () { if (buf) out += open ? open + buf + (open.charAt(1) === 'a' ? '</span></a>' : '</span>') : buf; buf = ''; };
+            for (var k = from; k < to; k++) {
+                var ch = stream.charAt(k);
+                if (ch === D_BLOCK) { flush(); key = null; out += image(k); continue; }
+                if (ch === '\t') { ch = ' '; }
+                else if (ch < ' ') continue;
+                var ts = runAt(k), url = linkAt(k), next = JSON.stringify([ts, url]);
+                if (next !== key) {
+                    flush();
+                    key = next;
+                    var css = univerCss(ts);
+                    if (ts && ts.va === 3) css += 'vertical-align:super;font-size:smaller;';
+                    else if (ts && ts.va === 2) css += 'vertical-align:sub;font-size:smaller;';
+                    open = url ? '<a href="' + esc(url) + '"><span style="' + css + '">' : css ? '<span style="' + css + '">' : '';
+                }
+                buf += esc(ch);
+            }
+            flush();
+            return out || '&#8203;';
+        };
+
+        var marker = function (bullet) {
+            var level = Math.max(0, Math.min(8, bullet.nestingLevel || 0)), type = bullet.listType || '';
+            if (/^CHECK_LIST/.test(type)) return /CHECKED/.test(type) ? '☑' : '☐';
+            if (!/ORDER/.test(type)) return ['•', '◦', '▪'][level % 3];
+            var counts = lists[bullet.listId] = lists[bullet.listId] || [];
+            counts[level] = (counts[level] || 0) + 1;
+            counts.length = level + 1; // a deeper level starts again
+            var n = counts[level];
+            return (level % 3 === 1 ? String.fromCharCode(96 + ((n - 1) % 26) + 1) : level % 3 === 2 ? roman(n) : n) + '.';
+        };
+        var roman = function (n) {
+            var out = '', map = [[10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i']];
+            map.forEach(function (m) { while (n >= m[0] && n < 40) { out += m[1]; n -= m[0]; } });
+            return out || String(n);
+        };
+
+        var paragraph = function (from, end) {
+            var p = paragraphs[end] || {}, ps = p.paragraphStyle || {}, css = '';
+            // Title, Subtitle, then Heading 1 to 5.
+            var tag = { 2: 'h1', 3: 'p', 4: 'h1', 5: 'h2', 6: 'h3', 7: 'h4', 8: 'h5' }[ps.namedStyleType] || 'p';
+            var cls = ps.namedStyleType === 2 ? ' class="title"' : ps.namedStyleType === 3 ? ' class="subtitle"' : '';
+            var align = { 2: 'center', 3: 'right', 4: 'justify', 5: 'justify' }[ps.horizontalAlign];
+            if (align) css += 'text-align:' + align + ';';
+            if (ps.spaceAbove && ps.spaceAbove.v != null) css += 'margin-top:' + ps.spaceAbove.v + 'px;';
+            if (ps.spaceBelow && ps.spaceBelow.v != null) css += 'margin-bottom:' + ps.spaceBelow.v + 'px;';
+            if (ps.lineSpacing) css += 'line-height:' + ps.lineSpacing + ';';
+            if (ps.indentFirstLine && ps.indentFirstLine.v) css += 'text-indent:' + ps.indentFirstLine.v + 'px;';
+            var indent = (ps.indentStart && ps.indentStart.v) || 0, mark = '';
+            if (p.bullet) {
+                indent += 24 * ((p.bullet.nestingLevel || 0) + 1);
+                css += 'text-indent:-20px;';
+                mark = '<span class="mark">' + esc(marker(p.bullet)) + '</span>';
+            }
+            if (indent) css += 'margin-left:' + indent + 'px;';
+            return '<' + tag + cls + (css ? ' style="' + css + '"' : '') + '>' + mark + text(from, end) + '</' + tag + '>';
+        };
+
+        var table = function () {
+            var source = tableSource[tables[i]] || {}, rows = source.tableRows || [];
+            var cols = (source.tableColumns || []).map(function (c) { return '<col style="width:' + Math.round((c.size && c.size.width && c.size.width.v) || 0) + 'px">'; }).join('');
+            var out = '<table class="doc-table"><colgroup>' + cols + '</colgroup>', r = -1, c = -1;
+            i++;
+            while (i < stream.length) {
+                var ch = stream.charAt(i);
+                if (ch === D_TABLE_END) { i++; break; }
+                if (ch === D_ROW) { r++; c = -1; out += '<tr>'; i++; }
+                else if (ch === D_ROW_END) { out += '</tr>'; i++; }
+                else if (ch === D_CELL) {
+                    c++;
+                    i++;
+                    var cell = rows[r] && rows[r].tableCells && rows[r].tableCells[c] || {};
+                    var attrs = (cell.rowSpan > 1 ? ' rowspan="' + cell.rowSpan + '"' : '') + (cell.columnSpan > 1 ? ' colspan="' + cell.columnSpan + '"' : '');
+                    var bg = cell.backgroundColor && cell.backgroundColor.rgb ? ' style="background:' + esc(cell.backgroundColor.rgb) + '"' : '';
+                    out += '<td' + attrs + bg + '>' + content(true) + '</td>';
+                    if (stream.charAt(i) === D_CELL_END) i++;
+                }
+                else i++;
+            }
+            return out + '</table>';
+        };
+
+        var content = function (inCell) {
+            var out = '', start = i;
+            while (i < stream.length) {
+                var ch = stream.charAt(i);
+                if (ch === D_CELL_END && inCell) break;
+                if (ch === D_END) { i = stream.length; break; }
+                if (ch === D_TABLE) { out += table(); start = i; continue; }
+                if (ch === D_PARA) { out += paragraph(start, i); start = ++i; continue; }
+                if (ch === D_PAGE) { out += '<div class="page-break"></div>'; start = i + 1; }
+                else if (ch === D_SECTION) start = i + 1;
+                i++;
+            }
+            return out;
+        };
+
+        var html = content(false);
+        var size = ds.pageSize || {}, px = function (v, d) { return (v != null ? v : d) + 'px'; };
+        var page = '@page{size:' + px(size.width, 793.7) + ' ' + px(size.height, 1122.5) + ';margin:' + px(ds.marginTop, 72) + ' ' + px(ds.marginRight, 96) + ' ' + px(ds.marginBottom, 72) + ' ' + px(ds.marginLeft, 96) + '}';
+        return { css: page + PRINT_DOC_CSS, body: html };
+    }
+
+    var PRINT_DOC_CSS = 'body{margin:0;font:11pt/1.15 Arial,Helvetica,sans-serif;color:#000}' +
+        'p,h1,h2,h3,h4,h5,h6{margin:0 0 8px;break-inside:avoid-page}h1,h2,h3,h4,h5,h6{break-after:avoid-page;font-weight:700}' +
+        'h1{font-size:20pt}h1.title{font-size:26pt}p.subtitle{font-size:15pt;color:#666}h2{font-size:16pt}h3{font-size:14pt}h4{font-size:12pt}h5{font-size:11pt}' +
+        '.mark{display:inline-block;width:20px;text-indent:0}a{color:#1155cc}img{vertical-align:bottom}' +
+        '.doc-table{border-collapse:collapse;table-layout:fixed;margin:0 0 8px}.doc-table td{border:1px solid #000;padding:5px 10px;vertical-align:top}.doc-table td p{margin:3px 0}' +
+        '.page-break{break-after:page}';
+
+    function printDoc(root) {
+        var doc = root._mUniver && root._mUniver.univerAPI.getActiveDocument();
+        var data = doc ? doc.save() : json(root, 'data-doc', null);
+        var out = docPrintHtml(data && data.body ? data : docBlank());
+        printFrame(printTitle(root, 'Document'), out.css, out.body);
+    }
+
+    function printEditor(root) {
+        if (root.hasAttribute('data-m-sheet')) printSheet(root);
+        else if (root.hasAttribute('data-m-doc')) printDoc(root);
+    }
+
+    // The Print button on an editor's ribbon, with Univer's own icon style (a printer, registered once per editor).
+    function univerPrintButton(api, app) {
+        if (!api.createMenu) return;
+        try {
+            var cm = api.getComponentManager && api.getComponentManager(), h = cm && cm.reactUtils && cm.reactUtils.createElement;
+            var icons = h && univerIconManager(api);
+            if (icons && !icons.has(PRINT_ICON)) {
+                icons.register(PRINT_ICON, function (props) {
+                    return h('svg', { className: props && props.className, style: props && props.style, width: '1em', height: '1em', viewBox: '0 0 24 24', fill: 'none',
+                        stroke: 'currentColor', strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true },
+                        h('path', { d: 'M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2' }),
+                        h('path', { d: 'M17 9V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4' }),
+                        h('rect', { x: 7, y: 13, width: 10, height: 8, rx: 2 }));
+                });
+            }
+            api.createMenu({
+                id: 'modulus.print',
+                title: '',
+                tooltip: 'Print',
+                icon: icons ? PRINT_ICON : 'TextIcon',
+                action: function () { var root = app.closest('[data-m-sheet], [data-m-doc]'); if (root) printEditor(root); }
+            }).appendTo('ribbon.start.others');
+        } catch (e) { if (window.console) console.error(e); }
+    }
+
+    // Univer's icon registry is not on its facade; it is the service in the injector that keeps a map of icons.
+    function univerIconManager(api) {
+        for (var inj = api._injector; inj; inj = inj.parent) {
+            var map = inj.resolvedDependencyCollection && inj.resolvedDependencyCollection.resolvedDependencies;
+            if (!map) continue;
+            var found = null;
+            map.forEach(function (list) {
+                (list || []).forEach(function (s) { if (!found && s && s._icons instanceof Map && typeof s.register === 'function' && typeof s.has === 'function') found = s; });
+            });
+            if (found) return found;
+        }
+        return null;
+    }
+
+    document.addEventListener('click', function (e) {
+        var button = e.target instanceof Element ? e.target.closest('[data-m-print]') : null;
+        if (!button) return;
+        var root = document.getElementById(button.getAttribute('data-m-print'));
+        if (!root || !(root.hasAttribute('data-m-sheet') || root.hasAttribute('data-m-doc'))) return;
+        e.preventDefault();
+        printEditor(root);
+    });
+
+    // Ctrl+P (Cmd+P) inside an editor prints its content, not the page with the editor's canvas on it.
+    document.addEventListener('keydown', function (e) {
+        if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || (e.key !== 'p' && e.key !== 'P')) return;
+        var root = e.target instanceof Element ? e.target.closest('[data-m-sheet], [data-m-doc]') : null;
+        if (!root) return;
+        e.preventDefault();
+        printEditor(root);
+    }, true);
 
     // ---- Submit on file pick -------------------------------------------------------------------------------
     // <input type="file" data-m-file-submit> (usually hidden inside a button-styled label) posts its form, which may be

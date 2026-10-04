@@ -45,9 +45,16 @@
                     <input type="file" name="file" accept=".xlsx" form="spreadsheet-import" class="m-sr-only" data-m-file-submit />
                     <app-icon type="upload" /><span>Import xlsx</span>
                 </label>
+                <button type="button" class="ant-btn ant-btn-default" data-m-print="budget" title="Print the spreadsheet (Ctrl+P in it)"><app-icon type="printer" /><span>Print</span></button>
                 <button type="submit" form="spreadsheet-form" formaction="@PluginsContent.SpreadsheetDownloadUrl" data-m-reload class="ant-btn ant-btn-default"><app-icon type="download" /><span>Download xlsx</span></button>
                 <a class="ant-btn ant-btn-default" href="@PluginsContent.SpreadsheetUrl(view)"><span>Reset</span></a>
                 <button type="submit" form="spreadsheet-form" class="ant-btn ant-btn-primary"><app-icon type="save" /><span>Save</span></button>
+            </div>
+        }
+        else
+        {
+            <div class="m-sheet-bar-actions">
+                <button type="button" class="ant-btn ant-btn-default" data-m-print="budget-readonly"><app-icon type="printer" /><span>Print</span></button>
             </div>
         }
     </div>

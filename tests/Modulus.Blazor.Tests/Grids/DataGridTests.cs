@@ -366,6 +366,39 @@ public class EditableGridTests : BunitContext
     }
 
     [Fact]
+    public async Task EditStates_TintTheChangedRowAndCell_TheAddedRow_UntilSaved()
+    {
+        var rows = Rows();
+        var cut = Render<EditableGrid>(p => p.Add(g => g.Columns, Columns()).Add(g => g.Rows, rows).Add(g => g.OnSave, () => { }));
+        // AntD Blazor's rows carry no key: r1 and r2 by their names, the added row on top.
+        IElement Row(string id) => id == "n3" ? cut.FindAll("tbody tr.ant-table-row")[0]
+            : cut.Find($"[aria-label^='Edit Name: {(id == "r1" ? "Portal" : "Mobile")}']").Closest("tr")!;
+        IElement Cell(string id, string title) => Row(id).QuerySelector($"[aria-label^='Edit {title}:']")!.Closest(".m-grid-cell")!;
+
+        Assert.Empty(cut.FindAll(".m-grid-row-dirty, .m-grid-cell-dirty"));
+
+        // Billable is a switch, changed in place: its row turns amber and the cell itself is marked.
+        await Row("r1").QuerySelector(".ant-switch")!.ClickAsync(new());
+        cut.WaitForAssertion(() => Assert.Contains("m-grid-row-dirty", Row("r1").ClassList));
+        Assert.DoesNotContain("m-grid-row-dirty", Row("r2").ClassList);
+        Assert.Single(cut.FindAll(".m-grid-cell-dirty"));
+        Assert.Contains("m-grid-cell-dirty", Row("r1").QuerySelector(".ant-switch")!.Closest(".m-grid-cell")!.ClassList);
+        Assert.DoesNotContain("m-grid-cell-dirty", Cell("r1", "Name").ClassList);
+
+        // An added row is new (blue), not changed, and the row being edited is marked too.
+        await cut.Find("[data-m-grid-add]").ClickAsync(new());
+        cut.WaitForAssertion(() => Assert.Contains("m-grid-row-new", Row("n3").ClassList));
+        Assert.Contains("m-grid-row-editing", Row("n3").ClassList);
+        Assert.DoesNotContain("m-grid-row-dirty", Row("n3").ClassList);
+
+        // Saving clears every mark.
+        rows[0]["name"] = "Portal";
+        rows.Single(r => r.Id == "n3")["name"] = "New";
+        await cut.FindAll("button").First(b => b.TextContent.Trim() == "Save").ClickAsync(new());
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".m-grid-row-dirty, .m-grid-row-new, .m-grid-cell-dirty")));
+    }
+
+    [Fact]
     public async Task Save_BlocksOnValidationErrors_ThenCallsOnSaveWhenValid()
     {
         var rows = Rows();

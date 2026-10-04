@@ -1,7 +1,10 @@
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using Modulus.Ui.Abstractions.Pivot;
 
 namespace Modulus.Ui.Abstractions.Data;
 
@@ -25,7 +28,17 @@ public enum CountMode
 /// <param name="Total">Every matching row, or null when not counted (<see cref="CountMode.None"/>).</param>
 /// <param name="HasMore">Whether rows follow this page.</param>
 /// <param name="NextCursor">Opaque cursor for the next page (<see cref="ProTableRequest.Cursor"/>), or null on the last page.</param>
-public sealed record TablePage<T>(IReadOnlyList<T> Items, int Offset, int PageSize, int? Total, bool HasMore, string? NextCursor);
+public sealed record TablePage<T>(IReadOnlyList<T> Items, int Offset, int PageSize, int? Total, bool HasMore, string? NextCursor)
+{
+    /// <summary>With <see cref="ProTableRequest.GroupBy"/> on a field that groups: the page's groups in row order; otherwise null.</summary>
+    public IReadOnlyList<TableGroup>? Groups { get; init; }
+
+    /// <summary>The registered totals over every matching row; null when none are registered.</summary>
+    public IReadOnlyList<TableTotal>? Totals { get; init; }
+
+    /// <summary>The page as a ProTable response (rows, count, groups, totals).</summary>
+    public ProTableResponse<T> ToResponse() => new() { Data = Items, Total = Total ?? Offset + Items.Count + (HasMore ? 1 : 0), Groups = Groups, Totals = Totals };
+}
 
 /// <summary>
 /// Turns a table request (<see cref="ProTableRequest"/>: page, page size, sort, column searches, cursor) into a query the
@@ -40,13 +53,20 @@ public sealed record TablePage<T>(IReadOnlyList<T> Items, int Offset, int PageSi
 /// </code>
 /// <para>
 /// Only registered fields sort and search: anything else in the query string is ignored. Rows are always ordered by the
-/// sort key, then by the id, so pages never overlap or skip rows that share a value.
+/// sort keys (<see cref="ProTableRequest.Sorts"/>: the first, then each <c>thenBy</c> one), then by the id, so pages
+/// never overlap or skip rows that share a value.
 /// </para>
 /// <para>
 /// Paging: <see cref="Page"/> reads a numbered page (<c>OFFSET</c>). With a cursor (infinite and virtual scrolling) the next
 /// page continues after the last row's sort value and id (keyset paging: <c>WHERE (date, id) &lt; (…)</c>), which costs
-/// the same however deep the user scrolls. Keys that may be null, and types that can't be compared in SQL, fall back to
-/// <c>OFFSET</c> for the cursor.
+/// the same however deep the user scrolls. Keys that may be null, types that can't be compared in SQL, and a sort on
+/// several keys fall back to <c>OFFSET</c> for the cursor.
+/// </para>
+/// <para>
+/// Grouping (<see cref="ProTableRequest.GroupBy"/>) on a field registered with <see cref="Group"/> sorts by that field
+/// first and returns the page's groups (<see cref="TablePage{T}.Groups"/>) with each whole group's row count and the
+/// totals (<c>Total(…)</c>): one <c>GROUP BY … WHERE key IN (the page's values)</c>. The totals over every matching row are one
+/// more aggregate query (only when totals are registered). A grouped page always pages by <c>OFFSET</c>.
 /// </para>
 /// <para>
 /// Everything stays <see cref="IQueryable{T}"/> (Where, OrderBy, ThenBy, Skip, Take, <c>string.Compare</c>), which
@@ -62,8 +82,13 @@ public sealed class TableQuery<T>
     private readonly Key _id;
     private readonly Dictionary<string, Key> _sorts = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Func<string, Expression<Func<T, bool>>>> _searches = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, Func<object?, string>?> _groups = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<TotalDef> _totals = [];
     private string? _defaultField;
     private bool _defaultDescending;
+
+    /// <summary>The most totals a query keeps.</summary>
+    public const int MaxTotals = 8;
 
     private TableQuery(Key id) => _id = id;
 
@@ -89,6 +114,36 @@ public sealed class TableQuery<T>
         _defaultDescending = descending;
         return this;
     }
+
+    /// <summary>
+    /// Lets the rows group by <paramref name="field"/>, a registered sort (<c>?groupBy={field}</c>): the page then sorts
+    /// by it first and carries its groups. <paramref name="label"/> turns a value into the text of its group header
+    /// (default: the value in the current culture, "(none)" for null or empty).
+    /// </summary>
+    public TableQuery<T> Group(string field, Func<object?, string>? label = null)
+    {
+        if (!_sorts.ContainsKey(field)) throw new ArgumentException($"Register the sort '{field}' before grouping by it.", nameof(field));
+        _groups[field] = label;
+        return this;
+    }
+
+    /// <summary>
+    /// A total of <paramref name="field"/>'s <paramref name="value"/>s for each group and for every matching row (the
+    /// footer), combined by <paramref name="aggregate"/>. At most <see cref="MaxTotals"/>.
+    /// </summary>
+    public TableQuery<T> Total(string field, string title, Expression<Func<T, decimal>> value, PivotAggregate aggregate = PivotAggregate.Sum, int decimals = 2)
+    {
+        if (_totals.Count >= MaxTotals) throw new InvalidOperationException($"A table query keeps at most {MaxTotals} totals.");
+        _totals.Add(new TotalDef(field, title, value, aggregate, decimals));
+        return this;
+    }
+
+    /// <summary><see cref="Total(string, string, Expression{Func{T, decimal}}, PivotAggregate, int)"/> over a whole number.</summary>
+    public TableQuery<T> Total(string field, string title, Expression<Func<T, int>> value, PivotAggregate aggregate = PivotAggregate.Sum, int decimals = 0) =>
+        Total(field, title, Expression.Lambda<Func<T, decimal>>(Expression.Convert(value.Body, typeof(decimal)), value.Parameters), aggregate, decimals);
+
+    /// <summary>Whether <paramref name="field"/> can group the rows.</summary>
+    public bool CanGroup(string field) => _groups.ContainsKey(field);
 
     /// <summary>Lets the column search of <paramref name="field"/> (<c>s.{field}</c>) filter with <paramref name="predicate"/> (given the trimmed text).</summary>
     public TableQuery<T> Search(string field, Func<string, Expression<Func<T, bool>>> predicate)
@@ -127,6 +182,8 @@ public sealed class TableQuery<T>
         var copy = new TableQuery<T>(_id);
         foreach (var (field, key) in _sorts) if (allow(field)) copy._sorts[field] = key;
         foreach (var (field, search) in _searches) if (allow(field)) copy._searches[field] = search;
+        foreach (var (field, label) in _groups) if (copy._sorts.ContainsKey(field)) copy._groups[field] = label;
+        copy._totals.AddRange(_totals.Where(t => allow(t.Field)));
         if (_defaultField is not null && copy._sorts.ContainsKey(_defaultField))
         {
             copy._defaultField = _defaultField;
@@ -153,11 +210,16 @@ public sealed class TableQuery<T>
     /// <summary>The source filtered and in the request's order (sort key, then id).</summary>
     public IQueryable<T> Apply(IQueryable<T> source, ProTableRequest request) => Order(Filter(source, request), Resolve(request));
 
+    /// <summary>The sorts the request gets: its registered fields in order, else the default sort, else the id.</summary>
+    public IReadOnlyList<SortKey> SortsOf(ProTableRequest request) =>
+        [.. Resolve(request).Where(s => s.Field.Length > 0).Select(s => new SortKey(s.Field, s.Descending ? SortDirection.Descending : SortDirection.Ascending))];
+
     /// <summary>The page the request asks for: its numbered page, or the rows after its <see cref="ProTableRequest.Cursor"/>.</summary>
     public TablePage<T> Page(IQueryable<T> source, ProTableRequest request, CountMode count = CountMode.Exact)
     {
         var plan = Plan(source, request, count);
-        return plan.Finish(plan.Rows.ToList(), plan.Count?.Invoke());
+        var page = plan.Finish(plan.Rows.ToList(), plan.Count?.Invoke());
+        return SummarizeAsync(plan, page, async: false, default).GetAwaiter().GetResult();
     }
 
     /// <summary>
@@ -171,27 +233,46 @@ public sealed class TableQuery<T>
         int? total = count == CountMode.Exact
             ? countAsync is null ? plan.Count!() : await countAsync(plan.Filtered, cancellationToken).ConfigureAwait(false)
             : null;
-        return plan.Finish(await ToListAsync(plan.Rows, cancellationToken).ConfigureAwait(false), total);
+        var page = plan.Finish(await ToListAsync(plan.Rows, cancellationToken).ConfigureAwait(false), total);
+        return await SummarizeAsync(plan, page, async: true, cancellationToken).ConfigureAwait(false);
     }
 
     // Planning ---------------------------------------------------------------------------------------------------------
 
     private readonly record struct Sorting(string Field, Key Key, bool Descending);
 
-    private Sorting Resolve(ProTableRequest request)
+    // The field the request groups by, when it may.
+    private string? GroupField(ProTableRequest request) =>
+        request.GroupBy is { } field && _groups.ContainsKey(field) ? _groups.Keys.First(k => string.Equals(k, field, StringComparison.OrdinalIgnoreCase)) : null;
+
+    // The registered sorts of the request, in order (unknown fields skipped); else the default sort; else the id.
+    // A group field goes first, in the direction the request sorts it (ascending when it doesn't).
+    private Sorting[] Resolve(ProTableRequest request)
     {
-        if (request.SortField is { } field && request.SortOrder != SortDirection.None && _sorts.TryGetValue(field, out var key))
-            return new(field.ToLowerInvariant(), key, request.SortOrder == SortDirection.Descending);
-        if (_defaultField is not null) return new(_defaultField.ToLowerInvariant(), _sorts[_defaultField], _defaultDescending);
-        return new("", _id, false);
+        var list = new List<Sorting>();
+        if (GroupField(request) is { } group)
+            list.Add(new(group.ToLowerInvariant(), _sorts[group], SortKeys.Of(request.Sorts, group) == SortDirection.Descending));
+        foreach (var sort in request.Sorts)
+            if (_sorts.TryGetValue(sort.Field, out var key) && !list.Any(s => ReferenceEquals(s.Key, key)))
+                list.Add(new(sort.Field.ToLowerInvariant(), key, sort.Descending));
+        if (list.Count > 0 && (list.Count > 1 || GroupField(request) is null)) return [.. list];
+        if (_defaultField is not null && !list.Any(s => ReferenceEquals(s.Key, _sorts[_defaultField])))
+            list.Add(new(_defaultField.ToLowerInvariant(), _sorts[_defaultField], _defaultDescending));
+        if (list.Count > 0) return [.. list];
+        return [new("", _id, false)];
     }
 
-    private IQueryable<T> Order(IQueryable<T> source, Sorting sort)
+    private IQueryable<T> Order(IQueryable<T> source, Sorting[] sorts)
     {
-        var ordered = Call(source, sort.Descending ? "OrderByDescending" : "OrderBy", sort.Key);
-        // Ties go by id in the same direction, which keeps the order total (and keyset paging exact).
-        return ReferenceEquals(sort.Key, _id) ? ordered : Call(ordered, sort.Descending ? "ThenByDescending" : "ThenBy", _id);
+        var ordered = Call(source, sorts[0].Descending ? "OrderByDescending" : "OrderBy", sorts[0].Key);
+        foreach (var sort in sorts.Skip(1)) ordered = Call(ordered, sort.Descending ? "ThenByDescending" : "ThenBy", sort.Key);
+        // Ties go by id in the first sort's direction, which keeps the order total (and keyset paging exact).
+        return sorts.Any(s => ReferenceEquals(s.Key, _id)) ? ordered : Call(ordered, sorts[0].Descending ? "ThenByDescending" : "ThenBy", _id);
     }
+
+    // What a cursor was made for: the field of a single sort, or every key ("-salary,name") of several.
+    private static string Signature(Sorting[] sorts) =>
+        sorts.Length == 1 ? sorts[0].Field : string.Join(',', sorts.Select(s => (s.Descending ? "-" : "") + s.Field));
 
     private static IQueryable<T> Call(IQueryable<T> source, string method, Key key) =>
         source.Provider.CreateQuery<T>(Expression.Call(typeof(Queryable), method, [typeof(T), key.Type], source.Expression, Expression.Quote(key.Lambda)));
@@ -199,6 +280,8 @@ public sealed class TableQuery<T>
     private sealed class QueryPlan(IQueryable<T> filtered, IQueryable<T> rows, Func<int>? count, Func<List<T>, int?, TablePage<T>> finish)
     {
         public IQueryable<T> Filtered { get; } = filtered;
+        public string? GroupField { get; init; }
+        public List<object?> GroupKeys { get; } = [];
         public IQueryable<T> Rows { get; } = rows;
         public Func<int>? Count { get; } = count;
         public TablePage<T> Finish(List<T> rows, int? total) => finish(rows, total);
@@ -206,31 +289,150 @@ public sealed class TableQuery<T>
 
     private QueryPlan Plan(IQueryable<T> source, ProTableRequest request, CountMode count)
     {
-        var sort = Resolve(request);
+        var sorts = Resolve(request);
+        var sort = sorts[0];
+        var signature = Signature(sorts);
         var filtered = Filter(source, request);
-        var ordered = Order(filtered, sort);
+        var ordered = Order(filtered, sorts);
         var size = request.PageSize;
 
+        var group = GroupField(request);
         var offset = request.Skip;
         IQueryable<T> page;
-        if (request.Cursor is { Length: > 0 } text && Cursor.Parse(text) is { } cursor && cursor.Field == sort.Field && cursor.Descending == sort.Descending)
+        if (request.Cursor is { Length: > 0 } text && Cursor.Parse(text) is { } cursor && cursor.Field == signature && cursor.Descending == sort.Descending)
         {
             offset = cursor.Offset;
-            page = After(ordered, sort, cursor) is { } keyset ? keyset : ordered.Skip(offset);
+            // Keyset paging continues after one sort key and the id; several keys, and groups, page by offset.
+            page = sorts.Length == 1 && group is null && After(ordered, sort, cursor) is { } keyset ? keyset : ordered.Skip(offset);
         }
         else page = ordered.Skip(offset);
 
-        // One row more than the page tells whether another page follows, without counting.
-        var rows = page.Take(size + 1);
+        // A grouped page also reads the row before it, to know whether its first group started earlier.
+        var before = group is not null && offset > 0 ? 1 : 0;
+        if (before == 1) page = ordered.Skip(offset - 1);
+
+        // One row more than the page tells whether another page follows, without counting (and whether the last group goes on).
+        var rows = page.Take(size + 1 + before);
         Func<int>? counter = count == CountMode.Exact ? () => filtered.Count() : null;
-        return new QueryPlan(filtered, rows, counter, (list, total) =>
+        QueryPlan? plan = null;
+        plan = new QueryPlan(filtered, rows, counter, (list, total) =>
         {
+            var previous = before == 1 && list.Count > 0 ? list[0] : default;
+            if (before == 1 && list.Count > 0) list.RemoveAt(0);
             var more = list.Count > size;
-            if (more) list.RemoveAt(list.Count - 1);
-            var next = more && list.Count > 0 ? Cursor.For(sort, _id, list[^1], offset + list.Count) : null;
-            return new TablePage<T>(list, offset, size, total, more, next);
-        });
+            var following = more ? list[size] : default;
+            if (more) list.RemoveRange(size, list.Count - size);
+            var next = more && list.Count > 0 ? Cursor.For(signature, sorts.Length == 1 ? sort : null, sort.Descending, _id, list[^1], offset + list.Count) : null;
+            var result = new TablePage<T>(list, offset, size, total, more, next);
+            return group is null ? result : result with { Groups = Spans(group, list, before == 1 && previous is not null, previous, more, following, plan!.GroupKeys) };
+        }) { GroupField = group };
+        return plan;
     }
+
+    // Groups ----------------------------------------------------------------------------------------------------------
+
+    private sealed record TotalDef(string Field, string Title, Expression<Func<T, decimal>> Value, PivotAggregate Aggregate, int Decimals);
+
+    // One group's count and totals as the database returns them.
+    private sealed record GroupSum(object? Key, int Count, decimal[] Values);
+
+    // The page's runs of one group value, with their rows on the page (counts and totals come from SummarizeAsync).
+    private List<TableGroup> Spans(string field, List<T> rows, bool hasPrevious, T? previous, bool hasFollowing, T? following, List<object?> keys)
+    {
+        var key = _sorts[field];
+        var label = _groups[field] ?? DefaultLabel;
+        var groups = new List<TableGroup>();
+        for (var i = 0; i < rows.Count;)
+        {
+            var value = key.Read(rows[i]);
+            var j = i;
+            while (j + 1 < rows.Count && Equals(key.Read(rows[j + 1]), value)) j++;
+            keys.Add(value);
+            groups.Add(new TableGroup(key.Text(value) ?? "", label(value), j - i + 1, [])
+            {
+                Rows = j - i + 1,
+                ContinuesBefore = i == 0 && hasPrevious && Equals(key.Read(previous!), value),
+                ContinuesAfter = j == rows.Count - 1 && hasFollowing && Equals(key.Read(following!), value),
+            });
+            i = j + 1;
+        }
+        return groups;
+    }
+
+    private static string DefaultLabel(object? value) => value switch
+    {
+        null => "(none)",
+        string { Length: 0 } => "(none)",
+        DateTime d => d.TimeOfDay == TimeSpan.Zero ? d.ToString("d", CultureInfo.CurrentCulture) : d.ToString("g", CultureInfo.CurrentCulture),
+        IFormattable f => f.ToString(null, CultureInfo.CurrentCulture),
+        _ => value.ToString() ?? "",
+    };
+
+    // Fills in each group's count and totals over the whole group, and the totals over every matching row.
+    private async Task<TablePage<T>> SummarizeAsync(QueryPlan plan, TablePage<T> page, bool async, CancellationToken cancellationToken)
+    {
+        if (page.Groups is { Count: > 0 } groups)
+        {
+            var key = _sorts[plan.GroupField!];
+            var sums = await RunAsync(key.Type, plan.Filtered, key.Lambda, plan.GroupKeys, async, cancellationToken).ConfigureAwait(false);
+            var filled = new List<TableGroup>(groups.Count);
+            for (var i = 0; i < groups.Count; i++)
+            {
+                var sum = sums.FirstOrDefault(s => Equals(s.Key, plan.GroupKeys[i]));
+                filled.Add(groups[i] with { Count = sum?.Count ?? groups[i].Rows, Totals = Totals(sum) });
+            }
+            page = page with { Groups = filled };
+        }
+        if (_totals.Count > 0)
+        {
+            Expression<Func<T, int>> all = x => 1;
+            var sums = await RunAsync(typeof(int), plan.Filtered, all, null, async, cancellationToken).ConfigureAwait(false);
+            page = page with { Totals = Totals(sums.FirstOrDefault()) };
+        }
+        return page;
+    }
+
+    private List<TableTotal> Totals(GroupSum? sum) => [.. _totals.Select((t, i) => new TableTotal(t.Field, t.Title, t.Aggregate,
+        sum is null || sum.Count == 0 ? (t.Aggregate == PivotAggregate.Sum ? 0m : null)
+        : t.Aggregate == PivotAggregate.Average ? sum.Values[i] / sum.Count : sum.Values[i], t.Decimals))];
+
+    private static readonly MethodInfo RunMethod = typeof(TableQuery<T>).GetMethod(nameof(RunTypedAsync), BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+    private Task<List<GroupSum>> RunAsync(Type keyType, IQueryable<T> source, LambdaExpression key, List<object?>? only, bool async, CancellationToken cancellationToken) =>
+        (Task<List<GroupSum>>)RunMethod.MakeGenericMethod(keyType).Invoke(this, [source, key, only, async, cancellationToken])!;
+
+    // source.Where(x => only.Contains(key(x))).GroupBy(key).Select(g => new TableGroupLeaf { Key = g.Key, Count = g.Count(), V0 = g.Sum(…), … })
+    private async Task<List<GroupSum>> RunTypedAsync<TKey>(IQueryable<T> source, LambdaExpression key, List<object?>? only, bool async, CancellationToken cancellationToken)
+    {
+        var lambda = (Expression<Func<T, TKey>>)key;
+        if (only is not null)
+        {
+            var values = only.Select(v => (TKey)v!).Distinct().ToList();
+            var contains = Expression.Call(typeof(Enumerable), nameof(Enumerable.Contains), [typeof(TKey)], Box.Of(values, typeof(List<TKey>)), lambda.Body);
+            source = source.Where(Expression.Lambda<Func<T, bool>>(contains, lambda.Parameters));
+        }
+        var g = Expression.Parameter(typeof(IGrouping<TKey, T>), "g");
+        var leaf = typeof(TableGroupLeaf<TKey>);
+        var bindings = new List<MemberBinding>
+        {
+            Expression.Bind(leaf.GetProperty(nameof(TableGroupLeaf<int>.Key))!, Expression.Property(g, nameof(IGrouping<int, T>.Key))),
+            Expression.Bind(leaf.GetProperty(nameof(TableGroupLeaf<int>.Count))!, Expression.Call(CountMethod, g)),
+        };
+        for (var i = 0; i < _totals.Count; i++)
+        {
+            var method = _totals[i].Aggregate switch { PivotAggregate.Min => MinMethod, PivotAggregate.Max => MaxMethod, _ => SumMethod };
+            bindings.Add(Expression.Bind(leaf.GetProperty("V" + i.ToString(CultureInfo.InvariantCulture))!, Expression.Call(method, g, _totals[i].Value)));
+        }
+        var select = Expression.Lambda<Func<IGrouping<TKey, T>, TableGroupLeaf<TKey>>>(Expression.MemberInit(Expression.New(leaf), bindings), g);
+        var query = source.GroupBy(lambda).Select(select);
+        var leaves = async ? await ToListAsync(query, cancellationToken).ConfigureAwait(false) : query.ToList();
+        return [.. leaves.Select(l => new GroupSum(l.Key, l.Count, [.. new[] { l.V0, l.V1, l.V2, l.V3, l.V4, l.V5, l.V6, l.V7 }.Take(_totals.Count)]))];
+    }
+
+    private static readonly MethodInfo CountMethod = new Func<IEnumerable<T>, int>(Enumerable.Count).Method;
+    private static readonly MethodInfo SumMethod = new Func<IEnumerable<T>, Func<T, decimal>, decimal>(Enumerable.Sum).Method;
+    private static readonly MethodInfo MinMethod = new Func<IEnumerable<T>, Func<T, decimal>, decimal>(Enumerable.Min).Method;
+    private static readonly MethodInfo MaxMethod = new Func<IEnumerable<T>, Func<T, decimal>, decimal>(Enumerable.Max).Method;
 
     // Rows after the cursor's sort value and id: key > v OR (key = v AND id > i), or < for a descending sort.
     private IQueryable<T>? After(IQueryable<T> ordered, Sorting sort, Cursor cursor)
@@ -269,10 +471,10 @@ public sealed class TableQuery<T>
         return greater ? Expression.GreaterThan(left, right) : Expression.LessThan(left, right);
     }
 
-    private static async Task<List<T>> ToListAsync(IQueryable<T> query, CancellationToken cancellationToken)
+    private static async Task<List<TRow>> ToListAsync<TRow>(IQueryable<TRow> query, CancellationToken cancellationToken)
     {
-        if (query is not IAsyncEnumerable<T> rows) return query.ToList();
-        var list = new List<T>();
+        if (query is not IAsyncEnumerable<TRow> rows) return query.ToList();
+        var list = new List<TRow>();
         await foreach (var row in rows.WithCancellation(cancellationToken).ConfigureAwait(false)) list.Add(row);
         return list;
     }
@@ -357,10 +559,11 @@ public sealed class TableQuery<T>
     {
         private const int MaxLength = 1024;
 
-        public static string For(Sorting sort, Key id, T last, int offset)
+        // single: the one sort whose value keyset paging continues after (null for several sorts, which page by offset).
+        public static string For(string field, Sorting? single, bool descending, Key id, T last, int offset)
         {
-            var value = ReferenceEquals(sort.Key, id) ? null : sort.Key.Text(sort.Key.Read(last));
-            var json = JsonSerializer.Serialize(new object?[] { sort.Field, sort.Descending ? 1 : 0, value, id.Text(id.Read(last)), offset });
+            var value = single is not { } sort || ReferenceEquals(sort.Key, id) ? null : sort.Key.Text(sort.Key.Read(last));
+            var json = JsonSerializer.Serialize(new object?[] { field, descending ? 1 : 0, value, id.Text(id.Read(last)), offset });
             return Convert.ToBase64String(Encoding.UTF8.GetBytes(json)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
         }
 
@@ -385,6 +588,22 @@ public sealed class TableQuery<T>
             static string? Str(JsonElement e) => e.ValueKind == JsonValueKind.Null ? null : e.GetString();
         }
     }
+}
+
+/// <summary>One group's row count and totals, as <see cref="TableQuery{T}"/> reads them in a <c>GROUP BY</c> (not for direct use).</summary>
+[EditorBrowsable(EditorBrowsableState.Never)]
+public sealed class TableGroupLeaf<TKey>
+{
+    public TKey Key { get; set; } = default!;
+    public int Count { get; set; }
+    public decimal V0 { get; set; }
+    public decimal V1 { get; set; }
+    public decimal V2 { get; set; }
+    public decimal V3 { get; set; }
+    public decimal V4 { get; set; }
+    public decimal V5 { get; set; }
+    public decimal V6 { get; set; }
+    public decimal V7 { get; set; }
 }
 
 /// <summary>

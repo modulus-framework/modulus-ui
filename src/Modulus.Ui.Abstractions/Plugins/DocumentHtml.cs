@@ -9,7 +9,8 @@ namespace Modulus.Ui.Abstractions.Plugins;
 /// modulus-plugins.js starts Univer on <c>[data-m-doc]</c> when it appears; edits land in the hidden <c>[data-m-doc-value]</c>
 /// input as the document's JSON (a Univer Docs snapshot), so the editor posts with its form and Blazor binds it without
 /// interop. Build or read that JSON on the server with <c>Modulus.Documents.UniverDocument</c>, and convert it to and from
-/// Word files with <c>Modulus.Documents.DocumentDocx</c>.
+/// Word files with <c>Modulus.Documents.DocumentDocx</c>. To print the document (on its page size and margins), use the
+/// ribbon's Print button, Ctrl+P in the editor, or any button with <c>data-m-print="{id}"</c>, which also works read-only.
 /// </summary>
 public static class DocumentHtml
 {

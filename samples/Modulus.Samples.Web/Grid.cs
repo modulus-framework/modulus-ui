@@ -43,17 +43,23 @@ public sealed class Grid(HttpRequest request, ProTableRequest paging)
     /// (<c>s.{field}</c>), as every Modulus table renders it (<see cref="ColumnHeader"/>).
     /// </summary>
     /// <param name="col">Column-picker key (<c>data-col</c>) when the column is optional.</param>
-    public IHtmlContent SortTh(string field, string title, string? style = null, string? col = null, bool searchable = false, ColumnKind kind = ColumnKind.Text)
+    /// <param name="multiSort">Shift+click adds the column to the other sorts (<c>thenBy</c>); the server must apply <see cref="ProTableRequest.Sorts"/>.</param>
+    public IHtmlContent SortTh(string field, string title, string? style = null, string? col = null, bool searchable = false, ColumnKind kind = ColumnKind.Text, bool multiSort = false)
     {
-        var current = string.Equals(Paging.SortField, field, StringComparison.OrdinalIgnoreCase) ? Paging.SortOrder : SortDirection.None;
-        var next = ColumnSearch.NextSort(current);
-        var href = next == SortDirection.None
-            ? Href(("sortField", null), ("sortOrder", null))
-            : Href(("sortField", field), ("sortOrder", next.ToString()));
-        var content = ColumnHeader.Content(field, title, kind, sort: current, sortHref: href, searchable: searchable,
-            search: Searches.GetValueOrDefault(field), searchHref: Href((ColumnSearch.Prefix + field, null)));
+        var sorts = multiSort ? Paging.Sorts : Paging.Sorts.Take(1).ToList();
+        var current = SortKeys.Of(sorts, field);
+        var content = ColumnHeader.Content(field, title, kind, sort: current, sortHref: SortHref(sorts, field, add: false), searchable: searchable,
+            search: Searches.GetValueOrDefault(field), searchHref: Href((ColumnSearch.Prefix + field, null)),
+            sortAddHref: multiSort ? SortHref(sorts, field, add: true) : null, sortRank: multiSort ? SortKeys.Rank(sorts, field) : 0);
         return new HtmlString(
             $"""<th{(col is null ? "" : $" data-col=\"{E(col)}\"")} class="ant-table-cell{ColumnHeader.ThClass(true, current)}"{ColumnHeader.AriaSort(true, current)}{(style is null ? "" : $" style=\"{style}\"")}>{content}</th>""");
+    }
+
+    // The URL after a header click (or a Shift+click with add): sortField/sortOrder for the first sort, thenBy for the rest.
+    private string SortHref(IReadOnlyList<SortKey> sorts, string field, bool add)
+    {
+        var next = new ProTableRequest { Sorts = SortKeys.Click(sorts, field, add) };
+        return Href(("sortField", next.SortField), ("sortOrder", next.SortField is null ? null : next.SortOrder.ToString()), ("thenBy", next.ThenBy));
     }
 
     /// <summary>Whether any of the given query values (search, filters) or a column search is set.</summary>
@@ -68,8 +74,7 @@ public sealed class Grid(HttpRequest request, ProTableRequest paging)
         Href([.. filters.Select(f => (f, (string?)null)), .. Searches.Keys.Select(k => (ColumnSearch.Prefix + k, (string?)null))]);
 
     /// <summary>" ant-table-column-sort" for the body cells of the sorted column.</summary>
-    public string SortClass(string field) =>
-        Paging.SortOrder != SortDirection.None && string.Equals(Paging.SortField, field, StringComparison.OrdinalIgnoreCase) ? " ant-table-column-sort" : "";
+    public string SortClass(string field) => SortKeys.Of(Paging.Sorts, field) != SortDirection.None ? " ant-table-column-sort" : "";
 
     /// <summary>Ant Design pagination (mini, like a Middle-size table) plus a page-size switcher.</summary>
     public IHtmlContent Pager(int total)

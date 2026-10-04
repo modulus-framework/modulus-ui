@@ -293,6 +293,34 @@ Expand all and Download.
   - A field the URL names but the user may not see is dropped like an unknown one.
   - The sample pivot's *Largest* measure needs the Admin or Editor role, for the page and the download alike.
 
+### Group by (phase 23)
+
+- **Groups come from the server, a page at a time.** As in Odoo's list view grouped by a field, the server sorts by
+  the group field first, so a page holds whole groups or the start or end of one. Each group's row count and totals
+  are over all its rows, not just those on the page, read with one `GROUP BY` over the page's group values; the page
+  reads one row before and after it to tell whether its first group started earlier ("continued") and whether its
+  last ends later (no subtotal row yet). Paging stays the page size the user picked, with no group-level paging.
+- **Ant Design's own row grouping is not used:** it groups the rows it has, client-side. ProTable writes the header
+  and subtotal rows itself through `RowTemplate`, around Ant Design's `TableRow`, so selection, row detail and
+  columns behave as before; a group row never reaches the columns (an `ActionColumn` reading the row is safe).
+- **One markup for both flavours** (`TableGroups`): the header and footer cells are the same HTML in Blazor and MVC;
+  MVC's toggle is a class on the group's rows (`m-group-collapsed`), so an open row detail keeps its own state.
+
+### Multi-column sort and edit states (phase 23)
+
+- **One sort list, in the URL.** `ProTableRequest.Sorts` is the first sort (`sortField`, `sortOrder`) followed by
+  `thenBy` (`-salary,name`; a minus is descending), at most four. Keeping the first sort in its old keys means old
+  links and saved views still mean the same thing, and an MVC action binds `ThenBy` like any other string.
+- **One click rule** (`SortKeys.Click`, shared by both flavours): a plain click sorts by that column alone; Shift
+  (or Ctrl/Cmd) + click adds it last, turns it, then drops it, as in Excel and AG Grid. Each sorted column shows its
+  place by the carets once there are two or more. The MVC header is still a plain link; the Shift+click URL is
+  `data-sort-add-href`, which `modulus-shell.js` follows (a modified click on a link would otherwise open a window).
+- **The server applies only what it registered.** `TableQuery` orders by each registered sort and then the id (one
+  `ORDER BY`), skipping unknown fields. Keyset cursors need a single sort key; several sorts page by offset.
+- **Edit states** in the editable and nested grids: changed rows amber with a bar at their start, changed cells
+  stronger with a corner mark, added rows blue, the row being edited with a primary bar. A cell error stays red on
+  top. The marks live in the page (Blazor state, or classes `modulus-widgets.js` adds) until a save or discard.
+
 ### The ERP UI map
 
 The ERP suites in §1 were reviewed as feature inventories. This is the UI surface they imply and where Modulus
@@ -353,6 +381,15 @@ Adapted from the 2.0 proposal; new components follow them.
   (a formula is the `f` field without the leading `=`), trimming trailing empty cells and rows. The theme follows the
   app: the sheet starts in `darkBlueTheme` when the shell is dark and switches in place on `modulus:theme`. A
   read-only sheet drops the toolbar, formula bar, header, footer and context menu.
+- **Printing the spreadsheet and the document is ours.** Univer's print plugin is Pro (not open source), and the
+  browser printing the page would print the canvas: a clipped screenful with the ribbon. So `modulus-plugins.js`
+  turns the content into plain HTML in a hidden frame and prints that. A workbook becomes one table per visible
+  sheet (the values as the grid displays them, so formula results and number formats; cell styles, borders, merges,
+  column widths, hidden rows and columns; the frozen rows repeat on every page; a wide sheet shrinks to the page). A
+  document keeps its page size and margins, title and headings, lists with their numbering, tables, links and
+  images. The ribbon gets a Print button (a printer icon registered in Univer's icon registry, which its facade does
+  not expose), Ctrl+P inside an editor prints it, and `data-m-print="{id}"` prints from any button, read-only
+  editors and editors not started yet included (from the JSON in the markup).
 - **One sortable engine** moves list items, cards and table rows. On a table (`data-m-sort-rows` around it,
   `data-m-sort-row` on the handle) it drags by the handle only, carries expanded and nested rows with their row, uses
   a one-row table as the ghost and skips hidden rows. Up, Down, Home and End on a focused handle move the row, and a

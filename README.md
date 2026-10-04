@@ -85,6 +85,13 @@ pixel-for-pixel where the controls allow it.
   submenu), collapse, flip axis, expand all, pick the measures, sort by one. Value cells drill down
   (`CellHref` / `cell-href`; the sample opens `/tables/large` filtered) and `PivotXlsx` writes the xlsx download
   (merged headers, bold totals) with no library. `/tables/pivot` pivots the 100,000 shipments in all three samples.
+- **Multi-column sort and edit states:** Shift+click a header to sort by several columns (`ProTable MultiSort`,
+  `thenBy` in the URL, applied by `TableQuery` as one `ORDER BY`); the editable and nested grids colour changed
+  rows and cells, added rows and the row being edited until you save.
+- **Group by:** `ProTable GroupFields` adds a Group by menu (`?groupBy=` in the URL); `TableQuery.Group(…)` and
+  `Total(…)` sort by the group first and read each group's row count and sums, averages, minima or maxima in one SQL
+  `GROUP BY`, so every group gets a header row (collapsible) and a subtotal row, with totals under the table. MVC
+  renders the same rows with `TableGroups.HeaderRow` / `FooterRow`.
 - **Saved views and field access** (`Modulus.Ui.Abstractions.State`): `AppSavedViews` / `app-saved-views` is a
   "Views" dropdown. A signed-in user names the current layout (its query string), stars one view as the default and
   deletes views. Views are kept per user in `IUiStateStore`; the default is in memory, so register your own store to
@@ -107,7 +114,8 @@ pixel-for-pixel where the controls allow it.
   `AppEditor` / `app-editor` (WYSIWYG on Tiptap; the HTML is cleaned by `RichText.Sanitize(images: true)`),
   `AppMap` / `app-map` (MapLibre GL JS tile map with markers and popups), `AppVectorMap` / `app-vector-map` (jsVectorMap
   choropleth with hover values and a legend), `AppSpreadsheet` / `app-spreadsheet` (Excel-style multi-sheet grid with
-  formulas on Univer; posts its sheets as JSON, follows the light and dark theme), `AppMediaPlayer` /
+  formulas on Univer; posts its sheets as JSON, follows the light and dark theme; prints from its ribbon, Ctrl+P or
+  any `data-m-print="{id}"` button, as does the document editor), `AppMediaPlayer` /
   `app-media-player` (video and audio with custom controls, poster and captions) and `AppSortable` / `app-sortable`
   (reorder a list, drag between lists, handles, keyboard moves; posts the order). `modulus-plugins.js` loads Tiptap,
   MapLibre, Univer and jsVectorMap only when a page uses them. `app-upload` also gains `action` (upload with per-file

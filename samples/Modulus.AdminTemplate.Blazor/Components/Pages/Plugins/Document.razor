@@ -39,9 +39,16 @@
                     <Icon Type="upload" /><span>Import docx</span>
                 </label>
                 @* The form posts the document to a download endpoint (the token-less endpoint is fine: it only writes a file). *@
+                <button type="button" class="ant-btn ant-btn-default" data-m-print="document" title="Print the document (Ctrl+P in it)"><Icon Type="printer" /><span>Print</span></button>
                 <button type="submit" form="document-form" class="ant-btn ant-btn-default"><Icon Type="download" /><span>Download docx</span></button>
                 <button type="button" class="ant-btn ant-btn-default" @onclick="Reset"><span>Reset</span></button>
                 <button type="button" class="ant-btn ant-btn-primary" @onclick="Save"><Icon Type="save" /><span>Save</span></button>
+            </div>
+        }
+        else
+        {
+            <div class="m-sheet-bar-actions">
+                <button type="button" class="ant-btn ant-btn-default" data-m-print="contract-readonly"><Icon Type="printer" /><span>Print</span></button>
             </div>
         }
     </div>

@@ -1121,7 +1121,16 @@
                     var tr = el.closest('tr[data-row-key]');
                     if (!tr || tr.parentElement !== this.$refs.body) return;
                     this.changed[tr.getAttribute('data-row-key')] = true;
-                    if (!tr.classList.contains('m-grid-row-new')) tr.classList.add('m-grid-row-dirty');
+                    if (tr.classList.contains('m-grid-row-new')) return;
+                    tr.classList.add('m-grid-row-dirty');
+                    // The changed cell itself (tinted, with a corner mark) as the Blazor grid's m-grid-cell-dirty.
+                    var td = el.closest('td');
+                    if (td && td.parentElement === tr && td.hasAttribute('data-key')) {
+                        td.classList.add('m-grid-td-dirty');
+                        var cell = td.querySelector('.m-grid-cell-editable');
+                        var label = cell && cell.getAttribute('aria-label');
+                        if (label && !/ \(changed\)$/.test(label)) cell.setAttribute('aria-label', label + ' (changed)');
+                    }
                 },
                 forget: function (tr) {
                     var id = tr.getAttribute('data-row-key');

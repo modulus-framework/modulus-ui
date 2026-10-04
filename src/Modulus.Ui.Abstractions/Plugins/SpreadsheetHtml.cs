@@ -21,7 +21,9 @@ public sealed record SpreadsheetSheet(
 /// <summary>
 /// Markup of the spreadsheet (<c>AppSpreadsheet</c> in Blazor, <c>&lt;app-spreadsheet&gt;</c> in MVC).
 /// modulus-plugins.js starts Univer on <c>[data-m-sheet]</c> when it appears; edits land in the hidden
-/// <c>[data-m-sheet-value]</c> input as the same JSON, so the sheet posts with its form.
+/// <c>[data-m-sheet-value]</c> input as the same JSON, so the sheet posts with its form. To print the sheets (as tables,
+/// with the values the grid shows), use the ribbon's Print button, Ctrl+P in the grid, or any button with
+/// <c>data-m-print="{id}"</c>, which also works for a read-only sheet.
 /// </summary>
 public static class SpreadsheetHtml
 {

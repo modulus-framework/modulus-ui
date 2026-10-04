@@ -54,6 +54,7 @@ else
               FilterRow="EnableFiltering"
               Exportable="Exportable"
               ExportFileName="@ExportFileName"
+              GroupFields="GroupFields"
               Id="@Id"
               Class="@Class"
               Columns="Columns ?? AutoColumns" />
@@ -108,6 +109,9 @@ else
 
     /// <summary>Own columns instead of the discovered ones (PropertyColumn, ActionColumn …).</summary>
     [Parameter] public RenderFragment<TItem>? Columns { get; set; }
+
+    /// <summary>Fields the rows can group by (a Group by menu); register them with <c>Configure: q =&gt; q.Group(…).Total(…)</c>.</summary>
+    [Parameter] public IReadOnlyList<TableColumn>? GroupFields { get; set; }
 
     // ---- Table surface (the typed engine; HeaderTitle, ToolBar and the toolbar buttons are shared) ----
 
@@ -210,7 +214,7 @@ else
         var source = Where is null ? Query! : Where(Query!);
         return Page(await query.PageAsync(source, request, CountMode.Exact, CountAsync));
 
-        static ProTableResponse<TItem> Page(TablePage<TItem> page) => new() { Data = page.Items, Total = page.Total ?? 0 };
+        static ProTableResponse<TItem> Page(TablePage<TItem> page) => new() { Data = page.Items, Total = page.Total ?? 0, Groups = page.Groups, Totals = page.Totals };
     }
 
     // The in-memory source: the queryable (with Where) materialized once, until one of them changes.

@@ -12,6 +12,8 @@
  *   [data-m-fullscreen]    the whole app full screen and back (html.m-fullscreen while it is; Escape also leaves).
  *                          A whole page load ends full screen in every browser, and only a click may start it again, so
  *                          after one the next click or key press goes back to full screen
+ *   a[data-sort-add-href]  a sortable header (ColumnHeader.Content): Shift/Ctrl/Cmd+click follows the multi-sort URL
+ *                          (the column joins the other sorts) instead of opening a new window
  *   select[data-m-nav-select]  options are URLs (a pager's page size): the chosen one loads as a link in its place, so
  *                          the list's boost area (or SPA navigation) swaps it in instead of loading a whole page
  *   [data-m-customizer]    theme settings panel (colour mode, scheme, base, font, radius, layout presets, layout, width,
@@ -239,23 +241,39 @@
         if (window.Blazor && window.Blazor.addEventListener) window.Blazor.addEventListener('enhancedload', syncFullscreen);
     });
 
-    // A select whose options are URLs (a pager's page size): the chosen URL loads as a link next to it, which htmx
-    // boosts like the list's other links (its boost area, or SPA navigation), so the page doesn't load whole.
-    document.addEventListener('change', function (e) {
-        var select = e.target;
-        if (!(select instanceof HTMLSelectElement) || !select.hasAttribute('data-m-nav-select') || !select.value) return;
-        var link = select.nextElementSibling;
+    // A link followed in place of another (a pager's page size, a header's multi-sort): a hidden <a> beside the element,
+    // which htmx boosts like the list's other links (its boost area, or SPA navigation), so the page doesn't load whole.
+    function follow(beside, href) {
+        var link = beside.nextElementSibling;
         if (!link || !link.hasAttribute('data-m-nav-link')) {
             link = document.createElement('a');
             link.hidden = true;
             link.tabIndex = -1;
             link.setAttribute('aria-hidden', 'true');
             link.setAttribute('data-m-nav-link', '');
-            select.insertAdjacentElement('afterend', link);
+            beside.insertAdjacentElement('afterend', link);
         }
-        link.setAttribute('href', select.value);
+        link.setAttribute('href', href);
         if (window.htmx) window.htmx.process(link); // boost it with its new href
         link.click();
+    }
+
+    // Shift+click (or Ctrl/Cmd+click, or Shift+Enter) on a sortable header adds the column to the table's sorts.
+    document.addEventListener('click', function (e) {
+        if (!(e.shiftKey || e.ctrlKey || e.metaKey) || !(e.target instanceof Element)) return;
+        var header = e.target.closest('a[data-sort-add-href]');
+        if (!header) return;
+        e.preventDefault();
+        e.stopPropagation();
+        follow(header, header.getAttribute('data-sort-add-href'));
+    }, true);
+
+    // A select whose options are URLs (a pager's page size): the chosen URL loads as a link next to it, which htmx
+    // boosts like the list's other links (its boost area, or SPA navigation), so the page doesn't load whole.
+    document.addEventListener('change', function (e) {
+        var select = e.target;
+        if (!(select instanceof HTMLSelectElement) || !select.hasAttribute('data-m-nav-select') || !select.value) return;
+        follow(select, select.value);
     });
 
     // The search keycap reads ⌘ K on Apple devices; again after Blazor's enhanced navigation re-renders the header.

@@ -1,6 +1,7 @@
 @*
     The header of a table column as every Modulus table renders it: the title, Ant Design's sorter carets (a click
-    cycles ascending, descending, unsorted) and a search icon that opens a column search box (ColumnSearch: contains,
+    cycles ascending, descending, unsorted; with Shift, the column joins the table's other sorts and shows its place
+    among them) and a search icon that opens a column search box (ColumnSearch: contains,
     =exact, !exclude, and >, <=, a..b for numbers and dates). The table around it (ProTable, EditableGrid) does the
     sorting and searching. The MVC twin is ColumnHeader.cs, with the same DOM.
 
@@ -14,8 +15,9 @@
     @if (Sortable && Host is not null)
     {
         var sort = Host.SortOf(Key);
-        <span class="ant-table-column-sorters m-th-sort" role="button" tabindex="0" title="@($"Sort by {Title}")" aria-label="@($"Sort by {Title}{State(sort)}")"
-              @onclick="() => Host.SortAsync(Key)" @onkeydown="SortKeyAsync">
+        var rank = Host.SortRank(Key);
+        <span class="ant-table-column-sorters m-th-sort" role="button" tabindex="0" title="@($"Sort by {Title}{(Host.MultiSort ? " (Shift+click to add)" : "")}")"
+              aria-label="@($"Sort by {Title}{State(sort, rank)}")" @onclick="SortClickAsync" @onkeydown="SortKeyAsync">
             <span class="ant-table-column-title">@Title@if (Required) {<span class="m-grid-required" aria-hidden="true">*</span>}</span>
             <span class="ant-table-column-sorter ant-table-column-sorter-full">
                 <span class="ant-table-column-sorter-inner">
@@ -23,6 +25,10 @@
                     <Icon Type="caret-down" Class="@($"ant-table-column-sorter-down{(sort == SortDirection.Descending ? " active" : "")}")" />
                 </span>
             </span>
+            @if (rank > 0)
+            {
+                <span class="m-th-sort-rank" aria-hidden="true">@rank</span>
+            }
         </span>
     }
     else
@@ -120,16 +126,21 @@
     private string? _draft;
     private ElementReference _input;
 
-    private static string State(SortDirection sort) => sort switch
+    private static string State(SortDirection sort, int rank) => sort switch
     {
-        SortDirection.Ascending => " (ascending)",
-        SortDirection.Descending => " (descending)",
+        SortDirection.Ascending => rank > 0 ? $" (ascending, sort {rank})" : " (ascending)",
+        SortDirection.Descending => rank > 0 ? $" (descending, sort {rank})" : " (descending)",
         _ => "",
     };
 
+    private async Task SortClickAsync(MouseEventArgs e)
+    {
+        if (Host is not null) await Host.SortAsync(Key, e.ShiftKey || e.CtrlKey || e.MetaKey);
+    }
+
     private async Task SortKeyAsync(KeyboardEventArgs e)
     {
-        if (Host is not null && e.Key is "Enter" or " ") await Host.SortAsync(Key);
+        if (Host is not null && e.Key is "Enter" or " ") await Host.SortAsync(Key, e.ShiftKey);
     }
 
     private void TriggerKey(KeyboardEventArgs e)

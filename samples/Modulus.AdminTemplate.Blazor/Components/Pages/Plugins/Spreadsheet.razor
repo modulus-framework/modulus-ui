@@ -40,9 +40,16 @@
                     <Icon Type="upload" /><span>Import xlsx</span>
                 </label>
                 @* The form posts the sheets to a download endpoint (the token-less endpoint is fine: it only writes a file). *@
+                <button type="button" class="ant-btn ant-btn-default" data-m-print="budget" title="Print the spreadsheet (Ctrl+P in it)"><Icon Type="printer" /><span>Print</span></button>
                 <button type="submit" form="spreadsheet-form" class="ant-btn ant-btn-default"><Icon Type="download" /><span>Download xlsx</span></button>
                 <button type="button" class="ant-btn ant-btn-default" @onclick="Reset"><span>Reset</span></button>
                 <button type="button" class="ant-btn ant-btn-primary" @onclick="Save"><Icon Type="save" /><span>Save</span></button>
+            </div>
+        }
+        else
+        {
+            <div class="m-sheet-bar-actions">
+                <button type="button" class="ant-btn ant-btn-default" data-m-print="budget-readonly"><Icon Type="printer" /><span>Print</span></button>
             </div>
         }
     </div>
