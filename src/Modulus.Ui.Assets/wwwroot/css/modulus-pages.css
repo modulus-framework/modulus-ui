@@ -1292,6 +1292,24 @@ mark.m-mark { padding: 0 1px; border-radius: 2px; background: color-mix(in srgb,
     .m-map-overlay { position: static; width: auto; max-width: none; max-height: none; }
 }
 
+/* Spreadsheet page: an Ant toolbar (demo switch, status, actions) over the Univer workspace, which fills the page
+   (the map-fullsize pattern). */
+.m-sheet-workspace { display: flex; flex-direction: column; gap: 12px; height: calc(100vh - var(--m-header-height, 56px) - 150px); min-height: 520px; }
+.m-sheet-workspace form:not([hidden]) { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.m-sheet-workspace .m-sheet, .m-sheet-workspace .m-doc { flex: 1; min-height: 0; height: auto !important; }
+.m-sheet-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.m-sheet-bar-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.m-sheet-bar-actions:empty { display: none; }
+/* The buttons stay at the right edge whether or not the status (saved, imported, an error) shows next to them: Blazor
+   renders an empty status as :empty (hidden), MVC with whitespace, and neither may move the buttons. */
+.m-sheet-bar-actions:not([role="status"]) { margin-left: auto; }
+.m-sheet-bar-actions[role="status"] { flex: 1; min-width: 0; justify-content: flex-end; }
+@media (max-width: 575px) {
+    .m-sheet-workspace { height: auto; min-height: 0; }
+    .m-sheet-workspace .m-sheet, .m-sheet-workspace .m-doc { flex: none; height: 70vh !important; }
+    .m-sheet-bar-actions[role="status"] { flex-basis: 100%; justify-content: flex-start; order: 3; }
+}
+
 /* ---- Reference pages (/ui/icons, /ui/typography, /ui/colors, /pages/changelog, /apps/users/grid) ---- */
 .m-empty-icon .anticon { font-size: 48px; }
 .m-icon-search { flex: 0 1 280px; min-width: 180px; margin-left: auto; }
@@ -1401,6 +1419,24 @@ mark.m-mark { padding: 0 1px; border-radius: 2px; background: color-mix(in srgb,
     .m-type h2 { font-size: 26px; }
 }
 
+/* ---- Saved views (SavedViewsHtml: AppSavedViews / <app-saved-views>) ---- */
+.m-views > summary { display: inline-flex; align-items: center; gap: 6px; max-width: 240px; }
+.m-views > summary > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-views-star { color: var(--m-text-tertiary); }
+.m-views-star-on, .m-views-trigger-on .m-views-star { color: #faad14; }
+.m-views-panel { min-width: 280px; max-width: min(360px, calc(100vw - 32px)); background: var(--m-bg-elevated); border-radius: 8px; box-shadow: var(--m-shadow-popup); overflow: hidden; }
+.m-views-panel > .ant-dropdown-menu { box-shadow: none; max-height: 320px; overflow-y: auto; }
+.m-views-item { display: flex; align-items: center; gap: 4px; }
+.m-views-item > .m-views-link { flex: 1; min-width: 0; }
+.m-views-item > .m-views-link > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-dropdown-panel .m-views-item > .m-views-action { flex: none; width: 24px; height: 24px; justify-content: center; border-radius: 4px; color: var(--m-text-tertiary); }
+.m-dropdown-panel .m-views-item > .m-views-action:hover { background: var(--m-fill-secondary); color: var(--m-heading); }
+.m-dropdown-panel .m-views-item > .m-views-delete:hover { color: var(--m-error); }
+.m-views-empty { padding: 5px 12px; color: var(--m-text-tertiary); list-style: none; }
+.m-views-error { padding: 4px 12px; color: var(--m-error); }
+.m-views-save { display: grid; gap: 8px; padding: 10px 12px 12px; border-top: 1px solid var(--m-split); }
+.m-views-default { display: inline-flex; align-items: center; gap: 6px; color: var(--m-text-secondary); cursor: pointer; }
+
 /* ---- Pivot table (PivotHtml: AppPivotGrid / <app-pivot-grid>) ---- */
 .m-pivot-toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 12px 14px; }
 .m-pivot-toolbar .ant-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
@@ -1458,7 +1494,9 @@ summary.m-pivot-header::-webkit-details-marker { display: none; }
 /* While the next layout loads (a header, menu or toolbar link was followed): a bar runs along the top of the table and
    the old values fade, so a slow query never looks like a click that did nothing. modulus-shell.js sets the class; the
    new markup arrives without it. */
-.m-pivot-busy .m-pivot-table .ant-table-content { opacity: .55; transition: opacity .15s .1s; pointer-events: none; }
+.m-pivot-busy .m-pivot-table .ant-table-content { opacity: .5; transition: opacity .15s .1s; pointer-events: none; }
+.m-pivot-busy .m-pivot-table::after { content: ""; position: absolute; left: 50%; top: min(50%, 140px); z-index: 7; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%; border: 3px solid color-mix(in srgb, var(--m-primary) 18%, transparent); border-top-color: var(--m-primary); opacity: 0; animation: m-spin .7s linear infinite, m-fade-in .15s .15s forwards; }
+@keyframes m-fade-in { to { opacity: 1; } }
 .m-pivot-busy .m-pivot-table { overflow: hidden; }
 .m-pivot-busy .m-pivot-table::before { content: ""; position: absolute; inset: 0 auto auto 0; z-index: 7; width: 40%; height: 2px; background: var(--m-primary); animation: m-loader-slide 1.2s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .m-pivot-busy .m-pivot-table::before { animation-duration: 3s; } }

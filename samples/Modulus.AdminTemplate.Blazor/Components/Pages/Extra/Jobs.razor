@@ -45,17 +45,17 @@
     <div class="m-row-cards" style="align-content:start">
         @if (jobs.Count == 0)
         {
-            <div class="m-card"><div class="m-empty"><span class="m-empty-icon"><Ti Name="ri:briefcase" /></span><p class="m-empty-title">No positions match</p><p class="m-empty-subtitle">Try fewer filters, or check back soon — we post new roles every week.</p><a class="ant-btn ant-btn-default" href="/extra/jobs"><span>Clear filters</span></a></div></div>
+            <div class="m-card"><div class="m-empty"><span class="m-empty-icon"><Ti Name="tb:briefcase" /></span><p class="m-empty-title">No positions match</p><p class="m-empty-subtitle">Try fewer filters, or check back soon — we post new roles every week.</p><a class="ant-btn ant-btn-default" href="/extra/jobs"><span>Clear filters</span></a></div></div>
         }
         @foreach (var j in jobs)
         {
             <div class="m-card">
                 <div class="m-card-body m-job">
-                    <span class="m-icon-tile m-tile-lg m-tile-@(SampleUi.Tone(Fmt.Tint(j.Department)))-lt"><Ti Name="ri:briefcase" /></span>
+                    <span class="m-icon-tile m-tile-lg m-tile-@(SampleUi.Tone(Fmt.Tint(j.Department)))-lt"><Ti Name="tb:briefcase" /></span>
                     <div class="m-grow" style="min-width:0">
                         <a class="m-job-title" href="/extra/jobs?q=@Uri.EscapeDataString(j.Title)">@j.Title</a>@if (j.Featured) {<span class="m-badge m-badge-primary-lt m-ml-8">Featured</span>}
                         <div class="m-job-meta">
-                            <span><Ti Name="ri:building" />@j.Department</span>
+                            <span><Ti Name="tb:building" />@j.Department</span>
                             <span><Ti Name="environment" />@j.Location</span>
                             <span><Ti Name="clock-circle" />@j.Type</span>
                         </div>

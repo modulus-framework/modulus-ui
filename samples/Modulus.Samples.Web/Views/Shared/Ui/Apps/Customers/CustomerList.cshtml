@@ -8,7 +8,7 @@
     (string Label, string Value, string Note, string Icon, string Tone)[] tiles =
     [
         ("Customers", s.Total.ToString("N0"), "Accounts with at least one order", "team", "primary"),
-        ("Active", s.Active.ToString("N0"), $"{Fmt.Percent(s.Active / (double)Math.Max(1, s.Total))} of all customers", "ri:user-follow", "green"),
+        ("Active", s.Active.ToString("N0"), $"{Fmt.Percent(s.Active / (double)Math.Max(1, s.Total))} of all customers", "tb:user-plus", "green"),
         ("On trial", s.Trial.ToString("N0"), "Evaluating a paid plan", "hourglass", "azure"),
         ("Lifetime revenue", Fmt.Money0(s.Revenue), $"{s.Churned} churned accounts", "dollar", "yellow"),
     ];

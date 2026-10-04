@@ -202,6 +202,26 @@ public sealed class PivotQuery<T>
         return this;
     }
 
+    /// <summary>
+    /// A copy without the group-bys and measures <paramref name="allow"/> refuses (<see cref="State.FieldAccess.For"/>;
+    /// <see cref="Count"/> always stays): they leave the menus, and a state naming one drops it like an unknown key, so
+    /// the database never groups or adds up a field the user may not see. Run each user's pivot on their copy.
+    /// </summary>
+    public PivotQuery<T> Restrict(Func<string, bool> allow)
+    {
+        var copy = new PivotQuery<T> { _maxGroups = _maxGroups };
+        copy._fields.AddRange(_fields.Where(f => allow(f.Key)));
+        copy._measures.AddRange(_measures.Where(m => allow(m.Key)));
+        var state = copy.Normalize(_default);
+        // The default's open "Total" headers belong to group-bys that may have gone.
+        copy._default = state with
+        {
+            RowPaths = state.Rows.Count > 0 ? state.RowPaths : [],
+            ColumnPaths = state.Columns.Count > 0 ? state.ColumnPaths : [],
+        };
+        return copy;
+    }
+
     /// <summary>The state in the query string, checked against the fields; the default when the query has none.</summary>
     public PivotState State(IEnumerable<KeyValuePair<string, string?>> query) => PivotState.Parse(query) is { } state ? Normalize(state) : _default;
 
@@ -217,6 +237,13 @@ public sealed class PivotQuery<T>
         var rows = Clean(state.Rows);
         var columns = Clean(state.Columns).Take(Math.Max(0, MaxLevels - rows.Count)).ToArray();
         rows = rows.Take(MaxLevels).ToArray();
+        // The levels Expand all brings back: known, used once, below the axis's own, and within MaxLevels together.
+        var fullRows = Full(state.RowsFull, rows, MaxLevels - columns.Length);
+        var fullColumns = Full(state.ColumnsFull, columns, MaxLevels - fullRows.Length);
+        string[] Full(IReadOnlyList<string> full, IReadOnlyList<string> groupBys, int max) =>
+            full.Count > groupBys.Count && full.Take(groupBys.Count).Select(Canonical).SequenceEqual(groupBys)
+                ? [.. groupBys.Concat(full.Skip(groupBys.Count).Select(Canonical).OfType<string>().Where(used.Add)).Take(Math.Max(groupBys.Count, max))]
+                : [];
         var known = Measures.Select(m => m.Key).ToHashSet(StringComparer.Ordinal);
         var measures = state.Measures.Where(known.Contains).Distinct().Take(MaxMeasures).ToArray();
         if (measures.Length == 0) measures = _default.Measures.Count > 0 ? [.. _default.Measures] : [Count];
@@ -226,6 +253,8 @@ public sealed class PivotQuery<T>
             Rows = rows,
             Columns = columns,
             Measures = measures,
+            RowsFull = fullRows.Length > rows.Count ? fullRows : [],
+            ColumnsFull = fullColumns.Length > columns.Length ? fullColumns : [],
             RowsAllDepth = Math.Clamp(state.RowsAllDepth, 0, rows.Count),
             ColumnsAllDepth = Math.Clamp(state.ColumnsAllDepth, 0, columns.Length),
             SortMeasure = sorted ? state.SortMeasure : null,

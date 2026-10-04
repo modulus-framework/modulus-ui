@@ -19,7 +19,7 @@ public sealed class SampleShellContentProvider : IShellContentProvider
             SearchPlaceholder = "Search pages…",
             Notices =
             [
-                new("Invoice #5012 was paid", "Fabrikam · $12,400.00", "18 min ago", true, "ri:bill", "success", "apps/invoice/list"),
+                new("Invoice #5012 was paid", "Fabrikam · $12,400.00", "18 min ago", true, "tb:file-invoice", "success", "apps/invoice/list"),
                 new("3 products are low on stock", "Dock Pro, Smart Lock, Field Tablet", "3 h ago", true, "warning", "warning", "apps/ecommerce/products"),
                 new("Olivia Bennett sent you a message", "“If we can sign by Friday we keep the Q3 pricing.”", "5 h ago", true, "comment", "primary", "apps/chat"),
                 new("New sign-in from Chrome on Windows", "San Francisco, United States", "Yesterday", false, "safety-certificate", "azure", "pages/account-settings?tab=security"),
@@ -31,7 +31,7 @@ public sealed class SampleShellContentProvider : IShellContentProvider
                 new("Account settings", "pages/account-settings", "setting"),
                 new("Billing", "pages/account-settings?tab=billing", "credit-card"),
                 new("Pricing", "pages/pricing", "dollar") { DividerBefore = true },
-                new("Help center", "pages/help-center", "ri:lifebuoy"),
+                new("Help center", "pages/help-center", "tb:lifebuoy"),
             ],
             SignOutHref = "auth/logout",
             // Each app owns a menu item (AdminMenuContributor keys); with the "Current app" menu the navbar shows
@@ -50,8 +50,8 @@ public sealed class SampleShellContentProvider : IShellContentProvider
                 new("Website", "pages/pricing", "global", "pink", "Pages, sign-in and error screens") { MenuKey = "pages", Group = "Administration" },
                 new("Developer", "ui/components", "code", "indigo", "Components, forms, tables and charts") { MenuKey = "developer", Group = "Administration" },
                 // Listed after Developer and Calendar: Plugins also links to some of their pages, which stay in those apps.
-                new("Plugins", "plugins/charts-advanced", "api", "cyan", "Charts, inputs, media and maps") { MenuKey = "plugins", Group = "Templates" },
-                new("Extra", "extra/billing", "ri:sparkling", "yellow", "Billing, apps, media and page blocks") { MenuKey = "extra", Group = "Templates" },
+                new("Plugins", "plugins/charts-advanced", "tb:puzzle", "cyan", "Charts, inputs, media and maps") { MenuKey = "plugins", Group = "Templates" },
+                new("Extra", "extra/billing", "tb:sparkles", "yellow", "Billing, apps, media and page blocks") { MenuKey = "extra", Group = "Templates" },
             ],
             Activities =
             [

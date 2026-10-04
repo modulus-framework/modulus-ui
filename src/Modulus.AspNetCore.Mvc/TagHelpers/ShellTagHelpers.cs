@@ -9,7 +9,7 @@ namespace Modulus.AspNetCore.Mvc.TagHelpers;
 
 /// <summary>
 /// Named icon: <c>&lt;app-ti name="team" /&gt;</c>. Draws an Ant Design outline icon inline, the way the shell draws its
-/// icons (<see cref="ShellRenderer.Icon"/>; <c>ri:</c> names are the Remix Icon fallbacks). For an Ant Design icon with
+/// icons (<see cref="ShellRenderer.Icon"/>; <c>tb:</c> names are the Tabler fallbacks). For an Ant Design icon with
 /// a theme, spin or rotation, use <c>&lt;app-icon&gt;</c>.
 /// </summary>
 [HtmlTargetElement("app-ti", TagStructure = TagStructure.WithoutEndTag)]

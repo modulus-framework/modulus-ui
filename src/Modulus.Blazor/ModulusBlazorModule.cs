@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Modulus.Ui.Abstractions.Navigation;
 using Modulus.Ui.Abstractions.Shell;
+using Modulus.Ui.Abstractions.State;
 using Modulus.Ui.Abstractions.Theming;
 
 namespace Modulus.Blazor;
@@ -54,6 +55,10 @@ public static class ModulusBlazorModule
 
         services.TryAddScoped<IMenuProvider, MenuProvider>();
         services.TryAddSingleton<IShellContentProvider, DefaultShellContentProvider>();
+
+        // Per-user UI state (saved views); an app registers its own IUiStateStore to keep it across restarts.
+        services.TryAddSingleton<IUiStateStore, MemoryUiStateStore>();
+        services.TryAddScoped<SavedViews>();
 
         return services;
     }

@@ -9,7 +9,7 @@
         <div>
             <h1 class="m-profile-name">@CurrentUser.Name</h1>
             <div class="m-profile-meta">
-                <span><Ti Name="ri:briefcase" />@CurrentUser.Title</span>
+                <span><Ti Name="tb:briefcase" />@CurrentUser.Title</span>
                 <span><Ti Name="environment" />San Francisco, US</span>
                 <span><Ti Name="calendar" />Joined April 2021</span>
             </div>
@@ -103,7 +103,7 @@
                             <div class="m-form-actions">
                                 @if (c.Connected)
                                 {
-                                    <a class="ant-btn ant-btn-primary" href="/pages/profile?tab=connections"><Ti Name="ri:user-follow" /><span>Connected</span></a>
+                                    <a class="ant-btn ant-btn-primary" href="/pages/profile?tab=connections"><Ti Name="tb:user-plus" /><span>Connected</span></a>
                                 }
                                 else
                                 {
@@ -141,8 +141,8 @@
                         <div class="m-card-header"><h2 class="m-card-title">Overview</h2></div>
                         <div class="m-card-body">
                             <dl class="m-dl">
-                                <dt><Ti Name="ri:check-double" />Tasks compiled</dt><dd>13.5k</dd>
-                                <dt><Ti Name="ri:briefcase" />Projects</dt><dd>@SampleContent.Projects.Count</dd>
+                                <dt><Ti Name="tb:checks" />Tasks compiled</dt><dd>13.5k</dd>
+                                <dt><Ti Name="tb:briefcase" />Projects</dt><dd>@SampleContent.Projects.Count</dd>
                                 <dt><Ti Name="team" />Connections</dt><dd>897</dd>
                             </dl>
                         </div>
@@ -206,7 +206,7 @@
 
 @code {
     private static readonly (string Key, string Label, string Icon)[] Tabs =
-        [("profile", "Profile", "user"), ("teams", "Teams", "ri:group"), ("projects", "Projects", "appstore"), ("connections", "Connections", "link")];
+        [("profile", "Profile", "user"), ("teams", "Teams", "tb:users-group"), ("projects", "Projects", "appstore"), ("connections", "Connections", "link")];
 
     [SupplyParameterFromQuery] public string? Tab { get; set; }
 

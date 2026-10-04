@@ -98,7 +98,7 @@ public sealed partial class SampleStore
             new("dollar", "primary", $"{days * 43} Sales", $"{days / 3 + 2} waiting payments"),
             new("shopping-cart", "green", $"{days * 26} Orders", $"{days + 2} shipped"),
             new("team", "orange", $"{days * 6 + 11} New customers", "18 from referrals"),
-            new("ri:lifebuoy", "purple", $"{days * 2 + 7} Tickets", $"{days / 4 + 1} awaiting reply"),
+            new("tb:lifebuoy", "purple", $"{days * 2 + 7} Tickets", $"{days / 4 + 1} awaiting reply"),
         };
         var channels = new List<ChartSlice> { new("Organic search", 4_812), new("Direct", 2_630), new("Referral", 1_472), new("Social", 1_104), new("Email", 687) };
 
@@ -117,7 +117,7 @@ public sealed partial class SampleStore
             new("/", 12_480, 8_512, 0.38), new("/pricing", 6_320, 5_102, 0.42), new("/apps/invoice/list", 4_870, 2_910, 0.21),
             new("/features/analytics", 3_992, 3_104, 0.47), new("/blog/htmx-and-blazor", 3_214, 2_870, 0.55), new("/docs/getting-started", 2_830, 2_016, 0.29),
         };
-        var browsers = new List<BrowserShare> { new("Chrome", "chrome", 0.62), new("Safari", "ri:safari", 0.19), new("Edge", "ri:edge", 0.09), new("Firefox", "ri:firefox", 0.07) };
+        var browsers = new List<BrowserShare> { new("Chrome", "chrome", 0.62), new("Safari", "tb:brand-safari", 0.19), new("Edge", "tb:brand-edge", 0.09), new("Firefox", "tb:brand-firefox", 0.07) };
 
         List<RecentOrder> orders;
         lock (_gate)
@@ -129,7 +129,7 @@ public sealed partial class SampleStore
         var now = DateTime.Now;
         List<ActivityItem> activity =
         [
-            new("Olivia Bennett", "paid invoice", "#5012", now.AddMinutes(-12), "ri:bill"),
+            new("Olivia Bennett", "paid invoice", "#5012", now.AddMinutes(-12), "tb:file-invoice"),
             new("Noah Tanaka", "upgraded", "Fabrikam to Enterprise", now.AddHours(-2), "rise"),
             new("Aisha Khan", "resolved ticket", "#4821", now.AddHours(-5), "check-circle"),
             new("System", "flagged low stock for", "Dock Pro", now.AddHours(-9), "warning"),
@@ -212,13 +212,13 @@ public sealed partial class SampleStore
                 new("Edge Gateway X2", "MD-1000", 999.99m, 2_486, "hdd", 1),
                 new("Inventory Cloud", "MD-1084", 299.99m, 2_590, "cloud", 2),
                 new("Access Card (100)", "MD-1105", 89.99m, 2_176, "idcard", 3),
-                new("Sensor Hub", "MD-1007", 149.99m, 2_128, "ri:cpu", 4),
+                new("Sensor Hub", "MD-1007", 149.99m, 2_128, "tb:cpu", 4),
                 new("Fleet Tracker", "MD-1091", 219.99m, 2_110, "truck", 5),
             ],
             [
                 new("Wallet", "Starbucks", -74.00m, "wallet", 1),
                 new("Bank transfer", "Add money", 480.00m, "bank", 2),
-                new("PayPal", "Client payment", 268.00m, "ri:paypal", 3),
+                new("PayPal", "Client payment", 268.00m, "tb:brand-paypal", 3),
                 new("Mastercard", "Ordered food", -22.00m, "credit-card", 4),
                 new("Refund", "Order #6951", 98.00m, "undo", 5),
             ],

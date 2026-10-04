@@ -4,7 +4,7 @@
 
 <PageHeading Pretitle="Extra" Title="Music" Subtitle="Your library, playlists and what's playing now">
     <Actions>
-    <a class="ant-btn ant-btn-default" href="/extra/music"><Ti Name="ri:play-list" /><span>New playlist</span></a>
+    <a class="ant-btn ant-btn-default" href="/extra/music"><Ti Name="tb:playlist" /><span>New playlist</span></a>
     </Actions>
 </PageHeading>
 
@@ -20,11 +20,11 @@
                 </div>
             </div>
             <div class="m-player-controls">
-                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Shuffle"><Ti Name="ri:shuffle" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Shuffle"><Ti Name="tb:arrows-shuffle" /></button>
                 <a class="ant-btn ant-btn-text ant-btn-icon-only" href="/extra/music?track=@(now.No == 1 ? ExtraContent.Tracks.Count : now.No - 1)" aria-label="Previous track"><Ti Name="step-backward" /></a>
                 <button type="button" class="ant-btn ant-btn-primary m-player-play" aria-label="Pause"><Ti Name="pause" /></button>
                 <a class="ant-btn ant-btn-text ant-btn-icon-only" href="/extra/music?track=@(now.No % ExtraContent.Tracks.Count + 1)" aria-label="Next track"><Ti Name="step-forward" /></a>
-                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Repeat"><Ti Name="ri:repeat" /></button>
+                <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Repeat"><Ti Name="tb:repeat" /></button>
             </div>
             <div class="m-player-progress">
                 <span>@ExtraContent.Duration(elapsed)</span>

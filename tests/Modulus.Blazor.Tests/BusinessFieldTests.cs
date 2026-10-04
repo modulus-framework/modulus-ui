@@ -360,7 +360,7 @@ public class BusinessFieldTests : BunitContext
     // ---- Rich text ----
 
     [Fact]
-    public async Task RichText_RendersCleanHtml_AndReportsCleanHtml()
+    public void RichText_RendersCleanHtml_AndReportsCleanHtml()
     {
         string? value = "<p onclick=\"x()\">Hi <b>there</b></p><script>alert(1)</script>";
         var cut = Bound<AppRichText>(h => [("Value", value), ("ValueChanged", h.Set<string?>(v => value = v)), ("Placeholder", "Notes")]);
@@ -368,12 +368,13 @@ public class BusinessFieldTests : BunitContext
         Assert.Equal("<p>Hi <b>there</b></p>", cut.Find(".m-richtext-editor").InnerHtml);
         Assert.Equal("Notes", cut.Find(".m-richtext-editor").GetAttribute("data-placeholder"));
         Assert.Equal(RichTextToolbar.Groups.Sum(g => g.Count), cut.FindAll(".m-richtext-btn").Count);
-        JSInterop.VerifyInvoke("modulusShell.richText");
+        Assert.Empty(JSInterop.Invocations); // the script reports through the hidden input, not interop
 
-        await cut.InvokeAsync(() => cut.Instance.OnRichTextInput("<p>New <img src=x onerror=alert(1)></p>"));
+        // What modulus-shell.js does: write the editor's HTML to the hidden input and raise change.
+        cut.Find(".m-richtext > input[type=hidden]").Change("<p>New <img src=x onerror=alert(1)></p>");
         Assert.Equal("<p>New </p>", value);
 
-        await cut.InvokeAsync(() => cut.Instance.OnRichTextInput(""));
+        cut.Find(".m-richtext > input[type=hidden]").Change("");
         Assert.Null(value);
         Assert.Contains("m-richtext-empty", cut.Find(".m-richtext").ClassList);
     }
@@ -390,20 +391,21 @@ public class BusinessFieldTests : BunitContext
     // ---- Signature ----
 
     [Fact]
-    public async Task SignaturePad_StartsTheScript_AndReportsTheImage()
+    public void SignaturePad_StartsTheScript_AndReportsTheImage()
     {
         string? value = null;
         var cut = Bound<AppSignaturePad>(h => [("Value", value), ("ValueChanged", h.Set<string?>(v => value = v)), ("Height", 120)]);
 
         Assert.Contains("--m-signature-height:120px", cut.Find(".m-signature").GetAttribute("style"));
         Assert.NotNull(cut.Find("input.m-signature-type"));
-        JSInterop.VerifyInvoke("modulusShell.signature");
+        Assert.True(cut.Find(".m-signature").HasAttribute("data-m-signature")); // modulus-plugins.js starts the pad
+        Assert.Empty(JSInterop.Invocations);
 
-        await cut.InvokeAsync(() => cut.Instance.OnSignature("data:image/png;base64,AAAA"));
+        cut.Find(".m-signature > input[type=hidden]").Change("data:image/png;base64,AAAA");
         Assert.Equal("data:image/png;base64,AAAA", value);
         Assert.Contains("m-signature-signed", cut.Find(".m-signature").ClassList);
 
-        await cut.InvokeAsync(() => cut.Instance.OnSignature(""));
+        cut.Find(".m-signature > input[type=hidden]").Change("");
         Assert.Null(value);
     }
 }

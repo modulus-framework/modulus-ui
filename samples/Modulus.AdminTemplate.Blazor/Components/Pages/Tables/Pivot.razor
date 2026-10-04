@@ -1,4 +1,5 @@
 @page "/tables/pivot"
+@using Microsoft.AspNetCore.Components.Authorization
 @using Modulus.Ui.Abstractions.Pivot
 @inject NavigationManager Navigation
 
@@ -16,6 +17,8 @@
                 <span class="m-small m-muted">@_total.ToString("N0") matching · query @_page.QueryMs.ToString("0.0") ms</span>
             </div>
             <div class="m-table-toolbar-actions">
+                @* The user's saved layouts of this page (Odoo's favourites); a starred one opens by default. *@
+                <AppSavedViews Page="@PivotTablePage.Path" Id="pivot-views" />
                 <Input TValue="string" Value="@_keyword" ValueChanged="KeywordChanged" BindOnInput DebounceMilliseconds="300" AllowClear MaxLength="200" Placeholder="Reference or customer…" Class="m-table-toolbar-search" Prefix="@_searchIcon" aria-label="Search shipments" />
                 @if (_status is not null || !string.IsNullOrWhiteSpace(_city) || !string.IsNullOrWhiteSpace(_keyword))
                 {
@@ -73,12 +76,21 @@
     private string? _keyword;
     private readonly RenderFragment _searchIcon = @<Ti Name="search" />;
 
+    // The signed-in user's fields (PivotTablePage.Access): the pivot runs restricted to them, whatever the URL asks for.
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+    private Func<string, bool> _allow = PivotTablePage.Access.For(null);
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthenticationState is not null) _allow = PivotTablePage.Access.For((await AuthenticationState).User);
+    }
+
     protected override void OnParametersSet()
     {
         _query = PivotState.ReadQuery(new Uri(Navigation.Uri).Query).ToList();
         var filter = new ShipmentFilter(Enum.TryParse<ShipmentStatus>(Status, out var s) ? s : null, City, Keyword);
         (_status, _city, _keyword) = (filter.Status, filter.City, filter.Keyword);
-        _page = PivotTablePage.Load(filter, _query);
+        _page = PivotTablePage.Load(filter, _query, _allow);
         _total = _page.Result.IsEmpty ? 0 : _page.Result.Value(PivotPath.Root, PivotPath.Root, PivotQuery<Shipment>.Count) ?? 0;
     }
 

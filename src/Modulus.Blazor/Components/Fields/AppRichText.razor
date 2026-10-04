@@ -1,12 +1,11 @@
 @* Rich text (Odoo html field, notes, terms and conditions): a formatting toolbar over an editable area. The value is
-   HTML cleaned by RichText.Sanitize. Editing runs in the browser (modulusShell.richText), and the editor's content is
-   rendered once and then left to the browser; a new Value from the parent replaces it. The MVC <app-rich-text>
+   HTML cleaned by RichText.Sanitize. Editing runs in the browser (modulus-shell.js), and the editor's content is
+   rendered once and then left to the browser; a new Value from the parent replaces it. The script writes the HTML to
+   the hidden input and raises change (debounced while typing), so there is no JS interop. The MVC <app-rich-text>
    renders the same DOM and posts the HTML (sanitize it on the server). *@
 @using Modulus.Ui.Abstractions.Forms
-@implements IAsyncDisposable
-@inject IJSRuntime JS
 
-<div class="@RootClass" style="@Style" @ref="_root">
+<div class="@RootClass" style="@Style">
     @if (!Disabled)
     {
         <div class="m-richtext-toolbar" role="toolbar" aria-label="Formatting">
@@ -34,6 +33,7 @@
     <div @key="_version" class="ant-input m-richtext-editor" contenteditable="@(!Disabled)" role="textbox" aria-multiline="true"
          aria-label="@(AriaLabel ?? "Rich text")" aria-invalid="@(Status == "error" ? "true" : null)" data-placeholder="@Placeholder"
          style="min-height:@(Height)px">@((MarkupString)_html)</div>
+    <input @key="@($"value-{_version}")" type="hidden" value="@_html" @onchange="Changed" />
 </div>
 
 @code {
@@ -54,8 +54,6 @@
     [Parameter] public string? Class { get; set; }
     [Parameter] public string? Style { get; set; }
 
-    private ElementReference _root;
-    private DotNetObjectReference<AppRichText>? _self;
     private string _html = "";
     private string? _last = "\0";
     private int _version;
@@ -77,32 +75,14 @@
         _version++;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender) return;
-        _self = DotNetObjectReference.Create(this);
-        try
-        {
-            await JS.InvokeVoidAsync("modulusShell.richText", _root, _self, _html);
-        }
-        catch (JSException)
-        {
-            // modulus-shell.js not loaded: the editor still edits, but changes are not reported.
-        }
-    }
+    private Task Changed(ChangeEventArgs e) => OnRichTextInput(e.Value?.ToString());
 
-    [JSInvokable]
+    /// <summary>The editor's HTML as the browser reports it; cleaned before it reaches <see cref="ValueChanged"/>.</summary>
     public Task OnRichTextInput(string? html)
     {
         var clean = RichText.Sanitize(html);
         _last = clean.Length == 0 ? null : clean;
         _empty = clean.Length == 0;
         return ValueChanged.InvokeAsync(_last);
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _self?.Dispose();
-        return ValueTask.CompletedTask;
     }
 }

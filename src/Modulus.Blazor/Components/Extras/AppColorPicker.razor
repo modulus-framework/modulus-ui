@@ -1,8 +1,8 @@
 @* Colour picker (Ant Design 5 ColorPicker; AntD Blazor 1.6.2 has none). Saturation/value palette, hue and alpha
    sliders, hex/rgb input, preset swatches and clear. The colour model is Modulus.Ui.Abstractions.Theming.HsvColor,
-   which modulusColorPicker in modulus-widgets.js mirrors for the MVC <app-color-picker>. *@
+   which modulusColorPicker in modulus-widgets.js mirrors for the MVC <app-color-picker>. Dragging keeps the pointer
+   on the palette and sliders through modulus-shell.js ([data-m-capture]), so there is no JS interop. *@
 @using Modulus.Ui.Abstractions.Theming
-@inject IJSRuntime JS
 
 <span class="m-color-picker @Class" style="@Style">
     <div class="@TriggerClass" id="@Id" tabindex="@(Disabled ? -1 : 0)" role="button" aria-haspopup="dialog"
@@ -42,7 +42,7 @@
                                 <div class="ant-color-picker-palette" style="background-color:@_hsv.HueHex()">
                                     <div class="ant-color-picker-select" tabindex="0" role="slider" aria-label="Saturation and brightness"
                                          aria-valuetext="@($"Saturation {Pct(_hsv.S)}%, brightness {Pct(_hsv.V)}%")"
-                                         @ref="_paletteRef" @onpointerdown="PaletteDown" @onpointermove="PaletteMove" @onpointerup="PointerUp"
+                                         data-m-capture @onpointerdown="PaletteDown" @onpointermove="PaletteMove" @onpointerup="PointerUp"
                                          @onkeydown="PaletteKey">
                                         <div class="ant-color-picker-saturation"></div>
                                         <div class="ant-color-picker-handler" style="left:@Px(_hsv.S * PaletteWidth);top:@Px((1 - _hsv.V) * PaletteHeight);background-color:@_hsv.ToHex()"></div>
@@ -52,7 +52,7 @@
                                     <div class="ant-color-picker-slider-group">
                                         <div class="ant-color-picker-slider ant-color-picker-slider-hue" tabindex="0" role="slider" aria-label="Hue"
                                              aria-valuemin="0" aria-valuemax="360" aria-valuenow="@((int)Math.Round(_hsv.H))"
-                                             @ref="_hueRef" @onpointerdown="HueDown" @onpointermove="HueMove" @onpointerup="PointerUp"
+                                             data-m-capture @onpointerdown="HueDown" @onpointermove="HueMove" @onpointerup="PointerUp"
                                              @onkeydown="HueKey">
                                             <div class="ant-color-picker-handler ant-color-picker-handler-sm" style="left:@Px(_hsv.H / 360 * SliderWidth);background-color:@_hsv.HueHex()"></div>
                                         </div>
@@ -60,7 +60,7 @@
                                         {
                                             <div class="ant-color-picker-slider ant-color-picker-slider-alpha" tabindex="0" role="slider" aria-label="Alpha"
                                                  aria-valuemin="0" aria-valuemax="100" aria-valuenow="@Pct(_hsv.A)"
-                                                 @ref="_alphaRef" @onpointerdown="AlphaDown" @onpointermove="AlphaMove" @onpointerup="PointerUp"
+                                                 data-m-capture @onpointerdown="AlphaDown" @onpointermove="AlphaMove" @onpointerup="PointerUp"
                                                  @onkeydown="AlphaKey">
                                                 <div class="ant-color-picker-slider-track" style="background:@AlphaGradient"></div>
                                                 <div class="ant-color-picker-handler ant-color-picker-handler-sm" style="left:@Px(_hsv.A * SliderWidth);background-color:@_hsv.ToRgbString()"></div>
@@ -151,7 +151,6 @@
     private string _text = "";
     private string? _lastValue = "\0";
     private bool _dragging;
-    private ElementReference _paletteRef, _hueRef, _alphaRef;
 
     private string TriggerClass => "ant-color-picker-trigger"
         + (Size == "small" ? " ant-color-picker-sm" : Size == "large" ? " ant-color-picker-lg" : "")
@@ -221,24 +220,11 @@
         await ValueChanged.InvokeAsync(null);
     }
 
-    private async Task Capture(ElementReference element, long pointerId)
-    {
-        _dragging = true;
-        try
-        {
-            await JS.InvokeVoidAsync("modulusShell.capture", element, pointerId);
-        }
-        catch (JSException)
-        {
-            // Script not loaded: dragging still works while the pointer stays over the control.
-        }
-    }
-
     private void PointerUp() => _dragging = false;
 
     private async Task PaletteDown(PointerEventArgs e)
     {
-        await Capture(_paletteRef, e.PointerId);
+        _dragging = true;
         await PaletteAt(e);
     }
 
@@ -249,7 +235,7 @@
 
     private async Task HueDown(PointerEventArgs e)
     {
-        await Capture(_hueRef, e.PointerId);
+        _dragging = true;
         await Set(_hsv with { H = e.OffsetX / SliderWidth * 360 });
     }
 
@@ -257,7 +243,7 @@
 
     private async Task AlphaDown(PointerEventArgs e)
     {
-        await Capture(_alphaRef, e.PointerId);
+        _dragging = true;
         await Set(_hsv with { A = e.OffsetX / SliderWidth });
     }
 

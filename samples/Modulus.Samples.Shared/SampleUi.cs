@@ -85,10 +85,10 @@ public static class SampleUi
 
     public static string CategoryIcon(string category) => category switch
     {
-        "Hardware" => "ri:cpu",
+        "Hardware" => "tb:cpu",
         "Software" => "code",
         "Services" => "customer-service",
-        _ => "ri:plug",
+        _ => "tb:plug",
     };
 
     public static string CustomerBadge(CustomerStatus s) => s switch
@@ -166,7 +166,7 @@ public static class SampleUi
     [
         ("Total users", s.Total.ToString("N0"), "All accounts in the workspace", "team", "primary"),
         ("Paid users", s.PaidPlans.ToString("N0"), $"{Fmt.Percent(s.PaidPlans / (double)Math.Max(1, s.Total))} on a paid plan", "user-add", "red"),
-        ("Active users", s.Active.ToString("N0"), "Signed in during the last 30 days", "ri:user-follow", "green"),
+        ("Active users", s.Active.ToString("N0"), "Signed in during the last 30 days", "tb:user-plus", "green"),
         ("Pending users", s.Pending.ToString("N0"), "Invited, not signed in yet", "user-delete", "yellow"),
     ];
 

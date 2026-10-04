@@ -7,8 +7,9 @@ Modulus pins every third-party UI dependency in one place, so upgrades are delib
 | `AntDesign`, `AntDesign.ProLayout` | `Directory.Packages.props` (keep both on the same version) | 1.6.2 |
 | htmx | `src/Modulus.Ui.Assets/wwwroot/lib/htmx/` | 2.0.11 |
 | Alpine.js | `src/Modulus.Ui.Assets/wwwroot/lib/alpinejs/` | 3.17.4 |
-| Leaflet (tile maps) | `src/Modulus.Ui.Assets/wwwroot/lib/leaflet/` | 1.9.4 |
-| Quill (WYSIWYG editor) | `src/Modulus.Ui.Assets/wwwroot/lib/quill/` | 2.0.3 |
+| MapLibre GL JS (tile maps) | `src/Modulus.Ui.Assets/wwwroot/lib/maplibre/` | 5.24.0 |
+| Tiptap (WYSIWYG editor; a prebuilt bundle, see below) | `src/Modulus.Ui.Assets/wwwroot/lib/tiptap/` | 3.31.4 |
+| Univer (spreadsheet; a prebuilt bundle, see below) | `src/Modulus.Ui.Assets/wwwroot/lib/univer/` | 1.0.3 |
 | jsVectorMap (vector map, with `world.js`) | `src/Modulus.Ui.Assets/wwwroot/lib/jsvectormap/` | not recorded; its build has no version banner, so write it here at the next upgrade |
 
 ## What protects you
@@ -82,18 +83,61 @@ Modulus pins every third-party UI dependency in one place, so upgrades are delib
    On `/ui/components`, check tabs (click and arrow keys), the dropdown delete (confirm → toast), notification, modal
    (focus, Escape, submit closes it), collapse, switch, segmented, rate, upload and the input clear/reveal buttons.
 
-## Upgrading Leaflet, Quill or jsVectorMap
+## Upgrading MapLibre, Tiptap, Univer or jsVectorMap
 
-1. Replace the files in `wwwroot/lib/<name>/` with the new builds from the official release, keeping the file names
-   (`modulus-plugins.js` loads them by path on first use), and update the table above.
+1. **MapLibre, jsVectorMap:** replace the files in `wwwroot/lib/<name>/` with the new builds from the official release,
+   keeping the file names (`modulus-plugins.js` loads them by path on first use), and update the table above.
+   **Tiptap** and **Univer** ship as IIFE bundles Modulus builds itself (`lib/tiptap/tiptap.js`,
+   `lib/univer/univer.js`), because both are ESM-only; see each `lib/<name>/LICENSE.md` for the esbuild command and
+   rebuild after bumping the packages.
 2. Read the release notes for the APIs Modulus calls:
-   - Leaflet: `L.map`, `L.tileLayer`, `L.marker` / `bindPopup`, `flyTo`, `fitBounds`, `invalidateSize`
-   - Quill: the `snow` theme, toolbar modules, `getSemanticHTML`, `text-change`
+   - MapLibre: `maplibregl.Map`, `Marker`, `Popup`, `flyTo`, `fitBounds`, `NavigationControl`
+   - Tiptap: `Editor` (`@tiptap/core`), `StarterKit`, `Image`, `Placeholder`, `chain().focus()`, `getHTML`, `isEmpty`
+   - Univer: `createUniver`, `UniverSheetsCorePreset` / `UniverDocsCorePreset` and the other presets, `defaultTheme`
+     (`@univerjs/themes`), `univerAPI.createWorkbook` / `createDocument`, `disposeUnit` (a reset swaps the workbook or
+     document in the running instance), `getActiveWorkbook().save()` / `getActiveDocument().save()`,
+     `addEvent(Event.CommandExecuted)` with the command `type` (2 is a mutation) and its `sheet.` / `doc.` id prefix,
+     `createMenu(...).appendTo('ribbon.start.others')`, `setTheme`, `toggleDarkMode`, the `en-US` locale. Univer's
+     buttons carry no `type`: the script points them (and its inputs) at a form id that does not exist so they never
+     submit the page's form; check the sheet list button next to "+" still switches sheets without a download.
    - jsVectorMap: the `world` map in `world.js`, region series (`regions` / `values`), `onRegionTooltipShow`
 3. Run a sample and check `/plugins/editor` (format, insert an image and a link, save, and confirm the cleaned HTML
-   comes back), `/plugins/map` and `/plugins/map-fullsize` (markers, popups, the place list flying to a place, resizing
-   the window) and `/plugins/map-vector` (fills, tooltips, legend), in light and dark mode, with SPA navigation on
-   (leave the page and come back).
+   comes back), `/plugins/spreadsheet` (type a number, watch the Year column and Total row recalculate, add a
+   `=SUM(B2:B5)` formula, switch sheets, save, and check the JSON posted), `/plugins/map` and `/plugins/map-fullsize`
+   (markers, popups, the place list flying to a place, resizing the window) and `/plugins/map-vector` (fills,
+   tooltips, legend), in light and dark mode, with SPA navigation on (leave the page and come back).
+
+## Saved views (`MapModulusSavedViews`)
+
+`<app-saved-views>` posts to `/_modulus/views`. An MVC or Razor Pages app that uses it must map that endpoint after
+its controllers or pages:
+
+```csharp
+app.MapModulusSavedViews();
+```
+
+Without it, saving or deleting a view returns 404. Blazor needs nothing extra. `AddModulusMvc` and `AddModulusBlazor`
+register `MemoryUiStateStore`, which forgets everything on restart. To keep views, register your own
+`IUiStateStore` **before** calling them, e.g. a copy of the samples' `EfUiStateStore`
+(`samples/Modulus.Samples.Shared/SampleUiState.cs`, one EF Core table keyed by user and key):
+
+```csharp
+builder.Services.AddSampleUiState(builder.Environment.ContentRootPath); // before AddModulusMvc / AddModulusBlazor
+var app = builder.Build();
+app.Services.EnsureUiStateDatabase();
+```
+
+On a Blazor `ProTable`, set `UrlState` (plus `UrlQuery` and `OnUrlChanged` for the page's own filters) so the
+layout is in the URL and `AppSavedViews` can save it. Saved views no longer keep the page number (`current` is
+dropped like `page`); views saved earlier with one still open, on that page.
+
+## Icons
+
+Names Ant Design has no icon for are Tabler outline icons with a `tb:` prefix (`ShellRenderer.TablerPrefix`), listed in
+`tools/icons/tabler.txt` and generated into `ExtraIconSvg.g.cs` by `tools/icons/build.sh`. The earlier Remix Icon
+fallbacks (`ri:`) are gone and draw an empty icon: rename them, e.g. `ri:check-double` → `tb:checks`,
+`ri:expand-up-down` → `tb:selector`, `ri:group` → `tb:users-group`, `ri:lock-2` → `tb:lock`, brands such as
+`ri:visa` → `tb:brand-visa`. To add one, put its name from https://tabler.io/icons in `tabler.txt` and run the script.
 
 ## SPA navigation and `IsHtmx()`
 

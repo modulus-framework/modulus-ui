@@ -47,16 +47,19 @@ public class PluginMarkupTests
     [Fact]
     public void ShellIcon_EveryBundledIcon_DrawsAnInlineSvg()
     {
-        // Ant Design icons newer than the AntDesign package, and the Remix Icon fallbacks.
+        // Ant Design icons newer than the AntDesign package, and the Tabler fallbacks.
         Assert.All(ExtraIconSvg.Svgs.Keys, name => Assert.NotNull(AntIconSvg.Svg(name)));
 
         var html = ShellRenderer.Icon("team", "m-nav-icon");
         Assert.StartsWith("<svg class=\"m-ti m-nav-icon m-ai\" data-m-icon=\"team\" focusable=\"false\"", html);
         Assert.Contains("viewBox=\"0 0 1024 1024\"", html); // Ant Design (team is one of the newer 1024-grid icons)
-        Assert.Contains("viewBox=\"0 0 24 24\"", ShellRenderer.Icon("ri:fingerprint")); // Remix Icon
+        var tabler = ShellRenderer.Icon("tb:fingerprint");
+        Assert.Contains("viewBox=\"0 0 24 24\"", tabler); // Tabler: a stroked outline, not a filled shape
+        Assert.Contains("<g fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\"", tabler);
+        Assert.DoesNotContain("<path", ShellRenderer.Icon("ri:fingerprint")); // the Remix names this replaced
         Assert.EndsWith("</svg>", ShellRenderer.Icon("moon")); // newer than the AntDesign package
         Assert.Equal(ShellRenderer.Icon("x").Replace("data-m-icon=\"x\"", ""), ShellRenderer.Icon("ant:x").Replace("data-m-icon=\"ant:x\"", ""));
-        Assert.DoesNotContain("<path", ShellRenderer.Icon("users")); // Tabler names are gone: an empty icon
+        Assert.DoesNotContain("<path", ShellRenderer.Icon("users")); // a Tabler name without its prefix is not an Ant Design icon: an empty icon
     }
 
     [Fact]
@@ -162,6 +165,42 @@ public class PluginMarkupTests
         Assert.Contains("data-m-vector-selected", html);
     }
 
+    [Fact]
+    public void Spreadsheet_CarriesTheSheetsAndTheValueInput()
+    {
+        var html = SpreadsheetHtml.Render("budget",
+            [new SpreadsheetSheet("Budget", [["Item", 1200, "=SUM(B2:B2)"]])],
+            height: "480px", name: "Budget", label: "Quarterly budget");
+
+        Assert.Contains("<div class=\"m-sheet\" id=\"budget\" data-m-sheet data-sheets=", html);
+        Assert.Contains("&quot;name&quot;:&quot;Budget&quot;", html);
+        Assert.Contains("[&quot;Item&quot;,1200,&quot;=SUM(B2:B2)&quot;]", html);
+        Assert.Contains("aria-label=\"Quarterly budget\" style=\"height: 480px\">", html);
+        Assert.Contains("<div class=\"m-sheet-loading\">Loading spreadsheet…</div>", html);
+        // The hidden input posts the same sheets JSON it started from.
+        Assert.Contains("<input type=\"hidden\" name=\"Budget\" id=\"budget-value\" value=\"[{&quot;name&quot;:&quot;Budget&quot;,&quot;rows&quot;:[[&quot;Item&quot;,1200,&quot;=SUM(B2:B2)&quot;]]}]\" data-m-sheet-value>", html);
+        Assert.DoesNotContain("data-readonly", html);
+    }
+
+    [Fact]
+    public void Spreadsheet_ReadOnly_MarksTheRootAndDropsTheInput()
+    {
+        var html = SpreadsheetHtml.Render("budget-ro", [new SpreadsheetSheet("Notes", [["Hello"]])], editable: false);
+
+        Assert.Contains(" data-readonly ", html);
+        Assert.Contains("aria-label=\"Spreadsheet\"", html);
+        Assert.DoesNotContain("data-m-sheet-value", html);
+    }
+
+    [Fact]
+    public void Spreadsheet_ClassAndSheetNameTravelThrough()
+    {
+        var html = SpreadsheetHtml.Render("sheet", [new SpreadsheetSheet("", [["A", true]])], cssClass: "wide");
+
+        Assert.Contains("<div class=\"m-sheet wide\"", html);
+        Assert.Contains("[&quot;A&quot;,true]", html);
+    }
+
     [Theory]
     [InlineData("{\"id\":\"t1\",\"from\":\"todo\",\"to\":\"done\",\"index\":2}", true)]
     [InlineData("{\"id\":\"\",\"from\":\"a\",\"to\":\"a\",\"index\":0}", false)]
@@ -235,7 +274,7 @@ public class PluginComponentTests : BunitContext
         cut.Find("[data-m-editor-value]").Change("<p>Typed<script>x</script></p>");
         Assert.Equal("<p>Typed</p>", bound);
 
-        // The parent echoes the value back: the editor is not rebuilt, so Quill keeps its state.
+        // The parent echoes the value back: the editor is not rebuilt, so Tiptap keeps its state.
         cut.Render(p => p.Add(c => c.Value, bound));
         Assert.Equal("<p>Start</p>", cut.Find(".m-editor-host").InnerHtml);
 

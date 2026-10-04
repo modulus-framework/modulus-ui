@@ -68,6 +68,14 @@ public sealed record PivotState
 
     public IReadOnlyList<string> ColumnPaths { get; init; } = [];
 
+    /// <summary>
+    /// The row group-bys <see cref="ExpandAll"/> opens, when there are more than <see cref="Rows"/>: a collapse drops
+    /// the levels no open header uses, and Expand all brings them back (Odoo's <c>fullRowGroupBys</c>).
+    /// </summary>
+    public IReadOnlyList<string> RowsFull { get; init; } = [];
+
+    public IReadOnlyList<string> ColumnsFull { get; init; } = [];
+
     /// <summary>The measure the rows are sorted by (within each group), or null for the groups' natural order.</summary>
     public string? SortMeasure { get; init; }
 
@@ -81,6 +89,30 @@ public sealed record PivotState
     private int AllDepth(PivotAxis axis) => axis == PivotAxis.Rows ? RowsAllDepth : ColumnsAllDepth;
 
     private IReadOnlyList<string> Paths(PivotAxis axis) => axis == PivotAxis.Rows ? RowPaths : ColumnPaths;
+
+    /// <summary>The group-bys Expand all opens on an axis: the remembered longer list, or the axis's own.</summary>
+    public IReadOnlyList<string> FullGroupBys(PivotAxis axis)
+    {
+        var groupBys = GroupBys(axis);
+        var full = axis == PivotAxis.Rows ? RowsFull : ColumnsFull;
+        return full.Count > groupBys.Count && full.Take(groupBys.Count).SequenceEqual(groupBys) ? full : groupBys;
+    }
+
+    /// <summary>
+    /// Whether Expand all would change the table: a remembered level to bring back, or a header that may be closed.
+    /// </summary>
+    public bool CanExpandAll() => !IsFullyExpanded(PivotAxis.Rows) || !IsFullyExpanded(PivotAxis.Columns);
+
+    private bool IsFullyExpanded(PivotAxis axis)
+    {
+        var count = GroupBys(axis).Count;
+        if (FullGroupBys(axis).Count > count) return false;
+        if (count == 0) return true;
+        var all = AllDepth(axis);
+        var paths = Paths(axis);
+        // Everything is open down to the last level, or there is one level and "Total" is open.
+        return (all == count && paths.Count == 0) || (all == 0 && count == 1 && paths.Contains(PivotPath.Root));
+    }
 
     /// <summary>Whether the header shows its groups (it has a group-by below it and is open).</summary>
     public bool IsExpanded(PivotAxis axis, string path)
@@ -103,8 +135,11 @@ public sealed record PivotState
     /// </summary>
     public PivotState ExpandBy(PivotAxis axis, string path, string groupBy)
     {
+        var full = FullGroupBys(axis);
         var groupBys = GroupBys(axis).Take(PivotPath.Depth(path)).Append(groupBy).ToArray();
-        return With(axis, groupBys, Math.Min(AllDepth(axis), groupBys.Length), Paths(axis)).Expand(axis, path);
+        // The remembered levels stay while the new one is the level they had there; another group-by replaces them.
+        var keep = full.Count > groupBys.Length && full.Take(groupBys.Length).SequenceEqual(groupBys) ? full : groupBys;
+        return WithFull(axis, keep).With(axis, groupBys, Math.Min(AllDepth(axis), groupBys.Length), Paths(axis)).Expand(axis, path);
     }
 
     /// <summary>
@@ -114,17 +149,30 @@ public sealed record PivotState
     public PivotState Collapse(PivotAxis axis, string path)
     {
         var all = AllDepth(axis);
-        if (path == PivotPath.Root) return With(axis, [], 0, []);
+        var state = WithFull(axis, FullGroupBys(axis));
+        if (path == PivotPath.Root) return state.With(axis, [], 0, []);
         // Headers under the collapsed one forget their state: opened again, it shows its groups closed.
         var rest = Paths(axis).Where(p => !PivotPath.Within(p, path));
-        if (PivotPath.Depth(path) < all) return With(axis, GroupBys(axis), all, rest.Append(path).ToArray());
+        if (PivotPath.Depth(path) < all) return state.With(axis, GroupBys(axis), all, rest.Append(path).ToArray());
         var paths = rest.ToArray();
         var height = Math.Max(all, paths.Where(p => PivotPath.Depth(p) >= all).Select(p => PivotPath.Depth(p) + 1).DefaultIfEmpty(0).Max());
-        return With(axis, GroupBys(axis).Take(height).ToArray(), all, paths);
+        return state.With(axis, GroupBys(axis).Take(height).ToArray(), all, paths);
     }
 
-    /// <summary>Opens every header of both axes on all their group-bys.</summary>
-    public PivotState ExpandAll() => this with { RowsAllDepth = Rows.Count, RowPaths = [], ColumnsAllDepth = Columns.Count, ColumnPaths = [] };
+    /// <summary>
+    /// Opens every header of both axes on all their group-bys, including the levels a collapse dropped
+    /// (<see cref="RowsFull"/>).
+    /// </summary>
+    public PivotState ExpandAll()
+    {
+        var rows = FullGroupBys(PivotAxis.Rows);
+        var columns = FullGroupBys(PivotAxis.Columns);
+        return this with
+        {
+            Rows = rows, RowsAllDepth = rows.Count, RowPaths = [], RowsFull = [],
+            Columns = columns, ColumnsAllDepth = columns.Count, ColumnPaths = [], ColumnsFull = [],
+        };
+    }
 
     /// <summary>Rows become columns and columns rows.</summary>
     public PivotState Flip() => this with
@@ -132,6 +180,7 @@ public sealed record PivotState
         Rows = Columns, Columns = Rows,
         RowsAllDepth = ColumnsAllDepth, ColumnsAllDepth = RowsAllDepth,
         RowPaths = ColumnPaths, ColumnPaths = RowPaths,
+        RowsFull = ColumnsFull, ColumnsFull = RowsFull,
         SortMeasure = null, SortColumn = PivotPath.Root, SortDescending = false,
     };
 
@@ -149,6 +198,9 @@ public sealed record PivotState
         SortMeasure == measure && SortColumn == column
             ? this with { SortDescending = !SortDescending }
             : this with { SortMeasure = measure, SortColumn = column, SortDescending = false };
+
+    private PivotState WithFull(PivotAxis axis, IReadOnlyList<string> full) =>
+        axis == PivotAxis.Rows ? this with { RowsFull = full } : this with { ColumnsFull = full };
 
     private PivotState With(PivotAxis axis, IReadOnlyList<string> groupBys, int allDepth, IReadOnlyList<string> paths)
     {
@@ -172,7 +224,7 @@ public sealed record PivotState
     // Query string ------------------------------------------------------------------------------------------------
 
     /// <summary>The query keys a pivot state uses; other keys (the page's own filters) are left alone.</summary>
-    public static readonly IReadOnlyList<string> QueryKeys = ["rows", "cols", "measures", "rx", "ra", "cx", "ca", "sort", "sortcol", "desc"];
+    public static readonly IReadOnlyList<string> QueryKeys = ["rows", "cols", "measures", "rx", "ra", "cx", "ca", "rf", "cf", "sort", "sortcol", "desc"];
 
     /// <summary>The state as query values (lists joined by commas, paths repeated).</summary>
     public IEnumerable<KeyValuePair<string, string>> ToQuery()
@@ -184,6 +236,8 @@ public sealed record PivotState
         foreach (var p in RowPaths) yield return new("rx", p);
         if (ColumnsAllDepth > 0) yield return new("ca", Invariant(ColumnsAllDepth));
         foreach (var p in ColumnPaths) yield return new("cx", p);
+        if (FullGroupBys(PivotAxis.Rows) is { } rf && rf.Count > Rows.Count) yield return new("rf", string.Join(',', rf));
+        if (FullGroupBys(PivotAxis.Columns) is { } cf && cf.Count > Columns.Count) yield return new("cf", string.Join(',', cf));
         if (SortMeasure is not null)
         {
             yield return new("sort", SortMeasure);
@@ -250,6 +304,8 @@ public sealed record PivotState
             RowPaths = PathsOf("rx"),
             ColumnsAllDepth = Depth(One("ca")),
             ColumnPaths = PathsOf("cx"),
+            RowsFull = List("rf"),
+            ColumnsFull = List("cf"),
             SortMeasure = string.IsNullOrWhiteSpace(One("sort")) ? null : One("sort"),
             SortColumn = PivotPath.IsValid(One("sortcol")) ? One("sortcol")! : PivotPath.Root,
             SortDescending = One("desc") == "1",

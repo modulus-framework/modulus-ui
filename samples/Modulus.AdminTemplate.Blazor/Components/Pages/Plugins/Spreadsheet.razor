@@ -1,0 +1,108 @@
+@page "/plugins/spreadsheet"
+@using Modulus.Ui.Abstractions.Plugins
+
+<PageTitle>Spreadsheet · Modulus</PageTitle>
+
+<PageHeading Pretitle="Plugins" Title="Spreadsheet" Subtitle="An Excel-style workbook on Univer: formulas, filter, sort, conditional formatting, validation, find and replace. It posts, downloads and imports xlsx." />
+
+<div class="m-sheet-workspace">
+    <div class="m-sheet-bar">
+        <div class="ant-segmented" role="group" aria-label="Demo">
+            <div class="ant-segmented-group">
+                @foreach (var demo in PluginsContent.SpreadsheetViews)
+                {
+                    <a class="ant-segmented-item @(demo.Key == _view ? "ant-segmented-item-selected" : "")" href="@PluginsContent.SpreadsheetUrl(demo.Key)" aria-current="@(demo.Key == _view ? "true" : null)">
+                        <div class="ant-segmented-item-label">@demo.Label</div>
+                    </a>
+                }
+            </div>
+        </div>
+        @if (_view != "readonly")
+        {
+            <div class="m-sheet-bar-actions" role="status">
+                @if (_error is not null)
+                {
+                    <span class="ant-form-item-explain-error">@_error</span>
+                }
+                else if (_imported is not null)
+                {
+                    <span class="m-muted">Imported from @_imported</span>
+                }
+                else if (_saved is not null)
+                {
+                    <span class="m-muted">Saved budget</span>
+                }
+            </div>
+            <div class="m-sheet-bar-actions">
+                @* InputFile reads the pick in .NET (no JS of ours); the button-styled label opens it. *@
+                <label class="ant-btn ant-btn-default m-file-button">
+                    <InputFile OnChange="@Import" accept=".xlsx" class="m-sr-only" />
+                    <Icon Type="upload" /><span>Import xlsx</span>
+                </label>
+                @* The form posts the sheets to a download endpoint (the token-less endpoint is fine: it only writes a file). *@
+                <button type="submit" form="spreadsheet-form" class="ant-btn ant-btn-default"><Icon Type="download" /><span>Download xlsx</span></button>
+                <button type="button" class="ant-btn ant-btn-default" @onclick="Reset"><span>Reset</span></button>
+                <button type="button" class="ant-btn ant-btn-primary" @onclick="Save"><Icon Type="save" /><span>Save</span></button>
+            </div>
+        }
+    </div>
+    @if (_view == "readonly")
+    {
+        <AppSpreadsheet Id="budget-readonly" Sheets="PluginsContent.Budget" ReadOnly Height="100%" />
+    }
+    else
+    {
+        <form id="spreadsheet-form" method="post" action="@PluginsContent.SpreadsheetDownloadUrl">
+            <AppSpreadsheet Id="budget" Name="Budget" @bind-Sheets="_sheets" Height="100%" />
+        </form>
+    }
+</div>
+
+@code {
+    [Parameter, SupplyParameterFromQuery] public string? View { get; set; }
+
+    private string _view = "budget";
+    private IReadOnlyList<SpreadsheetSheet> _sheets = PluginsContent.Budget;
+    private string? _saved;
+    private string? _imported;
+    private string? _error;
+
+    protected override void OnParametersSet()
+    {
+        // A nav link is the same page with another query string: switch the demo in place.
+        var view = PluginsContent.SpreadsheetView(View);
+        if (view != _view)
+        {
+            _view = view;
+            Reset();
+        }
+    }
+
+    private void Save() => _saved = "Saved budget"; // as in MVC, the sheet shows what was saved, not every keystroke
+
+    private void Reset()
+    {
+        _sheets = _view == "blank" ? PluginsContent.BlankSheets : PluginsContent.Budget;
+        _saved = null;
+        _imported = null;
+        _error = null;
+    }
+
+    // A picked xlsx replaces the grid, the same as the MVC and Razor Pages imports.
+    private async Task Import(InputFileChangeEventArgs e)
+    {
+        _error = PluginsContent.CheckSpreadsheetUpload(e.File.Name, e.File.Size);
+        if (_error is not null) return;
+        using var copy = new MemoryStream();
+        await e.File.OpenReadStream(PluginsContent.MaxUploadMb * 1024L * 1024).CopyToAsync(copy);
+        copy.Position = 0;
+        var (sheets, error) = PluginsContent.ImportSpreadsheet(copy);
+        _error = error;
+        if (sheets is not null)
+        {
+            _sheets = sheets;
+            _saved = null;
+            _imported = e.File.Name;
+        }
+    }
+}

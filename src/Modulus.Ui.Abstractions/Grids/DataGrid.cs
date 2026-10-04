@@ -132,6 +132,13 @@ public static class GridSchema
         return [.. shown.Where(c => c.Fixed == GridFixed.Left), .. shown.Where(c => c.Fixed == GridFixed.None), .. shown.Where(c => c.Fixed == GridFixed.Right)];
     }
 
+    /// <summary>
+    /// The columns <paramref name="allow"/> lets the user see (<see cref="State.FieldAccess.For"/>), for rendering and for
+    /// reading posted rows: apply a post against this list, so a column the user can't see can't be written either.
+    /// </summary>
+    public static List<GridColumn> Allowed(IEnumerable<GridColumn> columns, Func<string, bool> allow) =>
+        columns.Where(c => allow(c.Key)).ToList();
+
     /// <summary>Sticky offsets (px) for the pinned columns of <paramref name="visible"/>, keyed by column key.</summary>
     public static IReadOnlyDictionary<string, int> StickyOffsets(IReadOnlyList<GridColumn> visible, int leadingWidth = 0)
     {

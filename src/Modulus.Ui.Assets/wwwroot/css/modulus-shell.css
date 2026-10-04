@@ -1415,9 +1415,11 @@ html[data-density='compact'] .m-snav-header-top { padding: 12px 10px 4px; }
 
 /* SPA navigation (modulus-spa.js) ------------------------------------------------------------------------------- */
 
-/* Progress bar at the top of the window while a page loads (shown only after 120 ms, so quick pages don't flash it). */
-.m-nav-progress { position: fixed; inset: 0 0 auto; z-index: 2100; height: 2px; pointer-events: none; opacity: 0; }
-.m-nav-progress > div { height: 100%; background: var(--m-primary); transform: scaleX(0); transform-origin: 0 50%; box-shadow: 0 0 6px var(--m-primary); }
+/* Progress bar at the top of the window while a page loads (shown only after 80 ms, so quick pages don't flash it).
+   The bright tip at its end shows it moving even when it slows down near the end. */
+.m-nav-progress { position: fixed; inset: 0 0 auto; z-index: 2100; height: 3px; pointer-events: none; opacity: 0; }
+.m-nav-progress > div { position: relative; height: 100%; border-radius: 0 2px 2px 0; background: linear-gradient(90deg, color-mix(in srgb, var(--m-primary) 55%, transparent), var(--m-primary)); transform: scaleX(0); transform-origin: 0 50%; }
+.m-nav-progress > div::after { content: ""; position: absolute; inset: 0 0 0 auto; width: 100px; box-shadow: 0 0 10px var(--m-primary), 0 0 5px var(--m-primary); opacity: .9; }
 [dir='rtl'] .m-nav-progress > div { transform-origin: 100% 50%; }
 .m-nav-progress.m-active { opacity: 1; }
 .m-nav-progress.m-active > div { animation: m-nav-progress 8s cubic-bezier(.1, .7, .2, 1) forwards; }
@@ -1428,17 +1430,42 @@ html[data-density='compact'] .m-snav-header-top { padding: 12px 10px 4px; }
 /* #main takes focus after a navigation (for screen readers and keyboard users) without drawing a ring around the page. */
 #main:focus { outline: none; }
 
-/* Page transitions: only the page body fades; the shell around it stays still. The name is set only while a navigation
-   runs (html.m-vt), since a named element is its own stacking context and would trap the page's fixed overlays. */
+/* Page transitions: only the page body changes; the shell around it stays still. The name is set only while a
+   navigation runs (html.m-vt), since a named element is its own stacking context and would trap the page's fixed
+   overlays. The new page fades in while the old one stays opaque until late: fading both at once let the background
+   show through mid-way (a flash), and the group's default size morph stretched both snapshots when the pages differ
+   in height. */
 html.m-vt #main { view-transition-name: m-main; }
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
-::view-transition-old(m-main) { animation: m-page-out 90ms ease-in both; }
-::view-transition-new(m-main) { animation: m-page-in 160ms ease-out both; }
-@keyframes m-page-out { to { opacity: 0; } }
-@keyframes m-page-in { from { opacity: 0; transform: translateY(4px); } }
+::view-transition-group(m-main) { animation: none; }
+::view-transition-old(m-main) { animation: m-page-out 140ms linear both; }
+::view-transition-new(m-main) { animation: m-page-in 140ms ease-out both; }
+@keyframes m-page-out { 60% { opacity: 1; } to { opacity: 0; } }
+@keyframes m-page-in { from { opacity: 0; } }
+
+/* Spinner: an AntD-style ring, the primary colour on a faint track. */
+.m-spinner { display: inline-block; width: 28px; height: 28px; border-radius: 50%; border: 3px solid color-mix(in srgb, var(--m-primary) 18%, transparent); border-top-color: var(--m-primary); animation: m-spin .7s linear infinite; }
+@keyframes m-spin { to { transform: rotate(360deg); } }
+
+/* Page loader: a navigation that takes more than 300 ms dims the page body and centres a spinner chip over what is
+   visible of it (modulus-spa.js places it). */
+#main.m-main-loading > * { opacity: .45; filter: saturate(.6); transition: opacity .2s ease, filter .2s ease; pointer-events: none; }
+.m-main-loader { position: fixed; z-index: 2050; display: flex; align-items: center; justify-content: center; width: 56px; height: 56px; border-radius: 14px; background: var(--m-bg-elevated, #fff); box-shadow: 0 6px 16px 0 rgba(0, 0, 0, .08), 0 3px 6px -4px rgba(0, 0, 0, .12), 0 9px 28px 8px rgba(0, 0, 0, .05); transform: translate(-50%, -50%) scale(.9); opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .18s ease, transform .18s ease, visibility 0s .18s; }
+.m-main-loader.m-active { opacity: 1; visibility: visible; transform: translate(-50%, -50%) scale(1); transition: opacity .18s ease, transform .18s ease; }
+
+/* Area loader: an update within the page (a list's filters and pager, the pivot) that takes more than 150 ms dims the
+   area it replaces, with a sliding bar along its top and a spinner near its top (tall areas keep it in view). */
+.m-area-loading { position: relative; }
+.m-area-loading > * { opacity: .5; transition: opacity .15s ease; pointer-events: none; }
+.m-area-loading::before { content: ""; position: absolute; inset: 0 0 auto; z-index: 11; height: 2px; background: linear-gradient(90deg, transparent, var(--m-primary), transparent) no-repeat; background-size: 40% 100%; animation: m-area-slide 1.1s ease-in-out infinite; }
+.m-area-loading::after { content: ""; position: absolute; left: 50%; top: min(50%, 140px); z-index: 11; width: 28px; height: 28px; margin: -14px 0 0 -14px; border-radius: 50%; border: 3px solid color-mix(in srgb, var(--m-primary) 18%, transparent); border-top-color: var(--m-primary); animation: m-spin .7s linear infinite; }
+@keyframes m-area-slide { from { background-position: -60% 0; } to { background-position: 160% 0; } }
+
 @media (prefers-reduced-motion: reduce) {
     ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
     .m-nav-progress.m-active > div { animation-duration: 0s; }
+    .m-spinner, .m-area-loading::after { animation-duration: 1.6s; }
+    .m-area-loading::before { animation: none; background-size: 100% 100%; }
 }
 
 /* Large tables: infinite scrolling (<app-load-more>) and virtual tables (<app-virtual-table>) --------------------- */

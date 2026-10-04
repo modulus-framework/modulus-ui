@@ -26,13 +26,13 @@ public static class AntIconSvg
     /// <summary>Returns the icon's <c>&lt;svg&gt;</c> markup, or null when the name is unknown.</summary>
     /// <param name="name">
     /// Icon name, as in <c>&lt;Icon Type="…"&gt;</c>. Outline icons the AntDesign package does not ship yet, and the
-    /// Remix Icon fallbacks (<c>ri:</c> names), come from <see cref="ExtraIconSvg"/>.
+    /// Tabler fallbacks (<c>tb:</c> names), come from <see cref="ExtraIconSvg"/>.
     /// </param>
     /// <param name="theme"><see cref="Outline"/> (default), <see cref="Fill"/> or <see cref="TwoTone"/>.</param>
     public static string? Svg(string name, int theme = Outline) =>
         Cache.GetOrAdd((name, theme), key =>
         {
-            var svg = key.Item1.StartsWith(ShellRenderer.RemixPrefix, StringComparison.Ordinal) ? null : Lookup.Value(key.Item1, key.Item2);
+            var svg = key.Item1.StartsWith(ShellRenderer.TablerPrefix, StringComparison.Ordinal) ? null : Lookup.Value(key.Item1, key.Item2);
             if (string.IsNullOrEmpty(svg) && key.Item2 == Outline) svg = ExtraIconSvg.Svgs.GetValueOrDefault(key.Item1);
             return string.IsNullOrEmpty(svg) ? null : svg.Replace("<svg ", SvgAttributes, StringComparison.Ordinal);
         });

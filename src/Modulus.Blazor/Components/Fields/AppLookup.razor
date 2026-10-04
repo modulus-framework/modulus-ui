@@ -4,9 +4,8 @@
    SearchAsync loads them from a server. The MVC <app-lookup> renders the same DOM with modulusLookup. *@
 @using Modulus.Ui.Abstractions.Forms
 @implements IDisposable
-@inject IJSRuntime JS
 
-<span class="@RootClass" style="@Style" @ref="_root">
+<span class="@RootClass" style="@Style">
     <span class="@BoxClass">
         <input type="text" class="ant-input m-lookup-input" id="@Id" placeholder="@Placeholder" autocomplete="off" disabled="@Disabled"
                role="combobox" aria-autocomplete="list" aria-expanded="@(_open ? "true" : "false")" aria-controls="@ListId"
@@ -165,11 +164,11 @@
     [Parameter] public string? Style { get; set; }
 
     private readonly string _uid = Guid.NewGuid().ToString("N")[..8];
-    private ElementReference _root, _input, _search;
+    private ElementReference _input, _search;
     private string _text = "";
     private string? _last = "\0", _query, _label;
     private IReadOnlyList<LookupItem>? _items;
-    private bool _open, _dialog, _loading, _place, _focusSearch, _scroll;
+    private bool _open, _dialog, _loading, _focusSearch;
     private int _active = -1, _row = -1, _total;
     private IReadOnlyList<LookupItem> _suggestions = [], _rows = [];
     private LookupItem? _current;
@@ -205,15 +204,10 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        try
-        {
-            if (_place) { _place = false; await JS.InvokeVoidAsync("modulusShell.placeSelect", _root); }
-            if (_focusSearch) { _focusSearch = false; await JS.InvokeVoidAsync("modulusShell.focus", _search); }
-            if (_scroll) { _scroll = false; await JS.InvokeVoidAsync("modulusShell.scrollLookupRow", _root); }
-        }
-        catch (JSDisconnectedException) { }
-        catch (JSException) { } // modulus-shell.js not loaded
-        catch (InvalidOperationException) { } // prerendering
+        // Placing the list and scrolling the active row into view follow the DOM in modulus-shell.js.
+        if (!_focusSearch) return;
+        _focusSearch = false;
+        try { await _search.FocusAsync(preventScroll: true); } catch { /* not rendered (tests, prerender) */ }
     }
 
     // ---- Searching ----
@@ -247,7 +241,6 @@
             if (SearchAsync is not null) await Task.Delay(200, token);
             (_suggestions, _) = await FindAsync(_text, MaxSuggestions, token);
             _active = _suggestions.Count > 0 ? 0 : -1;
-            _place = true;
         }
         catch (OperationCanceledException) { return; }
         _loading = false;
@@ -257,7 +250,6 @@
     {
         _text = e.Value as string ?? "";
         if (!_open) { _open = true; _suggestions = []; }
-        _place = true;
         await SuggestAsync();
     }
 
@@ -265,7 +257,6 @@
     {
         if (Disabled) return;
         _open = true;
-        _place = true;
         // Opened on the current value: show everything, not just the current label.
         var text = _current is not null && _text == _current.Label ? "" : _text;
         var token = Restart();
@@ -278,7 +269,6 @@
         catch (OperationCanceledException) { return; }
         var i = _suggestions.ToList().FindIndex(s => s.Value == Value);
         _active = i >= 0 ? i : _suggestions.Count > 0 ? 0 : -1;
-        _scroll = true;
     }
 
     private void CloseList()
@@ -343,11 +333,9 @@
                 break;
             case "ArrowDown" when _suggestions.Count > 0:
                 _active = (_active + 1) % _suggestions.Count;
-                _scroll = true;
                 break;
             case "ArrowUp" when _suggestions.Count > 0:
                 _active = (_active - 1 + _suggestions.Count) % _suggestions.Count;
-                _scroll = true;
                 break;
             case "Enter" when _open && _active >= 0 && _active < _suggestions.Count:
                 await PickAsync(_suggestions[_active]);
@@ -373,7 +361,6 @@
         await DialogSearchAsync(debounce: false);
         var i = _rows.ToList().FindIndex(r => r.Value == Value);
         _row = i >= 0 ? i : _rows.Count > 0 ? 0 : -1;
-        _scroll = true;
     }
 
     private async Task CloseDialogAsync()
@@ -401,7 +388,6 @@
         catch (OperationCanceledException) { return; }
         _loading = false;
         _row = _rows.Count > 0 ? 0 : -1;
-        _scroll = true;
     }
 
     private Task OnDialogInput(ChangeEventArgs e)
@@ -414,8 +400,8 @@
     {
         switch (e.Key)
         {
-            case "ArrowDown" when _rows.Count > 0: _row = (_row + 1) % _rows.Count; _scroll = true; break;
-            case "ArrowUp" when _rows.Count > 0: _row = (_row - 1 + _rows.Count) % _rows.Count; _scroll = true; break;
+            case "ArrowDown" when _rows.Count > 0: _row = (_row + 1) % _rows.Count; break;
+            case "ArrowUp" when _rows.Count > 0: _row = (_row - 1 + _rows.Count) % _rows.Count; break;
             case "Enter" when _row >= 0 && _row < _rows.Count: await PickAsync(_rows[_row]); break;
         }
     }

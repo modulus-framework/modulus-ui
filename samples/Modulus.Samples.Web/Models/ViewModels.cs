@@ -163,6 +163,9 @@ public sealed record WizardPage(WizardInput Input, int Step)
 /// <summary>Data table page: one page of the employee directory, the filters, hidden columns and a summary.</summary>
 public sealed record EmployeeTablePage(ProTableResponse<Employee> Page, ProTableRequest Request, EmployeeQuery Query, IReadOnlySet<string> Hidden, (int Count, decimal AverageSalary) Summary)
 {
+    /// <summary>The page's path, which also keys its saved views.</summary>
+    public const string Path = "/tables/advanced";
+
     public static EmployeeTablePage Load(EmployeeQuery query, ProTableRequest request, string? hide) =>
         new(EmployeeDirectory.Query(query, request), request, query, EmployeeDirectory.ParseHidden(hide), EmployeeDirectory.Summary(query));
 

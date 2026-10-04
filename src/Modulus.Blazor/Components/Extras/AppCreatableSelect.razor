@@ -10,7 +10,6 @@
    With OnAddNew the footer is one "Add new" button instead: the page opens its own create form (ModalForm) and, after
    saving, passes the reloaded Options and the new Value. *@
 @using Modulus.Ui.Abstractions
-@inject IJSRuntime JS
 
 <div class="@RootClass" style="@Style" @ref="_root">
     <div class="ant-select-selector" id="@Id" role="combobox" tabindex="@(Disabled ? -1 : 0)" aria-haspopup="listbox"
@@ -189,7 +188,7 @@
 
     private readonly string _uid = Guid.NewGuid().ToString("N")[..8];
     private ElementReference _root, _addInput;
-    private bool _open, _place, _creating, _focusAdd;
+    private bool _open, _creating, _focusAdd;
     private int _active = -1;
     private string? _value, _newLabel, _error, _color;
     private List<string> _values = [];
@@ -215,7 +214,7 @@
 
     protected override void OnInitialized()
     {
-        if (DefaultOpen && !Disabled) { _open = true; _place = true; _active = ActiveIndex(); }
+        if (DefaultOpen && !Disabled) { _open = true; _active = ActiveIndex(); }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -225,11 +224,7 @@
             _focusAdd = false;
             try { await _addInput.FocusAsync(); } catch { /* not rendered (tests, prerender) */ }
         }
-        if (!_place) return;
-        _place = false;
-        try { await JS.InvokeVoidAsync("modulusShell.placeSelect", _root); }
-        catch (JSDisconnectedException) { }
-        catch (InvalidOperationException) { } // prerendering
+        // Placing the open list (and focusing it) follows the DOM in modulus-shell.js.
     }
 
     private GridOption? Find(string? value) => Options.FirstOrDefault(o => o.Value == value);
@@ -259,7 +254,6 @@
     {
         if (Disabled || _open) return;
         _open = true;
-        _place = true;
         _active = ActiveIndex();
         _error = null;
         await OpenChanged.InvokeAsync(true);
@@ -306,7 +300,7 @@
     {
         _creating = true;
         _error = null;
-        _focusAdd = _place = true;
+        _focusAdd = true;
     }
 
     private async Task CancelCreate()
@@ -314,7 +308,6 @@
         _creating = false;
         _newLabel = _error = null;
         _color = null;
-        _place = true;
         try { await _root.FocusAsync(); } catch { /* removed */ }
     }
 
@@ -351,7 +344,6 @@
         _newLabel = null;
         _color = null;
         _creating = false;
-        _place = true;
         if (Multiple)
         {
             _values.Add(added.Value);

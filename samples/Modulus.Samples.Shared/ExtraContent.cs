@@ -48,7 +48,7 @@ public static class ExtraContent
         new("files", "upload", "teal", "Emmy Levet", "uploaded", "brand-guidelines-v4.pdf", At(1, 17, 20), "4.2 MB"),
         new("comments", "message", "azure", "Maryjo Lebarree", "replied in", "Onboarding checklist", At(1, 15, 48), "“Done — the SSO step now links to the new article.”"),
         new("invoices", "account-book", "yellow", "Egan Poetz", "sent invoice", "INV-4472", At(1, 14, 2), "$860.00 due in 14 days"),
-        new("users", "ri:shield-keyhole", "red", "Kellie Skingley", "changed role of", "Leesa Beaty", At(1, 11, 36), "Viewer → Editor"),
+        new("users", "tb:shield-lock", "red", "Kellie Skingley", "changed role of", "Leesa Beaty", At(1, 11, 36), "Viewer → Editor"),
         new("orders", "undo", "gray", "Avivah Mugleston", "refunded order", "#ORD-10431", At(1, 9, 10), "$129.00 returned to card"),
         new("files", "folder", "teal", "Arlie Armstead", "created folder", "Contracts 2026", At(2, 16, 0)),
         new("comments", "message", "azure", "Tessie Curzon", "mentioned you in", "Pricing page copy", At(2, 13, 25), "“@you can you check the yearly discount wording?”"),
@@ -78,9 +78,9 @@ public static class ExtraContent
 
     public static readonly IReadOnlyList<(string Brand, string Icon, string Label, string Detail, bool Default)> PaymentMethods =
     [
-        ("Visa", "ri:visa", "Visa ending in 4242", "Expires 08/2028", true),
-        ("Mastercard", "ri:mastercard", "Mastercard ending in 5454", "Expires 02/2027", false),
-        ("PayPal", "ri:paypal", "PayPal · billing@modulus.dev", "Linked Mar 2026", false),
+        ("Visa", "tb:brand-visa", "Visa ending in 4242", "Expires 08/2028", true),
+        ("Mastercard", "tb:brand-mastercard", "Mastercard ending in 5454", "Expires 02/2027", false),
+        ("PayPal", "tb:brand-paypal", "PayPal · billing@modulus.dev", "Linked Mar 2026", false),
     ];
 
     public static readonly IReadOnlyList<(string Number, DateTime Date, string Description, decimal Amount, string Status)> BillingHistory =
@@ -156,7 +156,7 @@ public static class ExtraContent
     // Pay ----------------------------------------------------------------------------------------------------
 
     public static readonly IReadOnlyList<(string Key, string Label, string Icon)> PayMethods =
-        [("card", "Card", "credit-card"), ("paypal", "PayPal", "ri:paypal"), ("bank", "Bank transfer", "bank")];
+        [("card", "Card", "credit-card"), ("paypal", "PayPal", "tb:brand-paypal"), ("bank", "Bank transfer", "bank")];
 
     public static PayPage Pay(string? plan, string? method)
     {
@@ -279,7 +279,7 @@ public static class ExtraContent
         ("dashboard", "primary", "Dashboards that ship", "Analytics, CRM, eCommerce and ERP dashboards with real charts, not screenshots."),
         ("form", "green", "Business-grade forms", "Money, phone, lookup, signature and rich text fields with validation on both sides."),
         ("table", "orange", "Data grids", "Sorting, column search, resizing, inline editing and nested rows in one table design."),
-        ("ri:palette", "purple", "Themes and layouts", "Fifteen layout presets, light and dark themes and your brand colour in one setting."),
+        ("tb:palette", "purple", "Themes and layouts", "Fifteen layout presets, light and dark themes and your brand colour in one setting."),
         ("mobile", "teal", "Responsive by default", "Every page works from a 390 px phone to an ultrawide monitor, left-to-right or right-to-left."),
         ("code", "red", "Blazor, MVC and Razor Pages", "The same components and markup in all three, so teams can share one design system."),
     ];
@@ -377,8 +377,8 @@ public static class ExtraContent
     public static readonly IReadOnlyList<SearchHit> SearchIndex =
     [
         new("pages", "dashboard", "Analytics dashboard", "/", "Overview › Analytics", "Revenue, sessions and conversion for the last 7, 30 or 90 days, with the top pages and recent payments."),
-        new("pages", "ri:building", "ERP analytics dashboard", "/dashboards/erp", "Overview › ERP analytics", "Cash position, receivables aging, inventory turnover and margin by product line in one dashboard."),
-        new("pages", "ri:group", "CRM dashboard", "/dashboards/crm", "Overview › CRM", "Pipeline value, deals won and lost per month and the activity of your sales team."),
+        new("pages", "tb:building", "ERP analytics dashboard", "/dashboards/erp", "Overview › ERP analytics", "Cash position, receivables aging, inventory turnover and margin by product line in one dashboard."),
+        new("pages", "tb:users-group", "CRM dashboard", "/dashboards/crm", "Overview › CRM", "Pipeline value, deals won and lost per month and the activity of your sales team."),
         new("pages", "file-text", "Invoices", "/apps/invoice/list", "Invoicing › Invoices", "Every invoice with its status, due date and balance. Filter, export, or send reminders."),
         new("pages", "setting", "Account settings", "/pages/account-settings", "Settings › General", "Profile details, password and two-factor authentication, notifications and connected apps."),
         new("customers", "user", "Acme Logistics", "/apps/customers", "Customers › Enterprise", "Customer since 2023 · 42 orders · $128,400 lifetime value. Primary contact: Mallory Hulme."),
@@ -415,11 +415,11 @@ public static class ExtraContent
 
     public static readonly IReadOnlyList<(string Href, string Icon, string Label)> SettingsNav =
     [
-        ("/pages/account-settings", "ri:account-circle", "My account"),
+        ("/pages/account-settings", "tb:user-circle", "My account"),
         ("/extra/settings-plan", "crown", "Plan"),
         ("/extra/billing", "credit-card", "Billing"),
         ("/pages/account-settings?tab=notifications", "bell", "Notifications"),
-        ("/pages/account-settings?tab=security", "ri:shield-keyhole", "Security"),
+        ("/pages/account-settings?tab=security", "tb:shield-lock", "Security"),
     ];
 
     // Signatures ---------------------------------------------------------------------------------------------

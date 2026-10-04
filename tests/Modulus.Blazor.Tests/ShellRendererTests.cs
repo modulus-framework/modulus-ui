@@ -55,7 +55,7 @@ public class ShellRendererTests
         var sales = new MenuItemDefinition("sales", "Sales", null, "shopping-cart");
         sales.Children.Add(new MenuItemDefinition("orders", "Orders", "apps/orders"));
         var apps = Enumerable.Range(1, 14)
-            .Select(i => new ShellApp($"App {i}", $"apps/{i}", "ri:box-3") { Group = i <= 7 ? "Operations" : "Finance" })
+            .Select(i => new ShellApp($"App {i}", $"apps/{i}", "tb:box") { Group = i <= 7 ? "Operations" : "Finance" })
             .Prepend(new ShellApp("Sales", "apps/orders", "shopping-cart", "orange") { MenuKey = "sales", Group = "Operations" })
             .ToList();
         var view = new ShellView(new ModulusThemeOptions(), [sales], "apps/orders", new ShellContent { Apps = apps, AppLauncher = AppLauncherStyle.Overlay });

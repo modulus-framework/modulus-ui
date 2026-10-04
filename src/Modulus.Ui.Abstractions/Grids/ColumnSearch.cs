@@ -97,6 +97,9 @@ public static partial class ColumnSearch
         return result.Count == 0 ? null : result;
     }
 
+    /// <summary>Whether <paramref name="key"/> is a well-formed column key (letters and digits), as a search or sort names it.</summary>
+    public static bool IsKey(string key) => KeyPattern().IsMatch(key);
+
     /// <summary>The searches with one set (or removed, when <paramref name="value"/> is empty). Null when none remain.</summary>
     public static IReadOnlyDictionary<string, string?>? With(IReadOnlyDictionary<string, string?>? searches, string key, string? value)
     {

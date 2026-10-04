@@ -74,7 +74,9 @@ public static class PivotHtml
         // Flip axis, Expand all and Download side by side as one group, as in Odoo.
         sb.Append("""<div class="ant-btn-group m-pivot-actions" role="group" aria-label="Pivot actions">""")
           .Append($"""<a class="ant-btn ant-btn-default ant-btn-icon-only" href="{E(href(state.Flip()))}" title="Flip axis" aria-label="Flip axis">{ShellRenderer.Icon("swap")}</a>""")
-          .Append($"""<a class="ant-btn ant-btn-default ant-btn-icon-only" href="{E(href(state.ExpandAll()))}" title="Expand all" aria-label="Expand all">{ShellRenderer.Icon("expand")}</a>""");
+          .Append(state.CanExpandAll()
+              ? $"""<a class="ant-btn ant-btn-default ant-btn-icon-only" href="{E(href(state.ExpandAll()))}" title="Expand all" aria-label="Expand all">{ShellRenderer.Icon("expand")}</a>"""
+              : $"""<button type="button" class="ant-btn ant-btn-default ant-btn-icon-only" disabled title="Every header is expanded" aria-label="Expand all">{ShellRenderer.Icon("expand")}</button>""");
         if (downloadHref is not null)
             // A file, not a page: neither htmx nor Blazor's enhanced navigation may follow it.
             sb.Append($"""<a class="ant-btn ant-btn-default ant-btn-icon-only" href="{E(downloadHref)}" download hx-boost="false" data-enhance-nav="false" title="Download xlsx" aria-label="Download xlsx">{ShellRenderer.Icon("download")}</a>""");

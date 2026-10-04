@@ -4,17 +4,17 @@ using Modulus.Ui.Abstractions.Shell;
 
 namespace Modulus.Ui.Abstractions.Plugins;
 
-/// <summary>A button of the WYSIWYG editor toolbar: a Quill format (<c>bold</c>, <c>list</c> + <c>bullet</c>, …) or command.</summary>
+/// <summary>A button of the WYSIWYG editor toolbar: a Tiptap command (<c>bold</c>, <c>list</c> + <c>bullet</c>, …) or command.</summary>
 public sealed record EditorButton(string Format, string Label, string Icon, string? Argument = null, string? Shortcut = null)
 {
     public string Title => Shortcut is null ? Label : $"{Label} ({Shortcut})";
 }
 
 /// <summary>
-/// Markup of the WYSIWYG editor (<c>AppEditor</c> in Blazor, <c>&lt;app-editor&gt;</c> in MVC), a Quill editor with an Ant Design
-/// toolbar. modulus-plugins.js ([data-m-editor]) loads Quill and keeps <c>[data-m-editor-value]</c> in step with the HTML, so a
-/// form posts it and Blazor reads it from a change event. Clean what comes back with <see cref="Forms.RichText.Sanitize(string?, bool)"/>
-/// (images allowed).
+/// Markup of the WYSIWYG editor (<c>AppEditor</c> in Blazor, <c>&lt;app-editor&gt;</c> in MVC), a Tiptap editor with an Ant Design
+/// toolbar. modulus-plugins.js ([data-m-editor]) loads the bundled Tiptap build and keeps <c>[data-m-editor-value]</c> in step with
+/// the HTML, so a form posts it and Blazor reads it from a change event. Clean what comes back with
+/// <see cref="Forms.RichText.Sanitize(string?, bool)"/> (images allowed).
 /// </summary>
 public static class EditorHtml
 {

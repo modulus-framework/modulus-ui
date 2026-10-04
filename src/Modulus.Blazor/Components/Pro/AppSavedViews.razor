@@ -1,0 +1,131 @@
+@* The "Views" dropdown of a page (Odoo's favourites), the same markup as the MVC <app-saved-views> (SavedViewsHtml): the
+   signed-in user's saved views of the page as links, a star for the default and "Save current view". It saves the
+   current query string, so it suits every page that keeps its layout in the URL (lists, grids, the pivot). With
+   ApplyDefault, a visit whose URL names no layout goes to the default view. Views live in the IUiStateStore. *@
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Routing
+@using Modulus.Ui.Abstractions.State
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject SavedViews Store
+
+<details class="m-dropdown m-views" id="@Id" open="@(_error is not null)">
+    <summary class="ant-btn ant-btn-default m-dropdown-trigger@(_model.Current is null ? "" : " m-views-trigger-on")" aria-haspopup="menu" title="Saved views">
+        @((MarkupString)SavedViewsHtml.Star(_model.Current is not null))<span>@(_model.Current?.Name ?? "Views")</span>@((MarkupString)ShellRenderer.Icon("down"))
+    </summary>
+    <div class="ant-dropdown m-dropdown-panel m-dropdown-left m-views-panel">
+        <ul class="ant-dropdown-menu ant-dropdown-menu-root ant-dropdown-menu-vertical ant-dropdown-menu-light m-views-list" role="menu" aria-label="Saved views">
+            @foreach (var view in _model.Views)
+            {
+                var on = _model.Current == view;
+                <li class="ant-dropdown-menu-item m-views-item@(on ? " ant-dropdown-menu-item-selected" : "")" role="none">
+                    <a class="m-views-link" role="menuitem" href="@SavedViews.Url(_model.Path, view)" aria-current="@(on ? "true" : null)"><span>@view.Name</span></a>
+                    <button type="button" class="m-views-action@(view.IsDefault ? " m-views-action-on" : "")" title="@(view.IsDefault ? "Default view (click to clear)" : "Open the page in this view")"
+                            aria-label="@((view.IsDefault ? "Clear default: " : "Make default: ") + view.Name)" aria-pressed="@(view.IsDefault ? "true" : "false")"
+                            @onclick="() => ToggleDefaultAsync(view)">@((MarkupString)SavedViewsHtml.Star(view.IsDefault))</button>
+                    <button type="button" class="m-views-action m-views-delete" title="Delete" aria-label="@("Delete view: " + view.Name)"
+                            @onclick="() => DeleteAsync(view)">@((MarkupString)ShellRenderer.Icon("delete"))</button>
+                </li>
+            }
+            @if (_model.Views.Count == 0)
+            {
+                <li class="m-views-empty" role="none">@(_model.CanSave ? "No saved views yet." : "Sign in to save views.")</li>
+            }
+        </ul>
+        @if (_error is not null)
+        {
+            <div class="m-views-error" role="alert">@_error</div>
+        }
+        @if (_model.CanSave)
+        {
+            <div class="m-views-save">
+                <input type="text" class="ant-input ant-input-sm" required maxlength="@SavedViews.MaxName" placeholder="Name of this view" aria-label="Name of this view"
+                       @bind="_name" @bind:event="oninput" @onkeydown="SaveOnEnter" />
+                <label class="m-views-default"><input type="checkbox" @bind="_isDefault" /> <span>Open by default</span></label>
+                <button type="button" class="ant-btn ant-btn-primary ant-btn-sm" @onclick="SaveAsync">Save current view</button>
+            </div>
+        }
+    </div>
+</details>
+
+@code {
+    /// <summary>The key the views are kept under; the page's path when not set.</summary>
+    [Parameter] public string? Page { get; set; }
+
+    [Parameter] public string Id { get; set; } = "views";
+
+    /// <summary>Go to the default view when the URL names no layout (on the first render only).</summary>
+    [Parameter] public bool ApplyDefault { get; set; } = true;
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private SavedViewsModel _model = new("views", "", "/", [], [], false);
+    private string _user = "";
+    private string? _name, _error;
+    private bool _isDefault, _applied;
+
+    private string PageKey => string.IsNullOrEmpty(Page) ? _model.Path : Page;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _user = UiUser.Key(AuthenticationState is null ? null : (await AuthenticationState).User);
+        Navigation.LocationChanged += OnLocationChanged;
+        await LoadAsync();
+        if (ApplyDefault && !_applied)
+        {
+            _applied = true;
+            var url = await Store.DefaultUrlAsync(_user, PageKey, _model.Path, _model.Query);
+            if (url is not null) Navigation.NavigateTo(url, replace: true);
+        }
+    }
+
+    private async Task LoadAsync(IReadOnlyList<SavedView>? views = null)
+    {
+        var uri = new Uri(Navigation.Uri);
+        var path = uri.AbsolutePath;
+        var query = SavedViews.Parse(uri.Query);
+        var page = string.IsNullOrEmpty(Page) ? path : Page;
+        views ??= await Store.ListAsync(_user, page);
+        _model = new SavedViewsModel(Id, page, path, query, views, _user.Length > 0);
+        _name ??= _model.Current?.Name;
+    }
+
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        try
+        {
+            await InvokeAsync(async () =>
+            {
+                _error = null;
+                _name = null;
+                await LoadAsync(_model.Views);
+                StateHasChanged();
+            });
+        }
+        catch (ObjectDisposedException) { /* the circuit ended */ }
+    }
+
+    private async Task SaveAsync()
+    {
+        _error = await Store.SaveAsync(_user, PageKey, _name, _model.Query, _isDefault);
+        if (_error is not null) return;
+        _isDefault = false;
+        await LoadAsync(await Store.ListAsync(_user, PageKey));
+    }
+
+    private Task SaveOnEnter(KeyboardEventArgs e) => e.Key == "Enter" ? SaveAsync() : Task.CompletedTask;
+
+    private async Task ToggleDefaultAsync(SavedView view)
+    {
+        await Store.SetDefaultAsync(_user, PageKey, view.IsDefault ? null : view.Name);
+        await LoadAsync(await Store.ListAsync(_user, PageKey));
+    }
+
+    private async Task DeleteAsync(SavedView view)
+    {
+        await Store.DeleteAsync(_user, PageKey, view.Name);
+        await LoadAsync(await Store.ListAsync(_user, PageKey));
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}

@@ -551,8 +551,7 @@ public class SignaturePadTagHelper : BoundControlTagHelper
             EffectiveStatus is { } s ? $"m-signature-status-{s}" : null);
         output.AddStyle($"--m-signature-height:{Height.ToString(CultureInfo.InvariantCulture)}px");
         output.Attributes.SetAttribute("data-ink", Ink);
-        output.Attributes.SetAttribute("x-data", "");
-        output.Attributes.SetAttribute("x-init", "modulusShell.signature($el)");
+        output.Attributes.SetAttribute("data-m-signature", "");
 
         var sb = new StringBuilder();
         sb.Append($"""<div class="m-signature-pad"><canvas class="m-signature-canvas" role="img" aria-label="{Html.E(AriaLabel ?? "Signature")}"></canvas><span class="m-signature-hint" aria-hidden="true">{Html.E(Hint)}</span><span class="m-signature-line" aria-hidden="true"></span></div>""");

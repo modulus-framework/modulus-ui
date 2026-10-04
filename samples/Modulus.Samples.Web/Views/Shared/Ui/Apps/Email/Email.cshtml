@@ -118,7 +118,7 @@
                 <app-checkbox aria-label="Select all messages" data-select-all @@change="toggleAll($event.target.checked)" />
                 <div class="m-flex m-gap-8" x-show="count > 0" x-cloak>
                     <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Mark as read" title="Mark as read"
-                            hx-post="@Base/read" hx-vals='{"read": true}' hx-include="#mail-list input[name='ids']:checked" hx-swap="none"><app-ti name="ri:mail-open" /></button>
+                            hx-post="@Base/read" hx-vals='{"read": true}' hx-include="#mail-list input[name='ids']:checked" hx-swap="none"><app-ti name="tb:mail-opened" /></button>
                     <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only" aria-label="Mark as unread" title="Mark as unread"
                             hx-post="@Base/read" hx-vals='{"read": false}' hx-include="#mail-list input[name='ids']:checked" hx-swap="none"><app-ti name="mail" /></button>
                     <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-danger-hover" aria-label="@(inTrash ? "Delete forever" : "Move to trash")" title="@(inTrash ? "Delete forever" : "Move to trash")"

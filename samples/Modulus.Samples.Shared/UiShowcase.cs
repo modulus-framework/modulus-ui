@@ -45,7 +45,7 @@ public static class UiShowcase
     public static readonly MeetingCard[] Meetings =
     [
         new("Quarterly business review", "Today, 14:00 – 15:00", "fund-projection-screen", "blue", ["Serena Park", "Omar Hartmann", "Yuki Tanaka"]),
-        new("Design critique", "Tomorrow, 10:30 – 11:15", "ri:palette", "purple", ["Noah Tanaka", "Lena Fischer"]),
+        new("Design critique", "Tomorrow, 10:30 – 11:15", "tb:palette", "purple", ["Noah Tanaka", "Lena Fischer"]),
         new("Hiring sync: backend", "Thu, 09:00 – 09:30", "user-add", "green", ["Serena Park", "Marco Rossi"]),
         new("Customer call: Globex", "Fri, 16:00 – 16:45", "phone", "orange", ["Aisha Khan", "Omar Hartmann", "Lena Fischer", "Noah Tanaka"]),
     ];

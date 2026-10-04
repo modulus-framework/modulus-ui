@@ -98,7 +98,7 @@
     private (string Label, string Value, string Note, string Icon, string Tone)[] Tiles =>
     [
         ("Customers", _stats.Total.ToString("N0"), "Accounts with at least one order", "team", "primary"),
-        ("Active", _stats.Active.ToString("N0"), $"{Fmt.Percent(_stats.Active / (double)Math.Max(1, _stats.Total))} of all customers", "ri:user-follow", "green"),
+        ("Active", _stats.Active.ToString("N0"), $"{Fmt.Percent(_stats.Active / (double)Math.Max(1, _stats.Total))} of all customers", "tb:user-plus", "green"),
         ("On trial", _stats.Trial.ToString("N0"), "Evaluating a paid plan", "hourglass", "azure"),
         ("Lifetime revenue", Fmt.Money0(_stats.Revenue), $"{_stats.Churned} churned accounts", "dollar", "yellow"),
     ];

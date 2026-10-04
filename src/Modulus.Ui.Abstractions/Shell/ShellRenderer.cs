@@ -41,14 +41,14 @@ public static class ShellRenderer
     public const string AntPrefix = "ant:";
 
     /// <summary>
-    /// Prefix of a Remix Icon name, as in <c>"ri:fingerprint"</c>: the few concepts Ant Design has no icon for
-    /// (Apache License 2.0, https://remixicon.com), bundled in <see cref="ExtraIconSvg"/>.
+    /// Prefix of a Tabler icon name, as in <c>"tb:fingerprint"</c>: the concepts Ant Design has no icon for, drawn as
+    /// outline icons at Ant Design's stroke weight (MIT License, https://tabler.io/icons), bundled in <see cref="ExtraIconSvg"/>.
     /// </summary>
-    public const string RemixPrefix = "ri:";
+    public const string TablerPrefix = "tb:";
 
     /// <summary>
     /// Ant Design icon, drawn inline: <c>&lt;svg class="m-ti m-ai" data-m-icon="name"&gt;…&lt;/svg&gt;</c>. The name is an
-    /// Ant Design outline icon name (<c>"team"</c>, <c>"setting"</c>, <c>"bar-chart"</c>) or a <see cref="RemixPrefix"/> name.
+    /// Ant Design outline icon name (<c>"team"</c>, <c>"setting"</c>, <c>"bar-chart"</c>) or a <see cref="TablerPrefix"/> name.
     /// An unknown name renders an empty icon of the same size.
     /// </summary>
     public static string Icon(string name, string? cssClass = null)
@@ -81,7 +81,7 @@ public static class ShellRenderer
               .Append(AppMark(shellApp))
               .Append($"""<span class="m-sidebar-app-text"><span class="m-sidebar-app-name">{E(shellApp.Name)}</span>""")
               .Append(string.IsNullOrEmpty(shellApp.Description) ? "" : $"""<span class="m-sidebar-app-desc">{E(shellApp.Description)}</span>""")
-              .Append("</span>").Append(Icon("ri:expand-up-down", "m-sidebar-app-chevron")).Append("</summary>");
+              .Append("</span>").Append(Icon("tb:selector", "m-sidebar-app-chevron")).Append("</summary>");
             ModuleMenu(sb, view, shellApp);
             sb.Append("</details></div>");
             sb.Append($"""<nav class="m-sidebar-nav m-nav-app" aria-label="{E(shellApp.Name)}" {tone}>""");
@@ -174,7 +174,7 @@ public static class ShellRenderer
         sb.Append("""<button type="button" class="m-icon-btn m-nav-toggle" data-m-nav-open aria-controls="m-sidebar" aria-label="Open navigation">""").Append(Icon("menu")).Append("</button>");
         sb.Append("""<button type="button" class="m-icon-btn m-fold-toggle" data-m-fold-toggle aria-controls="m-sidebar" aria-label="Fold sidebar" title="Fold sidebar">""").Append(Icon("menu-fold")).Append("</button>");
         if (HasLauncher(c))
-            sb.Append("""<button type="button" class="m-icon-btn m-launcher-btn" data-m-launcher-open aria-controls="m-launcher" aria-haspopup="dialog" aria-label="All apps" title="All apps">""").Append(Icon("appstore")).Append("</button>");
+            sb.Append("""<button type="button" class="m-icon-btn m-launcher-btn" data-m-launcher-open aria-controls="m-launcher" aria-haspopup="dialog" aria-label="All apps" title="All apps">""").Append(Icon("tb:grid-dots")).Append("</button>");
         sb.Append(Brand(view.Options, "m-topbar-brand"));
 
         if (c.SearchPlaceholder is { } placeholder)
@@ -198,7 +198,7 @@ public static class ShellRenderer
         sb.Append("""<button type="button" class="m-icon-btn" data-m-theme-toggle aria-label="Toggle dark mode">""")
           .Append(Icon("moon", "m-show-light")).Append(Icon("sun", "m-show-dark")).Append("</button>");
         if (view.Options.ShowCustomizer)
-            sb.Append("""<button type="button" class="m-icon-btn" data-m-customizer-open aria-controls="m-customizer" aria-label="Theme settings">""").Append(Icon("ri:palette")).Append("</button>");
+            sb.Append("""<button type="button" class="m-icon-btn" data-m-customizer-open aria-controls="m-customizer" aria-label="Theme settings">""").Append(Icon("tb:palette")).Append("</button>");
 
         Activities(sb, c);
 
@@ -303,7 +303,7 @@ public static class ShellRenderer
           .Append(current.Subtitle is null ? "" : $"""<span class="m-tenant-subtitle">{E(current.Subtitle)}</span>""")
           .Append("</span>")
           .Append(active.Count > 1 ? $"""<span class="m-tenant-more" title="{active.Count - 1} more active">+{active.Count - 1}</span>""" : "")
-          .Append(Icon("ri:expand-up-down", "m-tenant-chevron"))
+          .Append(Icon("tb:selector", "m-tenant-chevron"))
           .Append("""</summary><div class="m-dropdown-menu m-tenant-menu">""");
         // The tenant in use heads the menu (SAP's and Oracle's context header), with how many are active.
         sb.Append("""<div class="m-tenant-current">""").Append(TenantMark(current, tenants, solid: true))
@@ -375,7 +375,7 @@ public static class ShellRenderer
     {
         if (c.Apps is not { Count: > 0 } apps) return;
         var many = apps.Count > AppFilterThreshold;
-        sb.Append("""<details class="m-dropdown m-apps"><summary class="m-icon-btn" aria-label="Apps">""").Append(Icon("appstore"))
+        sb.Append("""<details class="m-dropdown m-apps"><summary class="m-icon-btn" aria-label="Apps">""").Append(Icon("tb:grid-dots"))
           .Append($"""</summary><div class="m-dropdown-menu m-dropdown-end m-dropdown-card m-apps-menu{(many ? " m-apps-menu-wide" : "")}" data-m-app-menu>""")
           .Append($"""<div class="m-dropdown-card-header"><span class="m-dropdown-card-title">Apps</span>{AppCount(apps)}</div>""");
         if (many) AppFilter(sb);
@@ -593,9 +593,9 @@ public static class ShellRenderer
         {
             sb.Append("""<div class="m-app-menu-foot">""");
             if (launcher)
-                sb.Append("""<button type="button" class="m-dropdown-item" data-m-launcher-open aria-controls="m-launcher">""").Append(Icon("appstore")).Append("All apps</button>");
+                sb.Append("""<button type="button" class="m-dropdown-item" data-m-launcher-open aria-controls="m-launcher">""").Append(Icon("tb:grid-dots")).Append("All apps</button>");
             if (view.Content.AppsHref is { } all)
-                sb.Append($"""<a class="m-dropdown-item" href="{Url(all)}">""").Append(Icon("appstore")).Append("View all apps</a>");
+                sb.Append($"""<a class="m-dropdown-item" href="{Url(all)}">""").Append(Icon("tb:grid-dots")).Append("View all apps</a>");
             sb.Append("</div>");
         }
         sb.Append("</div>");
@@ -711,13 +711,13 @@ public static class ShellRenderer
         sb.Append("""<div class="m-offcanvas" id="m-customizer" data-m-customizer hidden>""")
           .Append("""<div class="m-offcanvas-backdrop" data-m-customizer-close></div>""")
           .Append("""<aside class="m-offcanvas-panel m-customizer-panel" role="dialog" aria-modal="true" aria-labelledby="m-customizer-title">""")
-          .Append("""<div class="m-offcanvas-header"><span class="m-customizer-mark">""").Append(Icon("ri:palette")).Append("</span>")
+          .Append("""<div class="m-offcanvas-header"><span class="m-customizer-mark">""").Append(Icon("tb:palette")).Append("</span>")
           .Append("""<div class="m-customizer-heading"><h2 class="m-offcanvas-title" id="m-customizer-title">Theme settings</h2>""")
           .Append("""<p class="m-offcanvas-subtitle">Saved in this browser and applied instantly.</p></div>""")
           .Append("""<button type="button" class="m-icon-btn" data-m-customizer-close aria-label="Close">""").Append(Icon("close")).Append("</button></div>")
           // Two panes, so neither is a long scroll: how the app looks, and how its shell is laid out.
           .Append("""<div class="m-setting-tabs" role="tablist" aria-label="Theme settings">""")
-          .Append("""<button type="button" class="m-setting-tab" role="tab" id="m-setting-tab-theme" aria-controls="m-setting-pane-theme" aria-selected="true" data-m-customizer-tab="theme">""").Append(Icon("ri:brush")).Append("Appearance</button>")
+          .Append("""<button type="button" class="m-setting-tab" role="tab" id="m-setting-tab-theme" aria-controls="m-setting-pane-theme" aria-selected="true" data-m-customizer-tab="theme">""").Append(Icon("tb:brush")).Append("Appearance</button>")
           .Append("""<button type="button" class="m-setting-tab" role="tab" id="m-setting-tab-layout" aria-controls="m-setting-pane-layout" aria-selected="false" tabindex="-1" data-m-customizer-tab="layout">""").Append(Icon("dashboard")).Append("Layout</button>")
           .Append("</div>")
           .Append("""<form class="m-offcanvas-body" data-m-customizer-form>""")
@@ -745,7 +745,7 @@ public static class ShellRenderer
         }
         sb.Append("</div></fieldset>");
 
-        Choice(sb, "Density", "density", Lower(o.Density), [("compact", "Compact", Icon("unordered-list")), ("comfortable", "Comfortable", Icon("ri:list-view"))]);
+        Choice(sb, "Density", "density", Lower(o.Density), [("compact", "Compact", Icon("unordered-list")), ("comfortable", "Comfortable", Icon("tb:list-details"))]);
         Choice(sb, "Font family", "font", Lower(o.Font),
         [
             ("sans", "Inter", """<span class="m-font-preview m-font-sans">Aa</span>"""),

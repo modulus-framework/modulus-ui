@@ -86,7 +86,7 @@ public sealed class ShippingFormInput
 public sealed class WizardInput
 {
     public static readonly (string Title, string Description, string Icon)[] Steps =
-        [("Account", "Sign-in details", "user"), ("Personal", "About you", "id"), ("Social", "Profile links", "link"), ("Review", "Confirm and submit", "ri:check-double")];
+        [("Account", "Sign-in details", "user"), ("Personal", "About you", "id"), ("Social", "Profile links", "link"), ("Review", "Confirm and submit", "tb:checks")];
 
     /// <summary>Property names validated on each step (index = step).</summary>
     public static readonly string[][] StepFields =

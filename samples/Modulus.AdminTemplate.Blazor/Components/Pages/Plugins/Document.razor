@@ -1,0 +1,108 @@
+@page "/plugins/document"
+
+<PageTitle>Document · Modulus</PageTitle>
+
+<PageHeading Pretitle="Plugins" Title="Document" Subtitle="A Word-style editor on Univer Docs: headings, fonts, lists, tables, images and links on A4 pages. It posts its JSON, downloads and imports docx." />
+
+<div class="m-sheet-workspace">
+    <div class="m-sheet-bar">
+        <div class="ant-segmented" role="group" aria-label="Demo">
+            <div class="ant-segmented-group">
+                @foreach (var demo in PluginsContent.DocumentViews)
+                {
+                    <a class="ant-segmented-item @(demo.Key == _view ? "ant-segmented-item-selected" : "")" href="@PluginsContent.DocumentUrl(demo.Key)" aria-current="@(demo.Key == _view ? "true" : null)">
+                        <div class="ant-segmented-item-label">@demo.Label</div>
+                    </a>
+                }
+            </div>
+        </div>
+        @if (_view != "readonly")
+        {
+            <div class="m-sheet-bar-actions" role="status">
+                @if (_error is not null)
+                {
+                    <span class="ant-form-item-explain-error">@_error</span>
+                }
+                else if (_imported is not null)
+                {
+                    <span class="m-muted">Imported from @_imported</span>
+                }
+                else if (_saved)
+                {
+                    <span class="m-muted">Saved document</span>
+                }
+            </div>
+            <div class="m-sheet-bar-actions">
+                @* InputFile reads the pick in .NET (no JS of ours); the button-styled label opens it. *@
+                <label class="ant-btn ant-btn-default m-file-button">
+                    <InputFile OnChange="@Import" accept=".docx" class="m-sr-only" />
+                    <Icon Type="upload" /><span>Import docx</span>
+                </label>
+                @* The form posts the document to a download endpoint (the token-less endpoint is fine: it only writes a file). *@
+                <button type="submit" form="document-form" class="ant-btn ant-btn-default"><Icon Type="download" /><span>Download docx</span></button>
+                <button type="button" class="ant-btn ant-btn-default" @onclick="Reset"><span>Reset</span></button>
+                <button type="button" class="ant-btn ant-btn-primary" @onclick="Save"><Icon Type="save" /><span>Save</span></button>
+            </div>
+        }
+    </div>
+    @if (_view == "readonly")
+    {
+        <AppDocument Id="contract-readonly" Value="@PluginsContent.Contract" ReadOnly Height="100%" />
+    }
+    else
+    {
+        <form id="document-form" method="post" action="@PluginsContent.DocumentDownloadUrl">
+            <AppDocument Id="document" Name="Document" @bind-Value="_document" Height="100%" />
+        </form>
+    }
+</div>
+
+@code {
+    [Parameter, SupplyParameterFromQuery] public string? View { get; set; }
+
+    private string _view = "contract";
+    private string? _document = PluginsContent.Contract;
+    private bool _saved;
+    private string? _imported;
+    private string? _error;
+
+    protected override void OnParametersSet()
+    {
+        // A nav link is the same page with another query string: switch the demo in place.
+        var view = PluginsContent.DocumentView(View);
+        if (view != _view)
+        {
+            _view = view;
+            Reset();
+        }
+    }
+
+    // As in MVC, the page confirms what was saved; _document already holds it (store it, or read it with UniverDocument).
+    private void Save() => _saved = true;
+
+    private void Reset()
+    {
+        _document = PluginsContent.DocumentTemplate(_view);
+        _saved = false;
+        _imported = null;
+        _error = null;
+    }
+
+    // A picked docx replaces the pages, the same as the MVC and Razor Pages imports.
+    private async Task Import(InputFileChangeEventArgs e)
+    {
+        _error = PluginsContent.CheckDocumentUpload(e.File.Name, e.File.Size);
+        if (_error is not null) return;
+        using var copy = new MemoryStream();
+        await e.File.OpenReadStream(PluginsContent.MaxUploadMb * 1024L * 1024).CopyToAsync(copy);
+        copy.Position = 0;
+        var (document, error) = PluginsContent.ImportDocument(copy, Path.GetFileNameWithoutExtension(e.File.Name));
+        _error = error;
+        if (document is not null)
+        {
+            _document = document;
+            _saved = false;
+            _imported = e.File.Name;
+        }
+    }
+}

@@ -85,6 +85,14 @@ pixel-for-pixel where the controls allow it.
   submenu), collapse, flip axis, expand all, pick the measures, sort by one. Value cells drill down
   (`CellHref` / `cell-href`; the sample opens `/tables/large` filtered) and `PivotXlsx` writes the xlsx download
   (merged headers, bold totals) with no library. `/tables/pivot` pivots the 100,000 shipments in all three samples.
+- **Saved views and field access** (`Modulus.Ui.Abstractions.State`): `AppSavedViews` / `app-saved-views` is a
+  "Views" dropdown. A signed-in user names the current layout (its query string), stars one view as the default and
+  deletes views. Views are kept per user in `IUiStateStore`; the default is in memory, so register your own store to
+  keep them (the samples use `EfUiStateStore` on SQLite). The samples have it on `/tables/pivot` and
+  `/tables/advanced`; a Blazor `ProTable` with `UrlState` keeps its paging, sort and column searches in the URL with
+  the MVC keys, so its views match. `FieldAccess` hides fields by role: `TableQuery.Restrict`, `PivotQuery.Restrict` and
+  `GridSchema.Allowed` apply it before the query runs. MVC and Razor Pages map the endpoint with
+  `app.MapModulusSavedViews()`.
 - **SPA navigation for MVC and Razor Pages** (`ModulusThemeOptions.SpaNavigation`): links and forms in the shell load
   through htmx `hx-boost`. The server answers with only the page body, the sidebar and the header, so scripts and
   Alpine state stay loaded. It aborts stale navigations, shows a progress bar, prefetches on hover (`SpaPrefetch`),
@@ -96,14 +104,15 @@ pixel-for-pixel where the controls allow it.
   CSS-only, and each chart carries a screen-reader data table. `LegendToggle` / `legend-toggle` lets the legend hide
   series; `Links` / `links` makes columns and axis labels drill-down links.
 - **Plugins**, each a Blazor component and a tag helper over one shared renderer in `Modulus.Ui.Abstractions.Plugins`:
-  `AppEditor` / `app-editor` (WYSIWYG on Quill; the HTML is cleaned by `RichText.Sanitize(images: true)`),
-  `AppMap` / `app-map` (Leaflet tile map with markers and popups), `AppVectorMap` / `app-vector-map` (jsVectorMap
-  choropleth with hover values and a legend), `AppMediaPlayer` / `app-media-player` (video and audio with custom
-  controls, poster and captions) and `AppSortable` / `app-sortable` (reorder a list, drag between lists, handles,
-  keyboard moves; posts the order). `modulus-plugins.js` loads Quill, Leaflet and jsVectorMap only when a page uses
-  them. `app-upload` also gains `action` (upload with per-file progress), `max-size`, `max-count` and
-  `list-type="picture"`, and `app-date-picker` gains `picker="quarter"` / `"year"`; `app-range-picker presets` uses
-  `DatePeriods`.
+  `AppEditor` / `app-editor` (WYSIWYG on Tiptap; the HTML is cleaned by `RichText.Sanitize(images: true)`),
+  `AppMap` / `app-map` (MapLibre GL JS tile map with markers and popups), `AppVectorMap` / `app-vector-map` (jsVectorMap
+  choropleth with hover values and a legend), `AppSpreadsheet` / `app-spreadsheet` (Excel-style multi-sheet grid with
+  formulas on Univer; posts its sheets as JSON, follows the light and dark theme), `AppMediaPlayer` /
+  `app-media-player` (video and audio with custom controls, poster and captions) and `AppSortable` / `app-sortable`
+  (reorder a list, drag between lists, handles, keyboard moves; posts the order). `modulus-plugins.js` loads Tiptap,
+  MapLibre, Univer and jsVectorMap only when a page uses them. `app-upload` also gains `action` (upload with per-file
+  progress), `max-size`, `max-count` and `list-type="picture"`, and `app-date-picker` gains `picker="quarter"` /
+  `"year"`; `app-range-picker presets` uses `DatePeriods`.
 - **Ant Design 5 components that AntD Blazor 1.6.2 lacks**, in both flavours: `AppQRCode` / `app-qr-code` (a tested QR
   encoder, drawn as SVG, with icon and status overlays), `AppColorPicker` / `app-color-picker` (palette, hue and alpha
   sliders, hex/RGB input, presets, clear), `AppFloatButton` / `AppFloatButtonGroup` / `AppFloatBackTop` and
@@ -154,7 +163,7 @@ pixel-for-pixel where the controls allow it.
   - **Extra**: 22 Tabler extra pages (gallery, search results, activity, tasks, logs, license, job listing, uptime,
     trial ended, cookie banner, widgets and more).
   - **Plugins**: advanced charts, colour picker, date picker, dropzone, sortable, media player, lightbox, map,
-    full-size map, vector map, tour and WYSIWYG editor.
+    full-size map, vector map, tour, WYSIWYG editor and spreadsheet.
 
 ## Quick start — Blazor
 
@@ -264,8 +273,8 @@ Tag helpers. `/ui/components` in the MVC and Razor Pages samples shows each one;
 | Pro | `app-page-container`, `app-page-header`, `app-statistic-card`, `app-trend`, `app-editable-grid` (`grid-toolbar`, `grid-title-extra`, `grid-filters`, `grid-batch`, `grid-summary`, `row-draggable`; read posts with `EditableGridForm.Read` / `Apply`), `app-nested-grid` (one level per request; state and saves through `NestedGridForm`), `app-pivot-grid` (Odoo-style pivot: expand/flip/measures/sort in the URL, `cell-href` drill-down, xlsx download) |
 | Large data | `app-load-more` (infinite scroll), `app-virtual-table` (virtual scrolling, `modulus-virtual.js`) |
 | Charts | `app-line-chart`, `app-column-chart`, `app-bar-chart`, `app-donut-chart`, `app-heatmap`, `app-sparkline`, `app-mini-bar` and the business charts; `legend-toggle`, `links` |
-| Plugins | `app-editor` (Quill), `app-map` (Leaflet), `app-vector-map` (jsVectorMap), `app-media-player`, `app-sortable` / `app-sortable-item`, `app-lightbox` |
-| Icons | `app-icon` (Ant Design), `app-ti` (an Ant Design outline icon by name, drawn inline like the shell's; `ri:` names for the few Remix Icon fallbacks) |
+| Plugins | `app-editor` (Tiptap), `app-map` (MapLibre), `app-vector-map` (jsVectorMap), `app-spreadsheet` (Univer), `app-media-player`, `app-sortable` / `app-sortable-item`, `app-lightbox` |
+| Icons | `app-icon` (Ant Design), `app-ti` (an Ant Design outline icon by name, drawn inline like the shell's; `tb:` names for the Tabler fallbacks where Ant Design has no icon) |
 
 Controls bind with `asp-for` (name, id, value and validation state) or a plain `name`. Any other attributes you add,
 such as `placeholder`, `hx-*` or `x-*`, go to the real `<input>`. Forms stay plain HTML and post normally.
@@ -307,7 +316,7 @@ the first paint.
 | Project | Purpose |
 |---|---|
 | `src/Modulus.Ui.Abstractions` | Flavor-agnostic: theme options and palette generation, menu contributors, the shell renderer, `ProTableRequest/Response`, `TableQuery`, `Paging`, chart geometry, form rules, plugin renderers |
-| `src/Modulus.Ui.Assets` | CSS (`modulus.css`, `modulus-shell.css`, `modulus-pages.css`, `antd-dark-brand.css`), scripts (`modulus-theme.js`, `modulus-shell.js`, `modulus-mvc.js`, `modulus-widgets.js`, `modulus-plugins.js`, `modulus-spa.js`, `modulus-virtual.js`), vendored htmx 2.0.11, Alpine.js 3.17.4, Leaflet 1.9.4, Quill 2.0.3 and jsVectorMap |
+| `src/Modulus.Ui.Assets` | CSS (`modulus.css`, `modulus-shell.css`, `modulus-pages.css`, `antd-dark-brand.css`), scripts (`modulus-theme.js`, `modulus-shell.js`, `modulus-mvc.js`, `modulus-widgets.js`, `modulus-plugins.js`, `modulus-spa.js`, `modulus-virtual.js`), vendored htmx 2.0.11, Alpine.js 3.17.4, MapLibre GL JS 5.24.0, Tiptap 3.31.4 (bundle), Univer 1.0.3 (bundle) and jsVectorMap |
 | `src/Modulus.Blazor` | `AddModulusBlazor`, `App*` aliases, ProLayout shell, Pro components, charts (no server framework dependency, so it is WASM-compatible) |
 | `src/Modulus.AspNetCore.Mvc` | `AddModulusMvc`, tag helpers, `_ModulusLayout` and partials, htmx response helpers, `AntIcons` |
 | `samples/Modulus.AdminTemplate.*` | The Blazor, MVC and Razor Pages admin templates |
@@ -363,7 +372,7 @@ CI packs `-ci.<run>` prereleases as the `packages` artifact; a local `dotnet pac
   the antd v5 DOM, styled by `modulus.css`, and may differ in detail from antd v5.
 - **Native pickers in MVC.** `app-date-picker` and `app-range-picker` use the browser's date/time inputs inside antd chrome,
   so the calendar popup follows the browser, not antd.
-- **Plugin libraries are third-party.** The editor, maps and vector map wrap Quill, Leaflet and jsVectorMap, loaded from
+- **Plugin libraries are third-party.** The editor, maps and vector map wrap Tiptap, MapLibre and jsVectorMap, loaded from
   `Modulus.Ui.Assets` on first use. Tile maps load their tiles from `tile.openstreetmap.org`, whose usage policy does not
   cover heavy production traffic, so they need network access and, for real use, your own tile server.
 - **Localization covers the framework**, not the sample texts: Ant Design's built-in strings, dates and numbers follow the
@@ -376,6 +385,8 @@ CI packs `-ci.<run>` prereleases as the `packages` artifact; a local `dotnet pac
 - [docs/DESIGN.md](docs/DESIGN.md): design decisions and the analysis of other Ant Design-based libraries they come from
 - [docs/UPGRADING.md](docs/UPGRADING.md): upgrading AntDesign, htmx, Alpine.js and the plugin libraries safely, and
   turning on SPA navigation
+- [DEPENDENCIES.md](DEPENDENCIES.md): every NuGet package, vendored script, font and icon set, with its version and
+  licence
 - [docs/PLAN.md](docs/PLAN.md): the plan, page inventory, verification results and change log
 - Roadmap: what is planned next — [docs/PLAN.md](docs/PLAN.md) §7 (Modulus 2.0) and §7.3 (ERP UI roadmap)
 - `manifest/antd-coverage.json`: component-by-component coverage, verified in CI

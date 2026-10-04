@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Modulus.Ui.Abstractions.Pivot;
+using Modulus.Ui.Abstractions.State;
 
 namespace Modulus.Samples.Shared;
 
@@ -24,18 +25,25 @@ public sealed record PivotTablePage(ShipmentFilter Filter, PivotResult Result, d
         .Measure("largest", "Largest amount", s => s.Amount, PivotAggregate.Max)
         .Default(rows: ["city"], columns: ["date:year"], measures: ["count", "amount"]);
 
-    /// <summary>Runs the pivot of the URL's state over the filtered shipments.</summary>
-    public static PivotTablePage Load(ShipmentFilter filter, IEnumerable<KeyValuePair<string, string?>> query)
+    /// <summary>
+    /// Who sees which field: "Largest amount" needs the Admin or Editor role (sign in as one to see it). The pages and the
+    /// download run the pivot restricted to the signed-in user's fields, so the URL can't ask for it either.
+    /// </summary>
+    public static readonly FieldAccess Access = FieldAccess.Create().Require("largest", "Admin", "Editor");
+
+    /// <summary>Runs the pivot of the URL's state over the filtered shipments, with the fields <paramref name="allow"/> lets through.</summary>
+    public static PivotTablePage Load(ShipmentFilter filter, IEnumerable<KeyValuePair<string, string?>> query, Func<string, bool>? allow = null)
     {
-        var state = Pivot.State(query);
+        var pivot = allow is null ? Pivot : Pivot.Restrict(allow);
+        var state = pivot.State(query);
         var watch = Stopwatch.StartNew();
-        var result = Pivot.Run(Shipments.Where(filter), state);
+        var result = pivot.Run(Shipments.Where(filter), state);
         return new PivotTablePage(filter, result, watch.Elapsed.TotalMilliseconds);
     }
 
     /// <summary>The table of the URL's state as an Excel workbook.</summary>
-    public static byte[] Download(ShipmentFilter filter, IEnumerable<KeyValuePair<string, string?>> query) =>
-        PivotXlsx.Write(Load(filter, query).Result, "Shipments");
+    public static byte[] Download(ShipmentFilter filter, IEnumerable<KeyValuePair<string, string?>> query, Func<string, bool>? allow = null) =>
+        PivotXlsx.Write(Load(filter, query, allow).Result, "Shipments");
 
     public const string DownloadName = "shipments-pivot.xlsx";
 

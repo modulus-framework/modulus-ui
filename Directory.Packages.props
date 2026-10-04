@@ -9,6 +9,12 @@
     <PackageVersion Include="AntDesign.ProLayout" Version="1.6.2" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.12" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.Authorization" Version="10.0.12" />
+    <!-- Reads and writes xlsx workbooks (the spreadsheet's import and export). -->
+    <PackageVersion Include="ClosedXML" Version="0.105.1" />
+    <!-- The Open XML SDK ClosedXML is built on; Modulus.Documents also writes Word files with it. Keep in step with ClosedXML. -->
+    <PackageVersion Include="DocumentFormat.OpenXml" Version="3.1.1" />
+    <!-- Samples: saved views kept in a SQLite file (EfUiStateStore). -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
     <!-- Test packages -->
     <PackageVersion Include="xunit.v3" Version="4.0.1" />
     <PackageVersion Include="bunit" Version="2.11.3" />

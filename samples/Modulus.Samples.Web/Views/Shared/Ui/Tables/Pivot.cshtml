@@ -23,6 +23,8 @@
                     <span class="m-small m-muted">@total.ToString("N0") matching · query @Model.QueryMs.ToString("0.0") ms</span>
                 </div>
                 <div class="m-table-toolbar-actions">
+                    @* The user's saved layouts of this page (Odoo's favourites); a starred one opens by default. *@
+                    <app-saved-views page="@PivotTablePage.Path" id="pivot-views" />
                     <span class="m-table-toolbar-search ant-input-affix-wrapper">
                         <span class="ant-input-prefix"><app-ti name="search" /></span>
                         <input id="pivot-keyword" class="ant-input" type="search" name="keyword" value="@filter.Keyword" maxlength="200" autocomplete="off"

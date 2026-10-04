@@ -13,11 +13,18 @@
     Search forms live outside (see QueryFilter); call ReloadAsync(resetPage: true) after a search.
     For the header of every Modulus table (sorter carets plus a column search), put a ColumnHeader in the column's
     TitleTemplate instead of Sortable: the request then carries SortField and Searches.
+    With UrlState, the page, sort and column searches live in the URL (the MVC grids' keys, see ProTableUrl), beside the
+    page's own filters (UrlQuery, read back in OnUrlChanged): back and forward step through them, a link opens the table
+    as it was, and AppSavedViews can save the layout.
 *@
 @typeparam TItem
 @attribute [CascadingTypeParameter(nameof(TItem))]
 @using Modulus.Ui.Abstractions.Plugins
+@using Microsoft.AspNetCore.Components.Routing
+@using Modulus.Ui.Abstractions.State
 @implements IColumnHeaderHost
+@implements IDisposable
+@inject NavigationManager Navigation
 
 <Card Bordered="false" Id="@TableId" Class="@($"m-table-card{(Resizable ? " m-resizable" : "")} {Class}")">
     <div class="m-table-toolbar">
@@ -211,6 +218,22 @@
     /// <summary>With <see cref="OnRowMove"/>: the name read out when a row moves (default "row").</summary>
     [Parameter] public Func<TItem, string>? RowLabel { get; set; }
 
+    /// <summary>
+    /// Keep the page, page size, sort and column searches in the URL (<see cref="ProTableUrl"/>'s keys, as the MVC grids):
+    /// each change adds a history entry, and the table follows the URL when it changes from outside (back, forward, a
+    /// saved view's link).
+    /// </summary>
+    [Parameter] public bool UrlState { get; set; }
+
+    /// <summary>With <see cref="UrlState"/>: the page's own query pairs (its search, filters, hidden columns) written beside the table's.</summary>
+    [Parameter] public Func<IEnumerable<KeyValuePair<string, string?>>>? UrlQuery { get; set; }
+
+    /// <summary>
+    /// With <see cref="UrlState"/>: the URL's query, on the first render and whenever the URL changes from outside; the page
+    /// sets its own filters from it before the table loads.
+    /// </summary>
+    [Parameter] public EventCallback<IReadOnlyList<KeyValuePair<string, string?>>> OnUrlChanged { get; set; }
+
     private bool Draggable => OnRowMove.HasDelegate && RowKey is not null;
 
     // A column sort decides the order, so a drop would not stay where it was put.
@@ -250,10 +273,61 @@
     private Modulus.Ui.Abstractions.SortDirection _sortOrder;
     private int _loadVersion;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         _pageSize = PageSize;
         _size = Size;
+        if (!UrlState) return;
+        Navigation.LocationChanged += OnLocationChanged;
+        await ReadUrlAsync();
+    }
+
+    // ---- UrlState ----
+
+    // The query the table last read or wrote, so its own navigations are not read back.
+    private IReadOnlyList<KeyValuePair<string, string?>> _urlQuery = [];
+
+    private static IReadOnlyList<KeyValuePair<string, string?>> QueryOf(string uri) => SavedViews.Parse(new Uri(uri).Query);
+
+    private async Task ReadUrlAsync()
+    {
+        _urlQuery = QueryOf(Navigation.Uri);
+        var request = ProTableUrl.Read(_urlQuery, PageSize);
+        (_pageIndex, _pageSize, _sortField, _sortOrder, _searches) = (request.Current, request.PageSize, request.SortField, request.SortOrder, request.Searches);
+        if (OnUrlChanged.HasDelegate) await OnUrlChanged.InvokeAsync(_urlQuery);
+    }
+
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        if (ProTableUrl.SameQuery(QueryOf(e.Location), _urlQuery)) return;
+        try
+        {
+            await InvokeAsync(async () =>
+            {
+                await ReadUrlAsync();
+                _selected = [];
+                await LoadAsync();
+            });
+        }
+        catch (ObjectDisposedException) { /* the circuit ended */ }
+    }
+
+    /// <summary>With <see cref="UrlState"/>: writes the current state to the URL (after a change the table does not load for, such as a hidden column).</summary>
+    public void SyncUrl() => WriteUrl(new ProTableRequest { Current = _pageIndex, PageSize = _pageSize, SortField = _sortField, SortOrder = _sortOrder, Searches = _searches });
+
+    private void WriteUrl(ProTableRequest request)
+    {
+        if (!UrlState) return;
+        var query = (UrlQuery?.Invoke() ?? []).Where(q => !ProTableUrl.IsTableKey(q.Key)).Concat(ProTableUrl.Write(request, PageSize)).ToList();
+        if (ProTableUrl.SameQuery(query, QueryOf(Navigation.Uri))) return;
+        _urlQuery = query;
+        var text = ProTableUrl.Query(query);
+        Navigation.NavigateTo(new Uri(Navigation.Uri).GetLeftPart(UriPartial.Path) + (text.Length == 0 ? "" : "?" + text));
+    }
+
+    public void Dispose()
+    {
+        if (UrlState) Navigation.LocationChanged -= OnLocationChanged;
     }
 
     /// <summary>Reloads the current page, or page 1 when <paramref name="resetPage"/> is true (after a search).</summary>
@@ -292,14 +366,16 @@
         StateHasChanged();
         try
         {
-            var response = await Request(new ProTableRequest
+            var request = new ProTableRequest
             {
                 Current = _pageIndex,
                 PageSize = _pageSize,
                 SortField = _sortField,
                 SortOrder = _sortOrder,
                 Searches = _searches,
-            });
+            };
+            WriteUrl(request);
+            var response = await Request(request);
             if (version != _loadVersion) return;
             _data = response.Data;
             _total = response.Total;

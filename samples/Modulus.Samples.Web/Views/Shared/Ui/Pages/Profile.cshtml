@@ -1,6 +1,6 @@
 @{
     (string Key, string Label, string Icon)[] Tabs =
-        [("profile", "Profile", "user"), ("teams", "Teams", "ri:group"), ("projects", "Projects", "appstore"), ("connections", "Connections", "link")];
+        [("profile", "Profile", "user"), ("teams", "Teams", "tb:users-group"), ("projects", "Projects", "appstore"), ("connections", "Connections", "link")];
     var tab = Context.Request.Query["tab"].ToString();
     var Current = Tabs.Any(t => t.Key == tab) ? tab : "profile";
 }
@@ -11,7 +11,7 @@
         <div>
             <h1 class="m-profile-name">@CurrentUser.Name</h1>
             <div class="m-profile-meta">
-                <span><app-ti name="ri:briefcase" />@CurrentUser.Title</span>
+                <span><app-ti name="tb:briefcase" />@CurrentUser.Title</span>
                 <span><app-ti name="environment" />San Francisco, US</span>
                 <span><app-ti name="calendar" />Joined April 2021</span>
             </div>
@@ -105,7 +105,7 @@
                             <div class="m-form-actions">
                                 @if (c.Connected)
                                 {
-                                    <a class="ant-btn ant-btn-primary" href="/pages/profile?tab=connections"><app-ti name="ri:user-follow" /><span>Connected</span></a>
+                                    <a class="ant-btn ant-btn-primary" href="/pages/profile?tab=connections"><app-ti name="tb:user-plus" /><span>Connected</span></a>
                                 }
                                 else
                                 {
@@ -143,8 +143,8 @@
                         <div class="m-card-header"><h2 class="m-card-title">Overview</h2></div>
                         <div class="m-card-body">
                             <dl class="m-dl">
-                                <dt><app-ti name="ri:check-double" />Tasks compiled</dt><dd>13.5k</dd>
-                                <dt><app-ti name="ri:briefcase" />Projects</dt><dd>@SampleContent.Projects.Count</dd>
+                                <dt><app-ti name="tb:checks" />Tasks compiled</dt><dd>13.5k</dd>
+                                <dt><app-ti name="tb:briefcase" />Projects</dt><dd>@SampleContent.Projects.Count</dd>
                                 <dt><app-ti name="team" />Connections</dt><dd>897</dd>
                             </dl>
                         </div>

@@ -84,7 +84,7 @@
     private (string Label, string Value, string Icon)[] Strip =>
     [
         ("Pending payment", _stats.PendingPayment.ToString("N0"), "field-time"),
-        ("Completed", _stats.Completed.ToString("N0"), "ri:check-double"),
+        ("Completed", _stats.Completed.ToString("N0"), "tb:checks"),
         ("Refunded", _stats.Refunded.ToString("N0"), "undo"),
         ("Failed", _stats.Failed.ToString("N0"), "stop"),
     ];

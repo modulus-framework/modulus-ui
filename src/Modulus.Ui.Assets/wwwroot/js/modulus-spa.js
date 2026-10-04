@@ -18,7 +18,11 @@
  *     position; htmx keeps no snapshots, since Alpine-rendered DOM can't be restored from one
  *   - after each page: the drawer, modals, the navigation drawer and the launcher close, the sidebar keeps its scroll
  *     position and open groups, focus moves to #main and the title is announced to screen readers
- *   - a[download] and [data-m-reload] links always load normally
+ *   - a[download] and [data-m-reload] links always load normally; a submit button with data-m-reload (a file
+ *     download, often with formaction) posts its form natively, the antiforgery token added as a form field
+ *   - loaders: past 300 ms the page body dims under a spinner (.m-main-loading), and an update within the page (a
+ *     list's boost area, or a request from inside [data-m-loading]) dims its target under the same spinner after
+ *     150 ms (.m-area-loading); quick loads show neither, so nothing flickers
  *   - a[data-m-page]: a page link inside a list's boost area (it keeps hx-boost="false" so the area leaves it alone,
  *     and loads whole without SPA navigation) loads as a page navigation, like a menu link
  */
@@ -69,7 +73,51 @@
 
     var body = document.body;
     var htmx = window.htmx;
-    if (!body || !htmx || !body.hasAttribute('data-m-spa')) return;
+    if (!body || !htmx) return;
+
+    // Area loader (SPA navigation on or off) ---------------------------------------------------------------------
+
+    // An update within the page (a list's filters and pager, the pivot, a form that answers into a panel) dims the
+    // element it replaces under a spinner, but only when it takes longer than 150 ms, so quick answers don't flicker.
+    var AREA_DELAY = 150;
+    var areas = new Map(); // xhr → { target, timer }
+
+    function areaTarget(d) {
+        var elt = d.elt, target = d.target;
+        if (!elt || !target || !(target instanceof Element)) return null;
+        if (target === body || target === document.documentElement || target.id === 'main') return null; // a page: the page loader
+        if (elt.closest('[hx-indicator]') || elt.closest('.m-load-more')) return null; // has its own indicator
+        var areaBoost = boosted(d) && elt.closest('[hx-boost]') !== body;
+        return areaBoost || elt.closest('[data-m-loading]') ? target : null;
+    }
+
+    function areaStop(xhr) {
+        var entry = areas.get(xhr);
+        if (!entry) return;
+        areas.delete(xhr);
+        clearTimeout(entry.timer);
+        entry.target.classList.remove('m-area-loading');
+        entry.target.removeAttribute('aria-busy');
+    }
+
+    document.addEventListener('htmx:beforeRequest', function (e) {
+        var target = areaTarget(e.detail);
+        if (!target || target.querySelector('.m-pivot-busy')) return; // the pivot marks itself
+        var xhr = e.detail.xhr;
+        areas.forEach(function (entry, other) { if (entry.target === target) areaStop(other); });
+        areas.set(xhr, {
+            target: target,
+            timer: setTimeout(function () {
+                target.classList.add('m-area-loading');
+                target.setAttribute('aria-busy', 'true');
+            }, AREA_DELAY)
+        });
+    });
+    ['htmx:afterRequest', 'htmx:sendAbort', 'htmx:sendError', 'htmx:timeout'].forEach(function (name) {
+        document.addEventListener(name, function (e) { if (e.detail && e.detail.xhr) areaStop(e.detail.xhr); });
+    });
+
+    if (!body.hasAttribute('data-m-spa')) return;
 
     // Configuration ---------------------------------------------------------------------------------------------
 
@@ -124,6 +172,27 @@
         if (replace) window.location.replace(url); else window.location.assign(url);
     }
 
+    // A form posted natively, as its submitter would without htmx (a file download): the antiforgery token htmx sends
+    // as a header rides along as the form field instead, and the submitter's formaction / formmethod apply.
+    function hardSubmit(form, submitter) {
+        var headers = {};
+        try { headers = JSON.parse(body.getAttribute('hx-headers') || '{}'); } catch (err) { /* no token */ }
+        var token = headers.RequestVerificationToken;
+        if (token && !form.querySelector('input[name="__RequestVerificationToken"]')) {
+            var field = document.createElement('input');
+            field.type = 'hidden';
+            field.name = '__RequestVerificationToken';
+            field.value = token;
+            form.appendChild(field);
+        }
+        var action = form.getAttribute('action'), method = form.getAttribute('method');
+        if (submitter.hasAttribute('formaction')) form.setAttribute('action', submitter.formAction);
+        if (submitter.hasAttribute('formmethod')) form.setAttribute('method', submitter.formMethod);
+        form.submit(); // no submit event, so htmx stays out of it
+        if (action === null) form.removeAttribute('action'); else form.setAttribute('action', action);
+        if (method === null) form.removeAttribute('method'); else form.setAttribute('method', method);
+    }
+
     // Progress bar ----------------------------------------------------------------------------------------------
 
     var bar = document.createElement('div');
@@ -133,6 +202,37 @@
     body.appendChild(bar);
     var barTimer = 0, barHide = 0;
 
+    // The page loader: past 300 ms the page body dims and a spinner shows in the middle of what is visible of it, so
+    // a slow page never looks frozen. It goes as soon as the new page is in, or the navigation ends.
+    var loader = document.createElement('div');
+    loader.className = 'm-main-loader';
+    loader.setAttribute('role', 'status');
+    loader.innerHTML = '<span class="m-spinner" aria-hidden="true"></span><span class="m-sr-only">Loading</span>';
+    body.appendChild(loader);
+    var loaderTimer = 0;
+
+    function loaderStart() {
+        clearTimeout(loaderTimer);
+        loaderTimer = setTimeout(function () {
+            var m = main();
+            if (!m) return;
+            var r = m.getBoundingClientRect();
+            var top = Math.max(r.top, 0), bottom = Math.min(r.bottom, window.innerHeight);
+            loader.style.left = (r.left + r.width / 2) + 'px';
+            loader.style.top = (top + Math.max(bottom - top, 0) / 2) + 'px';
+            m.classList.add('m-main-loading');
+            m.setAttribute('aria-busy', 'true');
+            loader.classList.add('m-active');
+        }, 300);
+    }
+
+    function loaderDone() {
+        clearTimeout(loaderTimer);
+        loader.classList.remove('m-active');
+        var m = main();
+        if (m) { m.classList.remove('m-main-loading'); m.removeAttribute('aria-busy'); }
+    }
+
     function progressStart() {
         clearTimeout(barTimer);
         clearTimeout(barHide);
@@ -141,11 +241,13 @@
             bar.classList.remove('m-active');
             void bar.offsetWidth; // restart the animation
             bar.classList.add('m-active');
-        }, 120);
+        }, 80);
+        loaderStart();
     }
 
     function progressDone() {
         clearTimeout(barTimer);
+        loaderDone();
         if (!bar.classList.contains('m-active')) return;
         bar.classList.add('m-done');
         barHide = setTimeout(function () { bar.classList.remove('m-active', 'm-done'); }, 300);
@@ -358,6 +460,12 @@
             hardNavigate(elt.href);
             return;
         }
+        var submitter = d.triggeringEvent && d.triggeringEvent.submitter;
+        if (submitter && submitter.form && submitter.matches('[data-m-reload]')) {
+            e.preventDefault();
+            hardSubmit(submitter.form, submitter);
+            return;
+        }
         d.headers['X-Modulus-App'] = currentApp();
         if (d.verb === 'get' && pageLevel(elt)) {
             var entry = cached(d.path);
@@ -396,6 +504,7 @@
         d.target = main();
         d.selectOverride = '#main';
         d.swapOverride = MAIN_SWAP + (reduceMotion.matches ? '' : ' transition:true');
+        loaderDone();
         beforeLeave();
     });
 
@@ -421,6 +530,7 @@
     document.addEventListener('htmx:historyCacheMissLoad', function (e) {
         var d = e.detail;
         if (typeof d.response !== 'string' || d.response.indexOf('hx-history-elt') < 0) { hardNavigate(d.path, true); return; }
+        loaderDone();
         d.response = withoutLoadedAssets(d.response);
     });
     document.addEventListener('htmx:historyCacheMissLoadError', function (e) { hardNavigate(e.detail.path, true); });

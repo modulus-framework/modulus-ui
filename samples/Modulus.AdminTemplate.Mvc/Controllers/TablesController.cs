@@ -8,6 +8,7 @@ using Modulus.Samples.Web;
 using Modulus.Samples.Web.Models;
 using Modulus.Ui.Abstractions;
 using Modulus.Ui.Abstractions.Plugins;
+using Modulus.Ui.Abstractions.State;
 
 namespace Modulus.AdminTemplate.Mvc.Controllers;
 
@@ -19,8 +20,12 @@ public class TablesController : SampleController
     private EmployeeQuery WithSearches(EmployeeQuery query) => query with { Searches = Request.Query.ColumnSearches() };
 
     [HttpGet("advanced")]
-    public IActionResult Advanced([FromQuery] EmployeeQuery query, [FromQuery] ProTableRequest request, string? hide) =>
-        Page("Data table", "Tables/Advanced", EmployeeTablePage.Load(WithSearches(query), request, hide));
+    public async Task<IActionResult> Advanced([FromQuery] EmployeeQuery query, [FromQuery] ProTableRequest request, string? hide, [FromServices] SavedViews views)
+    {
+        // A visit that names no layout opens the user's default view (the Views dropdown's star).
+        if (await views.DefaultUrlAsync(UiUser.Key(User), EmployeeTablePage.Path, EmployeeTablePage.Path, QueryValues()) is { } url) return LocalRedirect(url);
+        return Page("Data table", "Tables/Advanced", EmployeeTablePage.Load(WithSearches(query), request, hide));
+    }
 
     /// <summary>Large data: 100,000 shipments in pages, with infinite scrolling or in a virtual table (mode).</summary>
     [HttpGet("large")]
@@ -43,13 +48,17 @@ public class TablesController : SampleController
 
     /// <summary>Pivot of the 100,000 shipments, in the manner of Odoo's pivot view: the layout is in the query string.</summary>
     [HttpGet("pivot")]
-    public IActionResult Pivot([FromQuery] ShipmentFilter filter) =>
-        Page("Pivot", "Tables/Pivot", PivotTablePage.Load(filter, QueryValues()));
+    public async Task<IActionResult> Pivot([FromQuery] ShipmentFilter filter, [FromServices] SavedViews views)
+    {
+        // A visit that names no layout opens the user's default view (the Views dropdown's star).
+        if (await views.DefaultUrlAsync(UiUser.Key(User), PivotTablePage.Path, PivotTablePage.Path, QueryValues()) is { } url) return LocalRedirect(url);
+        return Page("Pivot", "Tables/Pivot", PivotTablePage.Load(filter, QueryValues(), PivotTablePage.Access.For(User)));
+    }
 
     /// <summary>The pivot as an Excel workbook (the toolbar's Download).</summary>
     [HttpGet("pivot/download")]
     public IActionResult PivotDownload([FromQuery] ShipmentFilter filter) =>
-        File(PivotTablePage.Download(filter, QueryValues()), Modulus.Ui.Abstractions.Pivot.PivotXlsx.ContentType, PivotTablePage.DownloadName);
+        File(PivotTablePage.Download(filter, QueryValues(), PivotTablePage.Access.For(User)), Modulus.Ui.Abstractions.Pivot.PivotXlsx.ContentType, PivotTablePage.DownloadName);
 
     private IEnumerable<KeyValuePair<string, string?>> QueryValues() =>
         Request.Query.SelectMany(q => q.Value.Select(v => new KeyValuePair<string, string?>(q.Key, v)));

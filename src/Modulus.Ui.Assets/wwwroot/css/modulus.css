@@ -2085,7 +2085,7 @@ html[data-theme='dark'] :is(.ant-color-picker-color-block, .ant-color-picker-pre
 }
 @media (prefers-reduced-motion: reduce) { .m-media-spinner svg { animation-duration: 3s; } }
 
-/* WYSIWYG editor (Quill with an Ant Design toolbar). */
+/* WYSIWYG editor (Tiptap with an Ant Design toolbar). */
 .m-editor { --m-editor-min-height: 220px; display: flex; flex-direction: column; min-width: 0; border: 1px solid var(--m-border); border-radius: var(--m-radius); background: var(--m-bg-container); transition: border-color .2s, box-shadow .2s; }
 .m-editor:hover { border-color: var(--m-primary-hover); }
 .m-editor.m-editor-focused { border-color: var(--m-primary); box-shadow: var(--m-focus-ring); }
@@ -2108,36 +2108,38 @@ html[data-theme='dark'] :is(.ant-color-picker-color-block, .ant-color-picker-pre
 .m-editor-bar .ant-input { flex: 1 1 200px; width: auto; }
 .m-editor-host { min-height: var(--m-editor-min-height); padding: 12px 15px; overflow-wrap: anywhere; }
 .m-editor-ready .m-editor-host { padding: 0; }
-.m-editor .ql-container.ql-snow { border: 0; font: inherit; font-size: 14px; color: var(--m-text); }
-.m-editor .ql-editor { min-height: var(--m-editor-min-height); padding: 12px 15px; line-height: 1.6; }
-.m-editor .ql-editor.ql-blank::before { left: 15px; right: 15px; color: var(--m-text-quaternary); font-style: normal; }
-.m-editor .ql-snow .ql-tooltip { display: none; }
-.m-editor :is(.m-editor-host, .ql-editor) :is(h1, h2, h3) { margin: .6em 0 .3em; color: var(--m-heading); font-weight: 600; }
-.m-editor :is(.m-editor-host, .ql-editor) blockquote { margin: .4em 0; padding: 2px 12px; border-left: 3px solid var(--m-border-strong); color: var(--m-text-secondary); }
-.m-editor :is(.m-editor-host, .ql-editor) a { color: var(--m-primary); text-decoration: underline; }
-.m-editor :is(.m-editor-host, .ql-editor) img { max-width: 100%; height: auto; border-radius: var(--m-radius); }
-.m-editor :is(.m-editor-host, .ql-snow .ql-editor) :is(pre, .ql-code-block-container) { margin: .4em 0; padding: 10px 12px; border-radius: var(--m-radius); background: var(--m-bg-subtle); color: var(--m-text); font-family: var(--m-font-mono); font-size: 13px; }
+/* Tiptap's editable area (the .tiptap ProseMirror div) — the snow theme's job, done with our tokens. */
+.m-editor .tiptap { min-height: var(--m-editor-min-height); padding: 12px 15px; line-height: 1.6; outline: none; white-space: pre-wrap; }
+.m-editor .tiptap > * + * { margin-top: .25em; }
+.m-editor .tiptap p.is-editor-empty:first-child::before { content: attr(data-placeholder); float: left; height: 0; pointer-events: none; color: var(--m-text-quaternary); font-style: normal; }
+.m-editor :is(.m-editor-host, .tiptap) :is(h1, h2, h3) { margin: .6em 0 .3em; color: var(--m-heading); font-weight: 600; }
+.m-editor :is(.m-editor-host, .tiptap) blockquote { margin: .4em 0; padding: 2px 12px; border-left: 3px solid var(--m-border-strong); color: var(--m-text-secondary); }
+.m-editor :is(.m-editor-host, .tiptap) a { color: var(--m-primary); text-decoration: underline; }
+.m-editor :is(.m-editor-host, .tiptap) img { max-width: 100%; height: auto; border-radius: var(--m-radius); }
+.m-editor :is(.m-editor-host, .tiptap) pre { margin: .4em 0; padding: 10px 12px; border-radius: var(--m-radius); background: var(--m-bg-subtle); color: var(--m-text); font-family: var(--m-font-mono); font-size: 13px; white-space: pre-wrap; }
 .m-editor-footer { display: flex; justify-content: space-between; gap: 12px; padding: 4px 12px; border-top: 1px solid var(--m-split); color: var(--m-text-tertiary); font-size: 12px; }
 .m-editor-failed .m-editor-footer::before { content: "The editor couldn't load; the text is shown as it is."; color: var(--m-error); }
 
-/* Tile maps (Leaflet). */
+/* Tile maps (MapLibre GL JS). */
 .m-map { position: relative; z-index: 0; isolation: isolate; overflow: hidden; border: 1px solid var(--m-split); border-radius: var(--m-radius-lg); background: var(--m-bg-subtle); font: inherit; }
 .m-map-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--m-text-tertiary); font-size: 13px; }
-.m-map.leaflet-container > .m-map-loading { display: none; }
+.m-map.maplibregl-map > .m-map-loading { display: none; }
 .m-map-failed > .m-map-loading { font-size: 0; }
 .m-map-failed > .m-map-loading::after { content: "The map couldn't load."; color: var(--m-error); font-size: 13px; }
-html[data-theme='dark'] .m-map .leaflet-tile-pane { filter: invert(1) hue-rotate(180deg) brightness(.95) contrast(.9); }
-.m-map .leaflet-bar { border: 1px solid var(--m-border); border-radius: var(--m-radius); box-shadow: var(--m-shadow-card); }
-.m-map .leaflet-bar a { border-bottom-color: var(--m-split); background: var(--m-bg-elevated); color: var(--m-text); }
-.m-map .leaflet-bar a:hover { background: var(--m-fill-secondary); }
-.m-map .leaflet-control-attribution { background: color-mix(in srgb, var(--m-bg-container) 85%, transparent); color: var(--m-text-tertiary); }
-.m-map .leaflet-control-attribution a { color: var(--m-primary); }
-.m-map .leaflet-popup-content-wrapper, .m-map .leaflet-popup-tip { background: var(--m-bg-elevated); color: var(--m-text); box-shadow: var(--m-shadow-popup); }
-.m-map .leaflet-popup-content-wrapper { border-radius: var(--m-radius-lg); }
-.m-map .leaflet-popup-content { margin: 12px 16px; font-size: 13px; line-height: 1.5; }
-.m-map a.leaflet-popup-close-button { color: var(--m-text-tertiary); }
+html[data-theme='dark'] .m-map .maplibregl-canvas { filter: invert(1) hue-rotate(180deg) brightness(.95) contrast(.9); }
+.m-map .maplibregl-ctrl-group { border: 1px solid var(--m-border); border-radius: var(--m-radius); box-shadow: var(--m-shadow-card); overflow: hidden; }
+.m-map .maplibregl-ctrl-group button { border-bottom-color: var(--m-split); background: var(--m-bg-elevated); color: var(--m-text); width: 29px; height: 29px; }
+.m-map .maplibregl-ctrl-group button:hover { background: var(--m-fill-secondary); }
+.m-map .maplibregl-ctrl-group button + button { border-top: 1px solid var(--m-split); }
+.m-map .maplibregl-ctrl-attrib { background: color-mix(in srgb, var(--m-bg-container) 85%, transparent); color: var(--m-text-tertiary); }
+.m-map .maplibregl-ctrl-attrib a { color: var(--m-primary); }
+.m-map .maplibregl-popup-content, .m-map .maplibregl-popup-tip { background: var(--m-bg-elevated); color: var(--m-text); box-shadow: var(--m-shadow-popup); }
+.m-map .maplibregl-popup-content { padding: 12px 16px; border-radius: var(--m-radius-lg); font-size: 13px; line-height: 1.5; }
+.m-map .maplibregl-popup-close-button { width: 24px; height: 24px; color: var(--m-text-tertiary); font-size: 16px; }
+.m-map .maplibregl-popup-close-button:hover { color: var(--m-text); background: none; }
 .m-map-popup-title { color: var(--m-heading); font-weight: 600; }
 .m-map-popup-text { margin-top: 2px; color: var(--m-text-secondary); }
+.m-map .m-map-pin { width: 26px; height: 34px; cursor: pointer; }
 .m-map-pin, .m-map-pin-primary { --m-pin: var(--m-primary); }
 .m-map-pin-success { --m-pin: var(--m-success); }
 .m-map-pin-warning { --m-pin: var(--m-warning); }
@@ -2162,6 +2164,30 @@ html[data-theme='dark'] :is(.m-vector-map-wrap, .m-vector-map) { --m-map-land: #
 .m-map-legend-swatch { width: 12px; height: 12px; border-radius: 2px; }
 .m-map-legend-none { background: var(--m-map-land); box-shadow: inset 0 0 0 1px var(--m-border); }
 .m-map-selected { margin: 0; color: var(--m-text-secondary); }
+
+/* Spreadsheet (Univer). */
+.m-sheet, .m-doc { position: relative; display: flex; flex-direction: column; min-width: 0; overflow: hidden; border: 1px solid var(--m-split); border-radius: var(--m-radius-lg); background: var(--m-bg-container); }
+.m-sheet-app { flex: 1; min-height: 0; }
+.m-sheet-loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: var(--m-text-tertiary); font-size: 13px; }
+.m-sheet.m-sheet-ready > .m-sheet-loading, .m-doc.m-sheet-ready > .m-sheet-loading { display: none; }
+.m-sheet-failed > .m-sheet-loading { font-size: 0; }
+.m-sheet-failed > .m-sheet-loading::after { content: "The spreadsheet couldn't load."; color: var(--m-error); font-size: 13px; }
+.m-doc.m-sheet-failed > .m-sheet-loading::after { content: "The document couldn't load."; }
+/* Univer's ribbon (sheets and docs) reads like the page's Ant nav: tabs and toolbar start at the left, the tabs are
+   line tabs with the primary ink bar instead of centred pills. Univer's utility classes are the hooks; the !important
+   ones beat its dark-mode !important utilities. */
+.m-sheet-app header .univer-h-9 { height: 38px; border-bottom: 1px solid var(--m-split); }
+.m-sheet-app header .univer-h-9 > .univer-justify-center { justify-content: flex-start; gap: 4px; padding: 0 8px; border-radius: 0; background: transparent !important; }
+.m-sheet-app header .univer-h-9 > div > button { position: relative; height: 100%; padding: 0 12px; border-radius: 0; background: transparent !important; box-shadow: none; color: var(--m-text-secondary) !important; font-weight: 400; transition: color .2s; }
+.m-sheet-app header .univer-h-9 > div > button:hover { color: var(--m-primary) !important; }
+.m-sheet-app header .univer-h-9 > div > button[aria-selected="true"] { color: var(--m-primary) !important; font-weight: 500; }
+.m-sheet-app header .univer-h-9 > div > button[aria-selected="true"]::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: 0; height: 2px; border-radius: 2px 2px 0 0; background: var(--m-primary); }
+.m-sheet-app header .univer-h-9 > div > button:focus-visible { outline: 2px solid var(--m-primary); outline-offset: -2px; box-shadow: none; }
+.m-sheet-app header .univer-h-10.univer-justify-center, .m-sheet-app header .univer-h-10 > .univer-justify-center { justify-content: start; }
+.m-sheet-app header .univer-h-10 { padding-left: 8px; }
+/* A file input hidden inside a button-styled label (data-m-file-submit): the label shows the focus ring. */
+.m-file-button { cursor: pointer; }
+.m-file-button:focus-within { outline: 2px solid var(--m-primary); outline-offset: 1px; }
 
 /* Sortable lists. */
 [data-m-sortable] { position: relative; }

@@ -1,6 +1,6 @@
-@* WYSIWYG editor: Quill with an Ant Design toolbar (headings, bold, italic, underline, strike, lists, quote, code, links,
+@* WYSIWYG editor: Tiptap with an Ant Design toolbar (headings, bold, italic, underline, strike, lists, quote, code, links,
    images from a URL, clear, undo, redo). The same markup and script as the MVC <app-editor> (EditorHtml, modulus-plugins.js).
-   Quill owns the editing area, so the starting HTML is rendered once; the script writes the HTML to the hidden input and
+   Tiptap owns the editing area, so the starting HTML is rendered once; the script writes the HTML to the hidden input and
    raises change (debounced), which binds Value. Setting Value from outside starts a fresh editor with it. The HTML is
    cleaned with RichText.Sanitize (images allowed) on the way in and out; clean it again on the server before storing. *@
 @using System.Linq.Expressions

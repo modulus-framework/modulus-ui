@@ -1,0 +1,68 @@
+@using Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Plugins
+@* Document: Univer Docs filling the page under a segmented nav — a contract template, a memo, a blank page or read-only pages.
+   An Ant toolbar above the editor saves (the form posts the document's JSON), resets, imports a docx (picking a file posts it
+   and the document replaces the pages) and downloads the document as docx (a formaction button). *@
+@{
+    var view = PluginsContent.DocumentView(ViewData["DocumentView"] as string ?? Context.Request.Query["view"].ToString());
+    var posted = Context.Request.HasFormContentType && Context.Request.Form.Files.Count == 0
+        ? PluginsContent.PostedDocument(Context.Request.Form["Document"]) : null;
+    var imported = ViewData["DocumentJson"] as string;
+    var file = ViewData["DocumentImport"] as string;
+    var error = ViewData["DocumentError"] as string;
+    var document = posted ?? imported ?? PluginsContent.DocumentTemplate(view);
+    var feedback = posted is not null ? "Saved document" : imported is not null ? $"Imported from {file}" : null;
+}
+<app-page-header pretitle="Plugins" title="Document" subtitle="A Word-style editor on Univer Docs: headings, fonts, lists, tables, images and links on A4 pages. It posts its JSON, downloads and imports docx."></app-page-header>
+
+<div class="m-sheet-workspace">
+    <div class="m-sheet-bar">
+        <div class="ant-segmented" role="group" aria-label="Demo">
+            <div class="ant-segmented-group">
+                @foreach (var demo in PluginsContent.DocumentViews)
+                {
+                    <a class="ant-segmented-item @(demo.Key == view ? "ant-segmented-item-selected" : "")" href="@PluginsContent.DocumentUrl(demo.Key)" aria-current="@(demo.Key == view ? "true" : null)">
+                        <div class="ant-segmented-item-label">@demo.Label</div>
+                    </a>
+                }
+            </div>
+        </div>
+        @if (view != "readonly")
+        {
+            <div class="m-sheet-bar-actions" role="status">
+                @if (error is not null)
+                {
+                    <span class="ant-form-item-explain-error">@error</span>
+                }
+                else if (feedback is not null)
+                {
+                    <span class="m-muted">@feedback</span>
+                }
+            </div>
+            <div class="m-sheet-bar-actions">
+                @* The import posts just the file (and the demo to return to), not the document, whose edits stay on the page. *@
+                <label class="ant-btn ant-btn-default m-file-button">
+                    <input type="file" name="file" accept=".docx" form="document-import" class="m-sr-only" data-m-file-submit />
+                    <app-icon type="upload" /><span>Import docx</span>
+                </label>
+                <button type="submit" form="document-form" formaction="@PluginsContent.DocumentDownloadUrl" data-m-reload class="ant-btn ant-btn-default"><app-icon type="download" /><span>Download docx</span></button>
+                <a class="ant-btn ant-btn-default" href="@PluginsContent.DocumentUrl(view)"><span>Reset</span></a>
+                <button type="submit" form="document-form" class="ant-btn ant-btn-primary"><app-icon type="save" /><span>Save</span></button>
+            </div>
+        }
+    </div>
+    @if (view == "readonly")
+    {
+        <app-document id="contract-readonly" value="@PluginsContent.Contract" read-only="true" height="100%" />
+    }
+    else
+    {
+        <form id="document-form" method="post" action="/plugins/document" asp-antiforgery="true">
+            <input type="hidden" name="view" value="@view" />
+            <app-document id="document" name="Document" value="@document" height="100%" />
+        </form>
+        <form id="document-import" method="post" action="/plugins/document" asp-antiforgery="true" enctype="multipart/form-data" hidden>
+            <input type="hidden" name="view" value="@view" />
+        </form>
+    }
+</div>

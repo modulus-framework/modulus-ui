@@ -1,0 +1,64 @@
+@* Document editor: Univer Docs with a Word-style ribbon and A4 pages (pages only when read-only); the same markup as the MVC
+   <app-document> (DocumentHtml, modulus-plugins.js). Univer owns the pages, so the starting document renders once; the script
+   writes the edited document's JSON to the hidden input and raises change (debounced), which comes back through ValueChanged.
+   Setting Value from outside loads it into the running editor (the script keeps Univer across the re-render, so there is
+   no reload flash). Each change carries the whole document over the circuit: raise the hub's MaximumReceiveMessageSize
+   (32 KB by default) for documents larger than that, as the sample's Program.cs does. Build or read the JSON with Modulus.Documents.UniverDocument
+   and turn it into Word files with DocumentDocx. *@
+
+<div @key="_version" class="m-doc@(string.IsNullOrEmpty(CssClass) ? "" : " " + CssClass)" id="@Id" data-m-doc data-doc="@_initial"
+     data-readonly="@ReadOnly" role="region" aria-label="@(Label ?? "Document")" style="height: @(Height)">
+    <div class="m-sheet-loading">Loading document…</div>
+    <input type="hidden" name="@Name" id="@(Id)-value" value="@_initial" data-m-doc-value @onchange="Changed" />
+</div>
+
+@code {
+    /// <summary>The document's JSON (a Univer Docs snapshot); null or empty starts a blank page.</summary>
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>The edited document's JSON, after each pause in typing.</summary>
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    /// <summary>The pages to read, without the ribbon.</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>CSS height, e.g. "640px" or "100%".</summary>
+    [Parameter] public string Height { get; set; } = "640px";
+
+    /// <summary>Form field name; the hidden input posts the edited document's JSON under it.</summary>
+    [Parameter] public string? Name { get; set; }
+
+    /// <summary>Element id of the editor (the hidden input is "<see cref="Id"/>-value").</summary>
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+
+    /// <summary>Accessible name of the editor region.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    [Parameter] public string? CssClass { get; set; }
+
+    private string _initial = "";
+    private string? _last;
+    private bool _readOnly;
+    private int _version;
+
+    protected override void OnParametersSet()
+    {
+        // A document the script did not produce (first render, a reset, a loaded record) or a read-only switch: start again.
+        var value = Value ?? "";
+        if (_version == 0 || value != (_last ?? "") || ReadOnly != _readOnly)
+        {
+            _initial = value;
+            _last = value;
+            _readOnly = ReadOnly;
+            _version++;
+        }
+    }
+
+    private async Task Changed(ChangeEventArgs e)
+    {
+        var json = e.Value?.ToString() ?? "";
+        if (json == (_last ?? "")) return;
+        _last = json;
+        await ValueChanged.InvokeAsync(json);
+    }
+}

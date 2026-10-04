@@ -2,7 +2,7 @@
  * Modulus plugins runtime — shared by Blazor, MVC and Razor Pages.
  *
  * Like modulus-shell.js it works from the markup alone: event delegation on document, plus a MutationObserver
- * that starts the widgets which need a library (maps, editor) when their element appears, so Blazor re-renders,
+ * that starts the widgets which need a library (maps, editors, spreadsheet, documents) when their element appears, so Blazor re-renders,
  * enhanced navigation and htmx swaps all work without calls from the page. Libraries load on first use from
  * /_content/Modulus.Ui.Assets/lib (served locally, no CDN).
  *
@@ -13,10 +13,16 @@
  *                          [data-m-sort-value] inputs take the new list's name, so a form posts the order.
  *   [data-m-player]        custom controls for a <video> or <audio>: play, seek, time, mute, volume, speed,
  *                          captions (data-captions JSON cues), fullscreen and keyboard keys.
- *   [data-m-editor]        WYSIWYG editor on Quill; the HTML goes to [data-m-editor-value] with a change event.
- *   [data-m-map]           Leaflet tile map with markers (data-markers JSON) and popups; [data-m-map-go] buttons fly
- *                          to a marker.
+ *   [data-m-editor]        WYSIWYG editor on Tiptap; the HTML goes to [data-m-editor-value] with a change event.
+ *   [data-m-map]           MapLibre GL tile map with markers (data-markers JSON) and popups; [data-m-map-go] buttons
+ *                          fly to a marker.
  *   [data-m-vector-map]    jsVectorMap choropleth: region fills from data-fills, values in the tooltip.
+ *   [data-m-sheet]         spreadsheet on Univer (ribbon, formula bar, filter, sort, conditional formatting, validation,
+ *                          find and replace, links, notes, tables; a bare grid with sheet tabs with data-readonly); the
+ *                          sheets JSON in data-sheets, edits back to [data-m-sheet-value] with a change event.
+ *   [data-m-doc]           document editor on Univer Docs (Word-style ribbon, A4 pages; pages only with data-readonly);
+ *                          the document JSON in data-doc, edits back to [data-m-doc-value] with a change event.
+ *   [data-m-file-submit]   a file input that submits its form as soon as a file is picked.
  *   [data-m-copy]          copies its value to the clipboard on click.
  */
 (function () {
@@ -65,6 +71,23 @@
         if (!input) return;
         input.value = value;
         input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    // ---- Widget registry -----------------------------------------------------------------------------------
+
+    // One row per plugin widget: scan() inits the roots that appeared (roots mark themselves [data-m-ready])
+    // and stops the ones whose element left the page (Blazor navigation, htmx swap). A widget that builds
+    // something with listeners (an editor, a map) calls keepAlive(root, destroy) once it holds it.
+    var registry = [];
+    var liveRoots = [];
+
+    function widget(selector, init) {
+        registry.push({ selector: selector, init: init });
+    }
+
+    function keepAlive(root, destroy) {
+        root._mDestroy = destroy;
+        if (liveRoots.indexOf(root) < 0) liveRoots.push(root);
     }
 
     // ---- Sortable ------------------------------------------------------------------------------------------
@@ -544,55 +567,55 @@
         if (cmd) { e.preventDefault(); playerCommand(p, cmd); }
     });
 
-    // ---- Editor (Quill) ------------------------------------------------------------------------------------
+    // ---- Editor (Tiptap) ----------------------------------------------------------------------------------
 
-    var QUILL = [LIB + 'quill/quill.js'];
-    var QUILL_CSS = [LIB + 'quill/quill.snow.css'];
+    // One pre-bundled IIFE (see lib/tiptap/LICENSE.md): Editor, StarterKit (formatting, lists, link,
+    // undo/redo), Image from a URL and Placeholder. No CSS of its own; modulus.css styles .tiptap.
+    var TIPTAP = [LIB + 'tiptap/tiptap.js'];
 
-    function editorHtml(q) {
-        var html = q.getLength() <= 1 ? '' : q.getSemanticHTML();
-        // Quill writes every space as &nbsp; in its semantic HTML; keep them only where they are needed.
-        return html.replace(/&nbsp;/g, ' ').replace(/ {2}/g, '  ');
+    function editorHtml(ed) {
+        return ed.isEmpty() ? '' : ed.getHTML();
     }
 
     function initEditor(root) {
         var host = root.querySelector('.m-editor-host');
         if (!host) return;
         root.setAttribute('data-m-ready', '');
-        libs(QUILL_CSS, QUILL).then(function () {
-            if (!document.contains(root) || root._mQuill) return;
-            var q = new window.Quill(host, {
-                theme: 'snow',
-                placeholder: root.getAttribute('data-placeholder') || '',
-                readOnly: root.hasAttribute('data-readonly'),
-                // The toolbar is our own markup (Ant Design icons); pasted or dropped image files are refused, images
-                // come from a URL only, so the stored HTML stays small and passes RichText.Sanitize.
-                modules: { toolbar: false, uploader: { mimetypes: [] }, history: { delay: 800, maxStack: 200 } }
-            });
-            root._mQuill = q;
-            var value = root.querySelector('[data-m-editor-value]');
-            var editable = q.root;
-            editable.setAttribute('role', 'textbox');
-            editable.setAttribute('aria-multiline', 'true');
+        libs([], TIPTAP).then(function () {
+            if (!document.contains(root) || root._mTip) return;
+            var t = window.ModulusTiptap;
+            var attrs = { role: 'textbox', 'aria-multiline': 'true', class: 'tiptap' };
             var label = root.getAttribute('data-label');
-            if (label) editable.setAttribute('aria-label', label);
+            if (label) attrs['aria-label'] = label;
             var labelledBy = root.getAttribute('data-labelledby');
-            if (labelledBy) editable.setAttribute('aria-labelledby', labelledBy);
+            if (labelledBy) attrs['aria-labelledby'] = labelledBy;
+            var ed = new t.Editor({
+                element: host,
+                content: host.innerHTML,   // the starting HTML, rendered by the server
+                editable: !root.hasAttribute('data-readonly'),
+                extensions: [t.StarterKit, t.Image, t.Placeholder.configure({ placeholder: root.getAttribute('data-placeholder') || '' })],
+                editorProps: { attributes: attrs }
+            });
+            root._mTip = ed;
+            var value = root.querySelector('[data-m-editor-value]');
             var timer = 0;
-            q.on('text-change', function () {
+            ed.on('update', function () {
                 clearTimeout(timer);
                 // Blazor gets one update per pause in typing, not one per key.
-                timer = setTimeout(function () { raiseChange(value, editorHtml(q)); }, root.hasAttribute('data-m-debounce') ? 300 : 0);
-                syncEditor(root, q);
+                timer = setTimeout(function () { raiseChange(value, editorHtml(ed)); }, root.hasAttribute('data-m-debounce') ? 300 : 0);
+                syncEditor(root, ed);
             });
-            q.on('selection-change', function (range) {
-                root.classList.toggle('m-editor-focused', !!range);
-                syncEditor(root, q);
+            ed.on('selectionUpdate', function () { syncEditor(root, ed); });
+            ed.on('focus', function () { root.classList.add('m-editor-focused'); });
+            ed.on('blur', function () {
+                root.classList.remove('m-editor-focused');
                 // Leaving the editor (for a Save button, say) sends the text at once, ahead of the click.
-                if (!range) { clearTimeout(timer); if (value && value.value !== editorHtml(q)) raiseChange(value, editorHtml(q)); }
+                clearTimeout(timer);
+                if (value && value.value !== editorHtml(ed)) raiseChange(value, editorHtml(ed));
             });
             root.classList.add('m-editor-ready');
-            syncEditor(root, q);
+            keepAlive(root, function () { root._mTip.destroy(); });
+            syncEditor(root, ed);
         }).catch(function () { root.classList.add('m-editor-failed'); });
     }
 
@@ -600,43 +623,47 @@
     document.addEventListener('submit', function (e) {
         if (!(e.target instanceof HTMLFormElement)) return;
         e.target.querySelectorAll('[data-m-editor]').forEach(function (root) {
-            var q = root._mQuill, value = root.querySelector('[data-m-editor-value]');
-            if (q && value) value.value = editorHtml(q);
+            var ed = root._mTip, value = root.querySelector('[data-m-editor-value]');
+            if (ed && value) value.value = editorHtml(ed);
         });
     }, true);
 
-    function syncEditor(root, q) {
-        var range = q.getSelection();
-        var f = range ? q.getFormat(range) : {};
+    function syncEditor(root, ed) {
+        var marks = {
+            bold: ed.isActive('bold'), italic: ed.isActive('italic'), underline: ed.isActive('underline'), strike: ed.isActive('strike'),
+            blockquote: ed.isActive('blockquote'), 'code-block': ed.isActive('codeBlock'), link: ed.isActive('link')
+        };
         root.querySelectorAll('[data-m-ed]').forEach(function (b) {
-            var name = b.getAttribute('data-m-ed'), arg = b.getAttribute('data-arg');
-            var on = arg ? String(f[name]) === arg : !!f[name];
+            var name = b.getAttribute('data-m-ed'), arg = b.getAttribute('data-arg'), on;
+            if (name === 'list') on = arg === 'ordered' ? ed.isActive('orderedList') : ed.isActive('bulletList');
+            else on = !!marks[name];
             b.classList.toggle('m-editor-btn-active', on);
             b.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
         var heading = root.querySelector('[data-m-ed-heading]');
-        if (heading) heading.value = f.header ? String(f.header) : '';
+        if (heading) {
+            var level = [1, 2, 3].find(function (n) { return ed.isActive('heading', { level: n }); });
+            heading.value = level ? String(level) : '';
+        }
         var count = root.querySelector('[data-m-editor-count]');
         if (count) {
-            var words = q.getText().trim().split(/\s+/).filter(Boolean).length;
+            var words = ed.getText().trim().split(/\s+/).filter(Boolean).length;
             count.textContent = words + (words === 1 ? ' word' : ' words');
         }
         var undo = root.querySelector('[data-m-ed="undo"]'), redo = root.querySelector('[data-m-ed="redo"]');
-        if (undo) undo.disabled = !q.history.stack.undo.length;
-        if (redo) redo.disabled = !q.history.stack.redo.length;
+        if (undo) undo.disabled = !ed.can().undo();
+        if (redo) redo.disabled = !ed.can().redo();
     }
 
-    function editorOf(el) { var root = el instanceof Element && el.closest('[data-m-editor]'); return root && root._mQuill ? root : null; }
+    function editorOf(el) { var root = el instanceof Element && el.closest('[data-m-editor]'); return root && root._mTip ? root : null; }
 
     function openBar(root, mode) {
-        var q = root._mQuill;
+        var ed = root._mTip;
         var bar = root.querySelector('[data-m-editor-bar]');
         if (!bar) return;
-        var range = q.getSelection(true);
-        bar._mRange = range;
         bar.setAttribute('data-mode', mode);
         var input = bar.querySelector('input');
-        var current = mode === 'link' ? q.getFormat(range).link : '';
+        var current = mode === 'link' ? (ed.getAttributes('link').href || '') : '';
         input.value = current || '';
         input.placeholder = mode === 'link' ? 'https://example.com' : 'https://example.com/image.png';
         input.setAttribute('aria-label', mode === 'link' ? 'Link address' : 'Image address');
@@ -651,7 +678,7 @@
         var bar = root.querySelector('[data-m-editor-bar]');
         if (!bar || bar.hidden) return;
         bar.hidden = true;
-        if (focus) root._mQuill.focus();
+        if (focus) root._mTip.commands.focus();
     }
 
     function safeUrl(url, image) {
@@ -664,39 +691,37 @@
     }
 
     function applyBar(root) {
-        var q = root._mQuill;
+        var ed = root._mTip;
         var bar = root.querySelector('[data-m-editor-bar]');
         var mode = bar.getAttribute('data-mode');
         var url = safeUrl(bar.querySelector('input').value, mode === 'image');
-        var range = bar._mRange || q.getSelection(true) || { index: q.getLength() - 1, length: 0 };
         closeBar(root, true);
         if (!url) return;
         if (mode === 'image') {
-            q.insertEmbed(range.index, 'image', url, 'user');
-            q.setSelection(range.index + 1, 0, 'silent');
-        } else if (range.length) {
-            q.formatText(range.index, range.length, 'link', url, 'user');
+            ed.chain().focus().setImage({ src: url }).run();
         } else {
-            q.insertText(range.index, url, 'link', url, 'user');
-            q.setSelection(range.index + url.length, 0, 'silent');
+            var sel = ed.state.selection, empty = sel.empty;
+            // An empty selection on an existing link: extend to the whole link. Anywhere else, type the URL in as
+            // the text, linked to itself.
+            if (empty && !ed.isActive('link'))
+                ed.chain().focus().insertContent({ type: 'text', marks: [{ type: 'link', attrs: { href: url } }], text: url }).run();
+            else
+                ed.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
         }
     }
 
     function editorCommand(root, name, arg) {
-        var q = root._mQuill;
-        if (name === 'undo') { q.history.undo(); return; }
-        if (name === 'redo') { q.history.redo(); return; }
+        var ed = root._mTip, c = ed.chain().focus();
+        if (name === 'undo') { c.undo().run(); return; }
+        if (name === 'redo') { c.redo().run(); return; }
         if (name === 'link' || name === 'image') { openBar(root, name); return; }
-        var range = q.getSelection(true);
-        if (name === 'clean') {
-            if (range.length) q.removeFormat(range.index, range.length, 'user');
-            else q.formatLine(range.index, 1, { header: false, list: false, blockquote: false, 'code-block': false }, 'user');
-            return;
-        }
-        var f = q.getFormat(range);
-        if (arg) q.format(name, String(f[name]) === arg ? false : arg, 'user');
-        else q.format(name, !f[name], 'user');
-        syncEditor(root, q);
+        if (name === 'clean') { c.unsetAllMarks().clearNodes().run(); return; }
+        if (name === 'list') { (arg === 'ordered' ? c.toggleOrderedList() : c.toggleBulletList()).run(); return; }
+        var toggles = {
+            bold: c.toggleBold(), italic: c.toggleItalic(), underline: c.toggleUnderline(), strike: c.toggleStrike(),
+            blockquote: c.toggleBlockquote(), 'code-block': c.toggleCodeBlock()
+        };
+        if (toggles[name]) toggles[name].run();
     }
 
     document.addEventListener('mousedown', function (e) {
@@ -715,26 +740,18 @@
         var remove = e.target.closest('[data-m-editor-bar-remove]');
         if (remove && editorOf(remove)) {
             e.preventDefault();
-            var r = editorOf(remove), bar = r.querySelector('[data-m-editor-bar]'), range = bar._mRange;
+            var r = editorOf(remove);
             closeBar(r, true);
-            if (range) {
-                var q = r._mQuill;
-                if (range.length) q.formatText(range.index, range.length, 'link', false, 'user');
-                else {
-                    // A caret inside a link: unlink the whole link.
-                    var leaf = q.getLeaf(range.index + 1)[0], blot = leaf && leaf.parent;
-                    if (blot && blot.statics && blot.statics.blotName === 'link') q.formatText(q.getIndex(blot), blot.length(), 'link', false, 'user');
-                }
-            }
+            r._mTip.chain().focus().extendMarkRange('link').unsetLink().run();
         }
     });
     document.addEventListener('change', function (e) {
         var sel = e.target instanceof Element && e.target.closest('[data-m-ed-heading]');
         var root = sel && editorOf(sel);
         if (!root) return;
-        var q = root._mQuill;
-        q.focus();
-        q.format('header', sel.value ? Number(sel.value) : false, 'user');
+        var ed = root._mTip;
+        if (sel.value) ed.chain().focus().setHeading({ level: Number(sel.value) }).run();
+        else ed.chain().focus().setParagraph().run();
     });
     document.addEventListener('keydown', function (e) {
         var bar = e.target instanceof Element && e.target.closest('[data-m-editor-bar]');
@@ -745,22 +762,22 @@
             return;
         }
         // Ctrl+K opens the link bar, as in most editors.
-        root = e.target instanceof Element && e.target.closest('.ql-editor') && editorOf(e.target);
+        root = e.target instanceof Element && e.target.closest('.tiptap') && editorOf(e.target);
         if (root && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openBar(root, 'link'); }
     });
 
-    // ---- Tile maps (Leaflet) -------------------------------------------------------------------------------
+    // ---- Tile maps (MapLibre GL JS) ------------------------------------------------------------------------
 
-    var LEAFLET = [LIB + 'leaflet/leaflet.js'];
-    var LEAFLET_CSS = [LIB + 'leaflet/leaflet.css'];
-    var maps = [];
+    var MAPLIBRE = [LIB + 'maplibre/maplibre-gl.js'];
+    var MAPLIBRE_CSS = [LIB + 'maplibre/maplibre-gl.css'];
 
-    function pin(L, tone) {
-        return L.divIcon({
-            className: 'm-map-pin m-map-pin-' + (tone || 'primary'),
-            html: '<span class="m-map-pin-head"></span>',
-            iconSize: [26, 34], iconAnchor: [13, 32], popupAnchor: [0, -28]
-        });
+    function pinElement(tone, title) {
+        var el = document.createElement('div');
+        el.className = 'm-map-pin m-map-pin-' + (tone || 'primary');
+        el.innerHTML = '<span class="m-map-pin-head"></span>';
+        if (title) { el.title = title; el.setAttribute('aria-label', title); }
+        el.tabIndex = 0;
+        return el;
     }
 
     function popupContent(mk) {
@@ -779,34 +796,59 @@
         return box;
     }
 
+    function osmStyle() {
+        return {
+            version: 8,
+            sources: {
+                osm: {
+                    type: 'raster',
+                    tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                    tileSize: 256,
+                    maxzoom: 19,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+                }
+            },
+            layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
+        };
+    }
+
     function initMap(el) {
         el.setAttribute('data-m-ready', '');
-        libs(LEAFLET_CSS, LEAFLET).then(function () {
+        libs(MAPLIBRE_CSS, MAPLIBRE).then(function () {
             if (!document.contains(el) || el._mMap) return;
-            var L = window.L;
+            var gl = window.maplibregl;
             var markers = json(el, 'data-markers', []);
             var center = (el.getAttribute('data-center') || '').split(',').map(Number);
             var zoom = Number(el.getAttribute('data-zoom') || 4);
-            var map = L.map(el, {
-                scrollWheelZoom: el.hasAttribute('data-scroll-zoom'),
-                zoomControl: true,
-                attributionControl: true
+            var map = new gl.Map({
+                container: el,
+                style: osmStyle(),
+                // Off by default, so the page scrolls past the map (data-scroll-zoom turns it on).
+                scrollZoom: el.hasAttribute('data-scroll-zoom'),
+                attributionControl: { compact: true },
+                // trackResize (the default) keeps the canvas at the container's size.
+                maxZoom: 19
             });
-            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            }).addTo(map);
+            map.addControl(new gl.NavigationControl({ showCompass: false }));
             var layers = markers.map(function (mk) {
-                var m = L.marker([mk.lat, mk.lng], { icon: pin(L, mk.tone), title: mk.title || '', alt: mk.title || '', keyboard: true });
-                m.bindPopup(popupContent(mk), { closeButton: true, autoPanPadding: [24, 24] });
-                return m.addTo(map);
+                var pin = pinElement(mk.tone, mk.title);
+                pin.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); marker.togglePopup(); }
+                });
+                var marker = new gl.Marker({ element: pin, anchor: 'bottom' })
+                    .setLngLat([mk.lng, mk.lat])
+                    .setPopup(new gl.Popup({ closeButton: true, offset: 32, maxWidth: '260px' }).setDOMContent(popupContent(mk)))
+                    .addTo(map);
+                return marker;
             });
-            if (center.length === 2 && center.every(isFinite)) map.setView(center, zoom);
-            else if (layers.length) map.fitBounds(L.featureGroup(layers).getBounds().pad(0.2), { maxZoom: zoom || 12 });
-            else map.setView([20, 0], 2);
+            if (center.length === 2 && center.every(isFinite)) { map.setCenter([center[1], center[0]]); map.setZoom(zoom); }
+            else if (layers.length) {
+                var bounds = layers.reduce(function (b, m) { return b.extend(m.getLngLat()); }, new gl.LngLatBounds());
+                map.fitBounds(bounds, { padding: Math.max(24, Math.round(el.clientWidth * 0.12)), maxZoom: zoom || 12, animate: false });
+            }
+            else { map.setCenter([0, 20]); map.setZoom(2); }
             el._mMap = { map: map, markers: layers };
-            maps.push(el);
-            if (window.ResizeObserver) new ResizeObserver(function () { map.invalidateSize(); }).observe(el);
+            keepAlive(el, function () { el._mMap.map.remove(); });
         }).catch(function () { el.classList.add('m-map-failed'); });
     }
 
@@ -819,8 +861,8 @@
         var mk = state.markers[Number(go.getAttribute('data-m-map-go'))];
         if (!mk) return;
         e.preventDefault();
-        state.map.flyTo(mk.getLatLng(), Math.max(state.map.getZoom(), Number(go.getAttribute('data-zoom') || 12)), { duration: 0.8 });
-        state.map.once('moveend', function () { mk.openPopup(); });
+        state.map.flyTo({ center: mk.getLngLat(), zoom: Math.max(state.map.getZoom(), Number(go.getAttribute('data-zoom') || 12)), duration: 800 });
+        state.map.once('moveend', function () { mk.togglePopup(); });
         var list = go.closest('[data-m-map-list]');
         if (list) list.querySelectorAll('[data-m-map-go]').forEach(function (b) { b.classList.toggle('active', b === go); b.setAttribute('aria-current', b === go ? 'true' : 'false'); });
     });
@@ -875,11 +917,386 @@
                 out.textContent = isSelected ? (el._mVector.mapData.paths[code] ? el._mVector.mapData.paths[code].name : code) + ': ' + (labels[code] || 'no data') : out.getAttribute('data-empty') || '';
             }
         });
+        keepAlive(el, function () { el._mVector.destroy(); });
     }
 
     // Colours are read when a vector map is drawn, so it is drawn again in the other theme.
     window.addEventListener('modulus:theme', function () {
         document.querySelectorAll('[data-m-vector-map]').forEach(function (el) { if (el._mVector) drawVectorMap(el); });
+    });
+
+    // ---- Spreadsheet (Univer) ------------------------------------------------------------------------------
+
+    // One pre-bundled IIFE (see lib/univer/LICENSE.md): createUniver, the sheets core preset plus filter, sort,
+    // conditional formatting, data validation, find & replace, hyperlinks, notes and tables, the themes and the
+    // en-US locale. It is about 11.7 MB (3 MB gzipped) and loads only on pages that show a spreadsheet. The sheets
+    // travel as JSON in data-sheets ([{ name, rows, frozenRows, frozenColumns, columnWidths }]); a cell is a
+    // number, text, a bool or a "=SUM(A1:B2)" string. Edits land in the [data-m-sheet-value] input as the same
+    // JSON, so the sheet posts with its form and Blazor binds it. Formatting made in the grid (fonts, colours,
+    // rules) lives as long as the grid; values, formulas, frozen panes and column widths travel.
+    var UNIVER = [LIB + 'univer/univer.js'];
+    var UNIVER_CSS = [LIB + 'univer/univer.css'];
+    var SHEET_COL_WIDTH = 88;
+    var sheetId = 0;
+
+    function sheetCellData(sheet) {
+        var cells = {}, head = sheet.frozenRows || 0;
+        (sheet.rows || []).forEach(function (row, r) {
+            (row || []).forEach(function (cell, c) {
+                if (cell === '' || cell == null) return;
+                // Univer keeps a formula with its "=": { f: "=SUM(A1:B2)" }.
+                var out = typeof cell === 'string' && cell.charAt(0) === '=' && cell.length > 1 ? { f: cell } : { v: cell };
+                if (r < head) out.s = { bl: 1 }; // frozen rows are header rows
+                (cells[r] = cells[r] || {})[c] = out;
+            });
+        });
+        return cells;
+    }
+
+    function sheetRows(cellData) {
+        var maxR = -1, maxC = -1;
+        Object.keys(cellData || {}).forEach(function (r) {
+            Object.keys(cellData[r] || {}).forEach(function (c) {
+                var cell = cellData[r][c];
+                if (!cell || (!cell.f && (cell.v == null || cell.v === ''))) return;
+                maxR = Math.max(maxR, +r);
+                maxC = Math.max(maxC, +c);
+            });
+        });
+        var rows = [];
+        for (var r = 0; r <= maxR; r++) {
+            var row = [];
+            for (var c = 0; c <= maxC; c++) {
+                var cell = cellData[r] && cellData[r][c];
+                row.push(cell && cell.f ? (cell.f.charAt(0) === '=' ? cell.f : '=' + cell.f) : cell && cell.v != null ? cell.v : '');
+            }
+            while (row.length && row[row.length - 1] === '') row.pop();
+            rows.push(row);
+        }
+        while (rows.length && !rows[rows.length - 1].length) rows.pop();
+        return rows;
+    }
+
+    // Column widths that differ from the default, as a list where 0 is the default width.
+    function sheetWidths(s) {
+        var cols = s.columnData || {}, def = s.defaultColumnWidth || SHEET_COL_WIDTH, out = [];
+        Object.keys(cols).forEach(function (c) {
+            var w = cols[c] && cols[c].w;
+            if (w && Math.round(w) !== def) out[+c] = Math.round(w);
+        });
+        for (var i = 0; i < out.length; i++) if (!out[i]) out[i] = 0;
+        return out;
+    }
+
+    function sheetSnapshot(root) {
+        var wb = root._mUniver && root._mUniver.univerAPI.getActiveWorkbook();
+        if (!wb) return [];
+        var snap = typeof wb.save === 'function' ? wb.save() : wb.getSnapshot(); // save() in Univer 1.x
+        return (snap.sheetOrder || Object.keys(snap.sheets || {})).map(function (id) {
+            var s = (snap.sheets || {})[id] || {}, f = s.freeze || {};
+            var out = { name: s.name || 'Sheet1', rows: sheetRows(s.cellData) };
+            if (f.ySplit > 0) out.frozenRows = f.ySplit;
+            if (f.xSplit > 0) out.frozenColumns = f.xSplit;
+            var widths = sheetWidths(s);
+            if (widths.length) out.columnWidths = widths;
+            return out;
+        });
+    }
+
+    function sheetWorksheet(s, i) {
+        var rows = s.rows || [], cols = 0, columnData = {};
+        rows.forEach(function (row) { cols = Math.max(cols, (row || []).length); });
+        (s.columnWidths || []).forEach(function (w, c) { if (w > 0) columnData[c] = { w: w }; });
+        var ws = {
+            id: 's' + i,
+            name: s.name || 'Sheet' + (i + 1),
+            rowCount: Math.max(100, rows.length + 50),
+            columnCount: Math.max(26, cols + 6),
+            defaultColumnWidth: SHEET_COL_WIDTH,
+            columnData: columnData,
+            cellData: sheetCellData(s)
+        };
+        var fr = s.frozenRows || 0, fc = s.frozenColumns || 0;
+        if (fr > 0 || fc > 0) ws.freeze = { xSplit: fc, ySplit: fr, startRow: fr, startColumn: fc };
+        return ws;
+    }
+
+    // The brand colour as Univer's primary scale (600 is the base): tints towards white, shades towards black.
+    function sheetTheme(root) {
+        var u = window.ModulusUniver, probe = document.createElement('span');
+        probe.style.color = cssVar(root, '--m-primary', '#066fd1');
+        probe.style.display = 'none';
+        root.appendChild(probe);
+        var m = /(\d+),\s*(\d+),\s*(\d+)/.exec(getComputedStyle(probe).color);
+        probe.remove();
+        if (!m) return u.defaultTheme;
+        var rgb = [+m[1], +m[2], +m[3]];
+        var mix = function (to, t) {
+            return '#' + rgb.map(function (v) { return ('0' + Math.round(v + (to - v) * t).toString(16)).slice(-2); }).join('');
+        };
+        var primary = { 50: mix(255, 0.95), 100: mix(255, 0.9), 200: mix(255, 0.78), 300: mix(255, 0.62), 400: mix(255, 0.4),
+            500: mix(255, 0.2), 600: mix(255, 0), 700: mix(0, 0.12), 800: mix(0, 0.24), 900: mix(0, 0.36) };
+        return Object.assign({}, u.defaultTheme, { primary: primary });
+    }
+
+    function sheetDark() {
+        return (document.documentElement.getAttribute('data-theme') || 'light') === 'dark';
+    }
+
+    // The sheet's half of univerEditor below: its presets, its workbook and its JSON.
+    var SHEET = {
+        value: '[data-m-sheet-value]',
+        // Only these change what the input carries: not selection, scrolling, the cell editor's own text or formula results.
+        mutation: /^sheet\./,
+        presets: function (u, app, readonly) {
+            // Read-only keeps the sheet tabs and zoom (footer) but drops the ribbon, formula bar and menus. Auto focus stays on
+            // for editing: without it a key typed on a selected cell reaches only the formula bar, not the cell.
+            if (readonly) return [u.UniverSheetsCorePreset({ container: app, header: false, toolbar: false, formulaBar: false, menu: false, contextMenu: false, disableAutoFocus: true })];
+            return [u.UniverSheetsCorePreset({ container: app }), u.UniverSheetsFilterPreset(), u.UniverSheetsSortPreset(),
+                u.UniverSheetsConditionalFormattingPreset(), u.UniverSheetsDataValidationPreset(), u.UniverSheetsFindReplacePreset(),
+                u.UniverSheetsHyperLinkPreset(), u.UniverSheetsNotePreset(), u.UniverSheetsTablePreset()];
+        },
+        load: function (api, root, readonly) {
+            var defs = json(root, 'data-sheets', []);
+            if (!defs.length) defs = [{ name: 'Sheet1', rows: [] }];
+            var data = {
+                id: 'm-sheet-' + (++sheetId),
+                name: defs[0].name || 'Sheet1',
+                editable: !readonly,
+                sheetOrder: defs.map(function (s, i) { return 's' + i; }),
+                sheets: {}
+            };
+            defs.forEach(function (s, i) { data.sheets['s' + i] = sheetWorksheet(s, i); });
+            api.createWorkbook(data);
+            return data.id;
+        },
+        snapshot: function (root) { return root._mUniver ? JSON.stringify(sheetSnapshot(root)) : null; }
+    };
+
+    // ---- Univer editors (the spreadsheet and the document) ---------------------------------------------------
+
+    // Starting Univer is the slow part (its plugins, renderer and ribbon), so an editor keeps its instance for as long as
+    // the page shows it. When the root is replaced by an identical one (a Reset or Save that renders the page again, an
+    // htmx or SPA swap, a Blazor @key change), the new root adopts the running instance and only the workbook or document
+    // is swapped: no "Loading…" and no blank frame. Edits are snapshotted only after a mutation of the content (not on
+    // selection or scrolling), in idle time, and the pause before a snapshot grows with what a snapshot costs, so a large
+    // file stays responsive.
+    function univerKey(root, kind) {
+        var value = root.querySelector(kind.value);
+        return (root.id || (value && value.id) || '') + (root.hasAttribute('data-readonly') ? '|ro' : '|rw');
+    }
+
+    // A running editor of the same kind, id and mode whose root just left the page.
+    function univerOrphan(root, kind) {
+        var key = univerKey(root, kind);
+        for (var i = 0; i < liveRoots.length; i++) {
+            var old = liveRoots[i], ed = old._mEd;
+            if (ed && ed.kind === kind && !document.contains(old) && univerKey(old, kind) === key) return old;
+        }
+        return null;
+    }
+
+    // Puts the editor on root (a new one, or the one it starts on) and loads root's content into it.
+    function univerAttach(ed, root) {
+        var api = ed.created.univerAPI, previous = ed.unit;
+        ed.root = root;
+        root._mEd = ed;
+        root._mUniver = ed.created;
+        if (ed.app.parentNode !== root) root.appendChild(ed.app);
+        ed.value = root.querySelector(ed.kind.value);
+        ed.last = ed.value ? ed.value.value : null;
+        clearTimeout(ed.timer);
+        ed.loading = true;
+        try {
+            ed.unit = ed.kind.load(api, root, ed.readonly);
+            if (previous) api.disposeUnit(previous); // after the new one shows, so there is never an empty frame
+        } finally { ed.loading = false; }
+        root.classList.add('m-sheet-ready');
+        keepAlive(root, function () { univerDestroy(ed); });
+    }
+
+    // The editor usually sits in a form (it posts its JSON), but Univer's own controls are not the form's: its buttons
+    // carry no type (so the sheet list next to "+" would submit, and download, the page's form) and Enter in one of its
+    // boxes would submit it too. Pointing them at a form id that does not exist takes them out of it.
+    var NO_FORM = 'm-univer-no-form';
+
+    function univerOwnControls(app) {
+        var queued = false;
+        var detach = function () {
+            queued = false;
+            app.querySelectorAll('button:not([form]), input:not([form]), select:not([form]), textarea:not([form])')
+                .forEach(function (el) { el.setAttribute('form', NO_FORM); });
+        };
+        detach();
+        var observer = new MutationObserver(function () {
+            if (queued) return;
+            queued = true;
+            queueMicrotask(detach); // before the click or key that could reach the form
+        });
+        observer.observe(app, { childList: true, subtree: true });
+        return observer;
+    }
+
+    function univerDestroy(ed) {
+        clearTimeout(ed.timer);
+        ed.controls.disconnect();
+        try { ed.created.univerAPI.dispose(); } catch (e) { /* already gone */ }
+        try { ed.created.univer.dispose(); } catch (e) { /* already gone */ }
+        if (ed.root) { ed.root._mUniver = null; ed.root._mEd = null; }
+    }
+
+    var idle = window.requestIdleCallback || function (fn) { return setTimeout(fn, 0); };
+
+    function univerSchedule(ed) {
+        clearTimeout(ed.timer);
+        ed.timer = setTimeout(function () {
+            idle(function () {
+                if (!ed.root || ed.root._mEd !== ed || !ed.value) return;
+                var t = performance.now(), out = ed.kind.snapshot(ed.root);
+                // A snapshot that takes 50 ms waits 400 ms of quiet; one that takes 300 ms waits 2.4 s (at most 3 s).
+                ed.delay = Math.min(3000, Math.max(400, (performance.now() - t) * 8));
+                if (out && out !== ed.last) { ed.last = out; raiseChange(ed.value, out); }
+            }, { timeout: 1000 });
+        }, ed.delay);
+    }
+
+    function univerEditor(root, kind) {
+        root.setAttribute('data-m-ready', '');
+        var orphan = univerOrphan(root, kind);
+        if (orphan) {
+            var adopted = orphan._mEd;
+            orphan._mUniver = null;
+            orphan._mEd = null;
+            liveRoots.splice(liveRoots.indexOf(orphan), 1);
+            univerAttach(adopted, root);
+            return;
+        }
+        libs(UNIVER_CSS, UNIVER).then(function () {
+            if (!document.contains(root) || root._mUniver) return;
+            var u = window.ModulusUniver;
+            var readonly = root.hasAttribute('data-readonly');
+            var app = document.createElement('div');
+            app.className = 'm-sheet-app';
+            root.appendChild(app);
+            var created = u.createUniver({
+                locale: u.LocaleType.EN_US,
+                // The map is keyed by the LocaleType value itself ("enUS"), not the locale file name.
+                locales: { [u.LocaleType.EN_US]: u.enUS },
+                theme: sheetTheme(root),
+                darkMode: sheetDark(),
+                presets: kind.presets(u, app, readonly)
+            });
+            var ed = { kind: kind, readonly: readonly, app: app, created: created, controls: univerOwnControls(app), unit: null, root: null, value: null, last: null, timer: 0, delay: 400, loading: false };
+            if (kind.ready) kind.ready(created.univerAPI, app, readonly);
+            univerAttach(ed, root);
+            // Mutations (type 2) of the content only; loading a workbook or document is not an edit.
+            created.univerAPI.addEvent(created.univerAPI.Event.CommandExecuted, function (e) {
+                if (ed.readonly || ed.loading || e.type !== 2 || !kind.mutation.test(e.id)) return;
+                univerSchedule(ed);
+            });
+        }).catch(function (e) {
+            root.classList.add('m-sheet-failed');
+            if (window.console) console.error('Modulus: the ' + (kind === SHEET ? 'spreadsheet' : 'document editor') + ' failed to start', e);
+        });
+    }
+
+    function initSheet(root) { univerEditor(root, SHEET); }
+
+    // The theme switch (light/dark, or a new brand colour) restyles Univer in place, without losing the edits.
+    window.addEventListener('modulus:theme', function () {
+        document.querySelectorAll('[data-m-sheet], [data-m-doc]').forEach(function (root) {
+            if (!root._mUniver) return;
+            root._mUniver.univerAPI.setTheme(sheetTheme(root));
+            root._mUniver.univerAPI.toggleDarkMode(sheetDark());
+        });
+    });
+
+    // A form posts what the editors hold now, even inside the pause after an edit.
+    document.addEventListener('submit', function (e) {
+        if (!(e.target instanceof HTMLFormElement)) return;
+        // A control of Univer's that was not taken out of the form yet: not a submit.
+        if (e.submitter && e.submitter.closest('.m-sheet-app')) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+        e.target.querySelectorAll('[data-m-sheet], [data-m-doc]').forEach(function (root) {
+            var ed = root._mEd;
+            if (!ed || ed.readonly || !ed.value) return;
+            clearTimeout(ed.timer);
+            var out = ed.kind.snapshot(root);
+            if (out) { ed.value.value = out; ed.last = out; }
+        });
+    }, true);
+
+    // ---- Document editor (Univer Docs) ---------------------------------------------------------------------
+
+    // The same bundle as the spreadsheet (its docs engine is already in it for cell editing): a Word-style ribbon over A4
+    // pages. The document travels as Univer's JSON snapshot in data-doc (built and read on the server by
+    // Modulus.Documents.UniverDocument); edits land in [data-m-doc-value] as that JSON, with a change event.
+    var docId = 0;
+
+    // A blank A4 page, laid out as pages, for an editor without a document.
+    function docBlank() {
+        return {
+            body: { dataStream: '\r\n', textRuns: [], paragraphs: [{ startIndex: 0 }], sectionBreaks: [{ startIndex: 1 }] },
+            documentStyle: { pageSize: { width: 793.7, height: 1122.5 }, documentFlavor: 1, marginTop: 72, marginBottom: 72, marginLeft: 96, marginRight: 96,
+                defaultParagraphStyle: { spaceAbove: { v: 0 }, lineSpacing: 1.15, spaceBelow: { v: 8 } } }
+        };
+    }
+
+    function docSnapshot(root) {
+        var doc = root._mUniver && root._mUniver.univerAPI.getActiveDocument();
+        return doc ? JSON.stringify(doc.save()) : null;
+    }
+
+    // Univer's sheets ribbon has a full screen button; the docs ribbon gets the same one (same icon and tooltip), and
+    // like the sheet it takes Univer's own container full screen, so its menus and dialogs still show.
+    function docFullscreenButton(api, app) {
+        if (!app.requestFullscreen || !api.createMenu) return;
+        try {
+            api.createMenu({
+                id: 'modulus.doc.fullscreen',
+                title: '',
+                tooltip: 'sheets-ui.toolbar.fullscreen',
+                icon: 'ExpandIcon',
+                action: function () {
+                    if (document.fullscreenElement) document.exitFullscreen().catch(function () { });
+                    else app.requestFullscreen().catch(function () { });
+                }
+            }).appendTo('ribbon.start.others');
+        } catch (e) { if (window.console) console.error(e); }
+    }
+
+    // The document's half of univerEditor: its presets, its document and its JSON.
+    var DOC = {
+        value: '[data-m-doc-value]',
+        // Text, paragraph and image edits; not selection or the formula engine.
+        mutation: /^(doc|docs|drawing|docs-drawing)[.-]/,
+        presets: function (u, app, readonly) {
+            // Read-only drops the ribbon and menus and locks the text; the pages and the footer (pages, words, zoom) stay.
+            if (readonly) return [u.UniverDocsCorePreset({ container: app, header: false, toolbar: false, menu: false, contextMenu: false, disableAutoFocus: true })];
+            return [u.UniverDocsCorePreset({ container: app, disableAutoFocus: true }), u.UniverDocsDrawingPreset(), u.UniverDocsHyperLinkPreset()];
+        },
+        ready: function (api, app, readonly) { if (!readonly) docFullscreenButton(api, app); },
+        load: function (api, root, readonly) {
+            var data = json(root, 'data-doc', null);
+            if (!data || !data.body) data = docBlank();
+            data.id = 'm-doc-' + (++docId);
+            if (readonly) data.disabled = true;
+            api.createDocument(data);
+            return data.id;
+        },
+        snapshot: docSnapshot
+    };
+
+    function initDoc(root) { univerEditor(root, DOC); }
+
+    // ---- Submit on file pick -------------------------------------------------------------------------------
+    // <input type="file" data-m-file-submit> (usually hidden inside a button-styled label) posts its form, which may be
+    // another one named by its form attribute, as soon as a file is picked.
+
+    document.addEventListener('change', function (e) {
+        var input = e.target;
+        if (!(input instanceof HTMLInputElement) || input.type !== 'file' || !input.hasAttribute('data-m-file-submit')) return;
+        if (!input.files || !input.files.length || !input.form) return;
+        if (input.form.requestSubmit) input.form.requestSubmit(); else input.form.submit();
     });
 
     // ---- Copy to clipboard ---------------------------------------------------------------------------------
@@ -914,16 +1331,29 @@
 
     // ---- Start widgets as they appear ----------------------------------------------------------------------
 
+    widget('[data-m-map]', initMap);
+    widget('[data-m-vector-map]', initVectorMap);
+    widget('[data-m-editor]', initEditor);
+    widget('[data-m-sheet]', initSheet);
+    widget('[data-m-doc]', initDoc);
+    // The signature pad draws in modulus-shell.js; Blazor's AppSignaturePad and MVC's <app-signature-pad> both start here.
+    widget('[data-m-signature]', function (root) {
+        root.setAttribute('data-m-ready', '');
+        if (window.modulusShell && window.modulusShell.signature) window.modulusShell.signature(root);
+    });
+
     function scan() {
-        document.querySelectorAll('[data-m-map]:not([data-m-ready])').forEach(initMap);
-        document.querySelectorAll('[data-m-vector-map]:not([data-m-ready])').forEach(initVectorMap);
-        document.querySelectorAll('[data-m-editor]:not([data-m-ready])').forEach(initEditor);
+        // The registry: every widget whose root appeared (and has not marked itself ready yet).
+        registry.forEach(function (w) {
+            document.querySelectorAll(w.selector + ':not([data-m-ready])').forEach(function (el) { w.init(el); });
+        });
+        // Stateless widgets: the player syncs once, the sortable lists their empty state every pass.
         document.querySelectorAll('[data-m-player]').forEach(function (p) { if (!p._mSynced) { p._mSynced = true; syncPlayer(p); } });
         document.querySelectorAll('[data-m-sortable]').forEach(syncEmpty);
-        // Maps whose element left the page (Blazor navigation) release their listeners.
-        maps = maps.filter(function (el) {
+        // Roots whose element left the page (Blazor navigation) release what their widget built on them.
+        liveRoots = liveRoots.filter(function (el) {
             if (document.contains(el)) return true;
-            try { el._mMap.map.remove(); } catch (e) { /* already removed */ }
+            try { el._mDestroy(); } catch (e) { /* already gone */ }
             return false;
         });
     }

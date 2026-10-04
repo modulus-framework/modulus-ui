@@ -38,7 +38,7 @@ public sealed record Choropleth(IReadOnlyDictionary<string, double> Values, IRea
 
 /// <summary>
 /// Markup of the maps (<c>AppMap</c> / <c>AppVectorMap</c> in Blazor, <c>&lt;app-map&gt;</c> / <c>&lt;app-vector-map&gt;</c> in MVC).
-/// modulus-plugins.js starts Leaflet on <c>[data-m-map]</c> and jsVectorMap on <c>[data-m-vector-map]</c> when they appear.
+/// modulus-plugins.js starts MapLibre GL JS on <c>[data-m-map]</c> and jsVectorMap on <c>[data-m-vector-map]</c> when they appear.
 /// </summary>
 public static class MapHtml
 {

@@ -11,6 +11,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews(o => o.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
 
 // Modulus UI for MVC / Razor Pages: same theme options and menu contributors as the Blazor sample.
+// Saved views in a SQLite file (App_Data/ui-state.db), so they outlive a restart; without it they stay in memory.
+builder.Services.AddSampleUiState(builder.Environment.ContentRootPath);
 builder.Services.AddModulusMvc(theme => builder.Configuration.GetSection("Modulus:Theme").Bind(theme));
 builder.Services.AddTransient<IMenuContributor, AdminMenuContributor>();
 builder.Services.AddSingleton<IShellContentProvider, SampleShellContentProvider>();
@@ -35,6 +37,7 @@ builder.Services.AddSingleton<GarmentStore>();
 builder.Services.AddSingleton<PurchaseStore>();
 
 var app = builder.Build();
+app.Services.EnsureUiStateDatabase();
 
 if (!app.Environment.IsDevelopment())
 {
@@ -51,5 +54,7 @@ app.UseAuthorization();
 
 app.MapStaticAssets().AllowAnonymous();
 app.MapControllers().WithStaticAssets();
+// The "Views" dropdown (<app-saved-views>) posts here.
+app.MapModulusSavedViews();
 
 app.Run();

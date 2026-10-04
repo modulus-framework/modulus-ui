@@ -9,6 +9,7 @@
   <Folder Name="/src/">
     <Project Path="src/Modulus.AspNetCore.Mvc/Modulus.AspNetCore.Mvc.csproj" />
     <Project Path="src/Modulus.Blazor/Modulus.Blazor.csproj" />
+    <Project Path="src/Modulus.Documents/Modulus.Documents.csproj" />
     <Project Path="src/Modulus.Ui.Abstractions/Modulus.Ui.Abstractions.csproj" />
     <Project Path="src/Modulus.Ui.Assets/Modulus.Ui.Assets.csproj" />
   </Folder>

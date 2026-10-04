@@ -199,7 +199,7 @@ public class BusinessFieldTagHelperTests
     {
         var png = "data:image/png;base64," + Convert.ToBase64String(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0 });
         var signed = await RenderAsync(new SignaturePadTagHelper { For = For("Signature", png), Height = 120 }, "app-signature-pad");
-        Assert.StartsWith("<div class=\"m-signature m-signature-signed\" style=\"--m-signature-height:120px\" data-ink=\"#111827\" x-data=\"\" x-init=\"modulusShell.signature($el)\">", signed);
+        Assert.StartsWith("<div class=\"m-signature m-signature-signed\" style=\"--m-signature-height:120px\" data-ink=\"#111827\" data-m-signature=\"\">", signed);
         Assert.Contains($"name=\"Signature\" value=\"{png}\"", signed);
         Assert.Contains("m-signature-type", signed);
 

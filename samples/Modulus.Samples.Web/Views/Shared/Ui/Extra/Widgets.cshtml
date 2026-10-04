@@ -10,12 +10,12 @@
         <div class="m-card-body">
             <div class="m-subheader">Warsaw, Poland</div>
             <div class="m-weather m-mt-8">
-                <app-ti name="ri:sun-cloudy" class="m-weather-art" />
+                <app-ti name="tb:cloud" class="m-weather-art" />
                 <div><div class="m-weather-temp">21°</div><div class="m-muted">Sunny, light breeze</div></div>
             </div>
-            <div class="m-flex m-gap-16 m-mt-12 m-muted m-small"><span><app-ti name="ri:drop" /> 48%</span><span><app-ti name="ri:windy" /> 12 km/h</span><span><app-ti name="ri:temp-hot" /> 24° / 13°</span></div>
+            <div class="m-flex m-gap-16 m-mt-12 m-muted m-small"><span><app-ti name="tb:droplet" /> 48%</span><span><app-ti name="tb:wind" /> 12 km/h</span><span><app-ti name="tb:temperature" /> 24° / 13°</span></div>
             <div class="m-weather-days">
-                @foreach (var (d, icon, t) in new[] { ("Tue", "sun", 22), ("Wed", "ri:sun-cloudy", 20), ("Thu", "ri:drop", 17), ("Fri", "ri:windy", 16), ("Sat", "sun", 19) })
+                @foreach (var (d, icon, t) in new[] { ("Tue", "sun", 22), ("Wed", "tb:cloud", 20), ("Thu", "tb:droplet", 17), ("Fri", "tb:wind", 16), ("Sat", "sun", 19) })
                 {
                     <div>@d<app-ti name="@icon" /><strong>@(t)°</strong></div>
                 }
@@ -100,7 +100,7 @@
     </div>
 
     <div class="m-card m-quote-card">
-        <app-ti name="ri:double-quotes-l" />
+        <app-ti name="tb:quote" />
         <div class="m-card-body">
             <blockquote>“Simplicity is prerequisite for reliability.”</blockquote>
             <div class="m-muted m-mt-12">— Edsger W. Dijkstra</div>

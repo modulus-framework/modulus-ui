@@ -1,11 +1,11 @@
 @* Signature pad (Odoo signature widget, delivery and approval sign-off): draw with a mouse, pen or finger, or type
    a name that is drawn in a script face. The value is a PNG data URL (check it with SignatureImage.TryDecode).
-   Drawing runs in modulus-shell.js (modulusShell.signature); the MVC <app-signature-pad> renders the same DOM. *@
+   Drawing runs in modulus-shell.js, started from [data-m-signature] like the MVC <app-signature-pad>, which renders the
+   same DOM. The script writes the image to the hidden input and raises change, so there is no JS interop; a new Value
+   from the parent draws a fresh pad. *@
 @using Modulus.Ui.Abstractions.Forms
-@implements IAsyncDisposable
-@inject IJSRuntime JS
 
-<div class="@RootClass" style="@RootStyle" data-ink="@Ink" @ref="_root">
+<div @key="_version" class="@RootClass" style="@RootStyle" data-ink="@Ink" data-m-signature>
     <div class="m-signature-pad">
         <canvas class="m-signature-canvas" role="img" aria-label="@(AriaLabel ?? "Signature")"></canvas>
         <span class="m-signature-hint" aria-hidden="true">@Hint</span>
@@ -21,6 +21,7 @@
             <button type="button" class="ant-btn ant-btn-sm ant-btn-text" data-m-signature-clear><Icon Type="clear" /><span>@ClearText</span></button>
         </div>
     }
+    <input type="hidden" value="@_initial" @onchange="Changed" />
 </div>
 
 @code {
@@ -49,10 +50,9 @@
     [Parameter] public string? Class { get; set; }
     [Parameter] public string? Style { get; set; }
 
-    private ElementReference _root;
-    private DotNetObjectReference<AppSignaturePad>? _self;
-    private string? _last;
-    private bool _attached;
+    private string? _initial;
+    private string? _last = "\0";
+    private int _version;
 
     private string RootClass => string.Join(' ', new[]
     {
@@ -62,39 +62,21 @@
 
     private string RootStyle => $"--m-signature-height:{Height}px;{Style}";
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override void OnParametersSet()
     {
-        if (firstRender)
-        {
-            _self = DotNetObjectReference.Create(this);
-            _last = Value;
-            try
-            {
-                await JS.InvokeVoidAsync("modulusShell.signature", _root, _self, Value ?? "");
-                _attached = true;
-            }
-            catch (JSException)
-            {
-                // modulus-shell.js not loaded: the pad stays blank.
-            }
-        }
-        else if (_attached && Value != _last)
-        {
-            _last = Value;
-            await JS.InvokeVoidAsync("modulusShell.signature", _root, null, Value ?? "");
-        }
+        if (Value == _last) return;
+        // A value that did not come from this pad: draw it on a fresh pad.
+        _last = Value;
+        _initial = Value;
+        _version++;
     }
 
-    [JSInvokable]
+    private Task Changed(ChangeEventArgs e) => OnSignature(e.Value?.ToString());
+
+    /// <summary>The image the pad drew, as the browser reports it ("" when cleared).</summary>
     public Task OnSignature(string? dataUrl)
     {
         _last = string.IsNullOrEmpty(dataUrl) ? null : dataUrl;
         return ValueChanged.InvokeAsync(_last);
-    }
-
-    public ValueTask DisposeAsync()
-    {
-        _self?.Dispose();
-        return ValueTask.CompletedTask;
     }
 }

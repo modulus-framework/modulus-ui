@@ -16,5 +16,8 @@ TestResults/
 .DS_Store
 Thumbs.db
 
+# Sample databases (saved views)
+App_Data/
+
 # Tool output
 drift-reports/

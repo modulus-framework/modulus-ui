@@ -13,8 +13,8 @@
 
     <div class="m-row-cards m-cols-4">
         @foreach (var (label, value, icon, tone) in new[] {
-            ("Overall uptime", Fmt.Number(ExtraContent.Monitors.Average(x => x.Uptime), "0.00") + "%", "ri:pulse", "green"),
-            ("Monitors", ExtraContent.Monitors.Count.ToString(), "ri:heart-pulse", "primary"),
+            ("Overall uptime", Fmt.Number(ExtraContent.Monitors.Average(x => x.Uptime), "0.00") + "%", "tb:activity", "green"),
+            ("Monitors", ExtraContent.Monitors.Count.ToString(), "tb:heartbeat", "primary"),
             ("Avg. response", Fmt.Number(ExtraContent.Monitors.Where(x => x.ResponseMs > 0).Average(x => x.ResponseMs)) + " ms", "clock-circle", "azure"),
             ("Open incidents", ExtraContent.Incidents.Count(i => i.Status != "Resolved").ToString(), "warning", "red") })
         {

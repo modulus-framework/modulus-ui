@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../src/Modulus.Blazor/Modulus.Blazor.csproj" />
+    <ProjectReference Include="../../src/Modulus.Documents/Modulus.Documents.csproj" />
     <ProjectReference Include="../../src/Modulus.Ui.Abstractions/Modulus.Ui.Abstractions.csproj" />
     <ProjectReference Include="../../samples/Modulus.Samples.Shared/Modulus.Samples.Shared.csproj" />
   </ItemGroup>

@@ -25,11 +25,11 @@
                     </div>
                     <div class="m-user-stats">
                         <div class="m-user-stat">
-                            <span class="m-icon-tile m-tile-primary-lt"><app-ti name="ri:check-double" /></span>
+                            <span class="m-icon-tile m-tile-primary-lt"><app-ti name="tb:checks" /></span>
                             <div><div class="m-h3">@u.TasksDone.ToString("N0")</div><div class="m-xsmall m-muted">Tasks done</div></div>
                         </div>
                         <div class="m-user-stat">
-                            <span class="m-icon-tile m-tile-primary-lt"><app-ti name="ri:briefcase" /></span>
+                            <span class="m-icon-tile m-tile-primary-lt"><app-ti name="tb:briefcase" /></span>
                             <div><div class="m-h3">@u.Projects</div><div class="m-xsmall m-muted">Projects</div></div>
                         </div>
                     </div>
@@ -54,7 +54,7 @@
                         <button type="button" class="ant-btn @(suspended ? "ant-btn-default" : "ant-btn-default ant-btn-dangerous")"
                                 hx-post="@baseUrl/status" hx-vals='{"status": "@(suspended ? "Active" : "Inactive")"}' hx-swap="none"
                                 hx-confirm="@(suspended ? $"Reactivate {u.Name}?" : $"Suspend {u.Name}? They won't be able to sign in.")" @(suspended ? "" : "data-confirm-danger") data-confirm-ok="@(suspended ? "Reactivate" : "Suspend")">
-                            <app-ti name="@(suspended ? "ri:play" : "stop")" /><span>@(suspended ? "Reactivate" : "Suspend")</span>
+                            <app-ti name="@(suspended ? "tb:player-play" : "stop")" /><span>@(suspended ? "Reactivate" : "Suspend")</span>
                         </button>
                     }
                 </div>

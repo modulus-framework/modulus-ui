@@ -8,14 +8,18 @@
    mapped in Program.cs). MVC and Razor Pages render the same page from Samples.Web Views/Shared/Ui/Tables/Advanced.cshtml. *@
 <PageHeading Pretitle="Tables" Title="Data table" Subtitle="Search, filter, sort, page, pick columns and export to CSV." />
 
-@* Rows drag by their handle to a new place (not while a column sort is on); EmployeeDirectory keeps the order. *@
+@* Rows drag by their handle to a new place (not while a column sort is on); EmployeeDirectory keeps the order.
+   The search, filters, hidden columns, sort, column searches and page are in the URL (UrlState), with the MVC page's
+   keys, so the Views dropdown saves the layout and back and forward step through it. *@
 <ProTable TItem="Employee" @ref="_table" HeaderTitle="Employees" Request="LoadAsync" RowKey="e => e.Id" Selectable ScrollX="1140" FilterRow ColumnSettings="false" Exportable="false"
-          OnRowMove="MoveRow" RowLabel="e => e.Name">
+          OnRowMove="MoveRow" RowLabel="e => e.Name" UrlState UrlQuery="PageQuery" OnUrlChanged="ReadQuery">
     <TitleExtra>
         <span class="m-badge m-badge-gray-lt">@_summary.Count</span>
         <span class="m-small m-muted m-medium" style="font-weight:400">avg. salary @Fmt.Money0(_summary.AverageSalary)</span>
     </TitleExtra>
     <ToolBar>
+        @* The user's saved layouts of this table (Odoo's favourites); a starred one opens by default. *@
+        <AppSavedViews Page="/tables/advanced" Id="employee-views" />
         <Input @bind-Value="_keyword" Placeholder="Search name, email, position…" AllowClear Class="m-table-toolbar-search" OnPressEnter="SearchAsync" OnClear="SearchAsync" Prefix="@_searchIcon" />
         <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight">
             <Overlay>
@@ -137,7 +141,33 @@
 
     private static void MoveRow(Modulus.Ui.Abstractions.Plugins.RowMove move) => EmployeeDirectory.Reorder(move.Order);
 
-    private void ToggleColumn(string key) => _hidden = EmployeeDirectory.ParseHidden(EmployeeDirectory.ToggleHidden(_hidden, key));
+    private void ToggleColumn(string key)
+    {
+        _hidden = EmployeeDirectory.ParseHidden(EmployeeDirectory.ToggleHidden(_hidden, key));
+        _table?.SyncUrl();
+    }
+
+    // The page's own keys in the URL, as the MVC page names them.
+    private IEnumerable<KeyValuePair<string, string?>> PageQuery()
+    {
+        yield return new("keyword", _keyword);
+        yield return new("department", _department);
+        yield return new("office", _office);
+        yield return new("status", _status?.ToString());
+        yield return new("label", _label);
+        yield return new("hide", _hidden.Count == 0 ? null : string.Join(',', _hidden));
+    }
+
+    private void ReadQuery(IReadOnlyList<KeyValuePair<string, string?>> query)
+    {
+        string? Value(string key) => query.LastOrDefault(q => q.Key == key).Value is { Length: > 0 } v ? v : null;
+        _keyword = Value("keyword");
+        _department = Value("department");
+        _office = Value("office");
+        _status = Enum.TryParse<EmployeeStatus>(Value("status"), out var status) ? status : null;
+        _label = Value("label");
+        _hidden = EmployeeDirectory.ParseHidden(Value("hide"));
+    }
 
     private string ExportUrl(IEnumerable<int>? ids = null)
     {

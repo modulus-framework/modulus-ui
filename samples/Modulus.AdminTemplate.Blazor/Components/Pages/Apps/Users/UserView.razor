@@ -32,11 +32,11 @@
                     </div>
                     <div class="m-user-stats">
                         <div class="m-user-stat">
-                            <span class="m-icon-tile m-tile-primary-lt"><Ti Name="ri:check-double" /></span>
+                            <span class="m-icon-tile m-tile-primary-lt"><Ti Name="tb:checks" /></span>
                             <div><div class="m-h3">@u.TasksDone.ToString("N0")</div><div class="m-xsmall m-muted">Tasks done</div></div>
                         </div>
                         <div class="m-user-stat">
-                            <span class="m-icon-tile m-tile-primary-lt"><Ti Name="ri:briefcase" /></span>
+                            <span class="m-icon-tile m-tile-primary-lt"><Ti Name="tb:briefcase" /></span>
                             <div><div class="m-h3">@u.Projects</div><div class="m-xsmall m-muted">Projects</div></div>
                         </div>
                     </div>
@@ -61,7 +61,7 @@
                         <Popconfirm Title="@(suspended ? $"Reactivate {u.Name}?" : $"Suspend {u.Name}? They won't be able to sign in.")" OkText="@(suspended ? "Reactivate" : "Suspend")"
                                     OkButtonProps="@(suspended ? null : new ButtonProps { Danger = true })" OnConfirm="ToggleStatusAsync">
                             <button type="button" class="ant-btn @(suspended ? "ant-btn-default" : "ant-btn-default ant-btn-dangerous")">
-                                <Ti Name="@(suspended ? "ri:play" : "stop")" /><span>@(suspended ? "Reactivate" : "Suspend")</span>
+                                <Ti Name="@(suspended ? "tb:player-play" : "stop")" /><span>@(suspended ? "Reactivate" : "Suspend")</span>
                             </button>
                         </Popconfirm>
                     }

@@ -1,0 +1,68 @@
+@using Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Plugins
+@* Spreadsheet: Univer filling the page under a segmented nav — the budget, a blank workbook or a read-only grid.
+   An Ant toolbar above the grid saves (the form posts the sheets as JSON), resets, imports an xlsx (picking a file posts it
+   and the workbook replaces the grid) and downloads the sheets as xlsx (a formaction button). *@
+@{
+    var view = PluginsContent.SpreadsheetView(ViewData["SpreadsheetView"] as string ?? Context.Request.Query["view"].ToString());
+    var posted = Context.Request.HasFormContentType && Context.Request.Form.Files.Count == 0
+        ? PluginsContent.PostedSheets(Context.Request.Form["Budget"]) : null;
+    var imported = ViewData["SpreadsheetSheets"] as IReadOnlyList<SpreadsheetSheet>;
+    var file = ViewData["SpreadsheetImport"] as string;
+    var error = ViewData["SpreadsheetError"] as string;
+    var sheets = posted ?? imported ?? (view == "blank" ? PluginsContent.BlankSheets : PluginsContent.Budget);
+    var feedback = posted is not null ? "Saved budget" : imported is not null ? $"Imported from {file}" : null;
+}
+<app-page-header pretitle="Plugins" title="Spreadsheet" subtitle="An Excel-style workbook on Univer: formulas, filter, sort, conditional formatting, validation, find and replace. It posts, downloads and imports xlsx."></app-page-header>
+
+<div class="m-sheet-workspace">
+    <div class="m-sheet-bar">
+        <div class="ant-segmented" role="group" aria-label="Demo">
+            <div class="ant-segmented-group">
+                @foreach (var demo in PluginsContent.SpreadsheetViews)
+                {
+                    <a class="ant-segmented-item @(demo.Key == view ? "ant-segmented-item-selected" : "")" href="@PluginsContent.SpreadsheetUrl(demo.Key)" aria-current="@(demo.Key == view ? "true" : null)">
+                        <div class="ant-segmented-item-label">@demo.Label</div>
+                    </a>
+                }
+            </div>
+        </div>
+        @if (view != "readonly")
+        {
+            <div class="m-sheet-bar-actions" role="status">
+                @if (error is not null)
+                {
+                    <span class="ant-form-item-explain-error">@error</span>
+                }
+                else if (feedback is not null)
+                {
+                    <span class="m-muted">@feedback</span>
+                }
+            </div>
+            <div class="m-sheet-bar-actions">
+                @* The import posts just the file (and the demo to return to), not the sheet, whose edits stay in the grid. *@
+                <label class="ant-btn ant-btn-default m-file-button">
+                    <input type="file" name="file" accept=".xlsx" form="spreadsheet-import" class="m-sr-only" data-m-file-submit />
+                    <app-icon type="upload" /><span>Import xlsx</span>
+                </label>
+                <button type="submit" form="spreadsheet-form" formaction="@PluginsContent.SpreadsheetDownloadUrl" data-m-reload class="ant-btn ant-btn-default"><app-icon type="download" /><span>Download xlsx</span></button>
+                <a class="ant-btn ant-btn-default" href="@PluginsContent.SpreadsheetUrl(view)"><span>Reset</span></a>
+                <button type="submit" form="spreadsheet-form" class="ant-btn ant-btn-primary"><app-icon type="save" /><span>Save</span></button>
+            </div>
+        }
+    </div>
+    @if (view == "readonly")
+    {
+        <app-spreadsheet id="budget-readonly" sheets="@PluginsContent.Budget" read-only="true" height="100%" />
+    }
+    else
+    {
+        <form id="spreadsheet-form" method="post" action="/plugins/spreadsheet" asp-antiforgery="true">
+            <input type="hidden" name="view" value="@view" />
+            <app-spreadsheet id="budget" name="Budget" sheets="@sheets" height="100%" />
+        </form>
+        <form id="spreadsheet-import" method="post" action="/plugins/spreadsheet" asp-antiforgery="true" enctype="multipart/form-data" hidden>
+            <input type="hidden" name="view" value="@view" />
+        </form>
+    }
+</div>

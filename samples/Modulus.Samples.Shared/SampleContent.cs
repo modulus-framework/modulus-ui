@@ -44,7 +44,7 @@ public static class SampleContent
             ["Up to 3 users", "10 GB storage", "Core dashboards", "Email support"]),
         new("Standard", "For growing businesses", "thunderbolt", 49, 39, true,
             ["Up to 25 users", "100 GB storage", "All dashboards & apps", "Invoices and payments", "Priority support"]),
-        new("Enterprise", "For large organisations", "ri:building", 149, 119, false,
+        new("Enterprise", "For large organisations", "tb:building", 149, 119, false,
             ["Unlimited users", "1 TB storage", "SSO and audit log", "Custom roles & permissions", "Dedicated success manager"]),
     ];
 
@@ -76,7 +76,7 @@ public static class SampleContent
             new("update-card", "Update a payment method", "Add, remove or set a default card.", ["Go to Account settings → Billing & plans → Payment methods."]),
             new("download-invoices", "Download invoices", "Every invoice is available as a printable page.", ["Open Invoices, choose an invoice and press Print or Download."]),
         ]),
-        new("security", "Security", "ri:shield-keyhole", 3,
+        new("security", "Security", "tb:shield-lock", 3,
         [
             new("two-factor", "Turn on two-step verification", "Protect your account with an authenticator app.", ["Open Account settings → Security → Two-step verification and follow the steps."]),
             new("sessions", "Review active sessions", "See where you're signed in and sign out other devices.", ["The Recent devices table in Security lists every active session."]),
@@ -87,7 +87,7 @@ public static class SampleContent
             new("kanban", "Using the Kanban board", "Plan work by dragging cards between columns.", ["Drag a card to another column to change its status; add tasks at the bottom of any column."]),
             new("calendar", "Using the Calendar", "Schedule events and filter by category.", ["Click a day to add an event, or an event to edit it. Use the filters to show only some categories."]),
         ]),
-        new("integrations", "Integrations", "ri:plug", 5,
+        new("integrations", "Integrations", "tb:plug", 5,
         [
             new("api-keys", "Create an API key", "Connect your own tools to the REST API.", ["Open Account settings → Connections and create a key with the scopes you need."]),
             new("webhooks", "Receive webhooks", "Get notified when invoices are paid or orders ship.", ["Add an HTTPS endpoint and choose which events to send."]),
@@ -141,7 +141,7 @@ public static class SampleContent
 
     public static readonly IReadOnlyList<Team> Teams =
     [
-        new("Design", "Product design and research", "ri:palette", 5, ["Yuki Tanaka", "Elena Rossi", "Hiro Park"], ["UX", "Figma"]),
+        new("Design", "Product design and research", "tb:palette", 5, ["Yuki Tanaka", "Elena Rossi", "Hiro Park"], ["UX", "Figma"]),
         new("Engineering", "Frontend, backend and infrastructure", "code", 1, ["Noah Tanaka", "Omar Hartmann", "Arjun Costa", "Lucas Novak"], ["Blazor", "htmx", ".NET"]),
         new("Sales", "New business and renewals", "rise", 2, ["Mateo Reyes", "Priya Silva", "Kwame Mensah"], ["CRM", "EMEA"]),
         new("Finance", "Billing, payroll and reporting", "account-book", 3, ["Ingrid Lindqvist", "Samuel Mensah"], ["Payroll"]),
@@ -160,9 +160,9 @@ public static class SampleContent
     /// <summary>Recent activity on the profile page (who is always the current user).</summary>
     public static IReadOnlyList<ActivityItem> ProfileActivity() =>
     [
-        new(CurrentUser.Name, "paid invoice", "#4981", DateTime.Now.AddMinutes(-12), "ri:bill"),
-        new(CurrentUser.Name, "created the project", "Security review", DateTime.Now.AddHours(-3), "ri:briefcase"),
-        new(CurrentUser.Name, "added 3 members to", "Engineering", DateTime.Now.AddHours(-7), "ri:group"),
+        new(CurrentUser.Name, "paid invoice", "#4981", DateTime.Now.AddMinutes(-12), "tb:file-invoice"),
+        new(CurrentUser.Name, "created the project", "Security review", DateTime.Now.AddHours(-3), "tb:briefcase"),
+        new(CurrentUser.Name, "added 3 members to", "Engineering", DateTime.Now.AddHours(-7), "tb:users-group"),
         new(CurrentUser.Name, "shipped", "Modulus UI v2 beta", DateTime.Now.AddDays(-1), "rocket"),
         new(CurrentUser.Name, "commented on", "Billing migration", DateTime.Now.AddDays(-2), "message"),
     ];
@@ -172,11 +172,11 @@ public static class SampleContent
         new("Chrome on Windows", "Desktop", "San Francisco, US", DateTime.Now.AddMinutes(-2), "windows"),
         new("Safari on iPhone", "Mobile", "San Francisco, US", DateTime.Now.AddHours(-5), "mobile"),
         new("Chrome on macOS", "Laptop", "New York, US", DateTime.Now.AddDays(-2), "apple"),
-        new("Edge on Windows", "Desktop", "London, UK", DateTime.Now.AddDays(-9), "ri:edge"),
+        new("Edge on Windows", "Desktop", "London, UK", DateTime.Now.AddDays(-9), "tb:brand-edge"),
     ];
 
     public static readonly IReadOnlyList<(string Brand, string Name, string Number, string Expires, bool Primary)> PaymentCards =
-        [("ri:visa", "Serena Park", "4242", "12/28", true), ("ri:mastercard", "Serena Park", "5454", "03/27", false)];
+        [("tb:brand-visa", "Serena Park", "4242", "12/28", true), ("tb:brand-mastercard", "Serena Park", "5454", "03/27", false)];
 
     public static readonly IReadOnlyList<(string Icon, string Name, string? Handle)> SocialAccounts =
         [("github", "GitHub", "@serena-park"), ("x", "X", null), ("linkedin", "LinkedIn", "in/serenapark"), ("dribbble", "Dribbble", null)];
@@ -191,8 +191,8 @@ public static class SampleContent
         ("Google", "Calendar and contacts", "google", true),
         ("Slack", "Notifications in your channels", "slack", true),
         ("GitHub", "Link commits to tasks", "github", false),
-        ("Figma", "Embed designs in cards", "ri:figma", false),
-        ("Stripe", "Card payments for invoices", "ri:bank-card", true),
+        ("Figma", "Embed designs in cards", "tb:brand-figma", false),
+        ("Stripe", "Card payments for invoices", "tb:credit-card", true),
     ];
 
     // User view (Apps → Users → a user) ----------------------------------------------------------
@@ -215,7 +215,7 @@ public static class SampleContent
         var projects = UserProjects(user);
         return
         [
-            new(user.Name, "completed 4 tasks in", projects[0].Name, DateTime.Now.AddMinutes(-(user.Id * 7 % 50 + 5)), "ri:check-double"),
+            new(user.Name, "completed 4 tasks in", projects[0].Name, DateTime.Now.AddMinutes(-(user.Id * 7 % 50 + 5)), "tb:checks"),
             new(user.Name, "uploaded", "brand-guidelines.pdf", DateTime.Now.AddHours(-(user.Id % 5 + 2)), "upload"),
             new(user.Name, "commented on", projects[1].Name, DateTime.Now.AddHours(-(user.Id % 9 + 9)), "message"),
             new(user.Name, "was added to", projects[2].Name, DateTime.Now.AddDays(-(user.Id % 4 + 1)), "user-add"),

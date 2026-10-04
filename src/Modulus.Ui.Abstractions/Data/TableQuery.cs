@@ -117,6 +117,24 @@ public sealed class TableQuery<T>
         });
     }
 
+    /// <summary>
+    /// A copy without the sorts and column searches of the fields <paramref name="allow"/> refuses
+    /// (<see cref="State.FieldAccess.For"/>): a request naming one of them is treated like an unknown field. The default
+    /// sort falls back to the id when its field is refused.
+    /// </summary>
+    public TableQuery<T> Restrict(Func<string, bool> allow)
+    {
+        var copy = new TableQuery<T>(_id);
+        foreach (var (field, key) in _sorts) if (allow(field)) copy._sorts[field] = key;
+        foreach (var (field, search) in _searches) if (allow(field)) copy._searches[field] = search;
+        if (_defaultField is not null && copy._sorts.ContainsKey(_defaultField))
+        {
+            copy._defaultField = _defaultField;
+            copy._defaultDescending = _defaultDescending;
+        }
+        return copy;
+    }
+
     /// <summary>Whether <paramref name="field"/> can sort (for the header's sorter).</summary>
     public bool CanSort(string field) => _sorts.ContainsKey(field);
 

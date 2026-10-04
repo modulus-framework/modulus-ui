@@ -37,8 +37,9 @@
  *                          thumbnails, download); AppLightbox, app-lightbox, app-image and app-image-group
  *
  * window.modulusShell.fields holds the business-field rules of Modulus.Ui.Abstractions.Forms (NumberText,
- * DurationText, InputMask) for both flavours; signature(root, dotnet) and richText(root, dotnet) attach a
- * signature pad or rich text editor to Blazor (MVC needs no call).
+ * DurationText, InputMask) for both flavours. Signature pads ([data-m-signature], started by modulus-plugins.js) and
+ * rich text editors (.m-richtext) report through their hidden input's change event in both flavours, so Blazor
+ * needs no JS interop; signature(root, dotnet) and richText(root, dotnet) remain for callers of the earlier API.
  *
  * window.modulusShell.download(name, text) saves text as a file (the grids' CSV export); watchResize(id, dotnet)
  * reports resizes to a Blazor grid.
@@ -879,11 +880,16 @@
         })();
     };
 
-    // Pointer capture for drag controls (the Blazor colour picker palette and sliders keep receiving pointermove
-    // after the pointer leaves them).
+    // Pointer capture for drag controls: a [data-m-capture] element (the Blazor colour picker palette and sliders)
+    // keeps receiving pointermove after the pointer leaves it. Taken here, as the pointer goes down, instead of by a
+    // JS call from the component. capture(el, pointerId) stays for callers of the earlier API.
     window.modulusShell.capture = function (el, pointerId) {
         try { if (el && el.setPointerCapture) el.setPointerCapture(pointerId); } catch (e) { /* pointer already up */ }
     };
+    document.addEventListener('pointerdown', function (e) {
+        var el = e.button === 0 && e.target instanceof Element && e.target.closest('[data-m-capture]');
+        if (el) window.modulusShell.capture(el, e.pointerId);
+    });
 
     // Arrow keys on colour picker sliders move the handle, not the page.
     document.addEventListener('keydown', function (e) {
@@ -1057,6 +1063,42 @@
         var selector = root && root.querySelector('.ant-select-selector');
         if (selector && !root.contains(document.activeElement)) selector.focus({ preventScroll: true });
     };
+
+    // Open selects and lookups (AppCreatableSelect, AppLookup and their MVC twins) follow their own DOM, so the Blazor
+    // components need no JS interop: when a root opens or its list changes it is placed again (before the browser
+    // paints), and a newly active option or dialog row is scrolled into view.
+    var OPEN_SELECT = '.m-cselect.ant-select-open, .m-lookup.m-lookup-open';
+    var selectsQueued = new Set(), rowsQueued = new Set();
+    function selectsFlush() {
+        selectsQueued.forEach(function (root) { if (root.isConnected && root.matches(OPEN_SELECT)) window.modulusShell.placeSelect(root); });
+        rowsQueued.forEach(function (row) { if (row.isConnected) row.scrollIntoView({ block: 'nearest' }); });
+        selectsQueued.clear();
+        rowsQueued.clear();
+    }
+    function selectsNote(node) {
+        if (!(node instanceof Element)) return;
+        var root = node.closest('.m-cselect, .m-lookup');
+        if (!root) {
+            // A whole select or lookup that appeared already open (an editable grid cell's editor).
+            node.querySelectorAll && node.querySelectorAll(OPEN_SELECT).forEach(function (r) { selectsQueued.add(r); });
+            return;
+        }
+        if (node === root || node.parentElement === root || node.closest('.m-cselect-dropdown')) selectsQueued.add(root);
+        var row = node.matches('.ant-select-item-option-active, .m-lookup-row-active') ? node
+            : node.querySelector && node.querySelector('.ant-select-item-option-active, .m-lookup-row-active');
+        if (row) rowsQueued.add(row);
+    }
+    function watchSelects() {
+        new MutationObserver(function (records) {
+            for (var i = 0; i < records.length; i++) {
+                var r = records[i];
+                if (r.type === 'attributes') selectsNote(r.target);
+                else for (var j = 0; j < r.addedNodes.length; j++) selectsNote(r.addedNodes[j].nodeType === 1 ? r.addedNodes[j] : r.target);
+            }
+            if (selectsQueued.size || rowsQueued.size) selectsFlush();
+        }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
+    }
+    if (document.body) watchSelects(); else document.addEventListener('DOMContentLoaded', watchSelects);
 
 
     // ---- Data tables and grids (Blazor and MVC share the DOM) ------------------------------------------------
@@ -1829,9 +1871,9 @@
     window.modulusShell.focus = function (el) { if (el && el.focus) el.focus({ preventScroll: true }); };
 
     // ---- Signature pad (.m-signature: AppSignaturePad / app-signature-pad) ----
-    // Draws with the pointer on a white "paper" canvas and publishes a PNG data URL: into the hidden input (MVC) and
-    // to dotnet.OnSignature (Blazor). A typed name is drawn in a script face instead. The drawing is redrawn from the
-    // value when the pad resizes. Call again with a value to show it (Blazor, when the bound value changes).
+    // Draws with the pointer on a white "paper" canvas and publishes a PNG data URL into the hidden input, raising
+    // change (AppSignaturePad listens to it; dotnet.OnSignature is the earlier API). A typed name is drawn in a script
+    // face instead. The drawing is redrawn from the value when the pad resizes. Call again with a value to show it.
     window.modulusShell.signature = function (root, dotnet, value) {
         if (!root) return;
         if (root._mSig) { if (value !== undefined) root._mSig.load(value || ''); return; }
@@ -1917,15 +1959,29 @@
 
     // ---- Rich text (.m-richtext: AppRichText / app-rich-text) ----
     // Toolbar buttons run editing commands on the editor (mousedown keeps the selection), pastes arrive as plain
-    // text, and every change is written to the hidden input (MVC) or sent to dotnet.OnRichTextInput (Blazor,
-    // debounced). The server cleans what it receives with RichText.Sanitize.
+    // text, and every change is written to the hidden input at once; its change event (which Blazor's AppRichText
+    // listens to) is debounced while typing and sent straight away when the editor loses focus or its form submits.
+    // The server cleans what it receives with RichText.Sanitize.
     function richEditor(root) { return root.querySelector('.m-richtext-editor'); }
+    function richHidden(root) { return root.querySelector(':scope > input[type=hidden]'); }
+    function richFlush(root) {
+        clearTimeout(root._mRichChange);
+        if (!root._mRichDirty) return;
+        root._mRichDirty = false;
+        var hidden = richHidden(root);
+        if (hidden) hidden.dispatchEvent(new Event('change', { bubbles: true }));
+    }
     function richChanged(root) {
         var editor = richEditor(root), html = editor.innerHTML;
         if (!editor.textContent.trim() && !editor.querySelector('li, hr')) html = '';
         root.classList.toggle('m-richtext-empty', !html);
-        var hidden = root.querySelector('input[type=hidden]');
-        if (hidden) { hidden.value = html; hidden.dispatchEvent(new Event('change', { bubbles: true })); }
+        var hidden = richHidden(root);
+        if (hidden && hidden.value !== html) {
+            hidden.value = html;
+            root._mRichDirty = true;
+            clearTimeout(root._mRichChange);
+            root._mRichChange = setTimeout(function () { richFlush(root); }, 300);
+        }
         var state = root._mRich;
         if (state && state.dotnet) {
             clearTimeout(state.timer);
@@ -1967,6 +2023,13 @@
         var editor = e.target instanceof Element && e.target.closest('.m-richtext-editor');
         if (editor) richChanged(editor.closest('.m-richtext'));
     });
+    document.addEventListener('focusout', function (e) {
+        var editor = e.target instanceof Element && e.target.closest('.m-richtext-editor');
+        if (editor) richFlush(editor.closest('.m-richtext'));
+    });
+    document.addEventListener('submit', function (e) {
+        if (e.target instanceof Element) e.target.querySelectorAll('.m-richtext').forEach(richFlush);
+    }, true);
     document.addEventListener('paste', function (e) {
         var editor = e.target instanceof Element && e.target.closest('.m-richtext-editor');
         if (!editor) return;

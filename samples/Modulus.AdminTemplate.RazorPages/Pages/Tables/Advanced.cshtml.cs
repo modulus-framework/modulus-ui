@@ -7,6 +7,7 @@ using Modulus.Samples.Web;
 using Modulus.Samples.Web.Models;
 using Modulus.Ui.Abstractions;
 using Modulus.Ui.Abstractions.Plugins;
+using Modulus.Ui.Abstractions.State;
 
 namespace Modulus.AdminTemplate.RazorPages.Pages.Tables;
 
@@ -18,8 +19,14 @@ public class AdvancedModel : SamplePageModel
     // The header column searches (s.{field}) are read here: model binding leaves the dictionary alone.
     private EmployeeQuery WithSearches(EmployeeQuery query) => query with { Searches = Request.Query.ColumnSearches() };
 
-    public void OnGet([FromQuery] EmployeeQuery query, [FromQuery] ProTableRequest request, string? hide) =>
+    public async Task<IActionResult> OnGetAsync([FromQuery] EmployeeQuery query, [FromQuery] ProTableRequest request, string? hide, [FromServices] SavedViews views)
+    {
+        // A visit that names no layout opens the user's default view (the Views dropdown's star).
+        if (await views.DefaultUrlAsync(UiUser.Key(User), EmployeeTablePage.Path, EmployeeTablePage.Path,
+                Request.Query.SelectMany(q => q.Value.Select(v => new KeyValuePair<string, string?>(q.Key, v)))) is { } url) return LocalRedirect(url);
         Table = EmployeeTablePage.Load(WithSearches(query), request, hide);
+        return Page();
+    }
 
     /// <summary>POST /tables/advanced/labels: "Add item" in a label dropdown.</summary>
     public IActionResult OnPostLabels([FromForm] string? label, [FromForm] string? color) => new JsonResult(EmployeeLabelActions.Add(label, color));

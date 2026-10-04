@@ -97,6 +97,46 @@ public class PivotTests
     }
 
     [Fact]
+    public void ExpandAll_BringsBackTheLevelsACollapseDropped_AsOdoosFullGroupBys()
+    {
+        var berlin = PivotPath.Child(PivotPath.Root, "Berlin");
+        var state = Pivot.DefaultState.ExpandBy(PivotAxis.Rows, berlin, "customer");
+        Assert.Equal(["city", "customer"], state.Rows);
+
+        // Closing Berlin drops "customer" from the axis, but Expand all remembers it, also through the URL.
+        var closed = state.Collapse(PivotAxis.Rows, berlin);
+        Assert.Equal(["city"], closed.Rows);
+        Assert.Contains("rf=city%2Ccustomer", closed.ToQueryString());
+        closed = Query(closed.ToQueryString());
+        Assert.True(closed.CanExpandAll());
+
+        var all = closed.ExpandAll();
+        Assert.Equal(["city", "customer"], all.Rows);
+        Assert.True(all.IsExpanded(PivotAxis.Rows, berlin));
+        Assert.True(all.IsExpanded(PivotAxis.Rows, PivotPath.Child(PivotPath.Root, "Paris")));
+        Assert.DoesNotContain("rf=", all.ToQueryString());
+
+        // Another group-by below the city replaces the remembered one.
+        Assert.Equal(["city", "status"], closed.ExpandBy(PivotAxis.Rows, berlin, "status").ExpandAll().Rows);
+        // Collapsing "Total" keeps the levels for Expand all too.
+        Assert.Equal(["city", "customer"], state.Collapse(PivotAxis.Rows, PivotPath.Root).ExpandAll().Rows);
+    }
+
+    [Fact]
+    public void ExpandAll_IsDisabled_WhenEveryHeaderIsOpen()
+    {
+        // The default (City × Year, both "Total"s open) has nothing more to open.
+        Assert.False(Pivot.DefaultState.CanExpandAll());
+        Assert.False(State("city,customer", "date:year").CanExpandAll());
+        var berlin = PivotPath.Child(PivotPath.Root, "Berlin");
+        Assert.True(Pivot.DefaultState.ExpandBy(PivotAxis.Rows, berlin, "customer").CanExpandAll());
+
+        var html = PivotHtml.Render(Pivot.Run(Shipments.Query, Pivot.DefaultState), s => "?" + s.ToQueryString());
+        Assert.Contains("<button type=\"button\" class=\"ant-btn ant-btn-default ant-btn-icon-only\" disabled title=\"Every header is expanded\" aria-label=\"Expand all\">", html);
+        Assert.DoesNotContain("title=\"Expand all\"", html);
+    }
+
+    [Fact]
     public void Flip_SwapsTheAxes_AndToggleMeasureKeepsTheLastOne()
     {
         var state = State("city", "status").SortBy("amount", PivotPath.Root);

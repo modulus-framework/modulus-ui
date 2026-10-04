@@ -52,7 +52,7 @@ public class MediaPlayerTagHelper : TagHelper
 }
 
 /// <summary>
-/// WYSIWYG editor (Quill with an Ant Design toolbar), the same markup as the Blazor <c>AppEditor</c> (<see cref="EditorHtml"/>).
+/// WYSIWYG editor (Tiptap with an Ant Design toolbar), the same markup as the Blazor <c>AppEditor</c> (<see cref="EditorHtml"/>).
 /// Posts HTML; the starting value is cleaned with <c>RichText.Sanitize(html, images: true)</c>, and what is posted must be
 /// cleaned the same way on the server.
 /// <code>&lt;app-editor asp-for="Body" placeholder="Write the announcement…" label="Announcement" /&gt;</code>
@@ -79,7 +79,7 @@ public class EditorTagHelper : BoundControlTagHelper
 }
 
 /// <summary>
-/// Tile map (Leaflet, OpenStreetMap), the same markup as the Blazor <c>AppMap</c> (<see cref="MapHtml.Tile"/>).
+/// Tile map (MapLibre GL JS, OpenStreetMap), the same markup as the Blazor <c>AppMap</c> (<see cref="MapHtml.Tile"/>).
 /// Buttons with <c>data-m-map-go="index" data-m-map-target="id"</c> fly to a marker.
 /// <code>&lt;app-map id="stores" markers="@Model.Stores" height="400px" /&gt;</code>
 /// </summary>
@@ -133,6 +133,70 @@ public class VectorMapTagHelper : TagHelper
     {
         output.TagName = null;
         output.Content.SetHtmlContent(MapHtml.Vector(Id, Data ?? Choropleth.Build(new Dictionary<string, double>(), ["#91caff"], v => v.ToString(CultureInfo.CurrentCulture)), Label, Height, Map));
+    }
+}
+
+/// <summary>
+/// Spreadsheet (Univer with a formula bar and toolbar; a bare grid when read-only), the same markup as the Blazor
+/// <c>AppSpreadsheet</c> (<see cref="SpreadsheetHtml"/>). With <c>name</c> the hidden input posts the edited sheets as JSON.
+/// <code>&lt;app-spreadsheet id="budget" name="Budget" sheets="@Model.Budget" height="480px" /&gt;</code>
+/// </summary>
+[HtmlTargetElement("app-spreadsheet", TagStructure = TagStructure.WithoutEndTag)]
+public class SpreadsheetTagHelper : TagHelper
+{
+    public string Id { get; set; } = "sheet";
+
+    public IReadOnlyList<SpreadsheetSheet>? Sheets { get; set; }
+
+    /// <summary>Form field name; the hidden input posts the edited sheets as JSON under it.</summary>
+    public string? Name { get; set; }
+
+    /// <summary>A bare grid without toolbar, formula bar or context menu.</summary>
+    public bool ReadOnly { get; set; }
+
+    public string Height { get; set; } = "420px";
+
+    /// <summary>Accessible name of the spreadsheet region.</summary>
+    public string? Label { get; set; }
+
+    public override void Process(TagHelperContext context, TagHelperOutput output)
+    {
+        var cls = output.Attributes.TryGetAttribute("class", out var c) ? c.Value?.ToString() : null;
+        output.TagName = null;
+        output.Content.SetHtmlContent(SpreadsheetHtml.Render(Id, Sheets ?? [], !ReadOnly, Height, Name, Label, cls));
+    }
+}
+
+/// <summary>
+/// Document editor (Univer Docs: a Word-style ribbon over A4 pages; the pages alone when read-only), the same markup as the
+/// Blazor <c>AppDocument</c> (<see cref="DocumentHtml"/>). <c>value</c> is the document's JSON (build it with
+/// <c>Modulus.Documents.UniverDocument</c>); with <c>name</c> the hidden input posts the edited JSON.
+/// <code>&lt;app-document id="contract" name="Contract" value="@Model.ContractJson" height="720px" /&gt;</code>
+/// </summary>
+[HtmlTargetElement("app-document", TagStructure = TagStructure.WithoutEndTag)]
+public class DocumentTagHelper : TagHelper
+{
+    public string Id { get; set; } = "document";
+
+    /// <summary>The document's JSON; empty starts a blank page.</summary>
+    public string? Value { get; set; }
+
+    /// <summary>Form field name; the hidden input posts the edited document's JSON under it.</summary>
+    public string? Name { get; set; }
+
+    /// <summary>The pages to read, without the ribbon.</summary>
+    public bool ReadOnly { get; set; }
+
+    public string Height { get; set; } = "640px";
+
+    /// <summary>Accessible name of the editor region.</summary>
+    public string? Label { get; set; }
+
+    public override void Process(TagHelperContext context, TagHelperOutput output)
+    {
+        var cls = output.Attributes.TryGetAttribute("class", out var c) ? c.Value?.ToString() : null;
+        output.TagName = null;
+        output.Content.SetHtmlContent(DocumentHtml.Render(Id, Value, !ReadOnly, Height, Name, Label, cls));
     }
 }
 

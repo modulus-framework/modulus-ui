@@ -1,33 +1,11 @@
-@* Light/dark switch for the header. State lives in the browser (cookie), see modulus-theme.js. *@
-@inject IJSRuntime JS
+@* Light/dark switch for the header. State lives in the browser (cookie, see modulus-theme.js): modulus-shell.js toggles
+   it on [data-m-theme-toggle], and the CSS shows the moon or the sun from html[data-theme], so no JS interop is needed. *@
 
-<Tooltip Title="@(_dark ? "Switch to light theme" : "Switch to dark theme")" Placement="Placement.Bottom">
-    <button type="button" class="m-header-action" aria-label="Toggle dark theme" aria-pressed="@(_dark ? "true" : "false")" @onclick="ToggleAsync">
-        @if (_dark)
-        {
-            <span class="anticon" role="img" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
-            </span>
-        }
-        else
-        {
-            <span class="anticon" role="img" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
-            </span>
-        }
-    </button>
-</Tooltip>
-
-@code {
-    private bool _dark;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender) return;
-        _dark = await JS.InvokeAsync<string>("modulusTheme.current") == "dark";
-        StateHasChanged();
-    }
-
-    private async Task ToggleAsync() =>
-        _dark = await JS.InvokeAsync<string>("modulusTheme.toggle") == "dark";
-}
+<button type="button" class="m-header-action" data-m-theme-toggle aria-label="Toggle dark theme" title="Toggle dark theme">
+    <span class="anticon m-show-dark" role="img" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" /></svg>
+    </span>
+    <span class="anticon m-show-light" role="img" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+    </span>
+</button>

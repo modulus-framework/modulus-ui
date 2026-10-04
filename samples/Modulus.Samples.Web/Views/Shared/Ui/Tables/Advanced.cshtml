@@ -37,6 +37,8 @@
                 <span class="m-small m-muted m-medium" style="font-weight:400">avg. salary @Fmt.Money0(Model.Summary.AverageSalary)</span>
             </div>
             <div class="m-table-toolbar-actions">
+                @* The user's saved layouts of this table (Odoo's favourites); a starred one opens by default. *@
+                <app-saved-views page="@Base" id="employee-views" />
                 <span class="m-table-toolbar-search ant-input-affix-wrapper" x-data="{ value: @(string.IsNullOrEmpty(q.Keyword) ? "''" : "true") }">
                     <span class="ant-input-prefix"><app-icon type="search" /></span>
                     <input class="ant-input" type="text" name="keyword" value="@q.Keyword" placeholder="Search name, email, position…" aria-label="Search employees" form="employees-filter" x-ref="input" @@input="value = $el.value" />

@@ -49,11 +49,11 @@ public sealed partial class SampleStore
         (string Name, string Icon, string Description)[] catalog =
         [
             ("Edge Gateway X2", "hdd", "Industrial gateway with dual LTE uplinks and local rules engine."),
-            ("Sensor Hub", "ri:cpu", "Collects readings from up to 64 wireless sensors."),
+            ("Sensor Hub", "tb:cpu", "Collects readings from up to 64 wireless sensors."),
             ("Analytics Suite", "dot-chart", "Dashboards, alerts and exports for every site."),
             ("Cloud Backup", "cloud-upload", "Nightly encrypted backups with 90-day retention."),
             ("Onboarding Pack", "rocket", "Remote setup session and a tailored rollout plan."),
-            ("Support Plus", "ri:lifebuoy", "Priority support with a four-hour response time."),
+            ("Support Plus", "tb:lifebuoy", "Priority support with a four-hour response time."),
             ("Dock Pro", "desktop", "Charging dock for field tablets with Ethernet pass-through."),
             ("Rack Kit 42U", "cloud-server", "Floor-standing 42U rack with cable management."),
             ("Field Tablet", "tablet", "Rugged 10-inch tablet, IP67, glove-friendly screen."),

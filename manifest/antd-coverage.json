@@ -626,6 +626,11 @@
         "note": "AppPivotGrid (Components/Pro): Odoo-style pivot over PivotQuery (one GROUP BY, roll-up in memory), layout in the URL, xlsx download; PivotHtml shared",
         "mvc": "app-pivot-grid"
       },
+      "SavedViews": {
+        "status": "modulus",
+        "note": "AppSavedViews (Components/Pro): per-user named views of a page (its query string) in IUiStateStore, one default; SavedViewsHtml shared, MVC posts to MapModulusSavedViews",
+        "mvc": "app-saved-views"
+      },
       "EditableGrid": {
         "status": "modulus",
         "note": "EditableGrid (Components/Pro): schema-driven columns (GridColumn), in-place editors, pinned columns, row drag; GridSchema shared",
@@ -660,12 +665,12 @@
       },
       "Editor": {
         "status": "modulus",
-        "note": "AppEditor (Components/Extras): WYSIWYG on Quill (EditorHtml); HTML cleaned by RichText.Sanitize(images: true)",
+        "note": "AppEditor (Components/Extras): WYSIWYG on Tiptap (EditorHtml); HTML cleaned by RichText.Sanitize(images: true)",
         "mvc": "app-editor"
       },
       "Map": {
         "status": "modulus",
-        "note": "AppMap (Components/Extras): Leaflet tile map with markers and popups (MapHtml.Tile)",
+        "note": "AppMap (Components/Extras): MapLibre GL JS tile map with markers and popups (MapHtml.Tile)",
         "mvc": "app-map"
       },
       "VectorMap": {
@@ -682,6 +687,11 @@
         "status": "modulus",
         "note": "AppSortable (Components/Extras): reorder and move between lists, handles, keyboard (SortableHtml)",
         "mvc": "app-sortable, app-sortable-item"
+      },
+      "Spreadsheet": {
+        "status": "modulus",
+        "note": "AppSpreadsheet (Components/Extras): Excel-style grid with formulas on Univer (SpreadsheetHtml); posts its sheets as JSON",
+        "mvc": "app-spreadsheet"
       }
     }
   },

@@ -1,5 +1,5 @@
 @using Modulus.AspNetCore.Mvc
-@* WYSIWYG editor: Quill with an Ant Design toolbar. The form posts the HTML back to this page, which shows it cleaned. *@
+@* WYSIWYG editor: Tiptap with an Ant Design toolbar. The form posts the HTML back to this page, which shows it cleaned. *@
 @{
     var posted = Context.Request.HasFormContentType ? Context.Request.Form["Body"].ToString() : null;
     var result = PluginsContent.Clean(posted ?? PluginsContent.EditorSample);

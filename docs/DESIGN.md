@@ -40,7 +40,7 @@ Modulus.Ui.Abstractions   theme options + palette, menus, ShellRenderer, ProTabl
         │
 Modulus.Ui.Assets         modulus*.css (tokens, v5 refresh, shell, pages), antd-dark-brand.css, modulus-*.js
         │                 (theme, shell, mvc, widgets, plugins, spa, virtual), htmx 2.0.11, Alpine 3.17.4,
-        │                 Leaflet, Quill, jsVectorMap; brings AntDesign + ProLayout static CSS to every flavor
+        │                 MapLibre, Tiptap, jsVectorMap; brings AntDesign + ProLayout static CSS to every flavor
    ┌────┴─────────────┐
 Modulus.Blazor         Modulus.AspNetCore.Mvc
 App* aliases, ProLayout    tag helpers, _ModulusLayout, htmx response helpers, AntIcons
@@ -258,6 +258,41 @@ Expand all and Download.
 - **Download** is `PivotXlsx`: SpreadsheetML written into a zip, with no library. It has the same headers (merged),
   indented row labels and bold totals.
 
+### User state, saved views and field access
+
+- **`IUiStateStore`** (`Modulus.Ui.Abstractions.State`) keeps short per-user strings under keys such as
+  `views:/tables/pivot`. The user is `UiUser.Key(principal)`: the name identifier, else the name. Anonymous visitors
+  keep nothing, because one key would be shared by all of them. `AddModulusMvc` and `AddModulusBlazor` register
+  `MemoryUiStateStore` (in memory, lost on restart, 64 KB per value, 500 keys per user) unless the app registered its
+  own store first. A database store is one table keyed by user and key: the samples' `EfUiStateStore`
+  (`Modulus.Samples.Shared/SampleUiState.cs`, EF Core on SQLite) is one to copy.
+- **Saved views are named query strings** (Odoo's favourites). Modulus pages keep their whole layout in the URL, so
+  `SavedViews` stores the canonical query:
+  - empty values and the position keys (`page`, `current`, `cursor`, `after`, `before`, `handler`) are dropped;
+  - keys are in ordinal order.
+
+  That lets the dropdown mark the view the current URL shows. A page keeps at most 20 views, and one view can be the
+  default: a visit whose URL names no layout goes there (`DefaultUrlAsync`; `AppSavedViews` does it with
+  `ApplyDefault`).
+- **One markup.**
+  - `SavedViewsHtml` draws the dropdown.
+  - `<app-saved-views>` (MVC) submits a hidden form through `form="…"` attributes, so the dropdown nests no form. It
+    posts to `MapModulusSavedViews()`, which validates the antiforgery token, accepts only a local path, and redirects
+    back with any error in `views-error`.
+  - `AppSavedViews` (Blazor) renders the same DOM with buttons.
+- **A Blazor table in the URL.** `ProTable UrlState` writes its page, page size, sort and column searches to the URL
+  with the MVC grids' keys (`ProTableUrl`: `current`, `pageSize`, `sortField`, `sortOrder`, `s.{key}`), beside the
+  page's own keys (`UrlQuery`, read back in `OnUrlChanged`). Each change adds a history entry, and the table follows
+  the URL when it changes from outside (back, forward, a saved view). So a saved view of `/tables/advanced` is the
+  same query string in all three samples. The editable grid has no URL state (its layout is a saved schema), so it
+  has no Views dropdown.
+- **Field access is enforced before the query, not only in the view.** `FieldAccess.Create().Require(field, roles…)`
+  (or a test on the principal) and `.For(user)` give a `Func<string, bool>`.
+  - It goes to `TableQuery.Restrict` (sorts and searches), `PivotQuery.Restrict` (group-bys and measures; a date
+    interval `date:month` follows `date`) and `GridSchema.Allowed` (the columns rendered and read back).
+  - A field the URL names but the user may not see is dropped like an unknown one.
+  - The sample pivot's *Largest* measure needs the Admin or Editor role, for the page and the download alike.
+
 ### The ERP UI map
 
 The ERP suites in §1 were reviewed as feature inventories. This is the UI surface they imply and where Modulus
@@ -302,15 +337,22 @@ Adapted from the 2.0 proposal; new components follow them.
 ### Plugins
 
 - **One renderer, two front ends.** Each plugin's markup is a static class in `Modulus.Ui.Abstractions.Plugins`
-  (`EditorHtml`, `MapHtml`, `MediaPlayerHtml`, `SortableHtml`); the Blazor component and the tag helper both call it,
-  so they emit the same DOM. `modulus-plugins.js` finds the `[data-m-*]` roots (`data-m-editor`, `data-m-map`,
-  `data-m-vector-map`, `data-m-player`, `data-m-sortable`) and wires them in both flavours, after htmx swaps and Blazor
-  renders alike.
-- **Libraries load on first use.** Quill, Leaflet and jsVectorMap are vendored in `Modulus.Ui.Assets/wwwroot/lib` and
-  loaded (script and CSS) only when a page has a matching root, so pages without a plugin pay nothing. Maps and the
-  editor wrap the library; the media player and sortable are Modulus code.
+  (`EditorHtml`, `MapHtml`, `MediaPlayerHtml`, `SortableHtml`, `SpreadsheetHtml`); the Blazor component and the tag
+  helper both call it, so they emit the same DOM. `modulus-plugins.js` finds the `[data-m-*]` roots (`data-m-editor`,
+  `data-m-map`, `data-m-vector-map`, `data-m-player`, `data-m-sortable`, `data-m-sheet`) and wires them in both
+  flavours, after htmx swaps and Blazor renders alike.
+- **Libraries load on first use.** Tiptap, MapLibre, Univer and jsVectorMap are vendored in
+  `Modulus.Ui.Assets/wwwroot/lib` and loaded (script and CSS) only when a page has a matching root, so pages without a
+  plugin pay nothing. Maps, the editor and the spreadsheet wrap the library (Tiptap and Univer as prebuilt IIFE
+  bundles, `lib/tiptap` and `lib/univer`, because both are ESM-only); the media player and sortable are Modulus code.
 - **Values post as form fields.** The editor writes its HTML into a hidden input (`[data-m-editor-value]`) and raises
-  `change`; Sortable writes the order. Servers clean editor HTML with `RichText.Sanitize(images: true)`.
+  `change`; Sortable writes the order; the spreadsheet writes its sheets as JSON (`[data-m-sheet-value]`, flushed on
+  submit) and raises `change` debounced while editing. Servers clean editor HTML with `RichText.Sanitize(images: true)`.
+- **The spreadsheet's data model is plain rows.** A sheet is `SpreadsheetSheet(Name, Rows)` with rows of numbers,
+  strings, booleans and `"=SUM(…)"` formula strings; `modulus-plugins.js` maps them to and from Univer's cell data
+  (a formula is the `f` field without the leading `=`), trimming trailing empty cells and rows. The theme follows the
+  app: the sheet starts in `darkBlueTheme` when the shell is dark and switches in place on `modulus:theme`. A
+  read-only sheet drops the toolbar, formula bar, header, footer and context menu.
 - **One sortable engine** moves list items, cards and table rows. On a table (`data-m-sort-rows` around it,
   `data-m-sort-row` on the handle) it drags by the handle only, carries expanded and nested rows with their row, uses
   a one-row table as the ghost and skips hidden rows. Up, Down, Home and End on a focused handle move the row, and a
@@ -343,7 +385,7 @@ Adapted from the 2.0 proposal; new components follow them.
 | Feedback | Toast (`message`) for success; inline form errors for validation; `Result` pages for 403/404/500 |
 | KPIs | `StatisticCard`: label, headline value, 46 px chart slot, divider, footer metric; trends always carry text, never colour alone |
 | Charts | One series per chart, one axis from zero, recessive grid, hover tooltips, a screen-reader table |
-| Icons | Ant Design icons only, drawn inline. Page content and navigation name an Ant Design outline icon (`<Ti Name="team" />` / `<app-ti name="team" />`, menu items, apps and links alike; an `ant:` prefix is optional). Ant Design icons newer than the AntDesign package, and the few concepts Ant Design has no icon for (Remix Icon, `ri:`), are bundled in `ExtraIconSvg` by `tools/icons/build.sh` |
+| Icons | Ant Design icons only, drawn inline. Page content and navigation name an Ant Design outline icon (`<Ti Name="team" />` / `<app-ti name="team" />`, menu items, apps and links alike; an `ant:` prefix is optional). Ant Design icons newer than the AntDesign package, and the concepts Ant Design has no icon for (Tabler outline icons at a 1.5 stroke, `tb:`), are bundled in `ExtraIconSvg` by `tools/icons/build.sh` |
 | Menus | Modules add items through `IMenuContributor`; `Order` 0–99 for app sections, 90+ for settings. In a menu, plain entries come first, then sections |
 | Page scripts (MVC) | `Modulus.page(fn)` or `Modulus.onPage(fn)`, returning a cleanup if needed, never `DOMContentLoaded`, so pages work with SPA navigation |
 

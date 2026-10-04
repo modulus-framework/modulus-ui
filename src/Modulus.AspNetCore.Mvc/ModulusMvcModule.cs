@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Modulus.Ui.Abstractions.Navigation;
 using Modulus.Ui.Abstractions.Shell;
+using Modulus.Ui.Abstractions.State;
 using Modulus.Ui.Abstractions.Theming;
 
 namespace Modulus.AspNetCore.Mvc;
@@ -28,6 +29,10 @@ public static class ModulusMvcModule
 
         services.TryAddScoped<IMenuProvider, MenuProvider>();
         services.TryAddSingleton<IShellContentProvider, DefaultShellContentProvider>();
+
+        // Per-user UI state (saved views); an app registers its own IUiStateStore to keep it across restarts.
+        services.TryAddSingleton<IUiStateStore, MemoryUiStateStore>();
+        services.TryAddScoped<SavedViews>();
 
         // htmx requests carry the token in this header (see _ModulusLayout: hx-headers on <body>).
         services.AddAntiforgery(o => o.HeaderName = Htmx.HtmxExtensions.AntiforgeryHeader);

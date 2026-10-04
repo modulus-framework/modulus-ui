@@ -1,0 +1,73 @@
+@* Spreadsheet: Univer with a formula bar and toolbar (a bare grid when read-only); the same markup as the MVC <app-spreadsheet>
+   (SpreadsheetHtml, modulus-plugins.js). Univer owns the grid, so the starting sheets render once; the script writes the edited
+   sheets as JSON to the hidden input and raises change (debounced), which parses back into SheetsChanged. Setting Sheets from
+   outside loads them into the running grid (no reload flash). Each change carries every sheet over the circuit: raise the
+   hub's MaximumReceiveMessageSize (32 KB by default) for large workbooks, as the sample's Program.cs does. Cells are
+   numbers, text, bools or "=SUM(A1:B2)" strings; on the way back they are System.Text.Json elements. *@
+@using Modulus.Ui.Abstractions.Plugins
+
+<div @key="_version" class="m-sheet@(string.IsNullOrEmpty(CssClass) ? "" : " " + CssClass)" id="@Id" data-m-sheet data-sheets="@_initial"
+     data-readonly="@ReadOnly" role="region" aria-label="@(Label ?? "Spreadsheet")" style="height: @(Height)">
+    <div class="m-sheet-loading">Loading spreadsheet…</div>
+    <input type="hidden" name="@Name" id="@(Id)-value" value="@_initial" data-m-sheet-value @onchange="Changed" />
+</div>
+
+@code {
+    private static readonly System.Text.Json.JsonSerializerOptions Json = new(System.Text.Json.JsonSerializerDefaults.Web);
+
+    [Parameter, EditorRequired] public IReadOnlyList<SpreadsheetSheet> Sheets { get; set; } = [];
+
+    /// <summary>Edited sheets as records; cells arrive as System.Text.Json elements (numbers, text, bools, "=…" formulas).</summary>
+    [Parameter] public EventCallback<IReadOnlyList<SpreadsheetSheet>> SheetsChanged { get; set; }
+
+    /// <summary>A bare grid without toolbar, formula bar or context menu.</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>CSS height, e.g. "420px" or "100%".</summary>
+    [Parameter] public string Height { get; set; } = "420px";
+
+    /// <summary>Form field name; the hidden input posts the edited sheets as JSON under it.</summary>
+    [Parameter] public string? Name { get; set; }
+
+    /// <summary>Element id of the sheet (the hidden input is "<see cref="Id"/>-value").</summary>
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+
+    /// <summary>Accessible name of the spreadsheet region.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    [Parameter] public string? CssClass { get; set; }
+
+    private string _initial = "[]";
+    private string? _last;
+    private bool _readOnly;
+    private int _version;
+
+    protected override void OnParametersSet()
+    {
+        // Sheets the script did not produce (first render, a reset, a loaded record) or a read-only switch: start again.
+        var value = System.Text.Json.JsonSerializer.Serialize(Sheets, Json);
+        if (_version == 0 || value != (_last ?? "") || ReadOnly != _readOnly)
+        {
+            _initial = value;
+            _last = value;
+            _readOnly = ReadOnly;
+            _version++;
+        }
+    }
+
+    private async Task Changed(ChangeEventArgs e)
+    {
+        var json = e.Value?.ToString() ?? "[]";
+        try
+        {
+            var sheets = System.Text.Json.JsonSerializer.Deserialize<IReadOnlyList<SpreadsheetSheet>>(json, Json) ?? [];
+            // Kept in the form OnParametersSet compares with: the script's JSON differs in escaping (& ' < and non-ASCII), so
+            // the bound sheets coming back would otherwise look like new ones and start the grid again on every edit.
+            var normal = System.Text.Json.JsonSerializer.Serialize(sheets, Json);
+            if (normal == (_last ?? "")) return;
+            _last = normal;
+            await SheetsChanged.InvokeAsync(sheets);
+        }
+        catch (System.Text.Json.JsonException) { /* a change mid-keystroke; the next change carries the sheets */ }
+    }
+}
