@@ -336,6 +336,40 @@ Expand all and Download.
   MVC column picker (`modulus-shell.js`) can narrow or hide it in the browser without a round trip; the picker,
   resizing and sticky headers all read the leaf row (`tr:not(.m-header-bands)`).
 
+### Checkbox filter menu (phase 23)
+
+- **A pick is a column search, not a new filter model.** The ticked values go into the same `s.{key}` search as
+  typed text, as a value list: `=a|b` (only these) or `!=a|b` (all but these), `""` for a blank cell.
+  `ColumnSearch.ValueQuery` writes the shorter form, so unticking two of 300 values is a short `!=` and the URL
+  stays readable; ticking everything clears the search. Saved views, `ProTableUrl` and the MVC binders needed no
+  change.
+- **Exact and set-based on the server.** `TableQuery.SearchText` and `DataGridAuto` translate a list to
+  `values.Contains(x)` over a boxed `List<string>`, which EF Core sends as `IN` / `NOT IN` with parameters, never as
+  `LIKE` or literals. A list is kept whole up to `MaxListLength` (cutting at `MaxSearchLength` would split a value).
+- **The icon stays in filter-row mode** for list columns: the filter row's select picks one value, the list several.
+- **Alpine fields are declared.** An Alpine component that sets a property it didn't declare writes it on the
+  outermost scope, so nested or neighbouring components share it. Every component in `modulus-*.js` declares its
+  private fields (timers, listeners, caches) in its data object.
+- **The menu survives its own focus.** It focuses with `preventScroll` and adds its close-on-scroll listener two
+  animation frames after opening, so the scroll that opened it (a phone scrolling the header into view) doesn't
+  close it.
+
+### Row states (phase 23)
+
+- **The state is data on the row.** `GridRecord.State` (`Editable`, `ReadOnly`, `Locked`) and `StateReason` come
+  from the app, derived from the record (a closed period, a posted invoice, another team's row); the grid only
+  shows and enforces them. Read-only means the cells are fixed but the row is still the user's to move or delete;
+  locked means nothing about the row changes.
+- **Enforced in three places.** The UI disables editors, handles and delete buttons; batch Delete and Set value
+  skip the rows; and the server holds a post to the store (`GridSchema.Protect`), because a disabled button is no
+  guarantee. Blazor runs in-process, so its grid simply refuses the change.
+- **Shown without colour alone.** A lock or eye mark in the first cell carries the reason as its tooltip and as
+  screen-reader text; colour (muted text, grey or red bar) only repeats it. An empty cell that can't be edited
+  reads "—", not the "Add" prompt.
+- **Row errors are separate from cell errors.** `GridError.ForRow` has an empty key; it is for rules across cells
+  (Due before Start) or the server refusing a row. The rule runs only once the row's cells are valid, so one
+  mistake doesn't produce two messages, and in Blazor it re-runs as the row is edited, so the error clears when fixed.
+
 ### The ERP UI map
 
 The ERP suites in §1 were reviewed as feature inventories. This is the UI surface they imply and where Modulus

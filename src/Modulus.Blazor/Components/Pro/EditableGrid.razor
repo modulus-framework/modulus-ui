@@ -187,11 +187,32 @@
                         }
                     </select>
                 }
+                @foreach (var action in Batch ?? [])
+                {
+                    var applies = BatchRows(action);
+                    var css = $"ant-btn {(action.Primary ? "ant-btn-primary" : "ant-btn-default")}{(action.Danger ? " ant-btn-dangerous" : "")} ant-btn-sm m-grid-batch-action";
+                    var content = BatchLabel(action, applies.Count);
+                    if (applies.Count == 0)
+                    {
+                        <button type="button" class="@css" disabled title="@GridSchema.BatchNone(action)" data-m-grid-batch="@action.Key">@content</button>
+                    }
+                    else if (action.Confirm)
+                    {
+                        <Popconfirm Title="@GridSchema.BatchConfirm(action, applies.Count, _selected.Count)" OkText="@action.Label" OkButtonProps="@(new ButtonProps { Danger = action.Danger })" OnConfirm="() => RunBatchAsync(action)">
+                            <button type="button" class="@css" data-m-grid-batch="@action.Key">@content</button>
+                        </Popconfirm>
+                    }
+                    else
+                    {
+                        <button type="button" class="@css" data-m-grid-batch="@action.Key" @onclick="() => RunBatchAsync(action)">@content</button>
+                    }
+                }
                 @BatchActions?.Invoke(_selected.ToList())
                 <button type="button" class="ant-btn ant-btn-default ant-btn-sm" @onclick="() => ExportAsync(_selected)"><Icon Type="download" /><span>Export selected</span></button>
                 @if (AllowDeleteRow)
                 {
-                    <Popconfirm Title="@($"Delete {_selected.Count} {(_selected.Count == 1 ? "row" : "rows")}?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="DeleteSelectedAsync">
+                    var deletable = _selected.Count(r => r.State != GridRowState.Locked);
+                    <Popconfirm Title="@($"Delete {deletable} {(deletable == 1 ? "row" : "rows")}?{(deletable < _selected.Count ? " Locked rows stay." : "")}")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="DeleteSelectedAsync" Disabled="deletable == 0">
                         <button type="button" class="ant-btn ant-btn-default ant-btn-dangerous ant-btn-sm" data-m-grid-delete-selected><Icon Type="delete" /><span>Delete</span></button>
                     </Popconfirm>
                 }
@@ -201,7 +222,7 @@
 
     @if (_errors.Count > 0)
     {
-        <Alert Type="@AlertType.Error" Class="m-table-alert" ShowIcon="true" Message="@($"{_errors.Count} {(_errors.Count == 1 ? "cell needs" : "cells need")} attention before saving.")" />
+        <Alert Type="@AlertType.Error" Class="m-table-alert" ShowIcon="true" Message="@GridSchema.ErrorSummary(_errors.Select(e => new GridError(e.Key.Row, e.Key.Key, e.Value)))" />
     }
 
     @* Rows drag by their handle (modulus-plugins.js reports the move through the hidden input; the grid reorders Rows). *@
@@ -355,6 +376,16 @@
     /// <summary>A checkbox column and a batch bar for the selected rows: set a value, export, delete.</summary>
     [Parameter] public bool Selectable { get; set; } = true;
 
+    /// <summary>
+    /// ERP buttons in the batch bar (Approve, Reject, Print …): each counts the selected rows it applies to, skips
+    /// locked ones, asks first when <see cref="GridBatchAction.Confirm"/> is set and raises <see cref="OnBatch"/>;
+    /// <see cref="GridBatchAction.Printing"/> prints the selected rows itself.
+    /// </summary>
+    [Parameter] public IReadOnlyList<GridBatchAction>? Batch { get; set; }
+
+    /// <summary>A <see cref="Batch"/> button ran: change the rows (they stay selected); the grid doesn't count it as an edit.</summary>
+    [Parameter] public EventCallback<GridBatchRequest> OnBatch { get; set; }
+
     /// <summary>More actions in the batch bar; receives the selected rows.</summary>
     [Parameter] public RenderFragment<IReadOnlyList<GridRecord>>? BatchActions { get; set; }
 
@@ -401,6 +432,12 @@
 
     /// <summary>With <see cref="OnColumnSearch"/>: the column searches applied.</summary>
     [Parameter] public IReadOnlyDictionary<string, string?>? Searches { get; set; }
+
+    /// <summary>
+    /// A check across a row's cells, run on Save once its cells are valid ("Due is before the start."): the message
+    /// shows under the row's first cell and blocks the save. Read-only and locked rows are skipped.
+    /// </summary>
+    [Parameter] public Func<GridRecord, string?>? ValidateRow { get; set; }
 
     private string? _sortKey;
     private bool _sortDesc;
@@ -472,12 +509,14 @@
     // Cells changed since the last save (tinted, with a corner mark), beside their row's tint.
     private readonly HashSet<(string Row, string Key)> _changedCells = [];
 
-    // Added rows are tinted blue, changed rows amber, and the row being edited has a primary bar.
+    // Added rows are tinted blue, changed rows amber, and the row being edited has a primary bar; read-only and locked
+    // rows are muted, and a row error tints the row red.
     private string RowClass(RowData<GridRecord> r)
     {
         var id = r.Data.Id;
-        var state = _addedIds.Contains(id) || id == _newRowId ? "m-grid-row-new" : _changedRows.Contains(id) ? "m-grid-row-dirty" : "";
-        return _editing?.Row == id ? (state + " m-grid-row-editing").TrimStart() : state;
+        var state = _addedIds.Contains(id) || id == _newRowId ? "m-grid-row-new" : _changedRows.Contains(id) ? "m-grid-row-dirty" : null;
+        return string.Join(' ', new[] { state, GridSchema.StateClass(r.Data), _errors.ContainsKey((id, "")) ? "m-grid-row-error" : null,
+            _editing?.Row == id ? "m-grid-row-editing" : null }.Where(c => c is not null));
     }
     private List<GridRecord> _selected = [];
     private int _batchVersion;
@@ -579,18 +618,69 @@
         var at = choice.IndexOf('=');
         _batchVersion++;
         if (at <= 0 || GridSchema.Find(Columns, choice[..at]) is not { } column) return;
-        foreach (var row in _selected.ToList()) await SetValue(row, column, choice[(at + 1)..]);
+        // Read-only and locked rows keep their values.
+        foreach (var row in _selected.Where(r => r.Editable).ToList()) await SetValue(row, column, choice[(at + 1)..]);
     }
 
     private async Task DeleteSelectedAsync()
     {
-        var ids = _selected.Select(r => r.Id).ToHashSet(StringComparer.Ordinal);
+        // Locked rows stay (and stay selected).
+        var ids = _selected.Where(r => r.State != GridRowState.Locked).Select(r => r.Id).ToHashSet(StringComparer.Ordinal);
         Rows.RemoveAll(r => ids.Contains(r.Id));
         foreach (var id in ids) Forget(id);
         foreach (var key in _errors.Keys.Where(k => ids.Contains(k.Row)).ToList()) _errors.Remove(key);
-        _selected = [];
+        _selected = _selected.Where(r => !ids.Contains(r.Id)).ToList();
         await ChangedAsync();
         await RowsChangedAsync();
+    }
+
+    // The selected rows in grid order that an action acts on.
+    private List<GridRecord> BatchRows(GridBatchAction action)
+    {
+        var picked = _selected.ToHashSet();
+        return GridSchema.BatchRows(action, Rows.Where(picked.Contains));
+    }
+
+    private static RenderFragment BatchLabel(GridBatchAction action, int count) => __builder =>
+    {
+        if (action.Icon is not null)
+        {
+            <Icon Type="@action.Icon" />
+        }
+        <span>@action.Label</span>
+        if (!action.Print && count > 0)
+        {
+            <span class="m-grid-batch-count">@count</span>
+        }
+    };
+
+    private async Task RunBatchAsync(GridBatchAction action)
+    {
+        var rows = BatchRows(action);
+        if (rows.Count == 0) return;
+        if (action.Print)
+        {
+            await PrintAsync(rows);
+            return;
+        }
+        await OnBatch.InvokeAsync(new GridBatchRequest(action, rows));
+        // The values may have moved rows out of the search or filters.
+        _view = Shown();
+    }
+
+    private async Task PrintAsync(IReadOnlyList<GridRecord> rows)
+    {
+        var columns = GridSchema.Visible(Columns);
+        try
+        {
+            await JS.InvokeVoidAsync("modulusShell.printTable", HeaderTitle ?? "Rows",
+                columns.Select(c => new { t = c.Title, right = c.AlignRight }),
+                rows.Select(r => columns.Select(c => GridSchema.Format(c, r[c.Key])).ToArray()));
+        }
+        catch (JSException)
+        {
+            // Script not loaded (tests): nothing to print with.
+        }
     }
 
     private async Task ExportAsync(IEnumerable<GridRecord> rows)
@@ -711,7 +801,8 @@
     {
         <ActionColumn Title="" Width="@SortableHtml.RowHandleWidth.ToString(CultureInfo.InvariantCulture)" Align="ColumnAlign.Center" Class="m-row-drag-cell"
                       Fixed="@(Columns.Any(c => !c.Hidden && c.Fixed == GridFixed.Left) ? ColumnFixPlacement.Left : null)">
-            @((MarkupString)SortableHtml.RowHandle(context.Id, RowLabel(context), HelpId, DragLocked))
+            @((MarkupString)SortableHtml.RowHandle(context.Id, RowLabel(context), HelpId, DragLocked || context.State == GridRowState.Locked,
+                context.State == GridRowState.Locked ? GridSchema.StateText(context) : null))
         </ActionColumn>
     }
     @if (Selectable)
@@ -721,6 +812,7 @@
     @foreach (var column in GridSchema.Visible(Columns))
     {
         var c = column;
+        var first = ReferenceEquals(c, GridSchema.Visible(Columns)[0]);
         <ActionColumn Title="@c.Title" Width="@((c.Width ?? 150).ToString(CultureInfo.InvariantCulture))"
                       Fixed="@Fix(c.Fixed)" Align="@(c.AlignRight ? ColumnAlign.Right : ColumnAlign.Left)" Class="@TdClass(c)">
             <TitleTemplate>
@@ -750,16 +842,23 @@
                 </ColumnHeader>
             </TitleTemplate>
             <ChildContent>
-                @Cell(context, c)
+                @Cell(context, c, first)
             </ChildContent>
         </ActionColumn>
     }
     @if (AllowDeleteRow)
     {
         <ActionColumn Title="" Width="64" Fixed="ColumnFixPlacement.Right" Align="ColumnAlign.Center" Class="m-grid-actions">
-            <Popconfirm Title="@("Delete this row?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => DeleteRow(context)">
-                <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only ant-btn-dangerous" aria-label="Delete row" title="Delete row"><Icon Type="delete" /></button>
-            </Popconfirm>
+            @if (context.State == GridRowState.Locked)
+            {
+                <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" disabled aria-label="Delete row" title="@GridSchema.StateText(context)"><Icon Type="delete" /></button>
+            }
+            else
+            {
+                <Popconfirm Title="@("Delete this row?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })" OnConfirm="() => DeleteRow(context)">
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only ant-btn-dangerous" aria-label="Delete row" title="Delete row"><Icon Type="delete" /></button>
+                </Popconfirm>
+            }
         </ActionColumn>
     }
     </text>;
@@ -815,30 +914,40 @@
 
     // ---- Cells ----
 
-    private RenderFragment Cell(GridRecord row, GridColumn c) => __builder =>
+    // first: the row's first shown cell, which carries the read-only or locked mark and the row's error.
+    private RenderFragment Cell(GridRecord row, GridColumn c, bool first = false) => __builder =>
     {
         var value = row[c.Key];
         var error = _errors.GetValueOrDefault((row.Id, c.Key));
         var editing = _editing == (row.Id, c.Key);
+        var editable = GridSchema.CanEdit(c, row);
         var direct = c.Type is GridCellType.Switch or GridCellType.Rating;
         var changed = _changedCells.Contains((row.Id, c.Key)) && !_addedIds.Contains(row.Id);
-        var cls = $"m-grid-cell{(c.Editable && !direct ? " m-grid-cell-editable" : "")}{(changed ? " m-grid-cell-dirty" : "")}{(error is not null ? " m-grid-cell-error" : "")}{(editing ? " m-grid-cell-editing" : "")}";
+        var cls = $"m-grid-cell{(editable && !direct ? " m-grid-cell-editable" : "")}{(changed ? " m-grid-cell-dirty" : "")}{(error is not null ? " m-grid-cell-error" : "")}{(editing ? " m-grid-cell-editing" : "")}";
 
-        if (editing && c.Editable)
+        if (editing && editable)
         {
             <div class="@cls" @onkeydown="e => OnEditorKey(e)">@Editor(row, c)</div>
         }
         else
         {
-            <div class="@cls" title="@error" tabindex="@(c.Editable && !direct ? 0 : -1)" role="@(c.Editable && !direct ? "button" : null)"
-                 aria-label="@(c.Editable && !direct ? $"Edit {c.Title}: {GridSchema.Format(c, value)}{(changed ? " (changed)" : "")}" : null)"
+            <div class="@cls" title="@error" tabindex="@(editable && !direct ? 0 : -1)" role="@(editable && !direct ? "button" : null)"
+                 aria-label="@(editable && !direct ? $"Edit {c.Title}: {GridSchema.Format(c, value)}{(changed ? " (changed)" : "")}" : null)"
                  @onclick="() => BeginEdit(row, c)" @onkeydown="e => OnCellKey(e, row, c)">
+                @if (first && GridSchema.StateIcon(row) is { } mark)
+                {
+                    <span class="m-grid-row-mark" title="@GridSchema.StateText(row)"><Icon Type="@mark" /><span class="m-sr-only">@GridSchema.StateText(row)</span></span>
+                }
                 @View(row, c, value)
             </div>
         }
         if (error is not null)
         {
             <div class="m-grid-cell-message" role="alert">@error</div>
+        }
+        if (first && _errors.GetValueOrDefault((row.Id, "")) is { } rowError)
+        {
+            <div class="m-grid-cell-message m-grid-row-message" role="alert">@rowError</div>
         }
     };
 
@@ -847,10 +956,10 @@
         switch (c.Type)
         {
             case GridCellType.Switch:
-                <Switch Size="InputSize.Small" Checked="GridSchema.Flag(value)" Disabled="!c.Editable" CheckedChanged="v => SetValue(row, c, GridSchema.FromFlag(v))" />
+                <Switch Size="InputSize.Small" Checked="GridSchema.Flag(value)" Disabled="!GridSchema.CanEdit(c, row)" CheckedChanged="v => SetValue(row, c, GridSchema.FromFlag(v))" />
                 break;
             case GridCellType.Rating:
-                <Rate Value="(decimal)(GridSchema.Number(value) ?? 0)" Count="(int)(c.Max ?? 5)" Disabled="!c.Editable" Class="m-grid-rate"
+                <Rate Value="(decimal)(GridSchema.Number(value) ?? 0)" Count="(int)(c.Max ?? 5)" Disabled="!GridSchema.CanEdit(c, row)" Class="m-grid-rate"
                       ValueChanged="(decimal v) => SetValue(row, c, GridSchema.FromNumber(v))" />
                 break;
             case GridCellType.Tag when GridSchema.Option(c, value) is { } tag:
@@ -873,7 +982,7 @@
                 var icon = c.Type == GridCellType.Select ? GridSchema.Option(c, value)?.Icon : null;
                 if (string.IsNullOrEmpty(text))
                 {
-                    <span class="m-grid-empty">@(c.Editable ? "Add" : "—")</span>
+                    <span class="m-grid-empty">@(GridSchema.CanEdit(c, row) ? "Add" : "—")</span>
                 }
                 else if (c.Avatar || c.SubtitleKey is not null)
                 {
@@ -945,7 +1054,7 @@
 
     private void BeginEdit(GridRecord row, GridColumn c)
     {
-        if (!c.Editable || c.Type is GridCellType.Switch or GridCellType.Rating) return;
+        if (!GridSchema.CanEdit(c, row) || c.Type is GridCellType.Switch or GridCellType.Rating) return;
         _editing = (row.Id, c.Key);
         _original = row[c.Key];
         // Select and DatePicker have no open API that works on first render, and InputNumber ignores AutoFocus:
@@ -1042,7 +1151,7 @@
     {
         // Switch and Rate report their value again when re-rendered: only a real change marks the grid dirty.
         var normalized = GridSchema.Normalize(c, value);
-        if (normalized == row[c.Key]) return;
+        if (normalized == row[c.Key] || !GridSchema.CanEdit(c, row)) return;
         row[c.Key] = normalized;
         _changedRows.Add(row.Id);
         _changedCells.Add((row.Id, c.Key));
@@ -1051,6 +1160,12 @@
         {
             if (GridSchema.ValidateCell(c, row[c.Key]) is { } message) _errors[(row.Id, c.Key)] = message;
             else _errors.Remove((row.Id, c.Key));
+        }
+        // And the row's rule, once it has flagged the row.
+        if (ValidateRow is not null && _errors.ContainsKey((row.Id, "")))
+        {
+            if (ValidateRow(row) is { Length: > 0 } message) _errors[(row.Id, "")] = message;
+            else _errors.Remove((row.Id, ""));
         }
         await ChangedAsync();
     }
@@ -1072,7 +1187,7 @@
 
     private async Task RowMovedAsync(ChangeEventArgs e)
     {
-        if (DragLocked || !SortMove.TryParse(e.Value?.ToString(), out var move)) return;
+        if (DragLocked || !SortMove.TryParse(e.Value?.ToString(), out var move) || Rows.Find(r => r.Id == move.Id) is { State: GridRowState.Locked }) return;
         // Only the page's rows swap places: rows on other pages or filtered out keep theirs.
         var order = move.Within(PageRows().Select(r => r.Id));
         GridSchema.Reorder(Rows, order, r => r.Id);
@@ -1155,12 +1270,14 @@
     private async Task SaveAsync()
     {
         _editing = null;
-        _errors = GridSchema.Validate(Columns, Rows).ToDictionary(e => (e.RowId, e.Key), e => e.Message);
+        _errors = GridSchema.Validate(Columns, Rows, ValidateRow).ToDictionary(e => (e.RowId, e.Key), e => e.Message);
         if (_errors.Count > 0) return;
         _saving = true;
         try
         {
             await OnSave.InvokeAsync();
+            // The app refused some rows (ShowErrors): the changes stay unsaved.
+            if (_errors.Count > 0) return;
             _dirty = false;
             _newRowId = null;
             _addedIds.Clear();
@@ -1172,6 +1289,16 @@
         {
             _saving = false;
         }
+    }
+
+    /// <summary>
+    /// Shows errors the app found, for example the server refusing rows while <see cref="OnSave"/> runs (the changes
+    /// then stay unsaved): cell errors, and row errors from <see cref="GridError.ForRow"/>.
+    /// </summary>
+    public void ShowErrors(IEnumerable<GridError> errors)
+    {
+        _errors = errors.GroupBy(e => (e.RowId, e.Key)).ToDictionary(g => g.Key, g => g.First().Message);
+        StateHasChanged();
     }
 
     private async Task DiscardAsync()

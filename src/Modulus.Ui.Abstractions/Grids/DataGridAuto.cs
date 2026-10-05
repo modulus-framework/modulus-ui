@@ -183,6 +183,7 @@ public static class DataGridAuto
         // database runs it. A query that doesn't parse matches everything (the search is ignored, not the rows lost).
         private Expression<Func<TItem, bool>> Search(string query, bool ignoreCase) => _raw switch
         {
+            _ when ColumnSearch.ValueList(query.Trim()) is { } list => Listed(list.Exclude, list.Values, ignoreCase),
             _ when _raw == typeof(string) => Text(query.Trim(), ignoreCase),
             _ when _raw == typeof(bool) => Flag(query.Trim()),
             _ when _raw.IsEnum => Enum(query.Trim()),
@@ -212,6 +213,30 @@ public static class DataGridAuto
             else
                 test = Keep(Expression.Call(Subject(), Contains, Value(query)));
             return Expression.Lambda<Func<TItem, bool>>(test, x);
+        }
+
+        // A checkbox list (=a|b, !=a|b) of displayed values: text as an IN, enum labels and Yes/No as the values they
+        // show. Other columns (numbers, dates) list nothing here, so the search is ignored.
+        private Expression<Func<TItem, bool>> Listed(bool exclude, IReadOnlySet<string> values, bool ignoreCase)
+        {
+            var x = _access.Parameters[0];
+            if (_raw == typeof(string) || _raw == typeof(char))
+            {
+                var body = _raw == typeof(string) ? _access.Body : ToString(_access.Body);
+                return Expression.Lambda<Func<TItem, bool>>(ValueListSearch.Test(exclude, values, body, ignoreCase), x);
+            }
+            object[] picked;
+            if (_raw.IsEnum)
+                picked = [.. System.Enum.GetValues(_raw).Cast<object>().Where(v => values.Contains(EnumText(v.ToString() ?? "")))];
+            else if (_raw == typeof(bool))
+                picked = [.. new object[] { true, false }.Where(v => values.Contains((bool)v ? "Yes" : "No"))];
+            else
+                return Always();
+            Expression test = Expression.Constant(false);
+            foreach (var value in picked) test = Expression.OrElse(test, Expression.Equal(_access.Body, Constant(value, _access.Body.Type)));
+            // A blank is a null cell (a nullable enum or bool).
+            if (values.Contains("") && _access.Body.Type != _raw) test = Expression.OrElse(test, Expression.Equal(_access.Body, Expression.Constant(null, _access.Body.Type)));
+            return Expression.Lambda<Func<TItem, bool>>(exclude ? Expression.Not(test) : test, x);
         }
 
         private Expression<Func<TItem, bool>> Flag(string query)

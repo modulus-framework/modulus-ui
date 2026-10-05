@@ -173,6 +173,33 @@ Nothing breaks: tables without groups render as before. To add bands over column
 
 A custom script that reads `thead tr` should pick the leaf row with `thead tr:not(.m-header-bands)`.
 
+## Checkbox filter menu (value lists)
+
+A column search of the form `=a|b` or `!=a|b` is now a value list: `TableQuery.SearchText` and `DataGridAuto` keep
+the rows whose value is (or is not) exactly one of the listed values (`""` is a blank cell), translated to SQL
+`IN` / `NOT IN`. Before, `SearchText` looked for the whole text (`=a|b`) as a substring, and `DataGridAuto` matched
+or excluded the text `a|b` exactly. `=x` and `!=x` with a single value now match exactly in `SearchText` too; other
+searches behave as before. Such a list may be up to `ColumnSearch.MaxListLength` (2000) characters; other searches are still
+cut at `TableQuery.MaxSearchLength`.
+
+To show the menu: Blazor `ColumnHeader Values="…"` (build them with `ColumnSearch.ValuesOf` or
+`GridSchema.SearchValues`); MVC `ColumnHeader.Content(…, values: …)`. Editable grids list Select, Tag and Switch
+columns without changes.
+
+Custom Alpine components: declare every field the component sets in its data object; an undeclared one lands on the
+outermost scope.
+
+## Row states on the editable grid
+
+- `GridSchema.Validate` skips rows whose `State` is `ReadOnly` or `Locked`, and takes an optional row rule
+  (`Func<GridRecord, string?>`) whose message becomes a row error (`GridError.ForRow`, `IsRow`).
+- MVC apps that set row states should call `GridSchema.Protect(post.Columns, post.Rows, storedRows)` after reading
+  the post: it restores read-only and locked rows from the store and puts back a deleted locked row. The
+  `delete-row` operation already refuses locked rows.
+- In `<app-editable-grid>`, an empty cell that can't be edited now shows "—" instead of "Add".
+- The error banner counts cells, rows or (mixed) items: "2 cells need attention before saving." (`GridSchema.ErrorSummary`).
+- `SortableHtml.RowHandle` has two new optional parameters, `disabled` and `disabledTitle`.
+
 ## Icons
 
 Names Ant Design has no icon for are Tabler outline icons with a `tb:` prefix (`ShellRenderer.TablerPrefix`), listed in

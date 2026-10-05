@@ -96,6 +96,13 @@ pixel-for-pixel where the controls allow it.
   over neighbouring columns, by column key, on as many levels as you need; a hidden column narrows its band. MVC
   has `header-groups` on `<app-editable-grid>`, and other tables write the same rows with
   `HeaderGroups.Rows(shownColumns, groups)` at the top of the `<thead>`.
+- **Checkbox filter menu:** a column's search menu lists its values with checkboxes, a search box, Select all,
+  "(Blanks)" and counts, as in Excel. The pick is a column search (`=a|b` or `!=a|b`) that `TableQuery` and
+  `ModulusDataGrid` run as SQL `IN` / `NOT IN`. Blazor: `ColumnHeader Values`; MVC: `ColumnHeader.Content(values:)`;
+  the editable grids list Select, Tag and Switch columns by themselves (`GridSchema.SearchValues`).
+- **Row states:** `GridRecord.State` makes a row `ReadOnly` (cells fixed) or `Locked` (no edit, delete or move),
+  with a reason shown as a lock or eye mark; `GridError.ForRow` flags a whole row (Blazor `ValidateRow`, or the
+  `rowRule` of `GridSchema.Validate`); MVC holds a post to the store with `GridSchema.Protect`.
 - **Saved views and field access** (`Modulus.Ui.Abstractions.State`): `AppSavedViews` / `app-saved-views` is a
   "Views" dropdown. A signed-in user names the current layout (its query string), stars one view as the default and
   deletes views. Views are kept per user in `IUiStateStore`; the default is in memory, so register your own store to

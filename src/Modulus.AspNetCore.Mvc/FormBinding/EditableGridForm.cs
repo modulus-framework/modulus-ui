@@ -17,6 +17,9 @@ public sealed class EditableGridPost
     /// <summary>The verb of <see cref="Operation"/> (<c>save</c>, <c>pin</c>, <c>add-column</c> …).</summary>
     public string Verb => Operation?.Split(':')[0] ?? "";
 
+    /// <summary>The ids of the rows a batch action posted (<c>{name}.selected</c>; see <see cref="EditableGridForm.Batch"/>).</summary>
+    public IReadOnlyList<string> Selected { get; init; } = [];
+
     /// <summary>Why <see cref="EditableGridForm.Apply"/> couldn't do the operation (for example a duplicate option), or null.</summary>
     public string? Error { get; set; }
 }
@@ -59,7 +62,8 @@ public static partial class EditableGridForm
             }
             rows.Add(row);
         }
-        return new EditableGridPost { Columns = columns, Rows = rows, Operation = form[$"{name}.op"].FirstOrDefault() };
+        var selected = form[$"{name}.selected"].Where(id => id is not null && RowIdPattern().IsMatch(id)).Distinct().Take(MaxRows).ToList();
+        return new EditableGridPost { Columns = columns, Rows = rows, Operation = form[$"{name}.op"].FirstOrDefault(), Selected = selected! };
     }
 
     /// <summary>
@@ -76,7 +80,8 @@ public static partial class EditableGridForm
                 post.Rows.Insert(0, GridSchema.NewRow(post.Columns, post.Rows));
                 return true;
             case "delete-row":
-                post.Rows.RemoveAll(r => r.Id == key);
+                // A locked row stays (its state comes from GridSchema.Protect).
+                post.Rows.RemoveAll(r => r.Id == key && r.State != GridRowState.Locked);
                 return true;
             case "pin":
                 GridSchema.Pin(post.Columns, key, parts.ElementAtOrDefault(2) switch { "left" => GridFixed.Left, "right" => GridFixed.Right, _ => GridFixed.None });
@@ -109,6 +114,21 @@ public static partial class EditableGridForm
             default:
                 return false;
         }
+    }
+
+    /// <summary>
+    /// The batch action a post asks for (<c>{name}.op=batch:{key}</c>, from <c>app-editable-grid batch="…"</c>) and the
+    /// posted selected rows it acts on (<see cref="GridSchema.BatchRows"/>: not locked, and its <c>When</c>), or null
+    /// for another operation or an unknown key. Run it after <see cref="GridSchema.Protect"/>, so the row states are the
+    /// stored ones and a browser can't approve a locked row.
+    /// </summary>
+    public static GridBatchRequest? Batch(EditableGridPost post, IEnumerable<GridBatchAction> actions)
+    {
+        if (post.Verb != "batch") return null;
+        var key = post.Operation!.Length > 6 ? post.Operation[6..] : "";
+        if (!GridSchema.IsBatchKey(key) || actions.FirstOrDefault(a => a.Key == key) is not { Print: false } action) return null;
+        var selected = post.Selected.ToHashSet();
+        return new GridBatchRequest(action, GridSchema.BatchRows(action, post.Rows.Where(r => selected.Contains(r.Id))));
     }
 
     /// <summary>Form field of the option name typed in a cell's editor (<c>{name}.option[{row}].{key}</c>).</summary>

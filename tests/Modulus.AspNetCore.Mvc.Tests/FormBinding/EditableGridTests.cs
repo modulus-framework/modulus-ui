@@ -75,6 +75,13 @@ public class EditableGridFormTests
         post = EditableGridForm.Read(GridForm("delete-row:p1"), Columns());
         Assert.True(EditableGridForm.Apply(post, GridForm()));
         Assert.Equal(["p2"], post.Rows.Select(r => r.Id));
+
+        // A row the server holds as locked: its posted values are put back, and it can't be deleted.
+        post = EditableGridForm.Read(GridForm("delete-row:p1"), Columns());
+        GridSchema.Protect(post.Columns, post.Rows, [new("p1", new Dictionary<string, string?> { ["name"] = "Stored", ["billable"] = "false" }) { State = GridRowState.Locked }]);
+        Assert.True(EditableGridForm.Apply(post, GridForm()));
+        Assert.Equal(["p1", "p2"], post.Rows.Select(r => r.Id));
+        Assert.Equal(("Stored", "false"), (post.Rows[0]["name"], post.Rows[0]["billable"]));
     }
 
     [Theory]
@@ -150,6 +157,43 @@ public class EditableGridFormTests
         EditableGridForm.Apply(post, budget);
         Assert.Null(post.Error);
         Assert.Equal("1250.5", post.Rows[0]["budget"]);
+    }
+
+    private static readonly GridBatchAction[] Approvals =
+    [
+        new() { Key = "approve", Label = "Approve", When = r => r["name"] != "Mobile" },
+        GridBatchAction.Printing(),
+    ];
+
+    [Fact]
+    public void Batch_ActsOnTheSelectedRowsItAppliesTo_AndNeverOnALockedRow()
+    {
+        var post = EditableGridForm.Read(GridForm("batch:approve", ("grid.selected", ["p1", "p2", "../x", "p9"])), Columns());
+        Assert.Equal(["p1", "p2", "p9"], post.Selected);
+
+        // p2 fails When; p9 isn't in the grid.
+        var request = EditableGridForm.Batch(post, Approvals);
+        Assert.NotNull(request);
+        Assert.Equal("approve", request.Action.Key);
+        Assert.Equal(["p1"], request.Rows.Select(r => r.Id));
+
+        // A locked row is skipped (its state comes from Protect, not the browser).
+        post = EditableGridForm.Read(GridForm("batch:approve", ("grid.selected", ["p1"])), Columns());
+        GridSchema.Protect(post.Columns, post.Rows, [new("p1", new Dictionary<string, string?> { ["name"] = "Portal" }) { State = GridRowState.Locked }]);
+        Assert.Empty(EditableGridForm.Batch(post, Approvals)!.Rows);
+    }
+
+    [Theory]
+    [InlineData("save")]
+    [InlineData("batch")]
+    [InlineData("batch:")]
+    [InlineData("batch:print")]
+    [InlineData("batch:delete")]
+    [InlineData("batch:<x>")]
+    public void Batch_IsNull_ForOtherOperations_PrintOrAnUnknownKey(string op)
+    {
+        var post = EditableGridForm.Read(GridForm(op, ("grid.selected", ["p1"])), Columns());
+        Assert.Null(EditableGridForm.Batch(post, Approvals));
     }
 
     [Theory]
@@ -295,6 +339,64 @@ public class EditableGridTagHelperTests
         var plain = await RenderAsync(off);
         Assert.DoesNotContain("data-m-sort-row", plain);
         Assert.DoesNotContain("m-row-drag-cell", plain);
+    }
+
+    [Fact]
+    public async Task Renders_BatchButtons_AndEachRowsBatchKeys()
+    {
+        var grid = Grid();
+        grid.Rows[1].State = GridRowState.Locked;
+        grid.Batch =
+        [
+            new() { Key = "approve", Label = "Approve", Icon = "check", Primary = true, Confirm = true, When = r => r["status"] == "a" },
+            new() { Key = "reject", Label = "Reject", Danger = true },
+            GridBatchAction.Printing(),
+        ];
+        var html = await RenderAsync(grid);
+
+        // Rows list the actions they take (none for a locked row).
+        Assert.Contains("""data-m-batch="approve reject" """.TrimEnd(), html);
+        Assert.Contains("""data-m-batch="" """.TrimEnd(), html);
+        Assert.Contains("""class="ant-btn ant-btn-primary ant-btn-sm m-grid-batch-action" data-m-grid-batch="approve" """.TrimEnd(), html);
+        Assert.Contains("""class="ant-btn ant-btn-default ant-btn-dangerous ant-btn-sm m-grid-batch-action" data-m-grid-batch="reject" """.TrimEnd(), html);
+        Assert.Contains("x-text=\"batchCount('approve', selected)\"", html);
+        Assert.Contains("@click=\"runBatch('print')\"", html);
+        Assert.DoesNotContain("batchCount('print'", html);
+        var config = html.Replace("&quot;", "\"");
+        Assert.Contains("\"title\":\"Projects\"", config);
+        Assert.Contains("\"approve\":{\"label\":\"Approve\",\"confirm\":true,\"danger\":false,\"print\":false}", config);
+        Assert.DoesNotContain("data-m-batch=", await RenderAsync(Grid()));
+    }
+
+    [Fact]
+    public async Task Renders_RowStates_AndRowErrors()
+    {
+        var grid = Grid();
+        grid.Rows[0].State = GridRowState.Locked;
+        grid.Rows[0].StateReason = "Invoiced";
+        grid.Rows[1].State = GridRowState.ReadOnly;
+        grid.Errors = [GridError.ForRow("p2", "Due is before the start.")];
+        var html = await RenderAsync(grid);
+
+        // Rows say their state; the cells are plain (no editors), and still post their values.
+        Assert.Contains("""<tr data-row-key="p1" class="ant-table-row ant-table-row-level-0 m-grid-row-locked" data-m-row-state="locked" title="Locked: Invoiced">""", html);
+        Assert.Contains("""<tr data-row-key="p2" class="ant-table-row ant-table-row-level-0 m-grid-row-readonly m-grid-row-error" data-m-row-state="readonly" title="Read-only">""", html);
+        // (The new-row <template> stays editable, so only the rendered rows are checked.)
+        var rows = html.Split("<template")[0];
+        Assert.DoesNotContain("Edit Name: &lt;Portal&gt;", rows);
+        Assert.DoesNotContain("m-grid-cell-editing", rows);
+        Assert.Contains("""<input type="hidden" name="projects[p1].budget" value="1200" />""", html);
+        // The first cell carries the mark (read out) and the row's error; empty cells say "—", not "Add".
+        Assert.Contains("""<span class="m-grid-row-mark">""", html);
+        Assert.Contains("""<span class="m-sr-only">Locked: Invoiced</span></span><span>&lt;Portal&gt;</span></div>""", html);
+        Assert.Contains("""<div class="m-grid-cell-message m-grid-row-message" role="alert">Due is before the start.</div>""", html);
+        Assert.Contains("""<span class="m-grid-empty">—</span>""", html);
+        Assert.Contains("1 row needs attention before saving.", html);
+        // A locked row's handle and delete button are disabled; the read-only row keeps both.
+        Assert.Contains("""data-m-sort-row="p1" data-m-sort-label="&lt;Portal&gt;" tabindex="-1" aria-disabled="true" title="Locked: Invoiced" """.TrimEnd(), html);
+        Assert.Contains("""disabled aria-label="Delete row" title="Locked: Invoiced">""", html);
+        Assert.Contains("""value="delete-row:p2" """.TrimEnd(), html);
+        Assert.DoesNotContain("""value="delete-row:p1" """.TrimEnd(), html);
     }
 
     [Fact]

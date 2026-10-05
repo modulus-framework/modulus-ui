@@ -60,11 +60,12 @@
                    autocomplete="off" maxlength="@ColumnSearch.MaxLength" @onchange="FilterChangedAsync" @onclick:stopPropagation />
         }
     }
-    else if (Searchable && Host is not null)
+    @* The search icon; a checkbox-list column keeps it beside the filter row's select, which can't pick several values. *@
+    @if (Searchable && Host is not null && (Scope?.FilterRow != true || Values is { Count: > 0 }))
     {
         var value = Host.SearchOf(Key);
         var active = !string.IsNullOrWhiteSpace(value);
-        <span class="m-th-search-host">
+        <span class="m-th-search-host" data-values="@(Values is { Count: > 0 })">
             <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight" Visible="_open" VisibleChanged="OpenChanged" OverlayClassName="m-col-search-drop">
                 <Overlay>
                     <div class="ant-table-filter-dropdown m-col-search" role="dialog" aria-label="@($"Search {Title}")">

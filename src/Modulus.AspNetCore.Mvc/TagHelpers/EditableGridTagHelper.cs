@@ -130,6 +130,14 @@ public class EditableGridTagHelper : TagHelper
     /// <summary>Bands over the column titles (a multi-level header): <see cref="HeaderGroup"/>s over <see cref="GridColumn.Key"/>s.</summary>
     public IReadOnlyList<HeaderGroup>? HeaderGroups { get; set; }
 
+    /// <summary>
+    /// Buttons in the batch bar that act on the selected rows (Approve, Reject, <see cref="GridBatchAction.Printing"/>).
+    /// Each counts the rows it applies to, asks first when <see cref="GridBatchAction.Confirm"/> is set, then posts
+    /// <c>{name}.op=batch:{key}</c> with the row ids in <c>{name}.selected</c>; read it with <see cref="EditableGridForm.Batch"/>.
+    /// Print runs in the browser.
+    /// </summary>
+    public IReadOnlyList<GridBatchAction>? Batch { get; set; }
+
     private const int ExpandWidth = 48;
     private const int SelectionWidth = 48;
     private const int ActionsWidth = 64;
@@ -241,7 +249,7 @@ public class EditableGridTagHelper : TagHelper
         if (Selectable) sb.Append(BatchBar(slots.GetValueOrDefault("grid-batch")));
 
         if (errors.Count > 0)
-            sb.Append($"""<div class="ant-alert ant-alert-error m-table-alert" role="alert">{AntIcons.Span("close-circle", IconThemeType.Fill, "ant-alert-icon")}<div class="ant-alert-content"><div class="ant-alert-message">{errors.Count} {(errors.Count == 1 ? "cell needs" : "cells need")} attention before saving.</div></div></div>""");
+            sb.Append($"""<div class="ant-alert ant-alert-error m-table-alert" role="alert">{AntIcons.Span("close-circle", IconThemeType.Fill, "ant-alert-icon")}<div class="ant-alert-content"><div class="ant-alert-message">{Html.E(GridSchema.ErrorSummary(errors.Select(e => new GridError(e.Key.Item1, e.Key.Item2, e.Value))))}</div></div></div>""");
 
         // Table
         var tableClass = Html.Cx("ant-table", "ant-table-middle", "ant-table-fixed-column", "ant-table-scroll-horizontal", hasLeft ? "ant-table-has-fix-left" : null, hasRight ? "ant-table-has-fix-right" : null);
@@ -339,7 +347,14 @@ public class EditableGridTagHelper : TagHelper
     {
         var n = Name;
         var hasLeft = visible.Any(c => c.Fixed == GridFixed.Left);
-        var sb = new StringBuilder($"""<tr data-row-key="{Html.E(row.Id)}" class="{Html.Cx("ant-table-row", "ant-table-row-level-0", newRow ? "m-grid-row-new" : null)}">""");
+        // A read-only or locked row says why in its tooltip; a row error (a rule over several cells) tints it red.
+        var rowError = errors.GetValueOrDefault((row.Id, ""));
+        var stateText = GridSchema.StateText(row);
+        var locked = row.State == GridRowState.Locked;
+        var state = row.Editable ? "" : $""" data-m-row-state="{(locked ? "locked" : "readonly")}" title="{Html.E(stateText)}" """.TrimEnd();
+        // The batch actions that act on this row (a new row isn't saved, so none do).
+        if (Batch is { Count: > 0 } && !newRow) state += $""" data-m-batch="{Html.E(GridSchema.BatchKeys(Batch, row))}" """.TrimEnd();
+        var sb = new StringBuilder($"""<tr data-row-key="{Html.E(row.Id)}" class="{Html.Cx("ant-table-row", "ant-table-row-level-0", newRow ? "m-grid-row-new" : null, GridSchema.StateClass(row), rowError is null ? null : "m-grid-row-error")}"{state}>""");
         // Hidden columns still post their values, so hiding a column and saving keeps its data.
         var index = $"""<input type="hidden" name="{Html.E(n)}.index" value="{Html.E(row.Id)}" />""" +
                     string.Concat(Columns.Where(c => c.Hidden).Select(c =>
@@ -347,7 +362,7 @@ public class EditableGridTagHelper : TagHelper
         if (RowDraggable)
         {
             var label = visible.Count > 0 && GridSchema.Format(visible[0], row[visible[0].Key], culture) is { Length: > 0 } text ? text : "row";
-            sb.Append($"""<td class="{Html.Cx("ant-table-cell", "m-row-drag-cell", hasLeft ? "ant-table-cell-fix-left" : null)}"{(hasLeft ? " style=\"position: sticky; left: 0px;\"" : "")}>{index}{SortableHtml.RowHandle(row.Id, label, HelpId(gridId), ServerSorted)}</td>""");
+            sb.Append($"""<td class="{Html.Cx("ant-table-cell", "m-row-drag-cell", hasLeft ? "ant-table-cell-fix-left" : null)}"{(hasLeft ? " style=\"position: sticky; left: 0px;\"" : "")}>{index}{SortableHtml.RowHandle(row.Id, label, HelpId(gridId), ServerSorted || locked, locked ? stateText : null)}</td>""");
             index = "";
         }
         if (Selectable)
@@ -369,11 +384,15 @@ public class EditableGridTagHelper : TagHelper
         {
             var c = visible[i];
             var (cls, style) = Fix(visible, i, offsets, "m-grid-td");
-            sb.Append($"""<td class="{cls}"{style} data-key="{Html.E(c.Key)}" data-label="{Html.E(c.Title)}">{index}{Cell(row, c, errors.GetValueOrDefault((row.Id, c.Key)), culture)}</td>""");
+            sb.Append($"""<td class="{cls}"{style} data-key="{Html.E(c.Key)}" data-label="{Html.E(c.Title)}">{index}{Cell(row, c, errors.GetValueOrDefault((row.Id, c.Key)), culture, i == 0 ? Mark(row) : "")}{(i == 0 ? RowMessage(rowError) : "")}</td>""");
             index = "";
         }
         if (AllowDeleteRow)
-            sb.Append($"""<td class="m-grid-actions ant-table-cell ant-table-cell-fix-right ant-table-cell-fix-right-first" style="text-align: center; position: sticky; right: 0px;">{index}<button type="submit" name="{Html.E(n)}.op" value="delete-row:{Html.E(row.Id)}" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only ant-btn-dangerous" aria-label="Delete row" title="Delete row" @click.prevent="deleteRow($el)">{AntIcons.Span("delete")}</button></td>""");
+            sb.Append($"""<td class="m-grid-actions ant-table-cell ant-table-cell-fix-right ant-table-cell-fix-right-first" style="text-align: center; position: sticky; right: 0px;">{index}""")
+              .Append(locked
+                  ? $"""<button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" disabled aria-label="Delete row" title="{Html.E(stateText)}">{AntIcons.Span("delete")}</button>"""
+                  : $"""<button type="submit" name="{Html.E(n)}.op" value="delete-row:{Html.E(row.Id)}" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only ant-btn-dangerous" aria-label="Delete row" title="Delete row" @click.prevent="deleteRow($el)">{AntIcons.Span("delete")}</button>""")
+              .Append("</td>");
         sb.Append("</tr>");
         if (detail && !newRow)
         {
@@ -384,9 +403,18 @@ public class EditableGridTagHelper : TagHelper
         return sb.ToString();
     }
 
-    private string Cell(GridRecord row, GridColumn c, string? error, CultureInfo culture)
+    // The mark of a read-only or locked row, in its first cell: an eye or a lock, with the reason read out.
+    private static string Mark(GridRecord row) =>
+        GridSchema.StateIcon(row) is not { } icon ? ""
+            : $"""<span class="m-grid-row-mark">{AntIcons.Span(icon)}<span class="m-sr-only">{Html.E(GridSchema.StateText(row))}</span></span>""";
+
+    private static string RowMessage(string? error) =>
+        error is null ? "" : $"""<div class="m-grid-cell-message m-grid-row-message" role="alert">{Html.E(error)}</div>""";
+
+    private string Cell(GridRecord row, GridColumn c, string? error, CultureInfo culture, string mark = "")
     {
         var value = row[c.Key];
+        var editable = GridSchema.CanEdit(c, row);
         var field = $"{Name}[{row.Id}].{c.Key}";
         var message = error is null ? "" : $"""<div class="m-grid-cell-message" role="alert">{Html.E(error)}</div>""";
         var errorClass = error is null ? null : "m-grid-cell-error";
@@ -394,27 +422,27 @@ public class EditableGridTagHelper : TagHelper
         if (c.Type == GridCellType.Switch)
         {
             var on = GridSchema.Flag(value);
-            var click = c.Editable ? " @click=\"on = !on; $dispatch('grid-change')\"" : "";
-            return $"""<div class="{Html.Cx("m-grid-cell", errorClass)}" tabindex="-1"><button type="button" role="switch" aria-label="{Html.E(c.Title)}" aria-checked="{Js(on)}" class="{Html.Cx("ant-switch", "ant-switch-small", on ? "ant-switch-checked" : null, c.Editable ? null : "ant-switch-disabled")}"{(c.Editable ? "" : " disabled")} x-data="{"{ on: " + Js(on) + " }"}" :aria-checked="on" :class="on && 'ant-switch-checked'"{click}><div class="ant-switch-handle"></div><span class="ant-switch-inner"></span><input type="hidden" name="{Html.E(field)}" value="{Js(on)}" :value="on" /></button></div>{message}""";
+            var click = editable ? " @click=\"on = !on; $dispatch('grid-change')\"" : "";
+            return $"""<div class="{Html.Cx("m-grid-cell", errorClass)}" tabindex="-1"><button type="button" role="switch" aria-label="{Html.E(c.Title)}" aria-checked="{Js(on)}" class="{Html.Cx("ant-switch", "ant-switch-small", on ? "ant-switch-checked" : null, editable ? null : "ant-switch-disabled")}"{(editable ? "" : " disabled")} x-data="{"{ on: " + Js(on) + " }"}" :aria-checked="on" :class="on && 'ant-switch-checked'"{click}><div class="ant-switch-handle"></div><span class="ant-switch-inner"></span><input type="hidden" name="{Html.E(field)}" value="{Js(on)}" :value="on" /></button></div>{message}""";
         }
         if (c.Type == GridCellType.Rating)
         {
             var count = (int)(c.Max ?? 5);
             var v = (int)Math.Round(GridSchema.Number(value) ?? 0);
             var star = AntIcons.Span("star", IconThemeType.Fill);
-            var sb = new StringBuilder($"""<div class="{Html.Cx("m-grid-cell", errorClass)}" tabindex="-1"><span class="m-rate" x-data="{"{ v: " + v + ", h: 0 }"}"><ul class="{Html.Cx("m-grid-rate", "ant-rate", c.Editable ? null : "ant-rate-disabled")}" role="radiogroup" aria-label="{Html.E(c.Title)}" @mouseleave="h = 0">""");
+            var sb = new StringBuilder($"""<div class="{Html.Cx("m-grid-cell", errorClass)}" tabindex="-1"><span class="m-rate" x-data="{"{ v: " + v + ", h: 0 }"}"><ul class="{Html.Cx("m-grid-rate", "ant-rate", editable ? null : "ant-rate-disabled")}" role="radiogroup" aria-label="{Html.E(c.Title)}" @mouseleave="h = 0">""");
             for (var i = 1; i <= count; i++)
             {
-                var click = c.Editable ? $""" @click="v = v === {i} ? 0 : {i}; $dispatch('grid-change')" @mouseenter="h = {i}" @keydown.enter.prevent="v = {i}; $dispatch('grid-change')" """.TrimEnd() : "";
-                sb.Append($"""<li class="ant-rate-star {(v >= i ? "ant-rate-star-full" : "ant-rate-star-zero")}" :class="(h || v) >= {i} ? 'ant-rate-star-full' : 'ant-rate-star-zero'"><div role="radio" aria-label="{i} star{(i == 1 ? "" : "s")}" aria-checked="{Js(v == i)}" :aria-checked="v === {i}" aria-posinset="{i}" aria-setsize="{count}" tabindex="{(c.Editable ? 0 : -1)}"{click}><div class="ant-rate-star-first">{star}</div><div class="ant-rate-star-second">{star}</div></div></li>""");
+                var click = editable ? $""" @click="v = v === {i} ? 0 : {i}; $dispatch('grid-change')" @mouseenter="h = {i}" @keydown.enter.prevent="v = {i}; $dispatch('grid-change')" """.TrimEnd() : "";
+                sb.Append($"""<li class="ant-rate-star {(v >= i ? "ant-rate-star-full" : "ant-rate-star-zero")}" :class="(h || v) >= {i} ? 'ant-rate-star-full' : 'ant-rate-star-zero'"><div role="radio" aria-label="{i} star{(i == 1 ? "" : "s")}" aria-checked="{Js(v == i)}" :aria-checked="v === {i}" aria-posinset="{i}" aria-setsize="{count}" tabindex="{(editable ? 0 : -1)}"{click}><div class="ant-rate-star-first">{star}</div><div class="ant-rate-star-second">{star}</div></div></li>""");
             }
             sb.Append($"""</ul><input type="hidden" name="{Html.E(field)}" value="{v}" :value="v" /></span></div>{message}""");
             return sb.ToString();
         }
 
-        var view = View(c, row, culture);
-        if (!c.Editable)
-            return $"""<div class="{Html.Cx("m-grid-cell", errorClass)}">{view}</div><input type="hidden" name="{Html.E(field)}" value="{Html.E(value)}" />{message}""";
+        var view = View(c, row, culture, editable);
+        if (!editable)
+            return $"""<div class="{Html.Cx("m-grid-cell", errorClass)}">{mark}{view}</div><input type="hidden" name="{Html.E(field)}" value="{Html.E(value)}" />{message}""";
 
         var label = $"Edit {c.Title}: {GridSchema.Format(c, value, culture)}";
         return $"""<div class="{Html.Cx("m-grid-cell", "m-grid-cell-editable", errorClass)}" tabindex="0" role="button" aria-label="{Html.E(label)}"{(error is null ? "" : $" title=\"{Html.E(error)}\"")} @click="edit($el)" @keydown.enter.prevent="edit($el)" @keydown.f2.prevent="edit($el)">{view}</div>""" +
@@ -422,7 +450,7 @@ public class EditableGridTagHelper : TagHelper
     }
 
     /// <summary>The read-only cell content; mirrors EditableGrid.View and modulusGrid.view() in modulus-widgets.js.</summary>
-    internal static string View(GridColumn c, GridRecord row, CultureInfo culture)
+    internal static string View(GridColumn c, GridRecord row, CultureInfo culture, bool editable = true)
     {
         var value = row[c.Key];
         switch (c.Type)
@@ -438,7 +466,7 @@ public class EditableGridTagHelper : TagHelper
                 return $"""<div class="ant-progress ant-progress-status-{(done ? "success" : "normal")} ant-progress-small ant-progress-line ant-progress-show-info"><div class="ant-progress-outer"><div class="ant-progress-inner"><div class="ant-progress-bg" style="width: {percent.ToString("0.##", CultureInfo.InvariantCulture)}%; height: 6px;"></div></div></div><span title="{percent:0}%" class="ant-progress-text">{text}</span></div>""";
             default:
                 var formatted = GridSchema.Format(c, value, culture);
-                if (formatted.Length == 0) return """<span class="m-grid-empty">Add</span>""";
+                if (formatted.Length == 0) return editable ? """<span class="m-grid-empty">Add</span>""" : """<span class="m-grid-empty">—</span>""";
                 var icon = c.Type == GridCellType.Select && GridSchema.Option(c, value)?.Icon is { } name ? AntIcons.Span(name) : "";
                 if (c.Avatar || c.SubtitleKey is not null)
                 {
@@ -475,6 +503,16 @@ public class EditableGridTagHelper : TagHelper
                 sb.Append("</optgroup>");
             }
             sb.Append("</select>");
+        }
+        foreach (var a in Batch ?? [])
+        {
+            if (!GridSchema.IsBatchKey(a.Key)) continue;
+            var key = Html.E(a.Key);
+            var cls = Html.Cx("ant-btn", a.Primary ? "ant-btn-primary" : "ant-btn-default", a.Danger ? "ant-btn-dangerous" : null, "ant-btn-sm", "m-grid-batch-action");
+            // The count of rows it applies to, and disabled (with why) when none do; Print takes every selected row.
+            var count = a.Print ? "" : $"""<span class="m-grid-batch-count" x-text="batchCount('{key}', selected)"></span>""";
+            var off = a.Print ? "" : $""" :disabled="!batchCount('{key}', selected)" :title="batchCount('{key}', selected) ? '' : {Html.E(JsonSerializer.Serialize(GridSchema.BatchNone(a)))}" """.TrimEnd();
+            sb.Append($"""<button type="button" class="{cls}" data-m-grid-batch="{key}"{off} @click="runBatch('{key}')">{(a.Icon is null ? "" : AntIcons.Span(a.Icon))}<span>{Html.E(a.Label)}</span>{count}</button>""");
         }
         sb.Append(extra);
         sb.Append($"""<button type="button" class="ant-btn ant-btn-default ant-btn-sm" @click="exportCsv(true)">{AntIcons.Span("download")}<span>Export selected</span></button>""");
@@ -664,6 +702,8 @@ public class EditableGridTagHelper : TagHelper
             dragLocked = !RowDraggable || ServerSorted,
             check = AntIcons.Span("check-circle", IconThemeType.Fill),
             file = $"{ExportFileName ?? HeaderTitle ?? "grid"}.csv",
+            title = HeaderTitle,
+            batch = (Batch ?? []).Where(a => GridSchema.IsBatchKey(a.Key)).ToDictionary(a => a.Key, a => new { label = a.Label, confirm = a.Confirm, danger = a.Danger, print = a.Print }),
             columns = Columns.ToDictionary(c => c.Key, c => new
             {
                 t = c.Title,

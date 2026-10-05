@@ -55,6 +55,8 @@
         Alpine.data('dropdown', function () {
             return {
                 open: false,
+                // Declared, so it stays on this component: Alpine sets an undeclared property on the outermost scope.
+                hoverTimer: 0,
                 toggle: function () {
                     this.open = !this.open;
                     // Inside a scrolling or clipping box (a Kanban board, a table) the panel floats above the page,
@@ -124,6 +126,8 @@
         Alpine.data('modulusTabs', function (initial) {
             return {
                 active: initial,
+                // Declared, so it stays on this component: Alpine sets an undeclared property on the outermost scope.
+                _resize: null,
                 init: function () {
                     var self = this;
                     this.$nextTick(function () { self.ink(); });
@@ -192,6 +196,8 @@
                 });
             }
             return {
+                // Declared, so it stays on this component: Alpine sets an undeclared property on the outermost scope.
+                _writing: false,
                 files: [],
                 over: false,
                 entry: function (file) {

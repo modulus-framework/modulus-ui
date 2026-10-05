@@ -83,6 +83,58 @@ public sealed class GridColumn
     public GridColumn Clone() => (GridColumn)MemberwiseClone();
 }
 
+/// <summary>How far a grid row can be changed (<see cref="GridRecord.State"/>).</summary>
+public enum GridRowState
+{
+    /// <summary>Its editable cells change; it can be moved and deleted.</summary>
+    Editable,
+
+    /// <summary>Its cells don't change (an approved or computed line); it can still be moved and deleted.</summary>
+    ReadOnly,
+
+    /// <summary>Nothing changes: no edits, no delete, no move (a posted document, a row someone else holds).</summary>
+    Locked,
+}
+
+/// <summary>
+/// A button in the editable grid's batch bar that acts on the selected rows: Approve, Reject, Post, Print … The grid
+/// counts the rows it applies to ("Approve 3"), skips locked rows (except <see cref="Print"/>), asks first when
+/// <see cref="Confirm"/> is set, and hands the app those rows; the app does the work (Blazor: <c>OnBatch</c>; MVC: the
+/// form posts <c>{name}.op=batch:{key}</c>, read with <c>EditableGridForm.Batch</c>).
+/// </summary>
+public sealed class GridBatchAction
+{
+    /// <summary>Its id in a post (<c>batch:{key}</c>); letters, digits, <c>-</c> and <c>_</c>.</summary>
+    public required string Key { get; init; }
+
+    public required string Label { get; init; }
+
+    /// <summary>An Ant Design icon name (<c>check</c>, <c>close</c>, <c>printer</c>).</summary>
+    public string? Icon { get; init; }
+
+    /// <summary>The primary button of the bar (one, at most).</summary>
+    public bool Primary { get; init; }
+
+    /// <summary>A red button (Reject, Void).</summary>
+    public bool Danger { get; init; }
+
+    /// <summary>Ask "Approve 3 rows?" first.</summary>
+    public bool Confirm { get; init; }
+
+    /// <summary>The rows it applies to (a pending document), or null for any row. Locked rows never apply.</summary>
+    [JsonIgnore]
+    public Func<GridRecord, bool>? When { get; init; }
+
+    /// <summary>Prints the selected rows (the visible columns, every selected row, locked ones too) instead of calling the app.</summary>
+    public bool Print { get; init; }
+
+    /// <summary>A Print button: the selected rows as a table, in the browser's print dialog.</summary>
+    public static GridBatchAction Printing(string label = "Print") => new() { Key = "print", Label = label, Icon = "printer", Print = true };
+}
+
+/// <summary>A batch button was clicked (and confirmed): the action and the selected rows it acts on (<see cref="GridSchema.BatchRows"/>).</summary>
+public sealed record GridBatchRequest(GridBatchAction Action, IReadOnlyList<GridRecord> Rows);
+
 /// <summary>
 /// A grid row. Values are stored as invariant strings keyed by column: numbers as <c>1234.5</c>, dates as
 /// <c>yyyy-MM-dd</c>, switches as <c>true</c>/<c>false</c>, multi-selects as comma-separated values.
@@ -102,6 +154,19 @@ public sealed class GridRecord
 
     public Dictionary<string, string?> Values { get; set; } = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Read-only or locked rows can't be edited in the grid. Set by the server and never read from a post: MVC apps
+    /// call <see cref="GridSchema.Protect"/> to keep a posted grid to the stored states.
+    /// </summary>
+    public GridRowState State { get; set; }
+
+    /// <summary>Why the row is read-only or locked ("Invoiced on 3 Oct"): its tooltip, and read out with the lock.</summary>
+    public string? StateReason { get; set; }
+
+    /// <summary>The row's cells can change.</summary>
+    [JsonIgnore]
+    public bool Editable => State == GridRowState.Editable;
+
     public string? this[string key]
     {
         get => Values.GetValueOrDefault(key);
@@ -109,8 +174,15 @@ public sealed class GridRecord
     }
 }
 
-/// <summary>A validation error on one cell.</summary>
-public sealed record GridError(string RowId, string Key, string Message);
+/// <summary>A validation error on one cell, or on a whole row when <see cref="Key"/> is empty (<see cref="ForRow"/>).</summary>
+public sealed record GridError(string RowId, string Key, string Message)
+{
+    /// <summary>An error on a row rather than a cell: a rule over several cells, or the server refusing the row.</summary>
+    public static GridError ForRow(string rowId, string message) => new(rowId, "", message);
+
+    /// <summary>The error is on the whole row.</summary>
+    public bool IsRow => Key.Length == 0;
+}
 
 /// <summary>Column operations, formatting, parsing and validation for schema-driven grids.</summary>
 public static class GridSchema
@@ -568,19 +640,123 @@ public static class GridSchema
         };
     }
 
-    /// <summary>Validates every cell: required, number format and range, date format, known options.</summary>
-    public static IReadOnlyList<GridError> Validate(IEnumerable<GridColumn> columns, IEnumerable<GridRecord> rows)
+    /// <summary>
+    /// Validates every cell (required, number format and range, date format, known options), then
+    /// <paramref name="rowRule"/> over each row whose cells are valid (a check across cells: "Due is before the
+    /// start."), as a row error. Read-only and locked rows are skipped: they can't be fixed in the grid.
+    /// </summary>
+    public static IReadOnlyList<GridError> Validate(IEnumerable<GridColumn> columns, IEnumerable<GridRecord> rows, Func<GridRecord, string?>? rowRule = null)
     {
         var errors = new List<GridError>();
         var cols = columns.ToList();
         foreach (var row in rows)
         {
+            if (!row.Editable) continue;
+            var before = errors.Count;
             foreach (var c in cols)
             {
                 if (ValidateCell(c, row[c.Key]) is { } message) errors.Add(new GridError(row.Id, c.Key, message));
             }
+            if (errors.Count == before && rowRule?.Invoke(row) is { Length: > 0 } rowMessage) errors.Add(GridError.ForRow(row.Id, rowMessage));
         }
         return errors;
+    }
+
+    /// <summary>The cell can be edited: its column is editable and its row neither read-only nor locked.</summary>
+    public static bool CanEdit(GridColumn column, GridRecord row) => column.Editable && row.Editable;
+
+    /// <summary>"Locked: Invoiced on 3 Oct", "Read-only", or null for an editable row: the row's tooltip and its mark's spoken text.</summary>
+    public static string? StateText(GridRecord row)
+    {
+        var state = row.State switch
+        {
+            GridRowState.Locked => "Locked",
+            GridRowState.ReadOnly => "Read-only",
+            _ => null,
+        };
+        return state is null || string.IsNullOrWhiteSpace(row.StateReason) ? state : $"{state}: {row.StateReason}";
+    }
+
+    /// <summary>The Ant Design icon that marks a read-only (<c>eye</c>) or locked (<c>lock</c>) row, or null.</summary>
+    public static string? StateIcon(GridRecord row) => row.State switch
+    {
+        GridRowState.Locked => "lock",
+        GridRowState.ReadOnly => "eye",
+        _ => null,
+    };
+
+    /// <summary>The row's state class: <c>m-grid-row-readonly</c> or <c>m-grid-row-locked</c>, or null.</summary>
+    public static string? StateClass(GridRecord row) => row.State switch
+    {
+        GridRowState.Locked => "m-grid-row-locked",
+        GridRowState.ReadOnly => "m-grid-row-readonly",
+        _ => null,
+    };
+
+    /// <summary>"3 cells need attention", or rows when some errors are on rows: the grid's error banner.</summary>
+    public static string ErrorSummary(IEnumerable<GridError> errors)
+    {
+        var list = errors.ToList();
+        var noun = list.All(e => !e.IsRow) ? "cell" : list.All(e => e.IsRow) ? "row" : "item";
+        return $"{list.Count} {noun}{(list.Count == 1 ? " needs" : "s need")} attention before saving.";
+    }
+
+    // ---- The batch bar (GridBatchAction) ----
+
+    /// <summary>The rows of <paramref name="selected"/> that <paramref name="action"/> acts on: not locked, and <see cref="GridBatchAction.When"/>.</summary>
+    public static List<GridRecord> BatchRows(GridBatchAction action, IEnumerable<GridRecord> selected) =>
+        [.. selected.Where(r => Applies(action, r))];
+
+    /// <summary>Whether <paramref name="action"/> acts on <paramref name="row"/> (a print takes every row).</summary>
+    public static bool Applies(GridBatchAction action, GridRecord row) =>
+        action.Print || (row.State != GridRowState.Locked && (action.When?.Invoke(row) ?? true));
+
+    /// <summary>The keys of the actions that act on <paramref name="row"/>, space-separated (MVC: the row's <c>data-m-batch</c>).</summary>
+    public static string BatchKeys(IEnumerable<GridBatchAction> actions, GridRecord row) =>
+        string.Join(' ', actions.Where(a => !a.Print && Applies(a, row)).Select(a => a.Key));
+
+    /// <summary>"Approve 3 rows?", and " 2 selected rows are skipped." when some don't apply: the confirm.</summary>
+    public static string BatchConfirm(GridBatchAction action, int count, int selected)
+    {
+        var skipped = selected - count;
+        return $"{action.Label} {count} {(count == 1 ? "row" : "rows")}?" +
+            (skipped > 0 ? $" {skipped} selected {(skipped == 1 ? "row is" : "rows are")} skipped." : "");
+    }
+
+    /// <summary>The batch button's tooltip when none of the selected rows apply.</summary>
+    public static string BatchNone(GridBatchAction action) => $"{action.Label} doesn't apply to the selected rows.";
+
+    /// <summary>A valid <see cref="GridBatchAction.Key"/> (it travels in a post).</summary>
+    public static bool IsBatchKey(string? key) =>
+        !string.IsNullOrEmpty(key) && key.Length <= 40 && key.All(ch => char.IsAsciiLetterOrDigit(ch) || ch is '-' or '_');
+
+    /// <summary>
+    /// Keeps a posted grid (MVC: <c>EditableGridForm.Read</c>) to the row states of the <paramref name="stored"/> rows,
+    /// since a browser can post anything: read-only and locked rows get their stored values, state and reason back, and
+    /// a locked row missing from the post (deleted in the browser) is put back where it was. Call it before applying
+    /// the post's operation.
+    /// </summary>
+    public static void Protect(IEnumerable<GridColumn> columns, List<GridRecord> posted, IReadOnlyList<GridRecord> stored)
+    {
+        var cols = columns.ToList();
+        for (var i = 0; i < stored.Count; i++)
+        {
+            var s = stored[i];
+            if (s.Editable) continue;
+            var p = posted.Find(r => r.Id == s.Id);
+            if (p is null)
+            {
+                if (s.State != GridRowState.Locked) continue;
+                p = new GridRecord(s.Id);
+                foreach (var c in cols) p[c.Key] = c.Type == GridCellType.Switch ? "false" : null;
+                posted.Insert(Math.Min(i, posted.Count), p);
+            }
+            // The posted columns: one removed in this session stays removed, one added keeps its empty value.
+            foreach (var c in cols)
+                if (s.Values.TryGetValue(c.Key, out var value)) p[c.Key] = value;
+            p.State = s.State;
+            p.StateReason = s.StateReason;
+        }
     }
 
     public static string? ValidateCell(GridColumn c, string? value)

@@ -873,6 +873,52 @@
     // SPA navigation (modulus-spa.js) closes the navigation drawer and the app launcher once the next page is in.
     window.modulusShell.closeNav = closeNav;
     window.modulusShell.closeLauncher = closeLauncher;
+
+    // ---- Print: HTML in a hidden frame, through the browser's print dialog ----
+    // print(title, css, body) is what the spreadsheet and document print with (modulus-plugins.js);
+    // printTable(title, columns [{ t, right }], rows [[text]]) prints grid rows (the editable grid's batch bar).
+    function printEsc(s) {
+        return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
+    }
+    function print(title, css, body) {
+        var frame = document.createElement('iframe');
+        frame.setAttribute('aria-hidden', 'true');
+        frame.setAttribute('data-m-print-frame', '');
+        frame.tabIndex = -1;
+        frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+        document.body.appendChild(frame);
+        var w = frame.contentWindow, d = w.document;
+        d.open();
+        d.write('<!doctype html><html><head><meta charset="utf-8"><title>' + printEsc(title) + '</title><style>' + css + '</style></head><body>' + body + '</body></html>');
+        d.close();
+        var done = false, remove = function () { if (!done) { done = true; setTimeout(function () { frame.remove(); }, 0); } };
+        var go = function () {
+            w.addEventListener('afterprint', remove);
+            w.focus();
+            w.print();
+            setTimeout(remove, 60000); // a browser that never says afterprint
+        };
+        // Images (a document's pictures) must have loaded, or they print blank.
+        var images = Array.prototype.slice.call(d.images).filter(function (img) { return !img.complete; });
+        if (!images.length) { setTimeout(go, 50); return; }
+        var left = images.length, once = function () { if (--left === 0) go(); };
+        images.forEach(function (img) { img.addEventListener('load', once); img.addEventListener('error', once); });
+        setTimeout(function () { if (left > 0) { left = 0; go(); } }, 5000);
+    }
+    var PRINT_TABLE_CSS = '@page{margin:12mm}body{margin:0;font:10pt/1.35 Arial,Helvetica,sans-serif;color:#000}' +
+        'h1{font-size:13pt;margin:0 0 2px}p{margin:0 0 8px;color:#555;font-size:9pt}' +
+        'table{border-collapse:collapse;width:100%}th,td{padding:3px 6px;border:1px solid #bbb;text-align:left;vertical-align:top}' +
+        'th{background:#f0f0f0;font-weight:700}thead{display:table-header-group}tr{break-inside:avoid}.n{text-align:right;white-space:nowrap}';
+    function printTable(title, columns, rows) {
+        var head = columns.map(function (c) { return '<th' + (c.right ? ' class="n"' : '') + '>' + printEsc(c.t) + '</th>'; }).join('');
+        var body = rows.map(function (r) {
+            return '<tr>' + r.map(function (v, i) { return '<td' + (columns[i] && columns[i].right ? ' class="n"' : '') + '>' + printEsc(v) + '</td>'; }).join('') + '</tr>';
+        }).join('');
+        var count = rows.length + ' ' + (rows.length === 1 ? 'row' : 'rows') + ' · ' + new Date().toLocaleString();
+        print(title, PRINT_TABLE_CSS, '<h1>' + printEsc(title) + '</h1><p>' + printEsc(count) + '</p><table><thead><tr>' + head + '</tr></thead><tbody>' + body + '</tbody></table>');
+    }
+    window.modulusShell.print = print;
+    window.modulusShell.printTable = printTable;
     window.modulusShell.openPopup = function (gridId) {
         // The component wires up its overlay in its own first after-render, and the table may render a new row a
         // cycle later, so look for the grid's editing cell for a few frames.

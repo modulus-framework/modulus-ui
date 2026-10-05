@@ -120,6 +120,35 @@ public class ModulusDataGridTests : BunitContext
         Assert.DoesNotContain("'acme'", sql);
     }
 
+    [Fact]
+    public void Query_ValueLists_FromACheckboxList()
+    {
+        var query = DataGridAuto.Query<Order>();
+        var rows = Orders.AsQueryable();
+        List<string> Numbers(string key, string value) =>
+            [.. query.Page(rows, new ProTableRequest { Searches = ColumnSearch.With(null, key, value), PageSize = 10 }).Items.Select(o => o.Number)];
+
+        Assert.Equal(["PO-1", "PO-2"], Numbers("customerName", "=Acme Fabrics|Acme Mills"));
+        Assert.Equal(["PO-1", "PO-2", "PO-3"], Numbers("customerName", "!=Zenith"));      // a blank (no customer) stays
+        Assert.Equal(["PO-3", "PO-4"], Numbers("customerName", "=Zenith|"));               // "" is the blank cell
+        Assert.Equal(["PO-1", "PO-2", "PO-4"], Numbers("customerName", "!=|"));
+        Assert.Equal(["PO-1", "PO-3", "PO-4"], Numbers("status", "=Confirmed|Received"));  // enum labels
+        Assert.Equal(["PO-3"], Numbers("rushed", "=Yes|"));                                // Yes/No
+        Assert.Equal(["PO-1", "PO-2", "PO-4"], Numbers("rushed", "!=Yes"));
+    }
+
+    [Fact]
+    public void Query_ValueList_TranslatesToSqlIn()
+    {
+        var query = DataGridAuto.Query<ShipmentRow>();
+        var sql = query.Apply(new ShipmentDb().Rows, new ProTableRequest { Searches = ColumnSearch.With(null, "customer", "!=Acme|Zenith") }).ToQueryString();
+
+        var where = sql[sql.IndexOf("WHERE", StringComparison.Ordinal)..];
+        Assert.Contains("NOT IN (@", where); // the values as parameters, not SQL text
+        Assert.DoesNotContain("LIKE", where);
+        Assert.DoesNotContain("Acme", where);
+    }
+
     private sealed class ShipmentRow
     {
         public int Id { get; set; }

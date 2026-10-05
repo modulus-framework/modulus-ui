@@ -1304,29 +1304,9 @@
         return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
     }
 
+    // The frame and the print dialog are modulusShell.print (modulus-shell.js).
     function printFrame(title, css, body) {
-        var frame = document.createElement('iframe');
-        frame.setAttribute('aria-hidden', 'true');
-        frame.tabIndex = -1;
-        frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
-        document.body.appendChild(frame);
-        var w = frame.contentWindow, d = w.document;
-        d.open();
-        d.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(title) + '</title><style>' + css + '</style></head><body>' + body + '</body></html>');
-        d.close();
-        var done = false, remove = function () { if (!done) { done = true; setTimeout(function () { frame.remove(); }, 0); } };
-        var go = function () {
-            w.addEventListener('afterprint', remove);
-            w.focus();
-            w.print();
-            setTimeout(remove, 60000); // a browser that never says afterprint
-        };
-        // Images (a document's pictures) must have loaded, or they print blank.
-        var images = Array.prototype.slice.call(d.images).filter(function (img) { return !img.complete; });
-        if (!images.length) { setTimeout(go, 50); return; }
-        var left = images.length, once = function () { if (--left === 0) go(); };
-        images.forEach(function (img) { img.addEventListener('load', once); img.addEventListener('error', once); });
-        setTimeout(function () { if (left > 0) { left = 0; go(); } }, 5000);
+        window.modulusShell.print(title, css, body);
     }
 
     function printTitle(root, fallback) {

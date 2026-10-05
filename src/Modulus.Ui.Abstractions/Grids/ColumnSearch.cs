@@ -197,7 +197,7 @@ public static partial class ColumnSearch
     }
 
     // "=a|b" (exact, one of) or "!=a|b" (none of): a "|" makes "=" a list; "!=a" alone is "not exactly a".
-    private static (bool Exclude, HashSet<string> Values)? ValueList(string q)
+    internal static (bool Exclude, HashSet<string> Values)? ValueList(string q)
     {
         var exclude = q.StartsWith("!=", StringComparison.Ordinal);
         if (exclude ? q.Length < 3 : q.Length < 2 || q[0] != '=' || q.IndexOf(ValueSeparator) < 0) return null;

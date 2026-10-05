@@ -94,10 +94,10 @@ public static class SortableHtml
     /// The drag handle of a table row (<paramref name="id"/> is the row's key). The table's owner element carries
     /// <see cref="RowsAttributes"/>; the handle's row is the item modulus-plugins.js moves.
     /// </summary>
-    public static string RowHandle(string id, string label, string helpId, bool disabled = false)
+    public static string RowHandle(string id, string label, string helpId, bool disabled = false, string? disabledTitle = null)
     {
         var name = WebUtility.HtmlEncode(label);
-        var state = disabled ? $""" tabindex="-1" aria-disabled="true" title="{RowSortedText}" """.TrimEnd() : """ tabindex="0" title="Drag to reorder" """.TrimEnd();
+        var state = disabled ? $""" tabindex="-1" aria-disabled="true" title="{WebUtility.HtmlEncode(disabledTitle ?? RowSortedText)}" """.TrimEnd() : """ tabindex="0" title="Drag to reorder" """.TrimEnd();
         return $"""<span class="m-sort-handle m-row-handle" data-m-sort-handle data-m-sort-row="{WebUtility.HtmlEncode(id)}" data-m-sort-label="{name}"{state} role="button" aria-label="Move {name}" aria-roledescription="sortable handle" aria-describedby="{WebUtility.HtmlEncode(helpId)}">{HandleIcon}</span>""";
     }
 

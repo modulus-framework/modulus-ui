@@ -2,6 +2,7 @@ using System.Globalization;
 using AngleSharp.Dom;
 using AntDesign;
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Modulus.Blazor.Components.Pro;
 using Modulus.Ui.Abstractions;
@@ -23,6 +24,38 @@ public class GridSchemaTests
         new() { Key = "billable", Title = "Billable", Type = GridCellType.Switch, Required = true },
         new() { Key = "owner", Title = "Owner", Fixed = GridFixed.Right, Width = 160 },
     ];
+
+    [Fact]
+    public void RowStates_ValidateSkipsThem_TheRowRuleRunsOnValidRows_AndProtectKeepsAPostToTheStore()
+    {
+        var columns = Columns()[..2];
+        GridRecord Row(string id, string? name, string budget, GridRowState state = GridRowState.Editable) =>
+            new(id, new Dictionary<string, string?> { ["name"] = name, ["budget"] = budget }) { State = state, StateReason = state == GridRowState.Editable ? null : "Posted" };
+        string? Rule(GridRecord r) => GridSchema.Number(r["budget"]) > 100 ? "Over budget." : null;
+
+        var errors = GridSchema.Validate(columns, [Row("a", null, "500"), Row("b", "B", "500"), Row("c", null, "500", GridRowState.Locked), Row("d", "D", "5")], Rule);
+        // a: its cell first (the rule waits for valid cells); b: the rule; c: locked, skipped; d: fine.
+        Assert.Equal([("a", "name"), ("b", "")], errors.Select(e => (e.RowId, e.Key)));
+        Assert.True(errors[1].IsRow);
+        Assert.Equal("1 cell needs attention before saving.", GridSchema.ErrorSummary(errors.Take(1)));
+        Assert.Equal("2 rows need attention before saving.", GridSchema.ErrorSummary([GridError.ForRow("a", "x"), GridError.ForRow("b", "y")]));
+        Assert.Equal("2 items need attention before saving.", GridSchema.ErrorSummary(errors));
+
+        Assert.Equal("Locked: Posted", GridSchema.StateText(Row("x", "X", "1", GridRowState.Locked)));
+        Assert.Equal("Read-only", GridSchema.StateText(new GridRecord("y") { State = GridRowState.ReadOnly }));
+        Assert.Null(GridSchema.StateText(Row("z", "Z", "1")));
+        Assert.False(GridSchema.CanEdit(columns[0], Row("x", "X", "1", GridRowState.ReadOnly)));
+
+        // The browser posts edits to a read-only row, drops a locked and a read-only one, and has no states.
+        List<GridRecord> stored = [Row("e", "E", "1"), Row("r", "R", "2", GridRowState.ReadOnly), Row("l", "L", "3", GridRowState.Locked), Row("g", "G", "4", GridRowState.ReadOnly)];
+        List<GridRecord> posted = [Row("e", "E2", "10"), Row("r", "Hacked", "999")];
+        GridSchema.Protect(columns, posted, stored);
+
+        Assert.Equal(["e", "r", "l"], posted.Select(r => r.Id)); // the locked row is back in its place; the read-only one stays deleted
+        Assert.Equal(("E2", "10"), (posted[0]["name"], posted[0]["budget"]));
+        Assert.Equal(("R", "2", GridRowState.ReadOnly), (posted[1]["name"], posted[1]["budget"], posted[1].State));
+        Assert.Equal(("L", GridRowState.Locked, "Posted"), (posted[2]["name"], posted[2].State, posted[2].StateReason));
+    }
 
     [Fact]
     public void Matches_SearchesDisplayedTextAndSubtitles_AndAppliesEveryFilter()
@@ -422,6 +455,77 @@ public class EditableGridTests : BunitContext
         Assert.Empty(cut.FindAll(".ant-alert"));
     }
 
+    [Fact]
+    public async Task RowStates_ReadOnlyAndLockedRows_DontEdit_LockedRowsDontDeleteOrMove()
+    {
+        var rows = Rows();
+        rows.Add(new("r3", new Dictionary<string, string?> { ["name"] = "Archive", ["budget"] = "50", ["billable"] = "false", ["owner"] = "Cy" }));
+        (rows[1].State, rows[1].StateReason) = (GridRowState.ReadOnly, "Approved");
+        (rows[2].State, rows[2].StateReason) = (GridRowState.Locked, "Invoiced");
+        var cut = Render<EditableGrid>(p => p.Add(g => g.Columns, Columns()).Add(g => g.Rows, rows));
+        IElement Row(string name) => cut.FindAll("tbody tr.ant-table-row").Single(tr => tr.TextContent.Contains(name));
+
+        // Only the editable row's cells are buttons; the others say why in their first cell.
+        Assert.Equal(3, cut.FindAll("[aria-label^='Edit ']").Count); // name, budget and owner of Portal
+        Assert.Contains("m-grid-row-readonly", Row("Mobile").ClassList);
+        Assert.Contains("m-grid-row-locked", Row("Archive").ClassList);
+        Assert.Equal("Read-only: Approved", Row("Mobile").QuerySelector(".m-grid-row-mark")!.GetAttribute("title"));
+        Assert.Equal("Locked: Invoiced", Row("Archive").QuerySelector(".m-grid-row-mark .m-sr-only")!.TextContent);
+        Assert.NotNull(Row("Mobile").QuerySelector(".ant-switch-disabled"));
+
+        // A locked row can't be dragged or deleted; a read-only one can.
+        Assert.Equal("true", Row("Archive").QuerySelector("[data-m-sort-row]")!.GetAttribute("aria-disabled"));
+        Assert.Equal("Locked: Invoiced", Row("Archive").QuerySelector("[data-m-sort-row]")!.GetAttribute("title"));
+        Assert.Null(Row("Mobile").QuerySelector("[data-m-sort-row]")!.GetAttribute("aria-disabled"));
+        Assert.True(Row("Archive").QuerySelector("td.m-grid-actions button")!.HasAttribute("disabled"));
+        Assert.False(Row("Mobile").QuerySelector("td.m-grid-actions button")!.HasAttribute("disabled"));
+
+        // A locked row dropped elsewhere stays put (the handle is disabled, so this is a forged move).
+        await cut.Find("input[data-m-sort-result]").ChangeAsync("""{"id":"r3","from":"x","to":"x","index":0}""");
+        Assert.Equal(["r1", "r2", "r3"], rows.Select(r => r.Id));
+        Assert.Empty(cut.FindAll(".m-grid-dirty"));
+    }
+
+    [Fact]
+    public async Task RowRule_FlagsTheRow_BlocksSave_AndClearsOnceFixed_AndTheAppCanRefuseRows()
+    {
+        var rows = Rows();
+        rows[1]["budget"] = "9000";
+        var saved = 0;
+        EditableGrid grid = null!;
+        var cut = Render<EditableGrid>(p => p.Add(g => g.Columns, Columns()).Add(g => g.Rows, rows)
+            .Add(g => g.ValidateRow, r => GridSchema.Number(r["budget"]) > 5000 ? "Over the limit." : null)
+            .Add(g => g.OnSave, () =>
+            {
+                saved++;
+                // The server refuses Portal: the changes stay unsaved.
+                if (saved == 1) grid.ShowErrors([GridError.ForRow("r1", "Portal is checked out by Ann.")]);
+            }));
+        grid = cut.Instance;
+        IElement Save() => cut.FindAll("button").First(b => b.TextContent.Trim() == "Save");
+        IElement Row(string name) => cut.FindAll("tbody tr.ant-table-row").Single(tr => tr.TextContent.Contains(name));
+
+        await Save().ClickAsync(new());
+        Assert.Equal(0, saved);
+        Assert.Contains("1 row needs attention", cut.Find(".ant-alert").TextContent);
+        Assert.Contains("m-grid-row-error", Row("Mobile").ClassList);
+        Assert.Equal("Over the limit.", Row("Mobile").QuerySelector(".m-grid-row-message")!.TextContent);
+
+        // Fixing the cell clears the row's error at once.
+        await Row("Mobile").QuerySelector("[aria-label^='Edit Budget:']")!.ClickAsync(new());
+        await Row("Mobile").QuerySelector("input[type=number]")!.InputAsync(new ChangeEventArgs { Value = "800" });
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".m-grid-row-error")));
+
+        await Save().ClickAsync(new());
+        Assert.Equal(1, saved);
+        cut.WaitForAssertion(() => Assert.Equal("Portal is checked out by Ann.", Row("Portal").QuerySelector(".m-grid-row-message")!.TextContent));
+        Assert.NotEmpty(cut.FindAll(".m-grid-dirty"));
+
+        await Save().ClickAsync(new());
+        Assert.Equal(2, saved);
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".m-grid-row-error, .m-grid-dirty")));
+    }
+
     private static List<GridColumn> RichColumns() =>
     [
         new() { Key = "name", Title = "Name", SubtitleKey = "email" },
@@ -468,7 +572,9 @@ public class EditableGridTests : BunitContext
 
         Assert.Equal("true", cut.Find(".m-table-filter-toggle").GetAttribute("aria-pressed"));
         Assert.Equal(3, cut.FindAll(".m-th-filter").Count); // name, owner, priority (email is hidden)
-        Assert.Empty(cut.FindAll(".m-th-search"));
+        // Only the checkbox-list columns keep the icon: the filter row's select picks one value, the list several.
+        Assert.Equal(["owner", "priority"], cut.FindAll(".m-th-search").Select(s => s.Closest(".m-th")!.GetAttribute("data-key")));
+        Assert.All(cut.FindAll(".m-th-search-host"), h => Assert.True(h.HasAttribute("data-values")));
         await cut.FindAll(".m-th-filter")[1].ChangeAsync("Ann");
 
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("tbody tr.ant-table-row")));
@@ -548,5 +654,37 @@ public class EditableGridTests : BunitContext
 
         cut.WaitForAssertion(() => Assert.Equal(["high", "high"], rows.Select(r => $"{r["priority"]}")));
         Assert.NotEmpty(cut.FindAll(".m-grid-dirty"));
+    }
+
+    [Fact]
+    public async Task BatchActions_CountTheRowsTheyApplyTo_RaiseOnBatchWithThoseRows_AndPrint()
+    {
+        var rows = RichRows();
+        GridBatchRequest? request = null;
+        GridBatchAction[] actions =
+        [
+            new() { Key = "approve", Label = "Approve", Primary = true, When = r => r["owner"] == "ann" },
+            new() { Key = "close", Label = "Close", When = r => r["owner"] == "nobody" },
+            new() { Key = "reject", Label = "Reject", Danger = true, Confirm = true },
+            GridBatchAction.Printing(),
+        ];
+        var cut = Render<EditableGrid>(p => p.Add(g => g.Columns, RichColumns()).Add(g => g.Rows, rows).Add(g => g.HeaderTitle, "Projects")
+            .Add(g => g.Batch, actions).Add(g => g.OnBatch, (GridBatchRequest r) => request = r));
+        for (var i = 0; i < 2; i++) await cut.FindAll("tbody td.ant-table-selection-column input")[i].ChangeAsync(true);
+
+        cut.WaitForAssertion(() => Assert.Equal("1", cut.Find("[data-m-grid-batch=approve] .m-grid-batch-count").TextContent));
+        Assert.Equal("2", cut.Find("[data-m-grid-batch=reject] .m-grid-batch-count").TextContent);
+        Assert.True(cut.Find("[data-m-grid-batch=close]").HasAttribute("disabled"));
+        Assert.Empty(cut.FindAll("[data-m-grid-batch=print] .m-grid-batch-count"));
+
+        // Only the selected rows the action applies to; a batch isn't an unsaved edit.
+        await cut.Find("[data-m-grid-batch=approve]").ClickAsync(new());
+        Assert.NotNull(request);
+        Assert.Equal(["r1"], request.Rows.Select(r => r.Id));
+        Assert.Empty(cut.FindAll(".m-grid-dirty"));
+
+        await cut.Find("[data-m-grid-batch=print]").ClickAsync(new());
+        var print = Assert.Single(JSInterop.Invocations, i => i.Identifier == "modulusShell.printTable");
+        Assert.Equal("Projects", print.Arguments[0]);
     }
 }

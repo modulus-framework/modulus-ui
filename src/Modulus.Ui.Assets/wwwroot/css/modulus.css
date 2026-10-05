@@ -2293,7 +2293,8 @@ tr.m-sort-placeholder-row > td { padding: 0 !important; border: 1px dashed var(-
 .m-th-filter.ant-input { flex: 0 0 100%; order: 10; width: 100%; min-width: 0; height: 26px; padding: 0 7px; font-size: 12px; font-weight: 400; text-transform: none; letter-spacing: normal; }
 .m-th-filter.m-th-filter-active { border-color: var(--m-primary); }
 .ant-table-thead:not(.m-filter-row-on) .m-th-filter:not(.m-th-filter-on) { display: none; }
-.ant-table-thead.m-filter-row-on .m-th-search { display: none !important; }
+.ant-table-thead.m-filter-row-on .m-th-search-host:not([data-values]) .m-th-search { display: none !important; }
+/* A checkbox-list column keeps its menu beside the filter row's select, which can't pick several values. */
 .ant-table-thead.m-filter-row-on > tr > th, .ant-table-thead:has(.m-th-filter-on) > tr > th { vertical-align: top; }
 
 /* Edit states, until the grid is saved or discarded (every editable and nested grid, Blazor and MVC):
@@ -2316,6 +2317,20 @@ tr.m-sort-placeholder-row > td { padding: 0 !important; border: 1px dashed var(-
 @media (forced-colors: active) {
     .m-grid :is(.m-grid-cell-dirty, td.m-grid-td-dirty .m-grid-cell):not(.m-grid-cell-error, .m-grid-cell-editing) { outline: 1px dashed CanvasText; outline-offset: -2px; }
 }
+
+/* Row states (GridRecord.State) and row errors:
+   - a read-only row has muted text and an eye in its first cell;
+   - a locked row is also greyed, with a grey bar and a lock (the reason is its tooltip and read out with the mark);
+   - a row error (a rule over several cells, or the server refusing the row) is tinted red with a red bar, its
+     message under the first cell. */
+.m-grid .ant-table-tbody > tr:is(.m-grid-row-readonly, .m-grid-row-locked) > td { color: var(--m-text-tertiary); }
+.m-grid .ant-table-tbody > tr.m-grid-row-locked > td { background: var(--m-bg-subtle); }
+.m-grid .ant-table-tbody > tr.m-grid-row-locked > td:first-child { box-shadow: inset 3px 0 0 var(--m-border); }
+.m-grid .ant-table-tbody > tr.m-grid-row-locked .ant-btn:disabled { color: var(--m-text-quaternary); background: transparent; }
+.m-grid .m-grid-cell > .m-grid-row-mark { flex: none; display: inline-flex; margin-right: 6px; overflow: visible; color: var(--m-text-tertiary); }
+.m-grid .ant-table-tbody > tr.m-grid-row-error > td { background: color-mix(in srgb, var(--m-error) 6%, transparent); }
+.m-grid .ant-table-tbody > tr.m-grid-row-error > td:first-child { box-shadow: inset 3px 0 0 var(--m-error); }
+.m-grid .m-grid-row-message { margin-top: 0; }
 
 /* The expand control as a chevron (▶ collapsed, ▼ expanded) instead of Ant Design's plus box. */
 .m-table-card .ant-table-row-expand-icon { position: relative; width: 22px; height: 22px; border: 0; border-radius: 4px; background: transparent; color: var(--m-text-tertiary); transform: none; }
@@ -2526,6 +2541,8 @@ select.m-select.m-th-filter { padding-right: 22px; background-position: right 6p
 .m-grid .ant-table-tbody > tr.m-grid-row-new > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(var(--m-primary-bg), var(--m-primary-bg)) var(--m-bg-container); }
 .m-grid .ant-table-tbody > tr.m-grid-row-dirty > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(var(--m-warning-bg), var(--m-warning-bg)) var(--m-bg-container); }
 .m-grid .ant-table-tbody > tr.m-grid-row-dirty:hover > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(var(--m-warning-bg-strong), var(--m-warning-bg-strong)) var(--m-bg-container); }
+.m-grid .ant-table-tbody > tr.m-grid-row-locked > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: var(--m-bg-subtle); }
+.m-grid .ant-table-tbody > tr.m-grid-row-error > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(color-mix(in srgb, var(--m-error) 6%, transparent), color-mix(in srgb, var(--m-error) 6%, transparent)) var(--m-bg-container); }
 /* The row being edited: its tint over an opaque fill, so the editors scrolling under the pinned cells stay hidden. */
 .m-grid .ant-table-tbody > tr:is(.m-grid-row-editing, :has(> td .m-grid-cell-editing:not([hidden]))) > td:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(color-mix(in srgb, var(--m-primary) 5%, transparent), color-mix(in srgb, var(--m-primary) 5%, transparent)) var(--m-bg-container); }
 .ant-table-tbody > tr > td.ant-table-column-sort:is(.ant-table-cell-fix-left, .ant-table-cell-fix-right) { background: linear-gradient(var(--m-fill), var(--m-fill)) var(--m-bg-container); }

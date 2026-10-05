@@ -155,6 +155,28 @@ public class TableQueryTests
     }
 
     [Fact]
+    public void SearchText_ValueList_KeepsTheListedValues_AndTheLongList()
+    {
+        var rows = Rows.Append(new Row(998, "", 0, default, null)).Append(new Row(999, null!, 0, default, null)).AsQueryable();
+        int Count(string search, TableQuery<Row>? query = null) =>
+            (query ?? Query).Page(rows, Request(size: 300, searches: new() { ["name"] = search })).Total ?? -1;
+        int Named(params string[] names) => Rows.Count(r => names.Contains(r.Name));
+
+        Assert.Equal(Named("Name 03", "Name 05"), Count("=Name 03|Name 05"));
+        Assert.Equal(Rows.Length + 2 - Named("Name 03"), Count("!=Name 03"));        // blanks stay
+        Assert.Equal(Named("Name 03") + 2, Count("=Name 03|"));                      // "" is the null and the empty name
+        Assert.Equal(Rows.Length, Count("!=|"));
+        Assert.Equal(0, Count("=name 03|name 05"));                                   // exact, case-sensitive by default
+        Assert.Equal(Named("Name 03", "Name 05"),
+            Count("=name 03|name 05", TableQuery<Row>.By(r => r.Id).SearchText("name", r => r.Name, ignoreCase: true)));
+
+        // Longer than MaxSearchLength: kept whole (up to ColumnSearch.MaxListLength), not cut mid-value.
+        var all = Enumerable.Range(0, 17).Select(i => $"Name {i:D2}").ToList();
+        var list = "=" + string.Join('|', all.Prepend(new string('x', TableQuery<Row>.MaxSearchLength)));
+        Assert.Equal(Rows.Length, Count(list));
+    }
+
+    [Fact]
     public async Task PageAsync_MatchesPage_AndUsesTheCounter()
     {
         var counted = false;

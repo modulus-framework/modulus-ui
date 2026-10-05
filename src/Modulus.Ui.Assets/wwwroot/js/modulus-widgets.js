@@ -798,6 +798,10 @@
             return {
                 open: false,
                 style: '',
+                // Declared, so they stay on this menu: Alpine sets an undeclared property on the outermost scope (the grid's).
+                _boxes: null,
+                _current: '',
+                _scroll: null,
                 init: function () {
                     if (!this.$refs.values) return;
                     this._boxes = Array.prototype.slice.call(this.$refs.values.querySelectorAll('input[data-value]'));
@@ -812,8 +816,13 @@
                     this.style = 'position: fixed; top: ' + Math.round(r.bottom + 6) + 'px; left: ' + Math.round(left) + 'px; width: ' + width + 'px; z-index: 1050;';
                     this.open = true;
                     this._scroll = function (e) { if (!self.$root.contains(e.target)) self.close(); };
-                    window.addEventListener('scroll', this._scroll, { capture: true, passive: true });
-                    this.$nextTick(function () { self.$refs.input.focus(); self.$refs.input.select(); });
+                    // A frame on: a scroll already under way (the trigger scrolled into view, a flick ending) lands first.
+                    var scroll = this._scroll;
+                    requestAnimationFrame(function () { requestAnimationFrame(function () {
+                        if (self.open && self._scroll === scroll) window.addEventListener('scroll', scroll, { capture: true, passive: true });
+                    }); });
+                    // preventScroll: focusing would scroll the table to the input, and a scroll closes the menu.
+                    this.$nextTick(function () { self.$refs.input.focus({ preventScroll: true }); self.$refs.input.select(); });
                 },
                 close: function () {
                     if (!this.open) return;
@@ -888,7 +897,10 @@
                         if (window.htmx) window.htmx.ajax('GET', url, { source: host }); else window.location.href = url;
                         return;
                     }
-                    this.$refs.trigger.classList.toggle('active', !!value);
+                    var trigger = this.$refs.trigger;
+                    trigger.classList.toggle('active', !!value);
+                    // As the server renders it: "Search Owner: Not Olivia Bennett".
+                    trigger.setAttribute('aria-label', trigger.getAttribute('title') + (value ? ': ' + (label || value) : ''));
                     host.dispatchEvent(new CustomEvent('m-col-search', { bubbles: true, detail: { key: key, value: value } }));
                 }
             };
@@ -1097,6 +1109,9 @@
             }
 
             return {
+                // Declared, so they stay on this grid: Alpine sets an undeclared property on the outermost scope.
+                _resize: null,
+                _close: null,
                 dirty: !!cfg.dirty,
                 density: 'ant-table-middle',
                 pingLeft: false,
@@ -1575,14 +1590,67 @@
                     });
                     this.syncSelection();
                 },
+                // Locked rows stay (data-m-row-state, from GridRecord.State); the server keeps them too (GridSchema.Protect).
                 deleteSelected: function () {
-                    var self = this, rows = this.selectedRows();
+                    var self = this, picked = this.selectedRows();
+                    var rows = picked.filter(function (tr) { return tr.getAttribute('data-m-row-state') !== 'locked'; });
                     if (!rows.length) return;
                     var remove = function () { rows.forEach(function (r) { self.removeRow(r); }); self.syncSelection(); };
-                    var text = 'Delete ' + rows.length + ' ' + (rows.length === 1 ? 'row' : 'rows') + '?';
+                    var text = 'Delete ' + rows.length + ' ' + (rows.length === 1 ? 'row' : 'rows') + '?' + (rows.length < picked.length ? ' Locked rows stay.' : '');
                     var ask = window.Alpine.store('confirm');
                     if (ask && ask.ask) ask.ask(text, 'Delete', true).then(function (ok) { if (ok) remove(); });
                     else if (window.confirm(text)) remove();
+                },
+                // ---- Batch actions (GridBatchAction): each row lists the actions that apply to it in data-m-batch ----
+                batchRows: function (key) {
+                    if (!cfg.batch || !cfg.batch[key]) return [];
+                    if (cfg.batch[key].print) return this.selectedRows();
+                    return this.selectedRows().filter(function (tr) { return (' ' + (tr.getAttribute('data-m-batch') || '') + ' ').indexOf(' ' + key + ' ') >= 0; });
+                },
+                // Reads `selected` so Alpine re-evaluates the count when the selection changes.
+                batchCount: function (key, selected) { return selected ? this.batchRows(key).length : 0; },
+                // GridSchema.BatchConfirm, then a post with the op "batch:{key}" and the ids of the rows it applies to.
+                runBatch: function (key) {
+                    var action = cfg.batch && cfg.batch[key];
+                    if (!action) return;
+                    if (action.print) { this.printSelected(); return; }
+                    var self = this, rows = this.batchRows(key), picked = this.selectedRows().length;
+                    if (!rows.length) return;
+                    var go = function () {
+                        var form = self.$root.closest('form');
+                        if (!form) return;
+                        form.querySelectorAll('input[data-m-batch-selected]').forEach(function (i) { i.remove(); });
+                        rows.forEach(function (tr) {
+                            var input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = cfg.name + '.selected';
+                            input.value = tr.getAttribute('data-row-key');
+                            input.setAttribute('data-m-batch-selected', '');
+                            form.prepend(input);
+                        });
+                        self.submitOp('batch:' + key);
+                        form.querySelectorAll('input[data-m-batch-selected]').forEach(function (i) { i.remove(); });
+                    };
+                    if (!action.confirm) { go(); return; }
+                    var skipped = picked - rows.length;
+                    var text = action.label + ' ' + rows.length + ' ' + (rows.length === 1 ? 'row' : 'rows') + '?' +
+                        (skipped > 0 ? ' ' + skipped + ' selected ' + (skipped === 1 ? 'row is' : 'rows are') + ' skipped.' : '');
+                    var ask = window.Alpine.store('confirm');
+                    if (ask && ask.ask) ask.ask(text, action.label, !!action.danger).then(function (ok) { if (ok) go(); });
+                    else if (window.confirm(text)) go();
+                },
+                // Prints the visible columns of the selected rows, as GridSchema.Format shows them.
+                printSelected: function () {
+                    var keys = Array.prototype.map.call(this.$refs.table.querySelector('thead').querySelectorAll('th[data-key]'), function (th) { return th.getAttribute('data-key'); })
+                        .filter(function (k) { return cfg.columns[k]; });
+                    var text = function (col, v) {
+                        if (col.type === 'Switch') return flag(v) ? 'Yes' : 'No';
+                        if (col.type === 'Rating' && num(v) !== null) return Math.round(num(v)) + ' / ' + (col.max === null || col.max === undefined ? 5 : col.max);
+                        return String(format(col, v));
+                    };
+                    var rows = this.selectedRows().map(function (tr) { return keys.map(function (k) { return text(cfg.columns[k], rowValue(tr, k)); }); });
+                    if (!rows.length || !window.modulusShell || !window.modulusShell.printTable) return;
+                    window.modulusShell.printTable(cfg.title || 'Rows', keys.map(function (k) { return { t: cfg.columns[k].t, right: !!cfg.columns[k].right }; }), rows);
                 },
                 // "Set value": puts one option (or Yes / No) into a column of every selected row.
                 setSelected: function (select) {
@@ -1591,7 +1659,8 @@
                     if (at <= 0) return;
                     var key = choice.slice(0, at), value = choice.slice(at + 1), col = cfg.columns[key];
                     if (!col) return;
-                    this.selectedRows().forEach(function (tr) {
+                    // Read-only and locked rows keep their values.
+                    this.selectedRows().filter(function (tr) { return !tr.hasAttribute('data-m-row-state'); }).forEach(function (tr) {
                         var td = tr.querySelector('td[data-key="' + CSS.escape(key) + '"]');
                         if (col.type === 'Switch') {
                             var sw = tr.querySelector('td[data-key="' + CSS.escape(key) + '"] [role=switch]') || null;
@@ -1706,6 +1775,8 @@
             return {
                 active: '',
                 ball: '',
+                // Declared, so it stays on this component: Alpine sets an undeclared property on the outermost scope.
+                onScroll: null,
                 init: function () {
                     var self = this, frame = 0;
                     var update = function () { frame = 0; self.update(); };
@@ -1786,6 +1857,8 @@
                 fixed: false,
                 style: '',
                 placeholder: '',
+                // Declared, so it stays on this component: Alpine sets an undeclared property on the outermost scope.
+                onScroll: null,
                 init: function () {
                     var self = this, frame = 0;
                     this.onScroll = function () { if (!frame) frame = requestAnimationFrame(function () { frame = 0; self.update(); }); };
@@ -1811,6 +1884,8 @@
         Alpine.data('modulusBackTop', function (visibilityHeight) {
             return {
                 visible: false,
+                // Declared, so it stays on this component: Alpine sets an undeclared property on the outermost scope.
+                onScroll: null,
                 init: function () {
                     var self = this;
                     this.onScroll = function () { self.visible = window.scrollY > visibilityHeight; };
@@ -1899,6 +1974,8 @@
             var pad = function (n) { return (n < 10 ? '0' : '') + n; };
             return {
                 text: '',
+                // Declared, so it stays on this component: Alpine sets an undeclared property on the outermost scope.
+                timer: 0,
                 init: function () {
                     var self = this;
                     this.tick();

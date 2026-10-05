@@ -15,7 +15,8 @@
     </Actions>
 </PageHeading>
 
-<EditableGrid @ref="_grid" Columns="_columns" Rows="_rows" HeaderTitle="Projects" HeaderGroups="ProjectGridStore.HeaderBands" OnSave="Save" OnDiscard="Discard">
+<EditableGrid @ref="_grid" Columns="_columns" Rows="_rows" HeaderTitle="Projects" HeaderGroups="ProjectGridStore.HeaderBands" ValidateRow="ProjectGridStore.CheckRow" OnSave="Save" OnDiscard="Discard"
+              Batch="ProjectGridStore.BatchActions" OnBatch="RunBatch">
     <TitleExtra>
         <span class="m-badge m-badge-gray-lt">@_rows.Count</span>
     </TitleExtra>
@@ -41,7 +42,15 @@
     private void Save()
     {
         Store.Save(_columns, _rows);
+        ProjectGridStore.Mark(_rows); // a project saved as done is closed now
         _ = Message.SuccessAsync("Projects saved.");
+    }
+
+    // Approve and Reject save the new approval straight away; the grid's other edits stay unsaved.
+    private void RunBatch(GridBatchRequest request)
+    {
+        var message = Store.ApplyBatch(request);
+        _ = request.Rows.Count > 0 ? Message.SuccessAsync(message) : Message.WarningAsync(message);
     }
 
     private void Discard() => (_columns, _rows) = Store.Load();
