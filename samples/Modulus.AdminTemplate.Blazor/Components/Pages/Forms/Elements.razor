@@ -21,7 +21,7 @@
                 <FormItem Label="Leading search icon"><Input TValue="string" Prefix="@SearchIcon" Placeholder="Search" /></FormItem>
                 <FormItem Label="Leading user icon"><Input TValue="string" Prefix="@UserIcon" Placeholder="Username" /></FormItem>
                 <FormItem Label="Sizes">
-                    <div>
+                    <div class="m-input-stack">
                         <Input TValue="string" Size="InputSize.Large" Placeholder="Large" />
                         <Input TValue="string" Placeholder="Default" />
                         <Input TValue="string" Size="InputSize.Small" Placeholder="Small" />
@@ -43,7 +43,10 @@
                 <FormItem Label="Appended shortcut hint"><Input TValue="string" Placeholder="Search" AddOnAfter="ShortcutHint" /></FormItem>
                 <FormItem Label="Error state"><Input TValue="string" Value="@("Not a valid value")" Status="error" /></FormItem>
                 <FormItem Label="Warning state"><Input TValue="string" Value="@("Check this value")" Status="warning" /></FormItem>
+                <FormItem Label="Clearable"><Input TValue="string" Value="@("Clear me")" AllowClear="true" /></FormItem>
+                <FormItem Label="Clearable, error"><Input TValue="string" Value="@("Required")" Status="error" AllowClear="true" /></FormItem>
                 <FormItem Label="Textarea"><TextArea @bind-Value="_input.Notes" Rows="4" ShowCount Placeholder="Write a note" /></FormItem>
+                <FormItem Label="Read-only textarea"><TextArea Value="@("Locked for review")" Rows="3" Disabled="true" /></FormItem>
             </div>
         </div>
 
@@ -123,8 +126,11 @@
             <div class="m-card-header"><div><h2 class="m-card-title">File input</h2><p class="m-card-subtitle">One file, or several dropped on the area.</p></div></div>
             <div class="m-card-body">
                 <FormItem Label="Files">
-                    <Upload Name="files" Accept=".pdf,image/*" Multiple="true" Drag="true" BeforeUpload="NoUpload" />
-                    <div class="m-muted">PDF or images up to 10 MB</div>
+                    <Upload Name="files" Accept=".pdf,image/*" Multiple="true" Drag="true" BeforeUpload="NoUpload">
+                        <p class="ant-upload-drag-icon"><Icon Type="inbox" /></p>
+                        <p class="ant-upload-text">Click or drag files to this area to upload</p>
+                        <p class="ant-upload-hint">PDF or images up to 10 MB</p>
+                    </Upload>
                 </FormItem>
             </div>
         </div>
@@ -132,7 +138,7 @@
         <div class="m-card" id="horizontal">
             <div class="m-card-header"><div><h2 class="m-card-title">Horizontal form and footer</h2><p class="m-card-subtitle">Labels beside the fields, and the submit row.</p></div></div>
             <div class="m-card-body">
-                <Form Context="horizontal" Model="_input" Layout="FormLayout.Horizontal">
+                <Form Context="horizontal" Model="_input" Layout="FormLayout.Horizontal" Class="m-form-horizontal">
                 <FormItem Label="Name"><Input TValue="string" Placeholder="Serena Park" /></FormItem>
                 <FormItem Label="Email"><Input TValue="string" Placeholder="you@company.com" /></FormItem>
                 <FormItem Label="Plan"><Select TItemValue="string" TItem="string" DataSource="FormElementsPage.Plans" Placeholder="Choose a plan" /></FormItem>

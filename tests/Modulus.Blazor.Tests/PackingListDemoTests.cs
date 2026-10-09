@@ -99,4 +99,111 @@ public class PackingListDemoTests
         Assert.Equal(walmart.Lines[2].Upc, rows[9][1]);
         Assert.Empty(PackingListDemo.Fill(walmart, "walmart").Errors);
     }
+
+    [Fact]
+    public void AChosenColumnOrder_ReordersTheTableAndKeepsTheHeaderBlock()
+    {
+        var chosen = new[] { "Remarks", "Style", "#", "Color", "Size", "Quantity", "Carton No.", "G.W. (KGS)", "N.W. (KGS)" };
+
+        var rows = PackingListDemo.Fill(Order, "hm", chosen).Rows;
+
+        Assert.Equal("Remarks", rows[6][0]);
+        Assert.Equal("#", rows[6][2]);
+        Assert.Equal("ST-00123", rows[7][1]);
+        Assert.Equal("PACKING LIST", rows[0][0]);
+        Assert.Equal("Buyer:", rows[1][0]);
+    }
+
+    [Fact]
+    public void AnUnknownOrPartialColumnOrder_KeepsTheRestAtTheEnd()
+    {
+        var headings = PackingListDemo.Headings("hm");
+
+        var rows = PackingListDemo.Fill(Order, "hm", ["Size", "Nonsense", "Size"]).Rows;
+
+        Assert.Equal("Size", rows[6][0]);
+        Assert.Equal(headings.Count, rows[6].Count);
+        Assert.Equal("#", rows[6][1]);
+    }
+
+    [Fact]
+    public void TheColumnOrder_ReachesTheDownload()
+    {
+        var excel = PackingListDemo.Download("PO-2025-001", "xlsx", "hm", ["Remarks", "Style"]);
+
+        Assert.NotNull(excel);
+        Assert.NotEmpty(excel!.Value.Bytes);
+    }
+
+
+    private static PackingOrder Custom(params PackingLine[] lines) =>
+        new("PO-T", "Test", new DateTime(2025, 1, 1), new DateTime(2025, 2, 1), "ST-1", "Test", "Red", "SS26", 6, lines, OrderQuantity: 300);
+
+    private static PackingLine Line(string carton, int qty = 100, decimal gross = 10m, decimal net = 9m) =>
+        new("ST-1", "Red", "M", qty, carton, gross, net);
+
+    [Fact]
+    public void TheSamplePurchaseOrders_PassTheChecks_ExceptTheShortOne()
+    {
+        var all = PackingListDemo.Orders.ToDictionary(o => o.Number, o => PackingListDemo.Checks(o));
+
+        Assert.Empty(all["PO-2025-001"]);
+        Assert.Empty(all["PO-2025-007"]);
+        var short12 = Assert.Single(all["PO-2025-004"]);
+        Assert.Equal("warning", short12.Level);
+        Assert.Equal("Shipped 660 of 672 pieces: 12 short.", short12.Message);
+    }
+
+    [Fact]
+    public void ACartonInTwoLines_IsAnError()
+    {
+        var checks = PackingListDemo.Checks(Custom(Line("1-3"), Line("3-4"), Line("5-6")));
+
+        var error = Assert.Single(checks, c => c.Level == "error");
+        Assert.Equal("Line 2: carton 3 is also in another line.", error.Message);
+    }
+
+    [Fact]
+    public void ACartonGap_And_AWrongLastCarton_AreWarnings()
+    {
+        var checks = PackingListDemo.Checks(Custom(Line("1-2"), Line("4-5")));
+
+        Assert.Contains(checks, c => c.Level == "warning" && c.Message == "Carton 3 is not in any line.");
+        Assert.Contains(checks, c => c.Level == "warning" && c.Message == "The carton ranges end at carton 5, but the order has 6 cartons.");
+    }
+
+    [Fact]
+    public void AnUnreadableCartonRange_IsAnError()
+    {
+        var checks = PackingListDemo.Checks(Custom(Line("1-2"), Line("x-3")));
+
+        Assert.Contains(checks, c => c.Level == "error" && c.Message.StartsWith("Line 2: carton no. \"x-3\""));
+    }
+
+    [Fact]
+    public void GrossBelowNet_IsAnError_AndAMissingWeight_IsAWarning()
+    {
+        var checks = PackingListDemo.Checks(Custom(Line("1-3", gross: 8m, net: 9m), Line("4-6", gross: 10m, net: 0m)));
+
+        Assert.Contains(checks, c => c.Level == "error" && c.Message == "Line 1 (M, carton 1-3): gross weight is below net weight.");
+        Assert.Contains(checks, c => c.Level == "warning" && c.Message == "Line 2 (M, carton 4-6): a weight is missing.");
+    }
+
+    [Fact]
+    public void AnOverShipment_IsAWarning()
+    {
+        var checks = PackingListDemo.Checks(Custom(Line("1-3", qty: 200), Line("4-6", qty: 200)));
+
+        Assert.Contains(checks, c => c.Level == "warning" && c.Message == "Shipped 400 of 300 pieces: 100 over.");
+    }
+
+    [Fact]
+    public void TheShippingFields_FillFromTheOrder()
+    {
+        var rows = PackingListDemo.Fill(PackingListDemo.Orders[0], "hm", null).Rows;
+        var fill = PackingListDemo.FillWith(PackingListDemo.Orders[0], new[] { new[] { "{{Invoice.Number}}", "{{Container.Number}}", "{{Terms}}" } });
+
+        Assert.Equal(["INV-2025-0412", "MSKU4821350", "FOB"], fill.Rows[0].Select(c => c?.ToString()).ToArray());
+        Assert.NotEmpty(rows);
+    }
 }

@@ -1050,7 +1050,7 @@ button.ant-segmented-item { padding: 0; border: 0; background: none; font: inher
 .m-section-head > .m-section-title { margin: 0; }
 
 /* ---- Forms pages (/forms/*) ---- */
-.m-form-horizontal .ant-form-item-row { flex-wrap: nowrap; }
+.m-form-horizontal .ant-form-item-row { flex-direction: row; flex-wrap: nowrap; }
 .m-form-horizontal .ant-form-item-label { flex: 0 0 120px; max-width: 120px; padding-right: 12px; text-align: left; white-space: normal; }
 .m-form-horizontal .ant-form-item-label > label { height: 36px; }
 .m-form-horizontal .ant-form-item-label > label::after { content: none; }
@@ -1746,3 +1746,193 @@ html[data-density='compact'] .m-invoice-head { gap: 16px; padding: 16px; margin-
 .m-field-insert { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 0; border: 0; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer; }
 .m-field-insert:hover span { color: #1677ff; }
 .m-field-insert:focus-visible { outline: 2px solid #1677ff; outline-offset: 2px; border-radius: 4px; }
+
+/* The page's own breadcrumb trail, above the pretitle of a page header (CrumbHtml inside m-page-header). */
+.m-page-crumbs { margin-bottom: 6px; }
+.m-page-crumbs .m-crumb a { color: var(--m-primary, #1677ff); }
+.m-page-crumbs .m-crumb-menu li a { color: var(--m-text, #1f2937); }
+
+/* Column order of the packing list preview: a horizontal sortable of the headings, applied with the button beside it. */
+.m-packing-cols { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-bottom: 12px; }
+.m-packing-cols-actions { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+
+/* Packing list templates: a polished page. Summary figures, the column bar above the Excel editor (drag a letter to move its
+   column), the template list with status pills, the preview as a sheet of paper, the output as format cards and a file card. */
+.m-pack-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.m-pack-kpi { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--m-border, #e5e7eb); border-radius: 12px; background: var(--m-bg-container, #fff); box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04); }
+.m-pack-kpi-icon { width: 40px; height: 40px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; background: color-mix(in srgb, #1677ff 12%, transparent); font-size: 18px; }
+.m-pack-kpi > div { display: flex; flex-direction: column; min-width: 0; }
+.m-pack-kpi-label { font-size: 12px; color: var(--m-text-secondary, #6b7280); text-transform: uppercase; letter-spacing: 0.04em; }
+.m-pack-kpi-value { font-size: 22px; font-weight: 700; line-height: 1.2; color: var(--m-text, #111827); font-variant-numeric: tabular-nums; }
+.m-pack-kpi-note { font-size: 12px; color: var(--m-text-secondary, #6b7280); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 991.98px) { .m-pack-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 575.98px) { .m-pack-kpis { grid-template-columns: minmax(0, 1fr); } }
+
+.m-pack-steps-card { margin-bottom: 16px; padding: 14px 16px; border: 1px solid var(--m-border, #e5e7eb); border-radius: 12px; background: var(--m-bg-container, #fff); }
+.m-pack-steps-card .m-steps { gap: 10px; }
+.m-pack-steps-card .m-step { border-radius: 10px; }
+.m-step-num { font-size: 13px; }
+
+.m-pack-colbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; padding: 10px 16px; margin: 0; border-bottom: 1px solid var(--m-border, #e5e7eb); background: var(--m-bg-subtle, #f8fafc); }
+.m-pack-colbar-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--m-text-secondary, #6b7280); }
+.m-pack-colbar .m-sort-list, .m-pack-colbar [data-m-sortable] { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.m-pack-colbar .m-sort-item { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border: 1px solid var(--m-border, #e5e7eb); border-radius: 8px; background: #fff; font-size: 12px; box-shadow: 0 1px 1px rgba(16, 24, 40, 0.04); }
+.m-pack-col-letter { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 5px; background: #1677ff; color: #fff; font-size: 11px; font-weight: 600; }
+.m-pack-col-name { white-space: nowrap; }
+.m-pack-colbar-hint { font-size: 12px; }
+.m-pack-colbar-apply { margin-left: auto; }
+/* The letter follows the chip's place, so a drag re-letters the row (MVC: the chip has no letter of its own). */
+.m-pack-colbar [data-m-sortable] > li:nth-child(1) .m-pack-col-letter::before { content: "A"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(2) .m-pack-col-letter::before { content: "B"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(3) .m-pack-col-letter::before { content: "C"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(4) .m-pack-col-letter::before { content: "D"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(5) .m-pack-col-letter::before { content: "E"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(6) .m-pack-col-letter::before { content: "F"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(7) .m-pack-col-letter::before { content: "G"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(8) .m-pack-col-letter::before { content: "H"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(9) .m-pack-col-letter::before { content: "I"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(10) .m-pack-col-letter::before { content: "J"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(11) .m-pack-col-letter::before { content: "K"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(12) .m-pack-col-letter::before { content: "L"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(13) .m-pack-col-letter::before { content: "M"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(14) .m-pack-col-letter::before { content: "N"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(15) .m-pack-col-letter::before { content: "O"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(16) .m-pack-col-letter::before { content: "P"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(17) .m-pack-col-letter::before { content: "Q"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(18) .m-pack-col-letter::before { content: "R"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(19) .m-pack-col-letter::before { content: "S"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(20) .m-pack-col-letter::before { content: "T"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(21) .m-pack-col-letter::before { content: "U"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(22) .m-pack-col-letter::before { content: "V"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(23) .m-pack-col-letter::before { content: "W"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(24) .m-pack-col-letter::before { content: "X"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(25) .m-pack-col-letter::before { content: "Y"; }
+.m-pack-colbar [data-m-sortable] > li:nth-child(26) .m-pack-col-letter::before { content: "Z"; }
+
+.m-pack-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 12px; padding: 12px 16px; border-top: 1px solid var(--m-border, #e5e7eb); }
+.m-pack-footer-actions { display: flex; gap: 8px; }
+@media (max-width: 575.98px) { .m-pack-footer-actions { width: 100%; } .m-pack-footer-actions > * { flex: 1 1 0; justify-content: center; } }
+
+.m-pack-table-wrap { overflow-x: auto; }
+.m-pack-list tbody tr:hover td { background: color-mix(in srgb, #1677ff 4%, transparent); }
+.m-pack-list td, .m-pack-list th { white-space: nowrap; }
+.m-pack-template-link { font-weight: 600; color: var(--m-text, #111827); }
+.m-pack-template-link:hover { color: #1677ff; }
+.m-pack-version { font-variant-numeric: tabular-nums; color: var(--m-text-secondary, #6b7280); }
+.m-pack-status { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; background: #f3f4f6; color: #4b5563; }
+.m-pack-status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.m-pack-status-active { background: #f6ffed; color: #389e0d; box-shadow: inset 0 0 0 1px #b7eb8f; }
+.m-pack-status-draft { background: #fffbe6; color: #ad6800; box-shadow: inset 0 0 0 1px #ffe58f; }
+.m-pack-actions, .m-pack-actions-head { text-align: right; }
+.m-pack-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; color: var(--m-text-secondary, #6b7280); text-decoration: none; }
+.m-pack-icon-btn:hover { background: #f3f4f6; color: #1677ff; }
+.m-pack-icon-btn:focus-visible { outline: 2px solid #1677ff; outline-offset: 1px; }
+.m-pack-empty { text-align: center; color: var(--m-text-secondary, #6b7280); padding: 24px 0; }
+
+.m-pack-paper { padding: 16px 18px; border: 1px solid var(--m-border, #e5e7eb); border-radius: 10px; background: #fff; box-shadow: 0 2px 8px rgba(16, 24, 40, 0.06); overflow-x: auto; margin-bottom: 12px; color: #111827; }
+.m-pack-paper-compact { box-shadow: none; }
+.m-pack-paper-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 2px solid #1677ff; }
+.m-pack-paper-title { font-size: 15px; font-weight: 700; letter-spacing: 0.06em; color: #1677ff; }
+.m-pack-paper-date { font-size: 12px; color: #4b5563; }
+.m-pack-grid { font-size: 12px; margin-bottom: 10px; }
+.m-pack-grid td { padding: 4px 6px; border-bottom: 1px solid #f0f0f0; }
+.m-pack-items thead th { background: #f0f5ff; color: #1d39c4; font-weight: 600; border-bottom: 1px solid #adc6ff; }
+.m-pack-items tbody tr:nth-child(even) td { background: #fafbfc; }
+.m-pack-items td:nth-child(n+5) { font-variant-numeric: tabular-nums; }
+.m-pack-total td { font-weight: 700; border-top: 2px solid #111827; border-bottom: 0; }
+.m-pack-ok { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 8px; background: #f6ffed; color: #389e0d; font-size: 13px; box-shadow: inset 0 0 0 1px #b7eb8f; }
+
+.m-pack-generate .m-form-item { margin-bottom: 14px; }
+.m-pack-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+@media (max-width: 575.98px) { .m-pack-pair { grid-template-columns: minmax(0, 1fr); } }
+.m-pack-formats { border: 0; padding: 0; margin: 0 0 16px; min-width: 0; }
+.m-pack-formats legend { font-weight: 600; font-size: 13px; margin-bottom: 8px; padding: 0; }
+.m-pack-format { position: relative; display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 8px; border: 1px solid var(--m-border, #d9d9d9); border-radius: 10px; cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.m-pack-format:hover { border-color: #91caff; }
+.m-pack-format:has(input:checked) { border-color: #1677ff; background: color-mix(in srgb, #1677ff 6%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, #1677ff 14%, transparent); }
+.m-pack-format input { position: absolute; opacity: 0; pointer-events: none; }
+.m-pack-format:has(input:focus-visible) { outline: 2px solid #1677ff; outline-offset: 2px; }
+.m-pack-format-badge { width: 44px; height: 44px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; }
+.m-pack-format-xls { background: #389e0d; }
+.m-pack-format-pdf { background: #cf1322; }
+.m-pack-format-text { display: flex; flex-direction: column; min-width: 0; }
+.m-pack-format-text small { color: var(--m-text-secondary, #6b7280); }
+.m-pack-note { font-size: 12px; margin: 10px 0 0; }
+
+.m-pack-file { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 14px; margin-bottom: 12px; border: 1px solid var(--m-border, #e5e7eb); border-radius: 10px; background: var(--m-bg-subtle, #f8fafc); }
+.m-pack-file-icon { width: 44px; height: 44px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; background: #389e0d; color: #fff; font-size: 11px; font-weight: 700; }
+.m-pack-file-text { display: flex; flex-direction: column; flex: 1 1 180px; min-width: 0; }
+.m-pack-file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-pack-fields-help { font-size: 12px; color: var(--m-text-secondary, #6b7280); margin: -4px 0 10px; }
+
+/* ERP document chrome (packing list): an object header with the template's key fields, an action toolbar, and a status bar. */
+.m-pack-toolbar { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: space-between; gap: 12px 16px; margin: 0 0 16px; padding: 10px 14px; border: 1px solid var(--m-border, #e5e7eb); border-radius: 10px; background: var(--m-bg-elevated, #fff); box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05); }
+.m-pack-objhead { display: flex; flex-wrap: wrap; gap: 4px 0; min-width: 0; }
+.m-pack-obj { display: flex; flex-direction: column; gap: 2px; padding: 2px 18px 2px 0; margin-right: 18px; border-right: 1px solid var(--m-border, #e5e7eb); }
+.m-pack-obj:last-child { border-right: 0; }
+.m-pack-obj-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--m-text-secondary, #6b7280); }
+.m-pack-obj-value { font-size: 14px; font-weight: 600; color: var(--m-text, #111827); font-variant-numeric: tabular-nums; }
+.m-pack-toolbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.m-pack-statusbar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; margin-top: 16px; padding: 8px 14px; border: 1px solid var(--m-border, #e5e7eb); border-radius: 8px; background: var(--m-bg-subtle, #f8fafc); font-size: 12px; color: var(--m-text-secondary, #6b7280); }
+.m-pack-statusbar > span { display: inline-flex; align-items: center; gap: 6px; }
+.m-pack-statusbar-end { margin-left: auto; }
+.m-pack-status-dot { width: 8px; height: 8px; border-radius: 50%; background: #16a34a; }
+@media (max-width: 767.98px) {
+    .m-pack-toolbar-actions { margin-left: 0; width: 100%; }
+    .m-pack-toolbar-actions .ant-btn { flex: 1 1 0; }
+    .m-pack-obj { margin-right: 12px; padding-right: 12px; }
+    .m-pack-statusbar-end { margin-left: 0; }
+}
+
+/* Checks on a packing list (carton ranges, quantity, weights): errors block the list, warnings are shown. */
+.m-pack-checks { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.m-pack-check { display: flex; gap: 10px; align-items: baseline; padding: 8px 12px; border-radius: 8px; font-size: 13px; line-height: 1.45; }
+.m-pack-check-error { background: #fff1f0; color: #a8071a; box-shadow: inset 0 0 0 1px #ffa39e; }
+.m-pack-check-warning { background: #fffbe6; color: #ad6800; box-shadow: inset 0 0 0 1px #ffe58f; }
+.m-pack-check-level { flex: 0 0 auto; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.m-pack-colbar .m-sort-item:focus-visible, .m-pack-colbar [data-m-sort-handle]:focus-visible { outline: 2px solid var(--m-primary, #1677ff); outline-offset: 2px; }
+
+/* Letterhead of the packing list paper: the company (logo, name, address, contact), the buyer, and the date. */
+.m-pack-paper-head { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px 24px; align-items: start; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 2px solid var(--m-text, #111827); }
+.m-pack-letterhead { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
+.m-pack-logo { flex: 0 0 auto; display: inline-flex; line-height: 0; }
+.m-pack-letterhead-text { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--m-text-secondary, #6b7280); min-width: 0; }
+.m-pack-letterhead-name { font-size: 15px; color: var(--m-text, #111827); }
+.m-pack-consignee { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--m-text-secondary, #6b7280); }
+.m-pack-consignee strong { color: var(--m-text, #111827); font-size: 13px; }
+.m-pack-consignee-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.m-pack-paper-head .m-pack-paper-date { grid-column: 1 / -1; text-align: right; }
+@media (max-width: 767.98px) {
+    .m-pack-paper-head { grid-template-columns: 1fr; }
+    .m-pack-paper-head .m-pack-paper-date { text-align: left; }
+}
+.m-pack-paper { overflow-x: auto; }
+.m-pack-paper > .m-packing-table, .m-pack-paper > table { width: 100%; }
+.m-pack-paper > .m-packing-table td, .m-pack-paper > table td { white-space: nowrap; }
+.m-pack-paper > .m-packing-table .m-pack-letterhead-text span, .m-pack-paper-head td { white-space: normal; }
+.m-pack-paper > table tbody tr:nth-child(-n+5) td { white-space: normal; }
+
+/* The packing list workspace: the Excel sheet beside the Insert ERP field panel (stacked below 992 px). */
+.m-pack-workspace { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; padding: 16px; }
+.m-pack-workspace > .m-packing-sheet { min-width: 0; }
+.m-pack-insert { border: 1px solid var(--m-border, #e5e7eb); border-radius: 8px; background: var(--m-bg-elevated, #fff); overflow: hidden; }
+.m-pack-insert-head { padding: 12px 14px; border-bottom: 1px solid var(--m-border, #e5e7eb); }
+.m-pack-insert-title { margin: 0; font-size: 14px; font-weight: 600; color: var(--m-text, #111827); }
+.m-pack-insert-help { margin: 4px 0 0; font-size: 12px; line-height: 1.5; color: var(--m-text-secondary, #6b7280); }
+.m-pack-insert .ant-collapse { border: 0; border-radius: 0; background: transparent; }
+.m-pack-insert-fields { display: flex; flex-direction: column; gap: 6px; }
+.m-pack-insert-fields .ant-btn { justify-content: flex-start; text-align: left; height: auto; min-height: 32px; white-space: normal; }
+@media (max-width: 991.98px) {
+    .m-pack-workspace { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Form elements page: inputs of several sizes stacked with a gap; a multiple select is a list box that shows its options. */
+.m-input-stack { display: flex; flex-direction: column; gap: 8px; }
+html select.m-select.m-select-multi { -webkit-appearance: auto; appearance: auto; height: auto; min-height: 32px; padding: 4px; background: var(--m-bg-container); background-image: none; overflow-y: auto; }
+select.m-select.m-select-multi option { padding: 5px 10px; border-radius: 6px; line-height: 1.5; }
+select.m-select.m-select-multi option:checked { background: color-mix(in srgb, var(--m-primary, #1677ff) 14%, transparent); color: var(--m-primary, #1677ff); font-weight: 500; }
+/* The file card fills its column, so its drop area is not left short above empty space. */
+#files .m-card-body { display: flex; flex-direction: column; flex: 1 1 auto; }
+#files .m-card-body > .ant-form-item, #files .m-card-body .ant-form-item-row, #files .m-card-body .ant-form-item-control, #files .m-uploader { flex: 1 1 auto; display: flex; flex-direction: column; }
+#files .m-uploader-host, #files .m-uploader, #files .ant-upload-wrapper, #files .ant-upload-btn, #files .ant-upload.ant-upload-drag { flex: 1 1 auto; min-height: 300px; height: 100%; }
+#files .ant-upload-drag-container { min-height: 260px; display: flex; flex-direction: column; justify-content: center; }

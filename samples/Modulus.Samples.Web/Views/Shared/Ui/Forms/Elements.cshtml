@@ -24,7 +24,7 @@
                 <app-form-item label="Leading search icon"><app-input name="search-icon" prefix-icon="search" placeholder="Search" /></app-form-item>
                 <app-form-item label="Leading user icon"><app-input name="user-icon" prefix-icon="user" placeholder="Username" /></app-form-item>
                 <app-form-item label="Sizes">
-                    <div>
+                    <div class="m-input-stack">
                         <app-input name="size-large" size="large" placeholder="Large" />
                         <app-input name="size-default" placeholder="Default" />
                         <app-input name="size-small" size="small" placeholder="Small" />
@@ -46,7 +46,10 @@
                 <app-form-item label="Appended shortcut hint"><app-input name="search-hint" addon-after-html="<kbd>Ctrl K</kbd>" placeholder="Search" /></app-form-item>
                 <app-form-item label="Error state"><app-input name="error-state" status="error" value="Not a valid value" /></app-form-item>
                 <app-form-item label="Warning state"><app-input name="warning-state" status="warning" value="Check this value" /></app-form-item>
+                <app-form-item label="Clearable"><app-input name="clearable" allow-clear value="Clear me" /></app-form-item>
+                <app-form-item label="Clearable, error"><app-input name="clearable-error" allow-clear status="error" value="Required" /></app-form-item>
                 <app-form-item label="Textarea"><app-textarea asp-for="Input.Notes" rows="4" show-count placeholder="Write a note" /></app-form-item>
+                <app-form-item label="Read-only textarea"><app-textarea name="locked-note" value="Locked for review" rows="3" disabled /></app-form-item>
             </div>
         </div>
 
@@ -90,7 +93,7 @@
                 <app-form-item label="Range slider"><app-slider asp-for="Input.Volume" show-value /></app-form-item>
                 <app-form-item label="Date"><app-date-picker asp-for="Input.Starts" /></app-form-item>
                 <app-form-item label="Date and time"><app-date-picker asp-for="Input.Reminder" show-time /></app-form-item>
-                <app-form-item label="Time"><input class="ant-input" type="time" name="time" value="09:30" /></app-form-item>
+                <app-form-item label="Time"><app-date-picker name="time" picker="time" value="09:30" /></app-form-item>
                 <app-form-item label="Colour"><app-color-picker asp-for="Input.Color" /></app-form-item>
             </div>
         </div>

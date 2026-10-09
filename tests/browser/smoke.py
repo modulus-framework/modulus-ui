@@ -99,6 +99,7 @@ def spa(base, name):
         page = browser.new_page(viewport={"width": 1280, "height": 900})
         page.goto(base + "/", wait_until="networkidle")
         page.evaluate("() => { window.__marker = 'same-document'; }")
+        page.mouse.move(0, 0)  # a chart tooltip left under the pointer by the page load would cover the link
         page.locator("a[href='/pages/faq']:visible").first.click()
         page.wait_for_url("**/pages/faq", timeout=15000)
         if page.evaluate("() => window.__marker") != "same-document":

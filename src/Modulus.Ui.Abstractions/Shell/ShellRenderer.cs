@@ -555,11 +555,36 @@ public static class ShellRenderer
         var app = FindApp(view);
         if (app is not var (shellApp, menu) || Breadcrumb(menu, view.Path) is not { Count: > 0 } trail) return "";
         // The app first, then the sections and the page; the page is the current level and is not a link.
-        var crumbs = new List<Crumb> { new(shellApp.Name, Url(shellApp.Href), shellApp.Icon) };
-        crumbs.AddRange(trail.Select((item, i) => new Crumb(item.Label,
-            i == trail.Count - 1 || item.Href is null ? null : Url(item.Href), item.Icon)));
+        // Each level opens its related pages: the app level lists the other apps, a section or page lists its siblings under
+        // the same parent (the app's menu for the first level), with the page on screen marked.
+        var otherApps = (view.Content.Apps ?? []).Where(a => a != shellApp)
+            .Select(a => new Crumb(a.Name, Url(a.Href), a.Icon)).ToList();
+        var crumbs = new List<Crumb> { new(shellApp.Name, Url(shellApp.Href), shellApp.Icon, otherApps, RelatedTitle: "Apps") };
+        for (var i = 0; i < trail.Count; i++)
+        {
+            var item = trail[i];
+            var parent = i == 0 ? menu : trail[i - 1];
+            // A group opens its first page; the group that holds the page on screen is the selected one.
+            var siblings = parent.Children.Select(c => new Crumb(c.Label, FirstPage(c) is { } href ? Url(href) : null, c.Icon,
+                Selected: ReferenceEquals(c, item) || Holds(c, item))).ToList();
+            crumbs.Add(new Crumb(item.Label, i == trail.Count - 1 || item.Href is null ? null : Url(item.Href), item.Icon,
+                siblings, RelatedTitle: parent.Label));
+        }
         return CrumbHtml.Trail(crumbs);
     }
+
+    // The page an item leads to: its own link, or the first link under it (a group has none of its own).
+    private static string? FirstPage(MenuItemDefinition item)
+    {
+        if (item.Href is not null) return item.Href;
+        foreach (var child in item.Children)
+            if (FirstPage(child) is { } href) return href;
+        return null;
+    }
+
+    // Whether the item holds the given one anywhere below it.
+    private static bool Holds(MenuItemDefinition item, MenuItemDefinition target) =>
+        item.Children.Any(c => ReferenceEquals(c, target) || Holds(c, target));
 
     // The app's name opens a list of every app to jump to (SAP's product switch), and the full launcher.
     private static void ModuleSwitcher(StringBuilder sb, ShellView view, ShellApp current)

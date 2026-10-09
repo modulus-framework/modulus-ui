@@ -60,3 +60,41 @@ public class CrumbTagHelperTests
         await helper.ProcessAsync(new TagHelperContext("app-crumb", [], shared, "c"), output);
     }
 }
+
+public class PageHeaderCrumbTests
+{
+    [Fact]
+    public async Task ACrumbInsideThePageHeader_IsTheTrailAboveTheTitle()
+    {
+        var shared = new Dictionary<object, object>();
+        var header = new PageHeaderTagHelper { Title = "Form layouts", Pretitle = "Forms" };
+        var output = new TagHelperOutput("app-page-header", [], async (_, _) =>
+        {
+            await new CrumbTagHelper { Href = "/forms" }.ProcessAsync(new TagHelperContext("app-crumb", [], shared, "c1"), Child("Forms"));
+            await new CrumbTagHelper().ProcessAsync(new TagHelperContext("app-crumb", [], shared, "c2"), Child("Form layouts"));
+            return new DefaultTagHelperContent();
+        });
+        await header.ProcessAsync(new TagHelperContext("app-page-header", [], shared, "p"), output);
+        using var writer = new StringWriter();
+        output.WriteTo(writer, HtmlEncoder.Default);
+        var html = writer.ToString();
+
+        Assert.StartsWith("<div class=\"m-page-header\"><div class=\"m-page-crumbs\"><nav class=\"m-crumbs\"", html);
+        Assert.True(html.IndexOf("m-page-crumbs", StringComparison.Ordinal) < html.IndexOf("m-page-title", StringComparison.Ordinal));
+        Assert.Contains("<a href=\"/forms\">", html);
+    }
+
+    [Fact]
+    public async Task AHeaderWithoutCrumbs_HasNoTrail()
+    {
+        var output = new TagHelperOutput("app-page-header", [], (_, _) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent()));
+        await new PageHeaderTagHelper { Title = "Dashboard" }.ProcessAsync(new TagHelperContext("app-page-header", [], new Dictionary<object, object>(), "p"), output);
+        using var writer = new StringWriter();
+        output.WriteTo(writer, HtmlEncoder.Default);
+
+        Assert.DoesNotContain("m-page-crumbs", writer.ToString());
+    }
+
+    private static TagHelperOutput Child(string text) =>
+        new("app-crumb", [], (_, _) => Task.FromResult<TagHelperContent>(new DefaultTagHelperContent().SetHtmlContent(text)));
+}

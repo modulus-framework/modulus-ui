@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Razor.TagHelpers;
+using Modulus.Ui.Abstractions.Navigation;
 using Modulus.Ui.Abstractions.Charts;
 using Modulus.Ui.Abstractions.Shell;
 
@@ -41,11 +42,16 @@ public class PageHeaderTagHelper : TagHelper
 
     public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
     {
+        // The app-crumb children (the page's breadcrumb trail) register here while the content runs.
+        var crumbs = new ItemList<Crumb>();
+        context.Items[typeof(PageHeaderTagHelper)] = crumbs;
         var actions = (await output.GetChildContentAsync()).GetContent();
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;
         output.AddClasses("m-page-header");
+        var trail = crumbs.Count == 0 ? "" : $"""<div class="m-page-crumbs">{CrumbHtml.Trail(crumbs)}</div>""";
         output.Content.SetHtmlContent(
+            trail +
             """<div class="m-page-header-text">""" +
             (Pretitle is null ? "" : $"""<div class="m-pretitle">{Html.E(Pretitle)}</div>""") +
             $"""<h1 class="m-page-title">{Html.E(Title)} {TitleExtraHtml}</h1>""" +

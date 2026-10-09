@@ -1995,11 +1995,43 @@
         if (window.modulusShell && window.modulusShell.signature) window.modulusShell.signature(root);
     });
 
+    // Keeps a page's state while the user is away: a page marked data-m-keep-state (its query string holds the filters, the
+    // chosen order and the template) remembers its query for this tab. A link to that page with no query then opens it with the
+    // remembered one, so going to another page and back returns to where the user was. sessionStorage: it lasts for the tab,
+    // not longer, and a blocked store only turns the feature off.
+    var KEEP_PREFIX = 'm-keep:';
+
+    // A page that opened with no query (a menu link that the click did not restore) takes its remembered one: a replace to the
+    // same page with that query, which the server answers with the page's state.
+    function keepState() {
+        if (!document.querySelector('[data-m-keep-state]')) return;
+        try {
+            if (location.search) { sessionStorage.setItem(KEEP_PREFIX + location.pathname, location.search); return; }
+            var kept = sessionStorage.getItem(KEEP_PREFIX + location.pathname);
+            if (kept) location.replace(location.pathname + kept + location.hash);
+        } catch (e) { /* storage blocked */ }
+    }
+
+    // The link's address takes the remembered query. On window and before the pointer rests on it, because the SPA fetches a
+    // resting link ahead of the click (data-m-prefetch) and reads its address then.
+    function restoreLink(e) {
+        var link = e.target instanceof Element ? e.target.closest('a[href]') : null;
+        if (!link || link.hasAttribute('data-m-keep-state-off') || link.target || e.metaKey || e.ctrlKey || e.shiftKey || (e.type === 'click' && e.button)) return;
+        var url;
+        try { url = new URL(link.getAttribute('href'), location.href); } catch (err) { return; }
+        if (url.origin !== location.origin || url.search) return;
+        var kept = null;
+        try { kept = sessionStorage.getItem(KEEP_PREFIX + url.pathname); } catch (err) { return; }
+        if (kept) link.setAttribute('href', url.pathname + kept + url.hash);
+    }
+    ['pointerover', 'focusin', 'touchstart', 'click'].forEach(function (type) { window.addEventListener(type, restoreLink, true); });
+
     function scan() {
         // The registry: every widget whose root appeared (and has not marked itself ready yet).
         registry.forEach(function (w) {
             document.querySelectorAll(w.selector + ':not([data-m-ready])').forEach(function (el) { w.init(el); });
         });
+        keepState();
         // Stateless widgets: the player syncs once, the sortable lists their empty state every pass.
         document.querySelectorAll('[data-m-player]').forEach(function (p) { if (!p._mSynced) { p._mSynced = true; syncPlayer(p); } });
         document.querySelectorAll('[data-m-sortable]').forEach(syncEmpty);

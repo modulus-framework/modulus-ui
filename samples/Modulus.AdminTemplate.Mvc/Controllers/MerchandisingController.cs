@@ -8,10 +8,10 @@ namespace Modulus.AdminTemplate.Mvc.Controllers;
 public class MerchandisingController : SampleController
 {
     [HttpGet("packing-lists")]
-    public IActionResult PackingLists(string? q, string? buyer, string? status, string? po, string? template, string? format) =>
-        Page("Packing list templates", "Merchandising/PackingLists", PackingListPage.Load(q, buyer, status, po, template, format));
+    public IActionResult PackingLists(string? q, string? buyer, string? status, string? po, string? template, string? format, string[]? cols) =>
+        Page("Packing list templates", "Merchandising/PackingLists", PackingListPage.Load(q, buyer, status, po, template, format, cols));
 
     [HttpGet("packing-lists/download")]
-    public IActionResult Download(string? po, string? format, string? template) =>
-        PackingListDemo.Download(po, format, template) is var (bytes, type, name) ? File(bytes, type, name) : NotFound();
+    public IActionResult Download(string? po, string? format, string? template, string[]? cols) =>
+        PackingListDemo.Download(po, format, template, cols) is var (bytes, type, name) ? File(bytes, type, name) : NotFound();
 }

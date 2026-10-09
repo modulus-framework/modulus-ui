@@ -89,8 +89,14 @@ public class SelectTagHelper : TagHelper
         output.TagMode = TagMode.StartTagAndEndTag;
         output.Attributes.SetAttribute("name", name);
         output.Attributes.SetAttribute("id", TagBuilder.CreateSanitizedId(name, "_"));
-        if (Multiple) output.Attributes.SetAttribute("multiple", "multiple");
         output.AddClasses("m-select");
+        if (Multiple)
+        {
+            // A list box: as many rows as its options up to five, so every chosen option shows (a one-line box hid them).
+            output.Attributes.SetAttribute("multiple", "multiple");
+            output.Attributes.SetAttribute("size", Math.Clamp(Items.Count(), 3, 5).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            output.AddClasses("m-select-multi");
+        }
 
         var html = new System.Text.StringBuilder();
         if (Placeholder is not null && !Multiple) html.Append($"""<option value="">{Html.E(Placeholder)}</option>""");

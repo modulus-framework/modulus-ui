@@ -125,8 +125,8 @@ app.MapGet(PivotTablePage.DownloadPath, (HttpRequest request) =>
 });
 
 // CSV export for the data table page (/tables/advanced); MVC and Razor Pages serve the same URL.
-app.MapGet(PackingListDemo.DownloadUrl, (string? po, string? format, string? template) =>
-    PackingListDemo.Download(po, format, template) is var (bytes, type, name) ? Results.File(bytes, type, name) : Results.NotFound());
+app.MapGet(PackingListDemo.DownloadUrl, (string? po, string? format, string? template, string[]? cols) =>
+    PackingListDemo.Download(po, format, template, cols) is var (bytes, type, name) ? Results.File(bytes, type, name) : Results.NotFound());
 app.MapGet("/tables/advanced/export", (HttpRequest request) =>
 {
     var q = request.Query;

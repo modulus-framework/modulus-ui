@@ -65,6 +65,15 @@
 
     // Dropdowns -----------------------------------------------------------------------
 
+    // A breadcrumb's related-pages panel opens from its left edge. When that runs past the window's right edge,
+    // it is anchored to the right edge instead, so it stays on screen wherever the level sits in the trail.
+    function placeCrumbPanel(d) {
+        var panel = d.querySelector(':scope > .m-crumb-panel');
+        if (!panel) return;
+        d.classList.remove('m-crumb-flip');
+        if (panel.getBoundingClientRect().right > window.innerWidth - 8) d.classList.add('m-crumb-flip');
+    }
+
     document.addEventListener('toggle', function (e) {
         var d = e.target;
         if (d.open && d.matches && d.matches('details.m-dropdown, details[data-m-dropdown]')) {
@@ -72,6 +81,7 @@
             // A panel inside a scrolling box (a pivot header in its table) floats out of it.
             if (d.querySelector(':scope > .m-dropdown-panel')) placeDropdown(d);
         }
+        if (d.matches && d.matches('details.m-crumb-switch')) placeCrumbPanel(d);
         // A pivot header's cell rises above the other sticky cells while its menu is open (CSS :has() does the same).
         if (d.matches && d.matches('details.m-pivot-groupby')) {
             var cell = d.closest('th');

@@ -1,60 +1,109 @@
 @model PackingListPage
-@using Modulus.Samples.Shared
 @* The packing list templates: upload a buyer's Excel layout, map ERP fields in the Excel editor, check the template on sample
-   data, then generate a packing list for a purchase order as Excel or PDF. The filters and the generate form are GET forms, so
-   the page works without script. The Blazor sample renders the same page. *@
+   data, then generate a packing list for a purchase order as Excel or PDF. Columns are reordered by dragging their letters
+   above the editor; the filters, the column order and the generate form are GET forms, so the page works without script.
+   The Blazor sample renders the same page (its column order is dragged in place). *@
 @{
     var order = Model.Order;
     var fill = Model.Fill;
     var download = PackingListDemo.DownloadUrl;
-    var template = Model.Templates.FirstOrDefault(t => t.Key == Model.Template);
+    var template = PackingListDemo.Templates.First(t => t.Key == Model.Template);
+    var units = order.Lines.Sum(l => l.Quantity);
+    var activeTemplates = PackingListDemo.Templates.Count(t => t.Status == "Active");
+    var fileName = $"Packing_List_{order.Buyer.Replace("&", "")}_{order.Number}.xlsx";
 }
 <app-page-header pretitle="Merchandising" title="Create Packing List Template" subtitle="Upload the buyer's Excel format, map ERP fields in the Excel editor, check it on sample data, then generate packing lists for a PO."></app-page-header>
 
-<div class="m-card m-packing-steps-card">
-    <div class="m-card-body">
-        <ol class="m-steps" aria-label="Template steps">
-            <li class="m-step m-step-done"><span class="m-step-num">1</span><div><div class="m-step-title">Upload Excel Template</div><div class="m-step-text">H&amp;M_Packing_List_Template.xlsx (3.2 MB) &middot; Uploaded</div></div></li>
-            <li class="m-step m-step-active" aria-current="step"><span class="m-step-num">2</span><div><div class="m-step-title">Edit Template (Excel Editor)</div><div class="m-step-text">Insert ERP fields and configure the template.</div></div></li>
-            <li class="m-step"><span class="m-step-num">3</span><div><div class="m-step-title">Preview &amp; Test</div><div class="m-step-text">Validate with real PO data.</div></div></li>
-            <li class="m-step"><span class="m-step-num">4</span><div><div class="m-step-title">Save Template</div><div class="m-step-text">Make it available for use.</div></div></li>
-        </ol>
+<div class="m-pack-toolbar" role="toolbar" aria-label="Template actions">
+    <div class="m-pack-objhead" aria-label="Template header">
+        <div class="m-pack-obj"><span class="m-pack-obj-label">Template</span><span class="m-pack-obj-value">@template.Key</span></div>
+        <div class="m-pack-obj"><span class="m-pack-obj-label">Buyer</span><span class="m-pack-obj-value">@template.Buyer</span></div>
+        <div class="m-pack-obj"><span class="m-pack-obj-label">Version</span><span class="m-pack-obj-value">@template.Version</span></div>
+        <div class="m-pack-obj"><span class="m-pack-obj-label">Order</span><span class="m-pack-obj-value">@order.Number</span></div>
+        <div class="m-pack-obj"><span class="m-pack-obj-label">Status</span><span class="m-pack-status m-pack-status-@(template.Status == "Active" ? "active" : "draft")">@template.Status</span></div>
+    </div>
+    <div class="m-pack-toolbar-actions">
+        <button type="button" class="ant-btn ant-btn-default" disabled title="Saving a template needs storage"><span>Save</span></button>
+        <a class="ant-btn ant-btn-default" href="#preview"><span>Preview</span></a>
+        <a class="ant-btn ant-btn-primary" href="#generate"><span>Generate</span></a>
     </div>
 </div>
 
-<div class="m-card m-packing-editor-card">
-    <div class="m-card-header"><div><h2 class="m-card-title">Excel editor</h2><p class="m-card-subtitle">The template sheet. A row with <code>{{Items[]...}}</code> repeats once per order line.</p></div></div>
-    <div class="m-packing-editor">
+<div class="m-row-cards m-cols-4 m-pack-kpis" aria-label="Summary">
+    <app-statistic-card title="Templates" value="@PackingListDemo.Templates.Length.ToString()"><stat-footer>@activeTemplates active</stat-footer></app-statistic-card>
+    <app-statistic-card title="Purchase orders" value="@Model.Orders.Count.ToString()"><stat-footer>ready to pack</stat-footer></app-statistic-card>
+    <app-statistic-card title="@("Lines in " + order.Number)" value="@order.Lines.Count.ToString()"><stat-footer>@order.Cartons cartons</stat-footer></app-statistic-card>
+    <app-statistic-card title="Units" value="@units.ToString("N0")"><stat-footer>@order.Buyer</stat-footer></app-statistic-card>
+</div>
+
+<div class="m-card m-pack-steps-card">
+    <app-steps current="1">
+        <app-step title="Upload Excel template" description="H&amp;M_Packing_List_Template.xlsx (3.2 MB) &middot; Uploaded" />
+        <app-step title="Edit template" description="Insert ERP fields and arrange the columns." />
+        <app-step title="Preview and test" description="Validate with real PO data." />
+        <app-step title="Save template" description="Make it available for use." />
+    </app-steps>
+</div>
+
+<div class="m-card m-pack-editor-card" id="packing-template-card">
+    <div class="m-card-header"><div><h2 class="m-card-title">Excel editor</h2><p class="m-card-subtitle">@template.Name &middot; a row with <code>{{Items[]...}}</code> repeats once per order line.</p></div></div>
+    <!--cols-->
+    <form method="get" action="/merchandising/packing-lists" class="m-pack-colbar" id="packing-columns">
+        <input type="hidden" name="template" value="@Model.Template" />
+        <input type="hidden" name="po" value="@order.Number" />
+        <input type="hidden" name="format" value="@Model.Format" />
+        <input type="hidden" name="q" value="@Model.Query" />
+        <input type="hidden" name="buyer" value="@Model.Buyer" />
+        <input type="hidden" name="status" value="@Model.Status" />
+        <div class="m-pack-colbar-label" id="column-order-label">Columns</div>
+        <app-sortable name="cols" input="cols" layout="Horizontal" title="Column order">
+            @foreach (var column in Model.Columns)
+            {
+                <app-sortable-item item-id="@column" label="@column"><span class="m-pack-col-letter"></span><span class="m-pack-col-name">@column</span></app-sortable-item>
+            }
+        </app-sortable>
+        <button type="submit" class="ant-btn ant-btn-default m-pack-colbar-apply"><span>Apply order</span></button>
+        <a class="ant-btn ant-btn-text" href="/merchandising/packing-lists?po=@order.Number&amp;template=@Model.Template&amp;format=@Model.Format"><span>Reset order</span></a>
+    </form>
+    <!--/cols-->
+    <div class="m-pack-workspace">
         <div class="m-packing-sheet">
             <app-spreadsheet id="packing-template" name="PackingList" sheets="@Model.TemplateSheet" height="420px" />
         </div>
-        <aside class="m-packing-fields" aria-label="Insert ERP Field">
-            <h3 class="m-packing-fields-title">Insert ERP Field</h3>
-            @foreach (var group in PackingListDemo.FieldGroups)
-            {
-                <div class="m-field-group">
-                    <div class="m-field-group-title">@group.Title</div>
-                    <ul class="m-field-list">
-                        @foreach (var field in group.Fields)
-                        {
-                            <li><button type="button" class="m-field-insert" data-m-sheet-insert="{{@field.Token}}" data-m-sheet-insert-target="#packing-template"><span>@field.Label</span><code>{{@field.Token}}</code></button></li>
-                        }
-                    </ul>
-                </div>
-            }
+        <aside class="m-pack-insert" aria-labelledby="insert-title">
+            <div class="m-pack-insert-head">
+                <h3 class="m-pack-insert-title" id="insert-title">Insert ERP field</h3>
+                <p class="m-pack-insert-help">Select a cell in the sheet, then choose a field to insert its token.</p>
+            </div>
+            <app-collapse accordion active="@PackingListDemo.FieldGroups[0].Title">
+                @foreach (var group in PackingListDemo.FieldGroups)
+                {
+                    <app-panel key="@group.Title" header="@group.Title">
+                        <div class="m-pack-insert-fields">
+                            @foreach (var field in group.Fields)
+                            {
+                                <app-button block type="default" title="{{@field.Token}}" data-m-sheet-insert="{{@field.Token}}" data-m-sheet-insert-target="#packing-template">@field.Label</app-button>
+                            }
+                        </div>
+                    </app-panel>
+                }
+            </app-collapse>
         </aside>
     </div>
-    <div class="m-card-body m-packing-footer">
-        <a class="ant-btn ant-btn-default" href="@Url.Content("~/merchandising/packing-lists")"><span>Cancel</span></a>
-        <button type="button" class="ant-btn ant-btn-default" disabled>Save</button>
-        <a class="ant-btn ant-btn-primary" href="#preview"><span>Next</span></a>
+    <div class="m-pack-footer">
+        <span class="m-muted">Unsaved changes stay in the editor.</span>
+        <div class="m-pack-footer-actions">
+            <app-button href="/merchandising/packing-lists">Cancel</app-button>
+            <app-button disabled title="Saving a template needs storage">Save</app-button>
+            <app-button type="primary" href="#preview">Next</app-button>
+        </div>
     </div>
 </div>
 
-<div class="m-row-cards m-cols-2 m-packing-results">
-    <div class="m-card" id="template-list">
-        <div class="m-card-header"><div><h2 class="m-card-title">Packing List Templates</h2><p class="m-card-subtitle">Pick a template, or create one.</p></div>
-            <a class="ant-btn ant-btn-primary" href="#packing-template"><span>+ New Template</span></a></div>
+<div class="m-row-cards m-cols-2 m-pack-results">
+    <div class="m-card" id="template-list" data-m-keep-state>
+        <div class="m-card-header"><div><h2 class="m-card-title">Packing List Templates</h2><p class="m-card-subtitle">Pick a template to preview or edit it.</p></div>
+            <a class="ant-btn ant-btn-primary" href="#packing-template-card"><span>+ New Template</span></a></div>
         <div class="m-card-body">
             <form method="get" action="/merchandising/packing-lists" class="m-packing-filters">
                 <input type="hidden" name="po" value="@order.Number" />
@@ -77,33 +126,55 @@
                 </select>
                 <button type="submit" class="ant-btn ant-btn-default"><span>Filter</span></button>
             </form>
-            <table class="m-packing-table">
-                <thead><tr><th>Template name</th><th>Buyer</th><th>Version</th><th>Status</th><th>Actions</th></tr></thead>
-                <tbody>
-                    @foreach (var t in Model.Templates)
-                    {
-                        <tr class="@(t.Key == Model.Template ? "m-row-selected" : "")">
-                            <td><a href="/merchandising/packing-lists?template=@t.Key&amp;po=@order.Number&amp;format=@Model.Format&amp;q=@Model.Query&amp;buyer=@Model.Buyer&amp;status=@Model.Status">@t.Name</a></td>
-                            <td>@t.Buyer</td>
-                            <td>@t.Version</td>
-                            <td><span class="ant-tag ant-tag-green">@t.Status</span></td>
-                            <td class="m-packing-actions"><a href="/merchandising/packing-lists?template=@t.Key&amp;po=@order.Number&amp;format=@Model.Format#preview" aria-label="Preview @t.Name" title="Preview"><span aria-hidden="true">&#128065;</span></a> <a href="/merchandising/packing-lists?template=@t.Key&amp;po=@order.Number&amp;format=@Model.Format#packing-template" aria-label="Edit @t.Name" title="Edit in the Excel editor"><span aria-hidden="true">&#9998;</span></a></td>
-                        </tr>
-                    }
-                    @if (!Model.Templates.Any())
-                    {
-                        <tr><td colspan="5" class="m-muted">No templates match.</td></tr>
-                    }
-                </tbody>
-            </table>
+            <div class="m-pack-table-wrap">
+                <table class="m-packing-table m-pack-list">
+                    <thead><tr><th>Template</th><th>Buyer</th><th>Version</th><th>Status</th><th class="m-pack-actions-head">Actions</th></tr></thead>
+                    <tbody>
+                        @foreach (var t in Model.Templates)
+                        {
+                            <tr class="@(t.Key == Model.Template ? "m-row-selected" : "")">
+                                <td><a class="m-pack-template-link" href="/merchandising/packing-lists?template=@t.Key&amp;po=@order.Number&amp;format=@Model.Format&amp;q=@Model.Query&amp;buyer=@Model.Buyer&amp;status=@Model.Status#preview">@t.Name</a></td>
+                                <td>@t.Buyer</td>
+                                <td><span class="m-pack-version">@t.Version</span></td>
+                                <td><span class="m-pack-status m-pack-status-@t.Status.ToLowerInvariant()">@t.Status</span></td>
+                                <td class="m-pack-actions">
+                                    <app-button type="text" icon="eye" href="/merchandising/packing-lists?template=@t.Key&amp;po=@order.Number&amp;format=@Model.Format#preview" aria-label="Preview @t.Name" title="Preview"></app-button>
+                                    <app-button type="text" icon="edit" href="/merchandising/packing-lists?template=@t.Key&amp;po=@order.Number&amp;format=@Model.Format#packing-template-card" aria-label="Edit @t.Name" title="Edit in the Excel editor"></app-button>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Templates.Any())
+                        {
+                            <tr><td colspan="5" class="m-pack-empty">No templates match these filters.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <div class="m-card" id="preview">
-        <div class="m-card-header"><div><h2 class="m-card-title">Preview with Sample Data</h2><p class="m-card-subtitle">@(template?.Name ?? "Template") filled from @order.Number</p></div></div>
+        <div class="m-card-header"><div><h2 class="m-card-title">Preview with Sample Data</h2><p class="m-card-subtitle">@template.Name, filled from @order.Number</p></div>
+            <span class="m-pack-status m-pack-status-active">Live</span></div>
         <div class="m-card-body">
-            <div class="m-packing-sheet-preview">
-                <table class="m-packing-table m-packing-grid">
+            <div class="m-pack-paper">
+                <div class="m-pack-paper-head">
+                    <div class="m-pack-letterhead">
+                        <span class="m-pack-logo"><svg viewBox="0 0 48 48" width="48" height="48" aria-hidden="true" focusable="false"><rect width="48" height="48" rx="10" fill="#1677ff"/><path d="M12 34V14h8.5c6 0 9.5 3.4 9.5 10s-3.5 10-9.5 10H12zm5-4.5h3.5c3.4 0 5-1.9 5-5.5s-1.6-5.5-5-5.5H17z" fill="#fff"/><circle cx="36" cy="14" r="3" fill="#91caff"/></svg></span>
+                        <div class="m-pack-letterhead-text">
+                            <strong class="m-pack-letterhead-name">@PackingListDemo.Company</strong>
+                            <span>@PackingListDemo.CompanyAddress</span>
+                            <span>@PackingListDemo.CompanyContact &middot; @PackingListDemo.CompanyEmail</span>
+                        </div>
+                    </div>
+                    <div class="m-pack-consignee">
+                        <span class="m-pack-consignee-label">Buyer</span>
+                        <strong>@order.Buyer</strong>
+                        <span>@order.BuyerAddress</span>
+                    </div>
+                    <div class="m-pack-paper-date">Date: <strong>@fill.Rows[0][8]</strong></div>
+                </div>
+                <table class="m-packing-table m-pack-grid">
                     <tbody>
                         @foreach (var row in fill.Rows.Take(5))
                         {
@@ -111,19 +182,19 @@
                         }
                     </tbody>
                 </table>
-                <table class="m-packing-table m-packing-grid">
+                <table class="m-packing-table m-pack-grid m-pack-items">
                     <thead><tr>@foreach (var h in fill.Rows[6]) { <th>@h</th> }</tr></thead>
                     <tbody>
                         @foreach (var row in fill.Rows.Skip(7))
                         {
-                            <tr>@foreach (var cell in row) { <td>@cell</td> }</tr>
+                            <tr class="@(row[0]?.ToString() == "Total" ? "m-pack-total" : "")">@foreach (var cell in row) { <td>@cell</td> }</tr>
                         }
                     </tbody>
                 </table>
             </div>
-            @if (fill.Errors.Count == 0)
+            @if (fill.Errors.Count == 0 && fill.Checks.Count == 0)
             {
-                <div class="m-packing-ok">Template validated successfully. All required fields are mapped.</div>
+                <div class="m-pack-ok" role="status"><span aria-hidden="true">&#10003;</span> Template validated successfully. All required fields are mapped.</div>
             }
             else
             {
@@ -132,43 +203,77 @@
                     <ul>@foreach (var e in fill.Errors) { <li>@e</li> }</ul>
                 </div>
             }
+            @if (fill.Checks.Count > 0)
+            {
+                <ul class="m-pack-checks" aria-label="Checks on this packing list">
+                    @foreach (var check in fill.Checks)
+                    {
+                        <li class="m-pack-check m-pack-check-@check.Level"><span class="m-pack-check-level">@(check.Level == "error" ? "Error" : "Warning")</span><span>@check.Message</span></li>
+                    }
+                </ul>
+            }
         </div>
     </div>
 
     <div class="m-card" id="generate">
-        <div class="m-card-header"><div><h2 class="m-card-title">Generate Packing List</h2><p class="m-card-subtitle">Choose the PO and the output.</p></div></div>
+        <div class="m-card-header"><div><h2 class="m-card-title">Generate Packing List</h2><p class="m-card-subtitle">Choose the PO, the template and the output.</p></div></div>
         <div class="m-card-body">
-            <form method="get" action="@download" class="ant-form ant-form-vertical">
+            <form method="get" action="@download" class="m-pack-generate">
                 <div class="m-form-item"><label for="gen-company">Company</label><select id="gen-company" class="m-select" name="company"><option>@PackingListDemo.Company</option></select></div>
-                <div class="m-form-item"><label for="gen-buyer">Buyer</label><select id="gen-buyer" class="m-select" name="buyer">@foreach (var b in PackingListDemo.Buyers) { <option value="@b" selected="@(b == order.Buyer)">@b</option> }</select></div>
-                <div class="m-form-item"><label for="gen-po">PO</label><select id="gen-po" class="m-select" name="po">@foreach (var o in Model.Orders) { <option value="@o.Number" selected="@(o.Number == order.Number)">@o.Number</option> }</select></div>
+                <div class="m-pack-pair">
+                    <div class="m-form-item"><label for="gen-buyer">Buyer</label><select id="gen-buyer" class="m-select" name="buyer">@foreach (var b in PackingListDemo.Buyers) { <option value="@b" selected="@(b == order.Buyer)">@b</option> }</select></div>
+                    <div class="m-form-item"><label for="gen-po">PO</label><select id="gen-po" class="m-select" name="po">@foreach (var o in Model.Orders) { <option value="@o.Number" selected="@(o.Number == order.Number)">@o.Number</option> }</select></div>
+                </div>
                 <div class="m-form-item"><label for="gen-template">Template</label><select id="gen-template" class="m-select" name="template">@foreach (var t in PackingListDemo.Templates) { <option value="@t.Key" selected="@(t.Key == Model.Template)">@t.Name</option> }</select></div>
-                <fieldset class="m-form-item"><legend>Output format</legend>
-                    <label class="m-radio"><input type="radio" name="format" value="xlsx" checked="@(Model.Format == "xlsx")" /> Excel (XLSX)</label>
-                    <label class="m-radio"><input type="radio" name="format" value="pdf" checked="@(Model.Format == "pdf")" /> PDF</label>
+                <fieldset class="m-pack-formats">
+                    <legend>Output format</legend>
+                    <label class="m-pack-format">
+                        <input type="radio" name="format" value="xlsx" checked="@(Model.Format == "xlsx")" />
+                        <span class="m-pack-format-badge m-pack-format-xls" aria-hidden="true">XLS</span>
+                        <span class="m-pack-format-text"><strong>Excel (XLSX)</strong><small>Editable workbook, one sheet</small></span>
+                    </label>
+                    <label class="m-pack-format">
+                        <input type="radio" name="format" value="pdf" checked="@(Model.Format == "pdf")" />
+                        <span class="m-pack-format-badge m-pack-format-pdf" aria-hidden="true">PDF</span>
+                        <span class="m-pack-format-text"><strong>PDF</strong><small>Print-ready, one page per order</small></span>
+                    </label>
                 </fieldset>
                 <button type="submit" class="ant-btn ant-btn-primary m-block"><span>Generate Packing List</span></button>
-                <p class="m-muted">The packing list is generated from the selected template and PO, with the sample order data.</p>
+                <p class="m-muted m-pack-note">Generated from the selected template and PO, with the sample order data.</p>
             </form>
         </div>
     </div>
 
     <div class="m-card" id="output">
-        <div class="m-card-header"><div><h2 class="m-card-title">Final Output (Excel)</h2><p class="m-card-subtitle">The generated file.</p></div>
-            <a class="ant-btn ant-btn-primary" href="@download?po=@order.Number&amp;format=xlsx&amp;template=@Model.Template"><span>Download</span></a></div>
+        <div class="m-card-header"><div><h2 class="m-card-title">Final Output</h2><p class="m-card-subtitle">The generated file, in the column order above.</p></div></div>
         <div class="m-card-body">
-            <div class="m-packing-file"><span class="m-packing-file-name">Packing_List_@(order.Buyer.Replace("&", ""))_@(order.Number).xlsx</span><span class="m-muted">@fill.Rows.Count rows &middot; 1 sheet</span></div>
-            <div class="m-packing-sheet-preview m-packing-sheet-compact">
-                <table class="m-packing-table m-packing-grid">
+            <div class="m-pack-file">
+                <span class="m-pack-file-icon" aria-hidden="true"><app-icon type="file-excel" /></span>
+                <div class="m-pack-file-text">
+                    <strong class="m-pack-file-name">@fileName</strong>
+                    <small class="m-muted">@fill.Rows.Count rows &middot; 1 sheet &middot; @Model.Columns.Count columns</small>
+                </div>
+                <a class="ant-btn ant-btn-primary" href="@(download + "?po=" + order.Number + "&format=xlsx&template=" + Model.Template + string.Concat(Model.Columns.Select(c => "&cols=" + Uri.EscapeDataString(c))))"><span>Download</span></a>
+            </div>
+            <div class="m-pack-paper m-pack-paper-compact">
+                <table class="m-packing-table m-pack-grid m-pack-items">
                     <thead><tr>@foreach (var h in fill.Rows[6]) { <th>@h</th> }</tr></thead>
                     <tbody>
                         @foreach (var row in fill.Rows.Skip(7))
                         {
-                            <tr>@foreach (var cell in row) { <td>@cell</td> }</tr>
+                            <tr class="@(row[0]?.ToString() == "Total" ? "m-pack-total" : "")">@foreach (var cell in row) { <td>@cell</td> }</tr>
                         }
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
+</div>
+
+<div class="m-pack-statusbar" role="status" aria-label="Document status">
+    <span><span class="m-pack-status-dot" aria-hidden="true"></span>Ready</span>
+    <span>@Model.Orders.Count POs</span>
+    <span>@order.Lines.Count lines &middot; @order.Cartons cartons</span>
+    <span>@Model.Columns.Count columns</span>
+    <span class="m-pack-statusbar-end">Sample data &middot; @fileName</span>
 </div>

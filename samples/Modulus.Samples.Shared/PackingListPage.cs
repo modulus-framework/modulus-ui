@@ -15,10 +15,13 @@ public sealed class PackingListPage
     public string Template { get; init; } = PackingListDemo.Templates[0].Key;
     public string Format { get; init; } = "xlsx";
     public PackingFill Fill { get; init; } = PackingListDemo.Fill(PackingListDemo.Orders[0]);
-    public IReadOnlyList<SpreadsheetSheet> TemplateSheet => PackingListDemo.TemplateSheet(Template);
+    public IReadOnlyList<SpreadsheetSheet> TemplateSheet => PackingListDemo.TemplateSheet(Template, Columns);
+
+    /// <summary>The column headings of the template, in the order the user chose (the template's own order by default).</summary>
+    public IReadOnlyList<string> Columns { get; init; } = [];
 
     /// <summary>The page for the query: the templates that match it, and the order and format asked for (the first order and Excel by default).</summary>
-    public static PackingListPage Load(string? query, string? buyer, string? status, string? po, string? template, string? format)
+    public static PackingListPage Load(string? query, string? buyer, string? status, string? po, string? template, string? format, IReadOnlyList<string>? columns = null)
     {
         var templates = PackingListDemo.Templates
             .Where(t => string.IsNullOrWhiteSpace(query) || t.Name.Contains(query.Trim(), StringComparison.OrdinalIgnoreCase))
@@ -36,7 +39,16 @@ public sealed class PackingListPage
             Order = order,
             Template = key,
             Format = format == "pdf" ? "pdf" : "xlsx",
-            Fill = PackingListDemo.Fill(order, key),
+            Columns = Ordered(key, columns),
+            Fill = PackingListDemo.Fill(order, key, columns),
         };
+    }
+
+    // The template's headings in the chosen order: the named ones first (unknown names dropped), the rest after them.
+    private static IReadOnlyList<string> Ordered(string key, IReadOnlyList<string>? chosen)
+    {
+        var headings = PackingListDemo.Headings(key);
+        var named = (chosen ?? []).Where(headings.Contains).Distinct().ToList();
+        return [.. named, .. headings.Where(h => !named.Contains(h))];
     }
 }

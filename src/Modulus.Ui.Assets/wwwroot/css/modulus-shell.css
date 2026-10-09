@@ -631,24 +631,36 @@ html[data-nav='dark'] .m-nav-app :is(.m-hnav-item.active > .m-hnav-link, .m-hnav
    levels move into that menu. Labels truncate rather than wrap. */
 .m-crumbs { display: flex; min-width: 0; flex: 0 1 auto; }
 .m-crumbs-list { display: flex; align-items: center; flex-wrap: nowrap; min-width: 0; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--m-nav-muted); }
-.m-crumb { display: flex; align-items: center; min-width: 0; white-space: nowrap; }
-.m-crumb + .m-crumb::before { content: '/'; margin: 0 8px; color: var(--m-nav-muted); opacity: 0.6; }
-.m-crumb a { display: inline-flex; align-items: center; gap: 6px; min-width: 0; padding: 2px 4px; margin: 0 -4px; border-radius: 4px; color: var(--m-app-tone); text-decoration: none; }
-.m-crumb a:hover { background: color-mix(in srgb, var(--m-app-tone) 10%, transparent); text-decoration: none; }
-.m-crumb a:focus-visible, .m-crumb-menu a:focus-visible { outline: 2px solid var(--m-app-tone); outline-offset: 1px; }
+.m-crumb { position: relative; display: flex; align-items: center; min-width: 0; white-space: nowrap; }
+.m-crumb + .m-crumb::before { content: '/'; margin: 0 4px; color: var(--m-nav-muted); opacity: 0.45; font-weight: 400; }
+.m-crumb > a, .m-crumb > span:not(.m-crumb-switch) { display: inline-flex; align-items: center; gap: 6px; min-width: 0; padding: 4px 8px; border-radius: 6px; color: var(--m-nav-text, var(--m-text, #374151)); font-weight: 500; text-decoration: none; transition: background-color 120ms ease, color 120ms ease; }
+.m-crumb > a:hover { background: color-mix(in srgb, var(--m-app-tone) 9%, transparent); color: var(--m-app-tone); text-decoration: none; }
+.m-crumb a:focus-visible, .m-crumb-switch-btn:focus-visible, .m-crumb-menu a:focus-visible { outline: 2px solid var(--m-app-tone); outline-offset: 1px; }
 .m-crumb-label { overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
 .m-crumb-icon { width: 15px; height: 15px; flex: none; }
-.m-crumb-current { color: var(--m-nav-text-strong); font-weight: 600; }
-.m-crumb-more { position: relative; }
-.m-crumb-menu-wrap summary { list-style: none; cursor: pointer; padding: 0 6px; border-radius: 4px; color: var(--m-nav-muted); line-height: 1.5; }
-.m-crumb-menu-wrap summary::-webkit-details-marker { display: none; }
-.m-crumb-menu-wrap summary:hover, .m-crumb-menu-wrap[open] summary { background: color-mix(in srgb, var(--m-app-tone) 10%, transparent); color: var(--m-app-tone); }
-.m-crumb-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; min-width: 200px; max-width: 320px; margin: 0; padding: 6px; list-style: none; background: var(--m-nav-surface, #fff); border: 1px solid var(--m-border, #e5e7eb); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); }
-.m-crumb-menu li a, .m-crumb-menu li span { display: block; padding: 6px 10px; border-radius: 6px; color: var(--m-text, #1f2937); text-decoration: none; }
-.m-crumb-menu li a:hover { background: color-mix(in srgb, var(--m-app-tone) 10%, transparent); }
-.m-crumb-menu li span { color: var(--m-nav-muted); }
+.m-crumb-current { color: var(--m-nav-text-strong); font-weight: 600; padding: 4px 8px; border-radius: 6px; }
+.m-crumb-current > span { color: var(--m-nav-text-strong); font-weight: 600; }
+/* The caret opens the level's related pages; it is quiet until the level is hovered or open. */
+.m-crumb-switch { position: relative; display: inline-flex; margin-left: 2px; }
+.m-crumb-switch > summary, .m-crumb-switch-btn { list-style: none; display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; cursor: pointer; color: var(--m-nav-muted); opacity: 0.55; transition: opacity 120ms ease, background-color 120ms ease; }
+.m-crumb-switch > summary::-webkit-details-marker, .m-crumb-switch-btn::-webkit-details-marker { display: none; }
+.m-crumb:hover > .m-crumb-switch > summary, .m-crumb-switch[open] > summary, .m-crumb-switch-btn:hover { opacity: 1; }
+.m-crumb-switch[open] > summary, .m-crumb-switch-btn:hover { background: color-mix(in srgb, var(--m-app-tone) 10%, transparent); color: var(--m-app-tone); }
+.m-crumb-caret { width: 12px; height: 12px; transition: transform 150ms ease; }
+.m-crumb-switch[open] .m-crumb-caret { transform: rotate(180deg); }
+.m-crumb-panel { position: absolute; top: calc(100% + 8px); left: -6px; z-index: 70; width: max-content; min-width: 240px; max-width: min(320px, calc(100vw - 24px)); padding: 6px; border: 1px solid var(--m-border, #e5e7eb); border-radius: 10px; background: var(--m-bg-elevated, #fff); color: var(--m-text, #1f2937); box-shadow: 0 12px 32px rgba(16, 24, 40, 0.14); }
+/* A panel near the right edge opens to the left of its caret, so it stays on screen. */
+.m-crumb-switch.m-crumb-flip > .m-crumb-panel, .m-crumb-more > .m-crumb-menu-wrap > .m-crumb-panel { left: auto; right: -6px; }
+.m-crumb-panel-head { padding: 6px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--m-text-tertiary, #6b7280); white-space: nowrap; }
+.m-crumb-menu { margin: 0; padding: 0; list-style: none; max-height: min(60vh, 420px); overflow: auto; }
+.m-crumb-menu li a, .m-crumb-menu-static { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; font-size: 13px; color: var(--m-text, #1f2937); text-decoration: none; white-space: nowrap; }
+.m-crumb-menu li a:hover { background: color-mix(in srgb, var(--m-app-tone) 9%, transparent); color: var(--m-app-tone); }
+.m-crumb-menu-selected, .m-crumb-menu-selected:hover { background: color-mix(in srgb, var(--m-app-tone) 13%, transparent); color: var(--m-app-tone); font-weight: 600; box-shadow: inset 3px 0 0 var(--m-app-tone); }
+.m-crumb-menu-static { color: var(--m-text-tertiary, #6b7280); }
+.m-crumb-menu-more { color: var(--m-text-tertiary, #6b7280); }
 .m-crumb-phone-only { display: none; }
-html[data-nav='dark'] .m-crumb a { color: rgba(255, 255, 255, 0.85); }
+html[data-nav='dark'] .m-crumb > a { color: rgba(255, 255, 255, 0.85); }
+html[data-nav='dark'] .m-crumb-panel { box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45); }
 @media (max-width: 639.98px) {
     .m-crumb-mid { display: none; }
     .m-crumb-phone-only { display: flex; }
@@ -1296,10 +1308,10 @@ html[data-nav='dark'] .m-mini-navline, .m-mini-darkline { fill: rgba(255, 255, 2
 .m-hnav-app-link .m-app-mark, .m-sidebar-app .m-app-mark {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 4px 10px -4px color-mix(in srgb, var(--m-app-tone) 75%, transparent);
 }
-/* Module bar tabs: hovering previews the underline in a quiet colour. */
+/* Module bar tabs: hovering previews the active underline in a light tint of the app's colour. */
 .m-nav-app .m-hnav-item:not(.active) > .m-hnav-link:hover::after,
 .m-nav-app .m-hnav-item:not(.active) > details > .m-hnav-link:hover::after {
-    content: ''; position: absolute; inset-inline: 14px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--m-nav-border);
+    content: ''; position: absolute; inset-inline: 14px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: color-mix(in srgb, var(--m-app-tone) 45%, transparent);
 }
 /* Sidebar (app menu): the open page on a wash of the tone that fades toward the end. */
 .m-nav-app .m-snav > .m-snav-item.active > .m-snav-link {

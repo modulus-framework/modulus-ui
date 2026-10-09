@@ -12,8 +12,15 @@ namespace Modulus.Samples.Shared;
 /// <summary>One colour, size and carton of an order.</summary>
 public sealed record PackingLine(string Style, string Color, string Size, int Quantity, string CartonNo, decimal GrossWeight, decimal NetWeight, string Remarks = "-", string Upc = "");
 
-/// <summary>A purchase order to pack: its header, its lines and the cartons it fills.</summary>
-public sealed record PackingOrder(string Number, string Buyer, DateTime PoDate, DateTime Shipment, string StyleCode, string StyleName, string Color, string Season, int Cartons, IReadOnlyList<PackingLine> Lines);
+/// <summary>
+/// A purchase order to pack: its header, its lines and the cartons it fills. <paramref name="OrderQuantity"/> is the quantity the
+/// buyer ordered (null when the order does not state one); the shipping fields are the invoice, the container and the terms of delivery.
+/// </summary>
+public sealed record PackingOrder(string Number, string Buyer, DateTime PoDate, DateTime Shipment, string StyleCode, string StyleName, string Color, string Season, int Cartons, IReadOnlyList<PackingLine> Lines,
+    int? OrderQuantity = null, string Invoice = "", string Container = "", string Terms = "FOB", string BuyerAddress = "");
+
+/// <summary>A check on a packing list: an error stops the list from being sent, a warning is shown but does not block it.</summary>
+public sealed record PackingCheck(string Level, string Message);
 
 /// <summary>A saved packing list template: the buyer's layout, its version and whether it is in use.</summary>
 /// The layout is the template sheet: five header rows, a blank row, the column headings, one item row and the total row.
@@ -26,11 +33,14 @@ public sealed record PackingField(string Token, string Label);
 public sealed record PackingFieldGroup(string Title, IReadOnlyList<PackingField> Fields);
 
 /// <summary>The result of filling a template: the rows of the sheet, and the fields that could not be filled.</summary>
-public sealed record PackingFill(IReadOnlyList<IReadOnlyList<object?>> Rows, IReadOnlyList<string> Errors);
+public sealed record PackingFill(IReadOnlyList<IReadOnlyList<object?>> Rows, IReadOnlyList<string> Errors, IReadOnlyList<PackingCheck> Checks);
 
 public static partial class PackingListDemo
 {
     public const string Company = "Demo Fashion Ltd.";
+    public const string CompanyAddress = "Plot 12, Industrial Area, Chattogram";
+    public const string CompanyContact = "Tel +880 31 000000";
+    public const string CompanyEmail = "info@demo-fashion.test";
     public const string DownloadUrl = "/merchandising/packing-lists/download";
 
     public static readonly string[] Buyers = ["H&M", "Zara", "Walmart", "Generic"];
@@ -55,37 +65,39 @@ public static partial class PackingListDemo
             new("ST-00123", "Black", "S", 400, "31-38", 98.3m, 88.0m),
             new("ST-00123", "Black", "M", 500, "39-45", 122.6m, 112.8m),
             new("ST-00123", "Black", "L", 500, "46-52", 125.4m, 112.8m),
-        ]),
+        ], 3100, "INV-2025-0412", "MSKU4821350", "FOB", "Warehouse 4, Stockholm, Sweden"),
         new("PO-2025-004", "Zara", new DateTime(2025, 9, 2), new DateTime(2025, 9, 15), "ST-00456", "Relaxed shirt", "Navy", "AW25", 24,
         [
             new("ST-00456", "Navy", "M", 240, "1-8", 62.0m, 55.4m),
             new("ST-00456", "Navy", "L", 240, "9-16", 64.5m, 57.2m),
             new("ST-00456", "Navy", "XL", 180, "17-24", 58.8m, 52.1m),
-        ]),
+        ], 672, "INV-2025-0419", "TCLU6027411", "FOB", "DC 2, Arteixo, Spain"),
         new("PO-2025-007", "Walmart", new DateTime(2025, 9, 10), new DateTime(2025, 9, 26), "WM-88012", "Cotton polo", "Blue", "SS26", 12,
         [
             new("WM-88012", "Blue", "S", 300, "1-4", 48.0m, 42.5m, "-", "0123456789012"),
             new("WM-88012", "Blue", "M", 400, "5-8", 64.0m, 56.8m, "-", "0123456789029"),
             new("WM-88012", "Blue", "L", 300, "9-12", 52.5m, 46.1m, "-", "0123456789036"),
-        ]),
+        ], 1000, "INV-2025-0427", "TGHU3390184", "DDP", "Distribution centre, Bentonville, USA"),
     ];
 
     /// <summary>The fields the Insert ERP Field panel offers, grouped as in the design.</summary>
     public static readonly PackingFieldGroup[] FieldGroups =
     [
-        new("Order", [new("PO.Number", "Order no"), new("Buyer.Name", "Buyer name"), new("PO.Date", "PO date"), new("Shipment.Date", "Shipment date")]),
+        new("Company", [new("Company.Name", "Company name"), new("Company.Address", "Company address"), new("Company.Contact", "Company phone"), new("Company.Email", "Company email")]),
+        new("Order", [new("PO.Number", "Order no"), new("Buyer.Name", "Buyer name"), new("Buyer.Address", "Buyer address"), new("PO.Date", "PO date"), new("Shipment.Date", "Shipment date")]),
         new("Style", [new("Style.Code", "Style code"), new("Style.Name", "Style name"), new("Color.Name", "Colour name"), new("Season", "Season")]),
         new("Item", [new("Items[].Size", "Size"), new("Items[].Quantity", "Quantity"), new("Items[].UOM", "UOM")]),
         new("Carton", [new("Items[].CartonNo", "Carton no"), new("Items[].GW", "Gross weight"), new("Items[].NW", "Net weight")]),
+        new("Shipping", [new("Invoice.Number", "Invoice no"), new("Container.Number", "Container no"), new("Terms", "Terms of delivery")]),
         new("Totals", [new("Total.Quantity", "Total quantity"), new("Total.Cartons", "Total cartons"), new("Total.GrossWeight", "Total gross weight"), new("Total.NetWeight", "Total net weight")]),
     ];
 
     /// <summary>The template sheet: the header block, the column headings, one item row (repeated per line), and the total row.</summary>
     public static readonly string[][] TemplateRows =
     [
-        ["PACKING LIST", "", "", "", "", "", "", "Date:", "{{Shipment.Date}}"],
-        ["Buyer:", "{{Buyer.Name}}", "", "", "", "Shipment Date:", "", "", "{{Shipment.Date}}"],
-        ["PO No.:", "{{PO.Number}}", "", "", "", "Total Cartons:", "", "", "{{Total.Cartons}}"],
+        ["PACKING LIST", "", "", "{{Company.Name}}", "", "", "", "Date:", "{{Shipment.Date}}"],
+        ["Buyer:", "{{Buyer.Name}}", "", "{{Company.Address}}", "", "Shipment Date:", "", "", "{{Shipment.Date}}"],
+        ["PO No.:", "{{PO.Number}}", "", "{{Company.Contact}}", "", "Total Cartons:", "", "", "{{Total.Cartons}}"],
         ["Style:", "{{Style.Code}}", "", "", "", "Total Gross Weight:", "", "", "{{Total.GrossWeight}} KGS"],
         ["Color:", "{{Color.Name}}", "", "", "", "Total Net Weight:", "", "", "{{Total.NetWeight}} KGS"],
         ["", "", "", "", "", "", "", "", ""],
@@ -95,8 +107,8 @@ public static partial class PackingListDemo
     ];
 
     /// <summary>The template as the Excel editor shows it: one sheet, its header rows frozen above the table.</summary>
-    public static IReadOnlyList<SpreadsheetSheet> TemplateSheet(string? template) =>
-        [new SpreadsheetSheet("PackingList", LayoutOf(template).Select(r => (IReadOnlyList<object?>)r.Cast<object?>().ToList()).ToList(),
+    public static IReadOnlyList<SpreadsheetSheet> TemplateSheet(string? template, IReadOnlyList<string>? columns = null) =>
+        [new SpreadsheetSheet("PackingList", ReorderColumns(LayoutOf(template).Select(r => (IReadOnlyList<object?>)r.Cast<object?>().ToList()).ToList(), LayoutOf(template)[HeadingRow], columns ?? Headings(template)).ToList(),
             FrozenRows: 7, ColumnWidths: [40, 110, 90, 60, 80, 90, 80, 80, 120])];
 
     /// <summary>Zara's sheet: its own headings, no remarks column, the season in the header.</summary>
@@ -156,14 +168,18 @@ public static partial class PackingListDemo
     public static string[][] LayoutOf(string? key) => Templates.FirstOrDefault(t => t.Key == key)?.Layout ?? TemplateRows;
 
     /// <summary>Fills the layout of the given template for one order.</summary>
-    public static PackingFill Fill(PackingOrder order, string? template) => FillWith(order, LayoutOf(template));
+    public static PackingFill Fill(PackingOrder order, string? template, IReadOnlyList<string>? columns = null) => FillWith(order, LayoutOf(template), columns);
 
     /// <summary>Fills the given template rows for one order (the sheet the page shows, or a copy of it).</summary>
-    public static PackingFill FillWith(PackingOrder order, string[][] templateRows)
+    public static PackingFill FillWith(PackingOrder order, string[][] templateRows, IReadOnlyList<string>? columns = null)
     {
         var scalars = new Dictionary<string, object?>
         {
             ["Company.Name"] = Company,
+            ["Company.Address"] = CompanyAddress,
+            ["Company.Contact"] = CompanyContact,
+            ["Company.Email"] = CompanyEmail,
+            ["Buyer.Address"] = order.BuyerAddress,
             ["PO.Number"] = order.Number,
             ["Buyer.Name"] = order.Buyer,
             ["PO.Date"] = order.PoDate.ToString("dd MMM yyyy", CultureInfo.InvariantCulture),
@@ -172,6 +188,9 @@ public static partial class PackingListDemo
             ["Style.Name"] = order.StyleName,
             ["Color.Name"] = order.Color,
             ["Season"] = order.Season,
+            ["Invoice.Number"] = order.Invoice,
+            ["Container.Number"] = order.Container,
+            ["Terms"] = order.Terms,
             ["Total.Quantity"] = order.Lines.Sum(l => l.Quantity),
             ["Total.Cartons"] = order.Cartons,
             ["Total.GrossWeight"] = order.Lines.Sum(l => l.GrossWeight).ToString("0.0", CultureInfo.InvariantCulture),
@@ -208,7 +227,87 @@ public static partial class PackingListDemo
                 rows.Add(template.Select(c => Resolve(c, scalars, scalars, errors)).ToList());
             }
         }
-        return new PackingFill(rows, errors.Distinct().ToList());
+        var table = columns is null ? rows : ReorderColumns(rows, templateRows[HeadingRow], columns);
+        return new PackingFill(table, errors.Distinct().ToList(), Checks(order));
+    }
+
+    /// <summary>
+    /// The checks a packing list must pass before it goes out: the carton ranges (no carton in two lines, no gap, the last carton is
+    /// the order's carton count), the shipped quantity against the ordered one, and the weights (gross is not below net, none is zero).
+    /// </summary>
+    public static IReadOnlyList<PackingCheck> Checks(PackingOrder order)
+    {
+        var checks = new List<PackingCheck>();
+
+        // Carton ranges: each line's "from-to" (or a single carton) is claimed once.
+        var owner = new Dictionary<int, int>();
+        for (var n = 0; n < order.Lines.Count; n++)
+        {
+            var line = order.Lines[n];
+            var parts = line.CartonNo.Split('-', StringSplitOptions.TrimEntries);
+            if (!int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out var from)
+                || !int.TryParse(parts[^1], NumberStyles.None, CultureInfo.InvariantCulture, out var to) || to < from)
+            {
+                checks.Add(new("error", $"Line {n + 1}: carton no. \"{line.CartonNo}\" is not a range such as 1-10."));
+                continue;
+            }
+            var clashes = new List<int>();
+            for (var c = from; c <= to; c++)
+            {
+                if (owner.TryAdd(c, n + 1)) continue;
+                clashes.Add(c);
+            }
+            if (clashes.Count > 0)
+                checks.Add(new("error", $"Line {n + 1}: carton{(clashes.Count > 1 ? "s" : "")} {string.Join(", ", clashes)} {(clashes.Count > 1 ? "are" : "is")} also in another line."));
+        }
+        var missing = Enumerable.Range(1, owner.Count == 0 ? 0 : owner.Keys.Max()).Where(c => !owner.ContainsKey(c)).ToList();
+        if (missing.Count > 0)
+            checks.Add(new("warning", $"Carton{(missing.Count > 1 ? "s" : "")} {string.Join(", ", missing.Take(10))}{(missing.Count > 10 ? " and more" : "")} {(missing.Count > 1 ? "are" : "is")} not in any line."));
+        var last = owner.Count == 0 ? 0 : owner.Keys.Max();
+        if (last != order.Cartons)
+            checks.Add(new("warning", $"The carton ranges end at carton {last}, but the order has {order.Cartons} cartons."));
+
+        // Quantity: the shipped total against the ordered one.
+        if (order.OrderQuantity is { } ordered)
+        {
+            var shipped = order.Lines.Sum(l => l.Quantity);
+            if (shipped < ordered)
+                checks.Add(new("warning", $"Shipped {shipped:N0} of {ordered:N0} pieces: {ordered - shipped:N0} short."));
+            else if (shipped > ordered)
+                checks.Add(new("warning", $"Shipped {shipped:N0} of {ordered:N0} pieces: {shipped - ordered:N0} over."));
+        }
+
+        // Weights: gross is never below net, and no line is left without a weight.
+        for (var n = 0; n < order.Lines.Count; n++)
+        {
+            var line = order.Lines[n];
+            if (line.GrossWeight < line.NetWeight)
+                checks.Add(new("error", $"Line {n + 1} ({line.Size}, carton {line.CartonNo}): gross weight is below net weight."));
+            else if (line.GrossWeight == 0 || line.NetWeight == 0)
+                checks.Add(new("warning", $"Line {n + 1} ({line.Size}, carton {line.CartonNo}): a weight is missing."));
+        }
+        return checks;
+    }
+
+    /// <summary>The row of the column headings in every layout (five header rows and a blank one come first).</summary>
+    public const int HeadingRow = 6;
+
+    /// <summary>The column headings of a template, in its own order.</summary>
+    public static IReadOnlyList<string> Headings(string? template) =>
+        LayoutOf(template)[HeadingRow].Where(h => h.Length > 0).ToList();
+
+    /// <summary>
+    /// The table rows (from the heading row on) in the given column order. A heading that is not named keeps its place at the
+    /// end, and an unknown name is ignored; the header block above the table is not changed.
+    /// </summary>
+    public static IReadOnlyList<IReadOnlyList<object?>> ReorderColumns(IReadOnlyList<IReadOnlyList<object?>> rows, string[] headingRow, IReadOnlyList<string> columns)
+    {
+        var index = headingRow.Select((h, i) => (h, i)).Where(x => x.h.Length > 0).ToDictionary(x => x.h, x => x.i, StringComparer.Ordinal);
+        var order = columns.Where(index.ContainsKey).Distinct().Select(c => index[c]).ToList();
+        order.AddRange(headingRow.Select((_, i) => i).Where(i => !order.Contains(i)));
+        return rows.Select((row, r) => r < HeadingRow || row.Count != headingRow.Length
+            ? row
+            : (IReadOnlyList<object?>)order.Select(i => row[i]).ToList()).ToList();
     }
 
     // A cell that is one token takes the field's value (a number stays a number); a token inside text is replaced in the text.
@@ -230,13 +329,13 @@ public static partial class PackingListDemo
     }
 
     /// <summary>The filled template as an Excel workbook.</summary>
-    public static byte[] Excel(PackingOrder order, string? template) =>
-        SpreadsheetXlsx.Write([new SpreadsheetSheet("PackingList", Fill(order, template).Rows, ColumnWidths: [40, 110, 90, 60, 80, 90, 80, 80, 120])]);
+    public static byte[] Excel(PackingOrder order, string? template, IReadOnlyList<string>? columns = null) =>
+        SpreadsheetXlsx.Write([new SpreadsheetSheet("PackingList", Fill(order, template, columns).Rows, ColumnWidths: [40, 110, 90, 60, 80, 90, 80, 80, 120])]);
 
     /// <summary>The filled template as a PDF: the header lines, then the item table with its total.</summary>
-    public static byte[] Pdf(PackingOrder order, string? template)
+    public static byte[] Pdf(PackingOrder order, string? template, IReadOnlyList<string>? columns = null)
     {
-        var fill = Fill(order, template);
+        var fill = Fill(order, template, columns);
         var header = fill.Rows.Take(5).Select(r => string.Join("   ", r.Where(c => c is not null && c.ToString()!.Length > 0).Select(c => c!.ToString()))).ToArray();
         var table = fill.Rows.Skip(6).Select(r => r.Select(c => c?.ToString() ?? "").ToArray()).ToArray();
         return DocumentPdf.Write(
@@ -248,13 +347,13 @@ public static partial class PackingListDemo
     }
 
     /// <summary>The download of a packing list: the order's file in the requested format, or null when the order is unknown.</summary>
-    public static (byte[] Bytes, string ContentType, string FileName)? Download(string? number, string? format, string? template)
+    public static (byte[] Bytes, string ContentType, string FileName)? Download(string? number, string? format, string? template, IReadOnlyList<string>? columns = null)
     {
         var order = Orders.FirstOrDefault(o => o.Number == number);
         if (order is null) return null;
         var name = $"Packing_List_{order.Buyer.Replace("&", "")}_{order.Number}";
         return format == "pdf"
-            ? (Pdf(order, template), DocumentPdf.ContentType, name + ".pdf")
-            : (Excel(order, template), SpreadsheetXlsx.ContentType, name + ".xlsx");
+            ? (Pdf(order, template, columns), DocumentPdf.ContentType, name + ".pdf")
+            : (Excel(order, template, columns), SpreadsheetXlsx.ContentType, name + ".xlsx");
     }
 }

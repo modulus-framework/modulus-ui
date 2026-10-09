@@ -29,8 +29,12 @@ public class CrumbsTagHelper : TagHelper
     }
 }
 
-/// <summary>One level of an <c>app-crumbs</c> trail: its text, the address it leads to (none for the current page), and an icon.</summary>
+/// <summary>
+/// One level of a breadcrumb trail: its text, the address it leads to (none for the current page), and an icon. Inside
+/// <c>app-crumbs</c> it is part of that trail; inside <c>app-page-header</c> it is the page's own trail above the title.
+/// </summary>
 [HtmlTargetElement("app-crumb", ParentTag = "app-crumbs")]
+[HtmlTargetElement("app-crumb", ParentTag = "app-page-header")]
 public class CrumbTagHelper : TagHelper
 {
     public string? Href { get; set; }
@@ -40,7 +44,7 @@ public class CrumbTagHelper : TagHelper
     {
         // The child text is encoded for HTML; the trail encodes its labels again, so the text is decoded first.
         var label = WebUtility.HtmlDecode((await output.GetChildContentAsync()).GetContent()).Trim();
-        if (context.Items.TryGetValue(typeof(CrumbsTagHelper), out var items))
+        if (context.Items.TryGetValue(typeof(CrumbsTagHelper), out var items) || context.Items.TryGetValue(typeof(PageHeaderTagHelper), out items))
             ((ItemList<Crumb>)items).Add(new Crumb(label, Href, Icon));
         output.SuppressOutput();
     }
