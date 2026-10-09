@@ -34,6 +34,10 @@ public class DocumentModel : SamplePageModel
     public IActionResult OnPostDownload() =>
         File(DocumentDocx.Write(Posted() ?? PluginsContent.Contract), DocumentDocx.ContentType, PluginsContent.DocumentDownloadName);
 
+    // PDF download of the page: the same document as a PDF file (the same URL as the MVC sample).
+    public IActionResult OnPostPdf() =>
+        File(DocumentPdf.Write(Posted() ?? PluginsContent.Contract), DocumentPdf.ContentType, PluginsContent.DocumentPdfName);
+
     private string? Posted() =>
         Request.HasFormContentType ? PluginsContent.PostedDocument(Request.Form["Document"]) : null;
 }

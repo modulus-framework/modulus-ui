@@ -143,6 +143,20 @@ The version is pinned in `Directory.Packages.props` (`Fluid.Core`, 2.40.0, MIT).
 3. Keep the renderer's public members clear of `TryParse`: ASP.NET Core's minimal APIs treat a `TryParse(string, out T)` method
    on a parameter type as a binder and fail when the route is built (`ModulusLiquid.TryParseTemplate` is the name).
 
+## Upgrading QuestPDF (`Modulus.Documents`, PDF output)
+
+The version is pinned in `Directory.Packages.props` (`QuestPDF`, 2026.9.0, Community licence). Before upgrading, check the
+licence terms of the new version: the Community licence covers individuals and businesses under USD 1,000,000 in annual gross
+revenue, and not public-sector or publicly traded companies. A host that needs another licence sets `QuestPDF.Settings.License`
+before its first document (Modulus does not choose it). The samples set it in their `Program.cs` (the Fluid sample and the three admin apps). To upgrade:
+
+1. Change the pin, build, and run `tests/Modulus.Blazor.Tests` (`DocumentPdfTests`, and the DOCX tests beside them).
+2. Check the output with `pdfinfo` (one A4 page for a short letter) and `pdftotext -layout` (the text, the lists and the
+   footer's page numbers), since the tests only check the PDF's structure.
+3. The calls `DocumentPdf` makes are `Document.Create`, `Page`, `MarginHorizontal` and `MarginVertical`, `DefaultTextStyle`,
+   `Column`, `Table` with `ColumnsDefinition`, `Cell().Border().BorderColor().Padding()`, `ConstantItem`, `RelativeItem`,
+   `CurrentPageNumber`, `TotalPages`, the text spans, and `GeneratePdf`. Read the release notes for those first.
+
 ## Hardening
 
 **What is on.** `AddModulusHardening()` and `UseModulusHardening()` (`Modulus.AspNetCore.Hosting`, called before the static
@@ -167,6 +181,22 @@ Modulus writes no inline scripts, so its own markup needs none.
 
 **Health.** `MapModulusHealth()` answers `/health` with `Healthy` (200) while the app's health checks pass, and 503 otherwise.
 Add checks with `AddHealthChecks()`. The samples report no checks beyond the defaults.
+
+**Observability.** `AddModulusObservability()` (`Modulus.AspNetCore.Hosting`, called beside `AddModulusHardening()` in each
+sample) registers OpenTelemetry for the app: ASP.NET Core request traces, request metrics, and the logs with their scopes. The
+service name is the entry assembly's name unless `ServiceName` is set.
+
+- **Traces** skip `/health`, `/_content`, `/_framework` and `/_blazor` (the probe, the library's assets and Blazor's live
+  connection). **Metrics do not skip them**: the `/health` requests count in the request metrics.
+- **Query strings** are recorded with their sensitive values redacted (the instrumentation's default; keep
+  `DisableUrlQueryRedaction` off), so a token in a URL is not written to a trace.
+- **Export.** The signals stay in the process unless `OTEL_EXPORTER_OTLP_ENDPOINT` is set (or `Otlp = true`). Then they go to
+  that collector, with the standard `OTEL_EXPORTER_OTLP_PROTOCOL` and `OTEL_EXPORTER_OTLP_HEADERS` variables.
+- **Checked.** The Fluid sample on 5103 with `OTEL_EXPORTER_OTLP_ENDPOINT` pointed at a local listener: `/v1/traces` carried
+  the `/invoices/4988` request and not `/health`; `/v1/logs` and `/v1/metrics` arrived (metrics go out every 60 seconds). With no
+  endpoint set, the sample runs with no export and no errors.
+- **Upgrading.** The three OpenTelemetry packages are pinned in `Directory.Packages.props`; keep them in step, and check the
+  signals after an upgrade as above.
 
 **Caching.** The MVC head tags (`modulus-head`, `modulus-scripts`) add each library asset's content hash as `?v=`, so a changed
 file gets a new address. A versioned `/_content/` response is sent `Cache-Control: public, max-age=31536000, immutable`.

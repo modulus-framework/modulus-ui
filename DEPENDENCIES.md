@@ -1,7 +1,8 @@
 # Dependencies
 
 Every third-party piece Modulus ships or calls, with its version, its licence and why it is there. All of them are
-open source; nothing needs a commercial licence. Versions are pinned in one place each (see
+open source except QuestPDF, which is free under its Community licence only (see its row); a commercial licence is needed
+for a public-sector body, a publicly traded company, or a business at USD 1,000,000 or more in annual gross revenue. Versions are pinned in one place each (see
 [docs/UPGRADING.md](docs/UPGRADING.md) for how to upgrade them).
 
 ## NuGet packages
@@ -15,9 +16,13 @@ Pinned in `Directory.Packages.props`.
 | `Microsoft.AspNetCore.Components.Web`, `.Authorization` | 10.0.12 | MIT | `Modulus.Blazor`, `Modulus.Ui.Assets` | Razor components and the cascading authentication state. |
 | `ClosedXML` | 0.105.1 | MIT | `Modulus.Documents` | Reads and writes xlsx (the spreadsheet's import and download). |
 | `DocumentFormat.OpenXml` | 3.1.1 | MIT | `Modulus.Documents` | Writes docx (the document editor's Word download); ClosedXML is built on it. |
+| `QuestPDF` | 2026.9.0 | Community licence (proprietary, free under USD 1,000,000 annual gross revenue; not for public-sector or publicly traded companies) | `Modulus.Documents` | Writes PDF from the document model (`DocumentPdf`). The host sets `QuestPDF.Settings.License`. Published 2026-09-14. |
 | `Microsoft.AspNetCore.App` (framework reference) | 10.0 | MIT | `Modulus.AspNetCore.Hosting` | Response compression, the health checks and the middleware of the hosting defaults. No package is added. |
 | `playwright` (Python) | the version CI installs | Apache-2.0 | `tests/browser` (CI and local gates only) | Drives Chromium for the smoke and parity gates. It is not part of any shipped package. |
 | `Fluid.Core` | 2.40.0 | MIT | `Modulus.AspNetCore.Fluid`, `Modulus.Samples.Fluid` | Liquid templates: the parser and the renderer (escaped output, tags and filters). The layout, the Modulus tags and the file cache are Modulus code. Published 2026-08-20. |
+| `OpenTelemetry.Extensions.Hosting` | 1.19.1 | Apache-2.0 | `Modulus.AspNetCore.Hosting` | Registers the OpenTelemetry SDK with the host: traces, metrics and logs (`AddModulusObservability`). Published 2026-09-21. |
+| `OpenTelemetry.Instrumentation.AspNetCore` | 1.19.0 | Apache-2.0 | `Modulus.AspNetCore.Hosting` | Request spans and request metrics for ASP.NET Core. |
+| `OpenTelemetry.Exporter.OpenTelemetryProtocol` | 1.19.1 | Apache-2.0 | `Modulus.AspNetCore.Hosting` | Sends the signals to an OTLP collector, only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. |
 
 `Modulus.Ui.Abstractions` and `Modulus.AspNetCore.Mvc` take no third-party packages; the pivot's xlsx (`PivotXlsx`) is
 written without a library.

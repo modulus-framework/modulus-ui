@@ -4,11 +4,17 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Description>Hosting defaults for Modulus apps: response compression, security headers and a Content-Security-Policy with a per-request nonce, and a health endpoint.</Description>
+    <Description>Hosting defaults for Modulus apps: response compression, security headers and a Content-Security-Policy with a per-request nonce, a health endpoint, and OpenTelemetry traces, metrics and logs.</Description>
   </PropertyGroup>
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
   </ItemGroup>
 
 </Project>

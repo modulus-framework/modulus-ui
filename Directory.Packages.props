@@ -13,6 +13,14 @@
     <PackageVersion Include="ClosedXML" Version="0.105.1" />
     <!-- The Open XML SDK ClosedXML is built on; Modulus.Documents also writes Word files with it. Keep in step with ClosedXML. -->
     <PackageVersion Include="DocumentFormat.OpenXml" Version="3.1.1" />
+    <!-- PDF output of the document model (Modulus.Documents). Community licence: free under USD 1M annual gross revenue, not for
+         public-sector or publicly traded companies; the host sets QuestPDF.Settings.License. Pinned exactly; 2026.9.0 was published 2026-09-14. -->
+    <PackageVersion Include="QuestPDF" Version="2026.9.0" />
+    <!-- Observability (Modulus.AspNetCore.Hosting): traces, metrics and logs through the OpenTelemetry SDK. Pinned exactly;
+         1.19.1 was published 2026-09-21. Keep the three in step. -->
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.19.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.1" />
     <!-- Samples: saved views kept in a SQLite file (EfUiStateStore). -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
     <!-- Liquid templates (Modulus.AspNetCore.Fluid): the parser and renderer. Pinned exactly; 2.40.0 was published 2026-08-20. -->

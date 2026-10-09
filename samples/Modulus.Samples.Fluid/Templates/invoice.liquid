@@ -3,6 +3,7 @@
     <h1>Invoice {{ invoice.Number }}</h1>
     <p>{{ invoice.ClientCompany }} · {{ invoice.ClientName }} · {{ invoice.ClientEmail }}</p>
     <p>{{ status | status_badge: tone }}</p>
+    <p><a href="/documents/invoices/{{ invoice.Id }}.pdf">PDF</a> · <a href="/documents/invoices/{{ invoice.Id }}.docx">Word</a></p>
 </header>
 <div class="m-card">
     <div class="m-card-body">

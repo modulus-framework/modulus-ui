@@ -25,6 +25,9 @@ public static class DocumentDocx
     /// <summary>The editor's JSON (see <see cref="UniverDocument"/>) as a docx file.</summary>
     public static byte[] Write(string? univerJson) => Write(UniverDocument.FromJson(univerJson));
 
+    /// <summary>The HTML (a template rendered to HTML, say) as a docx file, through <see cref="HtmlBlocks.FromHtml"/>.</summary>
+    public static byte[] WriteHtml(string? html) => Write(HtmlBlocks.FromHtml(html));
+
     /// <summary>The blocks as a docx file.</summary>
     public static byte[] Write(IReadOnlyList<DocBlock> blocks)
     {

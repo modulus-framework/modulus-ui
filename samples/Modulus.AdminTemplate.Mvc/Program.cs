@@ -6,6 +6,10 @@ using Modulus.Samples.Shared;
 using Modulus.Ui.Abstractions.Navigation;
 using Modulus.Ui.Abstractions.Shell;
 
+// The PDF download needs the QuestPDF licence tier that applies to the host (Community: free under USD 1,000,000 in annual gross
+// revenue, not for public-sector or publicly traded companies). Choose the tier for your use.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Validate from explicit [Required] attributes only, exactly like Blazor's DataAnnotations validator,
@@ -18,6 +22,7 @@ builder.Services.AddSampleUiState(builder.Environment.ContentRootPath);
 builder.Services.AddModulusMvc(theme => builder.Configuration.GetSection("Modulus:Theme").Bind(theme));
 // Compression, security headers, the CSP (enforced: the pages report no violations, see docs/UPGRADING.md), and /health.
 builder.Services.AddModulusHardening(o => o.CspEnforce = true);
+builder.Services.AddModulusObservability();
 builder.Services.AddTransient<IMenuContributor, AdminMenuContributor>();
 builder.Services.AddSingleton<IShellContentProvider, SampleShellContentProvider>();
 

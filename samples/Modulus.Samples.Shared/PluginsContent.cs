@@ -273,6 +273,12 @@ public static partial class PluginsContent
     /// <summary>The file name of the Word file the document page downloads.</summary>
     public const string DocumentDownloadName = "document.docx";
 
+    /// <summary>Where the document page posts its document to download it as a PDF file (through DocumentPdf).</summary>
+    public const string DocumentPdfUrl = "/plugins/document/pdf";
+
+    /// <summary>The file name of the PDF file the document page downloads.</summary>
+    public const string DocumentPdfName = "document.pdf";
+
     /// <summary>The document a demo starts with, as the editor's JSON (the read-only demo shows the contract).</summary>
     public static string DocumentTemplate(string view) => view switch
     {

@@ -13,6 +13,10 @@ using Modulus.Ui.Abstractions.Navigation;
 using Modulus.Ui.Abstractions.Shell;
 using Modulus.Ui.Abstractions.Theming;
 
+// The PDF download needs the QuestPDF licence tier that applies to the host (Community: free under USD 1,000,000 in annual gross
+// revenue, not for public-sector or publicly traded companies). Choose the tier for your use.
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // The spreadsheet and document editors send their whole JSON back on each change; SignalR's 32 KB default would drop
@@ -28,6 +32,7 @@ builder.Services.AddSampleUiState(builder.Environment.ContentRootPath);
 builder.Services.AddModulusBlazor(theme => builder.Configuration.GetSection("Modulus:Theme").Bind(theme));
 // Compression, security headers and the CSP (report-only: Blazor's import map is an inline script with no nonce, see docs/UPGRADING.md), and /health.
 builder.Services.AddModulusHardening();
+builder.Services.AddModulusObservability();
 builder.Services.AddTransient<IMenuContributor, AdminMenuContributor>();
 builder.Services.AddSingleton<IShellContentProvider, SampleShellContentProvider>();
 builder.Services.AddHttpContextAccessor();
@@ -151,6 +156,12 @@ app.MapPost(PluginsContent.SpreadsheetDownloadUrl, ([FromForm] string? budget) =
 app.MapPost(PluginsContent.DocumentDownloadUrl, ([FromForm] string? document) =>
         Results.File(DocumentDocx.Write(PluginsContent.PostedDocument(document) ?? PluginsContent.Contract),
             DocumentDocx.ContentType, PluginsContent.DocumentDownloadName))
+    .DisableAntiforgery();
+
+// PDF download of the document page: the same document as a PDF file, from the same form.
+app.MapPost(PluginsContent.DocumentPdfUrl, ([FromForm] string? document) =>
+        Results.File(DocumentPdf.Write(PluginsContent.PostedDocument(document) ?? PluginsContent.Contract),
+            DocumentPdf.ContentType, PluginsContent.DocumentPdfName))
     .DisableAntiforgery();
 
 // Audio track of the inline player page (/plugins/player), made on the server; MVC and Razor Pages serve the same URL.

@@ -104,6 +104,12 @@ public class PluginsController : SampleController
         File(DocumentDocx.Write(PluginsContent.PostedDocument(Request.Form["Document"]) ?? PluginsContent.Contract),
             DocumentDocx.ContentType, PluginsContent.DocumentDownloadName);
 
+    // PDF download of the document page: the same document as a PDF file.
+    [HttpPost("document/pdf")]
+    public IActionResult DocumentPdfDownload() =>
+        File(DocumentPdf.Write(PluginsContent.PostedDocument(Request.Form["Document"]) ?? PluginsContent.Contract),
+            DocumentPdf.ContentType, PluginsContent.DocumentPdfName);
+
     [HttpGet("sortable")]
     public IActionResult Sortable() => Page("Sortable", "Plugins/Sortable");
 

@@ -172,7 +172,7 @@ charts
   `[{ value, label, description, fields }]`. `fields` fill the dialog's extra `Columns`.
 - **One-time code**: typed keys are handled in `beforeinput` (replace the box, move on), so fast typing never depends
   on the caret; a paste or an autofill into one box spreads over the boxes. Blazor sees every change as `input`.
-- **Hosting** (`Modulus.AspNetCore.Hosting`): one place for compression, the security headers, the CSP with a nonce, and `/health`,
+- **Hosting** (`Modulus.AspNetCore.Hosting`): one place for compression, the security headers, the CSP with a nonce, `/health`, and OpenTelemetry (`AddModulusObservability`),
   added by each sample's `Program.cs`. The CSP is report-only until a page set shows no violations (see UPGRADING *Hardening*).
 - **Quality gates** (`tests/browser`): the samples in a real browser, in CI's `browser` job. The gates fail the job; they do not
   report and continue. `budgets.py` runs in the build job.

@@ -1,0 +1,19 @@
+<h1>Invoice {{ invoice.Number }}</h1>
+<p>{{ invoice.ClientCompany }}</p>
+<p>{{ invoice.ClientName }}</p>
+<p>{{ invoice.ClientEmail }}</p>
+<p>Status: {{ status }}</p>
+<table>
+<thead><tr><th>Item</th><th>Description</th><th>Qty</th><th>Cost</th><th>Total</th></tr></thead>
+<tbody>
+{% for line in invoice.Lines %}<tr><td>{{ line.Item }}</td><td>{{ line.Description }}</td><td>{{ line.Qty }}</td><td>{{ line.Cost | money }}</td><td>{{ line.Total | money }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+<ul>
+<li>Subtotal {{ invoice.Subtotal | money }}</li>
+<li>Discount {{ invoice.Discount | money }}</li>
+<li>Tax {{ invoice.Tax | money }}</li>
+</ul>
+<h2>Total {{ invoice.Total | money }}</h2>
+<p>Balance due {{ invoice.Balance | money }}.</p>

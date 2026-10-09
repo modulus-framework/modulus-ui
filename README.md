@@ -125,7 +125,7 @@ pixel-for-pixel where the controls allow it.
 - **Hosting defaults** (`Modulus.AspNetCore.Hosting`): `AddModulusHardening()` and `UseModulusHardening()` add Brotli and gzip for
   text, the security headers (no MIME sniffing, a referrer policy, same-site framing, no camera, microphone or location), and a
   Content-Security-Policy with a per-request nonce (`CspNonce.Of(Context)`). MVC and Razor Pages enforce it; Blazor reports
-  it, because its import map is an inline script with no nonce. The `MapModulusHealth()` endpoint answers `/health`. The
+  it, because its import map is an inline script with no nonce. The `MapModulusHealth()` endpoint answers `/health`. `AddModulusObservability()` adds OpenTelemetry traces, metrics and logs, sent over OTLP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. The
   versioned asset URLs the MVC head writes (`?v=`) are cached for a year. See [UPGRADING](docs/UPGRADING.md#hardening).
 - **Charts with no JS dependency**: `LineChart` (line/area, crosshair tooltip), `ColumnChart` (grouped/stacked),
   `BarChart`, `DonutChart`, `HeatmapChart`, `Sparkline`, `MiniBar`, plus business charts (treemap, pareto, waterfall,
@@ -357,7 +357,7 @@ the first paint.
 | `src/Modulus.Blazor` | `AddModulusBlazor`, `App*` aliases, ProLayout shell, Pro components, charts (no server framework dependency, so it is WASM-compatible) |
 | `src/Modulus.AspNetCore.Mvc` | `AddModulusMvc`, tag helpers, `_ModulusLayout` and partials, htmx response helpers, `AntIcons` |
 | `samples/Modulus.AdminTemplate.*` | The Blazor, MVC and Razor Pages admin templates |
-| `src/Modulus.AspNetCore.Hosting` | Hosting defaults: response compression, security headers, the CSP with a nonce, the `/health` endpoint |
+| `src/Modulus.AspNetCore.Hosting` | Hosting defaults: response compression, security headers, the CSP with a nonce, the `/health` endpoint, OpenTelemetry traces, metrics and logs |
 | `src/Modulus.AspNetCore.Fluid` | Liquid templates for pages and documents: `ModulusLiquid` (escaped output, layouts, the file cache), the `modulus_head`, `icon` and `barcode` tags and the `status_badge` and `money` filters |
 | `samples/Modulus.Samples.Shared` | Models, in-memory stores, menu and page data shared by all three samples |
 | `samples/Modulus.Samples.Fluid` | A Liquid sample on port 5103: an invoice list and an invoice page, rendered from `Templates/` |
