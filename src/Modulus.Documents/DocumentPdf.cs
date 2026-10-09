@@ -154,9 +154,12 @@ public static class DocumentPdf
 
         column.Item().PaddingTop(4).PaddingBottom(8).Table(table =>
         {
+            // A column's share follows its widest text in points (about 5.6 per character at the table's 9 pt, plus the padding), so a short
+            // column such as "#" stays narrow and a code such as "ST-00123" does not wrap.
+            var widths = Enumerable.Range(0, columns).Select(i => (float)Math.Max(14, rows.Max(r => i < r.Count ? Length(r[i]) : 0) * 5.6 + 9)).ToArray();
             table.ColumnsDefinition(definition =>
             {
-                for (var i = 0; i < columns; i++) definition.RelativeColumn();
+                foreach (var width in widths) definition.RelativeColumn(width);
             });
             foreach (var row in rows)
             {
@@ -164,11 +167,14 @@ public static class DocumentPdf
                 for (var i = 0; i < columns; i++)
                 {
                     IReadOnlyList<DocBlock> cell = i < row.Count ? row[i] : [];
-                    table.Cell().Border(0.5f).BorderColor(Rule).Padding(4).Column(content => Blocks(content, cell));
+                    table.Cell().Border(0.5f).BorderColor(Rule).Padding(4).DefaultTextStyle(style => style.FontSize(9)).Column(content => Blocks(content, cell));
                 }
             }
         });
     }
+
+    // The characters of a cell's text (the blocks' runs, joined), for sizing its column.
+    private static int Length(IReadOnlyList<DocBlock> cell) => cell.Sum(b => b.Runs.Sum(r => r.Text.Length));
 
     // The runs of a block, each with its own style, and the block's alignment.
     private static void Runs(TextDescriptor text, DocBlock block)

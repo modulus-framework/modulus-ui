@@ -535,6 +535,15 @@
         syncPlayer(p);
     }
 
+    // A field button of the Insert ERP Field panel: it sends its text to the sheet named by data-m-sheet-insert-target
+    // (the first sheet on the page by default), which writes it into the active cell.
+    document.addEventListener('click', function (e) {
+        var button = e.target instanceof Element ? e.target.closest('[data-m-sheet-insert]') : null;
+        if (!button) return;
+        var target = document.querySelector(button.getAttribute('data-m-sheet-insert-target') || '[data-m-sheet]');
+        if (target) target.dispatchEvent(new CustomEvent('modulus:insert', { detail: { text: button.getAttribute('data-m-sheet-insert') } }));
+    });
+
     document.addEventListener('click', function (e) {
         var btn = e.target instanceof Element && e.target.closest('[data-m-player-cmd]');
         var p = btn && playerOf(btn);
@@ -1198,6 +1207,11 @@
             var ed = { kind: kind, readonly: readonly, app: app, created: created, controls: univerOwnControls(app), unit: null, root: null, value: null, last: null, timer: 0, delay: 400, loading: false };
             if (kind.ready) kind.ready(created.univerAPI, app, readonly);
             univerAttach(ed, root);
+            // An ERP field from the side panel (a [data-m-sheet-insert] button) lands in the active cell of the sheet.
+            root.addEventListener('modulus:insert', function (e) {
+                if (ed.readonly || !e.detail) return;
+                created.univerAPI.getActiveWorkbook().getActiveSheet().getActiveRange().setValue(String(e.detail.text));
+            });
             // Mutations (type 2) of the content only; loading a workbook or document is not an edit.
             created.univerAPI.addEvent(created.univerAPI.Event.CommandExecuted, function (e) {
                 if (ed.readonly || ed.loading || e.type !== 2 || !kind.mutation.test(e.id)) return;

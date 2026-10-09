@@ -17,7 +17,7 @@ import urllib.request
 from playwright.sync_api import sync_playwright
 
 PAGES = [
-    "/", "/tables/large", "/tables/pivot", "/forms/business", "/forms/dynamic", "/plugins/dropzone",
+    "/", "/tables/large", "/tables/pivot", "/forms/business", "/forms/dynamic", "/forms/elements", "/merchandising/packing-lists", "/plugins/dropzone",
     "/plugins/code-editor", "/plugins/image-cropper", "/plugins/editor", "/plugins/spreadsheet", "/plugins/pdf",
     "/plugins/map", "/plugins/date-picker", "/tables/tree", "/apps/workflow", "/dashboards/crm", "/pages/faq",
 ]
