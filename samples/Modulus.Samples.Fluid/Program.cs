@@ -21,6 +21,16 @@ builder.Services.AddSingleton(_ => new ModulusLiquid(new ModulusLiquidOptions().
 var app = builder.Build();
 var templates = Path.Combine(app.Environment.ContentRootPath, "Templates");
 
+// Outside Development an unhandled exception gets the sample's error page with a 500 status, not the framework's bare response,
+// and never the exception itself.
+if (!app.Environment.IsDevelopment())
+    app.UseExceptionHandler(errors => errors.Run(async context =>
+    {
+        var liquid = context.RequestServices.GetRequiredService<ModulusLiquid>();
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        await Page(liquid, templates, "error", "Server error", new Dictionary<string, object?>()).ExecuteAsync(context);
+    }));
+
 app.UseModulusHardening();
 app.MapModulusHealth();
 app.MapStaticAssets();
