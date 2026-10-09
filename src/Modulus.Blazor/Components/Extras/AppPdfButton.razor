@@ -1,0 +1,17 @@
+@* A "Download PDF" button for a form: it submits the form to Action, and the server answers with the PDF. The same markup as the
+   MVC <app-pdf-button> (PdfDownloadHtml.Button). *@
+@using Modulus.Ui.Abstractions.Plugins
+
+@((MarkupString)PdfDownloadHtml.Button(FormId, Action, Label, CssClass))
+
+@code {
+    /// <summary>The id of the form the button submits.</summary>
+    [Parameter, EditorRequired] public string FormId { get; set; } = "";
+
+    /// <summary>A same-site path (starting with /) that answers with the PDF. Other addresses are refused.</summary>
+    [Parameter, EditorRequired] public string Action { get; set; } = "";
+
+    [Parameter] public string Label { get; set; } = "Download PDF";
+
+    [Parameter] public string? CssClass { get; set; }
+}

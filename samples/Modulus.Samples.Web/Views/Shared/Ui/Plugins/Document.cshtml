@@ -47,7 +47,7 @@
                 </label>
                 <button type="button" class="ant-btn ant-btn-default" data-m-print="document" title="Print the document (Ctrl+P in it)"><app-icon type="printer" /><span>Print</span></button>
                 <button type="submit" form="document-form" formaction="@PluginsContent.DocumentDownloadUrl" data-m-reload class="ant-btn ant-btn-default"><app-icon type="download" /><span>Download docx</span></button>
-                <button type="submit" form="document-form" formaction="@PluginsContent.DocumentPdfUrl" data-m-reload class="ant-btn ant-btn-default"><app-icon type="download" /><span>Download PDF</span></button>
+                <app-pdf-button form="document-form" action="@PluginsContent.DocumentPdfUrl" />
                 <a class="ant-btn ant-btn-default" href="@PluginsContent.DocumentUrl(view)"><span>Reset</span></a>
                 <button type="submit" form="document-form" class="ant-btn ant-btn-primary"><app-icon type="save" /><span>Save</span></button>
             </div>
