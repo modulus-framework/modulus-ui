@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Modulus.AspNetCore.Mvc.Htmx;
+using Modulus.AspNetCore.Mvc.TagHelpers;
 using Modulus.Samples.Shared;
 using Modulus.Ui.Abstractions;
 
@@ -9,13 +10,12 @@ namespace Modulus.AdminTemplate.Mvc.Controllers;
 [Route("apps/calendar")]
 public class CalendarController(SampleStore store) : SampleController
 {
-    public const string RefreshEvent = "calendar:refresh";
     private const string FormView = "~/Views/Shared/Ui/Apps/Calendar/_EventForm.cshtml";
 
     [HttpGet("")]
     public IActionResult Index(string? month, string? view, [FromQuery] string[] cat, bool filtered) =>
         Page("Calendar", "Apps/Calendar/Calendar",
-            CalendarView.Load(store, CalendarView.ParseMonth(month), view == "list", CalendarView.ParseCategories(cat, filtered)));
+            CalendarPage.Load(store, CalendarPage.Query(month, view, cat, filtered, DateTime.Today), DateTime.Now));
 
     [HttpGet("form/{id:int?}")]
     public IActionResult Form(int? id, DateTime? date)
@@ -32,7 +32,7 @@ public class CalendarController(SampleStore store) : SampleController
         if (input.Start is { } s && input.End is { } e && e < s) ModelState.AddModelError(nameof(input.End), "End must be after the start");
         if (!ModelState.IsValid) return PartialView(FormView, input);
         store.SaveEvent(input);
-        Response.HxMessage(MessageType.Success, input.Id is null ? "Event added" : "Event saved").HxCloseDrawer().HxTrigger(RefreshEvent);
+        Response.HxMessage(MessageType.Success, input.Id is null ? "Event added" : "Event saved").HxCloseDrawer().HxTrigger(SchedulerTagHelper.RefreshEvent);
         return Request.IsHtmx() ? NoContent() : Redirect("~/apps/calendar");
     }
 
@@ -40,7 +40,7 @@ public class CalendarController(SampleStore store) : SampleController
     public IActionResult Delete(int id)
     {
         store.DeleteEvent(id);
-        Response.HxMessage(MessageType.Success, "Event deleted").HxCloseDrawer().HxTrigger(RefreshEvent);
+        Response.HxMessage(MessageType.Success, "Event deleted").HxCloseDrawer().HxTrigger(SchedulerTagHelper.RefreshEvent);
         return Request.IsHtmx() ? NoContent() : Redirect("~/apps/calendar");
     }
 }

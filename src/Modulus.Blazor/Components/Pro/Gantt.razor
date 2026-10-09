@@ -1,0 +1,85 @@
+@using Modulus.Ui.Abstractions.Gantt
+
+@*
+    A read-only timeline: each task is a bar on the days it runs (filled to its progress), grouped under a heading, with weekly
+    ticks along the top and a line for today. Late tasks are marked. The rows and bars come from GanttModel, the same the MVC
+    app-gantt draws.
+
+    <Gantt Tasks="_tasks" From="_from" To="_to" />
+*@
+
+<div class="m-gantt" data-m-gantt>
+    <div class="m-gantt-head" aria-hidden="true">
+        <div class="m-gantt-name">Task</div>
+        <div class="m-gantt-track">
+            @foreach (var tick in _view.Ticks)
+            {
+                <span class="m-gantt-tick" style="left:@Pct(tick.LeftPct)">@tick.Label</span>
+            }
+        </div>
+    </div>
+    <div class="m-gantt-body" role="table" aria-label="Timeline">
+        @foreach (var row in _view.Rows)
+        {
+            var task = row.Task;
+            @if (row.NewGroup)
+            {
+                <div class="m-gantt-group" role="rowheader">@(string.IsNullOrEmpty(task.Group) ? "Ungrouped" : task.Group)</div>
+            }
+            <div class="m-gantt-row" role="row">
+                <div class="m-gantt-name" role="cell">
+                    <span class="m-heading m-medium m-truncate">@task.Name</span>
+                    @if (task.Owner is { Length: > 0 }) { <span class="m-xsmall m-muted m-truncate">@task.Owner</span> }
+                </div>
+                <div class="m-gantt-track" role="cell">
+                    <div class="@BarClass(row)" style="@BarStyle(row)" title="@Title(row)" aria-label="@Title(row)">
+                        <span class="m-gantt-fill" style="width:@row.Progress%"></span>
+                        <span class="m-gantt-bar-label">@row.Progress%</span>
+                    </div>
+                    @if (_view.TodayPct is { } today)
+                    {
+                        <div class="m-gantt-today" style="left:@Pct(today)" aria-hidden="true"></div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>The tasks to draw. Tasks outside the range are not shown.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<GanttTask> Tasks { get; set; } = [];
+
+    /// <summary>The first day of the timeline.</summary>
+    [Parameter, EditorRequired] public DateTime From { get; set; }
+
+    /// <summary>The last day of the timeline (both days count).</summary>
+    [Parameter, EditorRequired] public DateTime To { get; set; }
+
+    /// <summary>The day the timeline is drawn for: tasks that ended before it and are not done are late. Defaults to today.</summary>
+    [Parameter] public DateTime Today { get; set; } = DateTime.Today;
+
+    private GanttView _view = GanttModel.Build([], DateTime.Today, DateTime.Today, DateTime.Today);
+
+    protected override void OnParametersSet() => _view = GanttModel.Build(Tasks, From, To, Today);
+
+    private static string Pct(double value) => value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + "%";
+
+    private static string BarClass(GanttRowView row)
+    {
+        var classes = $"m-gantt-bar m-gantt-{row.Task.Tone}";
+        if (row.Late) classes += " late";
+        if (row.ClippedStart) classes += " clip-start";
+        if (row.ClippedEnd) classes += " clip-end";
+        return classes;
+    }
+
+    private static string BarStyle(GanttRowView row) => $"left:{Pct(row.LeftPct)};width:{Pct(row.WidthPct)}";
+
+    private static string Title(GanttRowView row)
+    {
+        var t = row.Task;
+        var dates = $"{t.Start:MMM d} to {t.End:MMM d}";
+        return $"{t.Name}: {dates}, {row.Progress}%" + (row.Late ? ", late" : "");
+    }
+}

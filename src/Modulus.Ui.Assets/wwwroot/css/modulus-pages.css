@@ -858,6 +858,158 @@ a.m-card, a.m-card:hover { color: inherit; }
 .m-cal-filters .ant-checkbox-wrapper { display: flex; align-items: center; gap: 2px; margin: 0; padding: 6px 8px; }
 .m-cal-filters .ant-checkbox-inner { border-color: var(--c); }
 .m-cal-filters .ant-checkbox-checked .ant-checkbox-inner { background: var(--c); border-color: var(--c); }
+
+/* Gantt: a task-name column, then the timeline; rows scroll sideways on narrow screens. */
+.m-gantt { overflow-x: auto; border: 1px solid var(--m-border-secondary); border-radius: var(--m-radius); background: var(--m-bg-container); }
+.m-gantt-head, .m-gantt-row { display: grid; grid-template-columns: 240px minmax(720px, 1fr); min-width: 960px; }
+.m-gantt-head { border-bottom: 1px solid var(--m-border-secondary); color: var(--m-text-tertiary); font-size: 12px; }
+.m-gantt-head .m-gantt-name { display: flex; align-items: center; padding: 8px 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.m-gantt-group { min-width: 960px; padding: 8px 12px; border-bottom: 1px solid var(--m-split); background: var(--m-bg-subtle); color: var(--m-heading); font-size: 12px; font-weight: 600; }
+.m-gantt-row { position: relative; border-bottom: 1px solid var(--m-split); }
+.m-gantt-name { display: flex; flex-direction: column; justify-content: center; min-width: 0; padding: 8px 12px; }
+.m-gantt-track { position: relative; min-height: 52px; border-left: 1px solid var(--m-split); }
+.m-gantt-head .m-gantt-track { min-height: 32px; }
+.m-gantt-tick { position: absolute; top: 0; bottom: 0; padding: 8px 6px 0; border-left: 1px solid var(--m-split); white-space: nowrap; }
+.m-gantt-bar { position: absolute; top: 50%; height: 24px; transform: translateY(-50%); min-width: 24px; display: flex; align-items: center; overflow: hidden; border-radius: var(--m-radius-sm); background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--m-heading); font-size: 12px; cursor: default; }
+.m-gantt-fill { position: absolute; top: 0; bottom: 0; left: 0; background: color-mix(in srgb, var(--c) 55%, transparent); }
+.m-gantt-bar-label { position: relative; padding: 0 8px; font-weight: 500; white-space: nowrap; }
+.m-gantt-bar.clip-start { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.m-gantt-bar.clip-end { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.m-gantt-bar.late { box-shadow: inset 0 0 0 1px var(--m-error); }
+.m-gantt-primary { --c: var(--m-primary); }
+.m-gantt-success { --c: var(--m-success); }
+.m-gantt-warning { --c: var(--m-warning); }
+.m-gantt-danger { --c: var(--m-error); }
+.m-gantt-today { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--m-error); pointer-events: none; }
+
+/* Workflow kit: a status pill, an approval timeline and an audit trail. The tone sets --c (success, processing, error, warning, default). */
+.m-status-badge { --c: var(--m-text-tertiary); display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 500; color: var(--m-text); background: color-mix(in srgb, var(--c) 12%, var(--m-bg-container)); white-space: nowrap; }
+.m-status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c); flex: none; }
+.m-status-success { --c: var(--m-success); }
+.m-status-processing { --c: var(--m-primary); }
+.m-status-warning { --c: var(--m-warning); }
+.m-status-error { --c: var(--m-error); }
+
+.m-approval { position: relative; margin: 0; padding: 0; list-style: none; }
+.m-approval-step { --c: var(--m-text-tertiary); position: relative; display: flex; gap: 12px; padding-bottom: 16px; }
+.m-approval-step:last-child { padding-bottom: 0; }
+.m-approval-step:not(:last-child)::before { content: ""; position: absolute; left: 5px; top: 14px; bottom: 0; width: 2px; background: var(--m-border); }
+.m-approval-success { --c: var(--m-success); }
+.m-approval-processing { --c: var(--m-primary); }
+.m-approval-warning { --c: var(--m-warning); }
+.m-approval-error { --c: var(--m-error); }
+.m-approval-dot { width: 12px; height: 12px; margin-top: 3px; border-radius: 50%; background: var(--m-bg-container); box-shadow: inset 0 0 0 2px var(--c); flex: none; }
+.m-approval-success .m-approval-dot { background: var(--c); }
+.m-approval-processing .m-approval-dot { box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 25%, transparent), inset 0 0 0 2px var(--c); }
+.m-approval-body { min-width: 0; flex: 1; }
+.m-approval-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.m-approval-state { color: var(--c); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.m-approval-note { margin-top: 4px; padding: 6px 10px; border-left: 2px solid var(--c); background: var(--m-bg-subtle); color: var(--m-text-secondary); }
+
+.m-audit-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.m-audit-day { margin-bottom: 12px; }
+.m-audit-date { margin: 0 0 4px; padding-bottom: 4px; border-bottom: 1px solid var(--m-split); font-size: 12px; font-weight: 600; color: var(--m-text-secondary); }
+.m-audit-list { margin: 0; padding: 0; list-style: none; }
+.m-audit-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 6px 0; font-size: 13px; }
+.m-audit-row time { min-width: 40px; color: var(--m-text-tertiary); font-variant-numeric: tabular-nums; }
+.m-audit-action { font-weight: 600; }
+.m-audit-actor { color: var(--m-text-secondary); }
+.m-audit-change { flex-basis: 100%; padding-left: 50px; color: var(--m-text-secondary); font-size: 12px; overflow-wrap: anywhere; }
+.m-workflow-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 16px; align-items: start; }
+.m-workflow-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+@media (max-width: 900px) { .m-workflow-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* PDF viewer: a toolbar over one page on a grey well; the page keeps its size, so the well scrolls. */
+.m-pdf { display: flex; flex-direction: column; min-height: 240px; overflow: hidden; border: 1px solid var(--m-border-secondary); border-radius: var(--m-radius); background: var(--m-bg-container); }
+.m-pdf-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--m-split); }
+.m-pdf-toolbar .ant-btn { min-width: 32px; }
+.m-pdf-page { display: inline-flex; align-items: center; gap: 6px; color: var(--m-text-secondary); font-size: 13px; }
+.m-pdf-page .ant-input { width: 72px; }
+.m-pdf-zoom { min-width: 48px; text-align: center; font-size: 13px; }
+.m-pdf-scroll { position: relative; flex: 1; min-height: 0; overflow: auto; padding: 16px; background: var(--m-bg-subtle); }
+.m-pdf-canvas { display: flex; justify-content: center; }
+.m-pdf-canvas canvas { display: block; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .2); }
+/* A page turn or zoom keeps the current page on screen until the next one is drawn; a thin bar shows the work. */
+.m-pdf-toolbar { position: relative; }
+.m-pdf-busy .m-pdf-toolbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: linear-gradient(90deg, transparent, var(--m-primary), transparent); background-size: 40% 100%; background-repeat: no-repeat; animation: m-pdf-progress 0.9s linear infinite; }
+@keyframes m-pdf-progress { from { background-position: -40% 0; } to { background-position: 140% 0; } }
+@media (prefers-reduced-motion: reduce) { .m-pdf-busy .m-pdf-toolbar::after { animation: none; background: var(--m-primary); } }
+.m-pdf-loading { padding: 48px 0; text-align: center; color: var(--m-text-tertiary); }
+.m-pdf-failed .m-pdf-scroll::before { content: "The PDF could not be loaded."; display: block; padding: 48px 0; text-align: center; color: var(--m-error); }
+
+/* Uploader (Uppy): the Dashboard fills the host; the fallback and the result line are plain text. */
+.m-uploader-host { min-height: 120px; }
+.m-uploader-fallback { margin: 0; padding: 24px 0; text-align: center; color: var(--m-text-tertiary); }
+.m-uploader-result { min-height: 1.5em; margin: 8px 0 0; color: var(--m-text-secondary); font-size: 12px; }
+.m-uploader-failed .m-uploader-fallback { color: var(--m-error); }
+
+/* Image cropper (Cropper.js): the stage takes the picture; the shape buttons show the one in use. */
+.m-cropper-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.m-cropper-toolbar .ant-btn[aria-pressed="true"] { border-color: var(--m-primary); color: var(--m-primary); }
+.m-cropper-stage { height: var(--m-cropper-height, 360px); overflow: hidden; border: 1px solid var(--m-border); border-radius: var(--m-radius); background: var(--m-bg-subtle); }
+.m-cropper-stage cropper-canvas { display: block; width: 100%; height: 100%; }
+.m-cropper-image { display: none; }
+.m-cropper-footer { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; margin-top: 12px; }
+.m-cropper-box { flex: 1 1 200px; color: var(--m-text-secondary); font-variant-numeric: tabular-nums; }
+.m-cropper-preview { flex: none; min-width: 0; }
+.m-cropper-preview canvas { display: block; max-width: 160px; max-height: 120px; height: auto; border: 1px solid var(--m-border); border-radius: var(--m-radius-sm); }
+.m-cropper-failed .m-cropper-stage { display: flex; align-items: center; justify-content: center; color: var(--m-error); }
+
+/* Code editor (CodeMirror): the host holds the editor, or the code as plain text until the editor starts. */
+.m-code-host { height: var(--m-code-height, 360px); overflow: hidden; border: 1px solid var(--m-border); border-radius: var(--m-radius); background: var(--m-bg-container); }
+.m-code-host .cm-editor { height: 100%; background: var(--m-bg-container); }
+.m-code-host .cm-scroller { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.5; }
+.m-code-host .cm-editor.cm-focused { outline: 2px solid var(--m-primary); outline-offset: -2px; }
+.m-code-fallback { height: 100%; margin: 0; padding: 8px 12px; overflow: auto; white-space: pre; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--m-text); }
+.m-code-failed .m-code-host { display: flex; align-items: center; justify-content: center; color: var(--m-error); }
+
+/* File manager: a bar (breadcrumb, search, new folder), a create form, and a listing grid of name, size, date and actions. */
+.m-files { overflow: hidden; border: 1px solid var(--m-border-secondary); border-radius: var(--m-radius); background: var(--m-bg-container); }
+.m-files-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--m-split); }
+.m-files-crumbs { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: center; gap: 2px; min-width: 0; }
+.m-files-crumb { padding: 2px 6px; border: 0; border-radius: var(--m-radius-sm); background: none; color: var(--m-primary); font: inherit; text-decoration: none; cursor: pointer; }
+.m-files-crumb:hover { background: var(--m-fill-secondary); }
+.m-files-crumb[aria-current="page"] { color: var(--m-heading); font-weight: 600; cursor: default; }
+.m-files-crumb[aria-current="page"]:hover { background: none; }
+.m-files-sep { color: var(--m-text-quaternary); }
+.m-files-search { flex: 0 1 280px; min-width: 180px; margin: 0; }
+.m-files-create { display: grid; gap: 8px; max-width: 360px; padding: 12px 16px; border-bottom: 1px solid var(--m-split); }
+.m-files-error { color: var(--m-error); font-size: 13px; }
+.m-files-list { display: block; }
+.m-files-row { display: grid; grid-template-columns: minmax(0, 1fr) 96px 150px 96px; align-items: center; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--m-split); }
+.m-files-head { padding-top: 10px; padding-bottom: 10px; color: var(--m-text-tertiary); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.m-files-name { min-width: 0; }
+.m-files-open, .m-files-file { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 0; border: 0; background: none; color: var(--m-heading); font: inherit; text-align: left; text-decoration: none; cursor: default; }
+.m-files-open { cursor: pointer; }
+.m-files-open:hover span { color: var(--m-primary); }
+.m-files-open span, .m-files-file span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-files-rename { display: grid; gap: 6px; max-width: 360px; }
+.m-files-size, .m-files-date { color: var(--m-text-tertiary); font-size: 13px; white-space: nowrap; }
+.m-files-actions { display: flex; justify-content: flex-end; gap: 4px; }
+.m-files-empty { grid-column: 1 / -1; padding: 48px 0; text-align: center; color: var(--m-text-tertiary); }
+@media (max-width: 640px) {
+    .m-files-row { grid-template-columns: minmax(0, 1fr) auto; }
+    .m-files-row > .m-files-size, .m-files-row > .m-files-date, .m-files-head > :nth-child(2), .m-files-head > :nth-child(3) { display: none; }
+    .m-files-search { flex-basis: 100%; }
+}
+
+/* Dashboard: tiles on a 12-column grid; each tile spans its columns (--w) and rows (--h); a row is 120px. */
+.m-dash { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-auto-rows: 120px; gap: 16px; }
+.m-dash-tile { display: flex; flex-direction: column; grid-column: span var(--w, 4); grid-row: span var(--h, 2); min-width: 0; overflow: hidden; border: 1px solid var(--m-border-secondary); border-radius: var(--m-radius); background: var(--m-bg-container); }
+.m-dash-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 6px 12px; border-bottom: 1px solid var(--m-split); }
+.m-dash-title { flex: 1 1 auto; margin: 0; color: var(--m-heading); font-size: 14px; font-weight: 600; }
+.m-dash-tools { display: flex; flex-wrap: wrap; gap: 0 2px; }
+.m-dash-body { flex: 1; min-height: 0; overflow: auto; padding: 12px; }
+.m-dash-kpi-value { color: var(--m-heading); font-size: 26px; font-weight: 600; line-height: 1.3; }
+.m-dash-foot { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+
+/* Barcode: the SVG scales down to its card; an error reads as an error. */
+.m-barcode { display: block; max-width: 100%; height: auto; }
+.m-barcode-error { color: var(--m-error); font-size: 13px; }
+@media (max-width: 768px) {
+    .m-dash { grid-template-columns: minmax(0, 1fr); }
+    .m-dash-tile { grid-column: 1 / -1; grid-row: span var(--h, 2); }
+}
 button.ant-segmented-item { padding: 0; border: 0; background: none; font: inherit; }
 
 /* Kanban */

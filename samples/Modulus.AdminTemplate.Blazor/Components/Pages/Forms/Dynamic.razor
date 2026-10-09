@@ -1,0 +1,65 @@
+@page "/forms/dynamic"
+@using Modulus.Samples.Shared
+@using Modulus.Ui.Abstractions.Forms
+@inject IMessageService Message
+
+<PageTitle>Dynamic form · Modulus</PageTitle>
+
+@* The fields come from the JSON schema in DynamicFormDemo (FormSchema.Parse), drawn by AppSchemaForm. The MVC and Razor Pages
+   samples post the same schema to the same checks. *@
+<PageHeading Pretitle="Forms" Title="Dynamic form" Subtitle="The fields are read from a JSON schema, so the page has no fields of its own." />
+
+<div class="m-row-cards m-cols-8-4">
+    <div class="m-card">
+        <form class="ant-form ant-form-vertical" novalidate @onsubmit="Submit">
+            <div class="m-card-header"><div><h2 class="m-card-title">Expense claim</h2><p class="m-card-subtitle">Submit the empty form to see every message.</p></div></div>
+            <div class="m-card-body">
+                <AppSchemaForm Schema="DynamicFormDemo.Schema" @bind-Values="_values" Problems="_problems" Id="claim" />
+            </div>
+            <div class="m-card-footer m-form-actions">
+                <Button Type="@ButtonType.Primary" HtmlType="submit">Submit claim</Button>
+                <Button OnClick="Reset">Reset</Button>
+            </div>
+        </form>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><div><h2 class="m-card-title">Stored values</h2><p class="m-card-subtitle">@(_saved is null ? "Filled in once the claim is valid" : "Normalised by the schema")</p></div></div>
+        <div class="m-card-body">
+            @if (_saved is null)
+            {
+                <p class="m-muted">Nothing saved yet.</p>
+            }
+            else
+            {
+                <ul class="m-plain-list">
+                    @foreach (var (key, value) in _saved)
+                    {
+                        <li><span class="m-muted">@key</span><span>@value</span></li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private IReadOnlyDictionary<string, string?> _values = new Dictionary<string, string?>();
+    private IReadOnlyList<FormProblem> _problems = [];
+    private IReadOnlyDictionary<string, string>? _saved;
+
+    private void Submit()
+    {
+        var state = DynamicFormDemo.Submit(_values);
+        _problems = state.Problems;
+        _saved = state.Saved;
+        if (_saved is not null) _ = Message.SuccessAsync(DynamicFormDemo.Summary(_saved));
+    }
+
+    private void Reset()
+    {
+        _values = new Dictionary<string, string?>();
+        _problems = [];
+        _saved = null;
+    }
+}

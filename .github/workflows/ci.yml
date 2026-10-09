@@ -33,6 +33,10 @@ jobs:
     - name: Ant Design drift check
       run: dotnet run --project tools/antd-drift --configuration Release --no-build
 
+    # Fails when a script or stylesheet every page loads grows past its gzipped budget (tests/browser/budgets.json).
+    - name: Asset budgets
+      run: python3 tests/browser/budgets.py
+
     - name: Pack
       run: dotnet pack Modulus.slnx --configuration Release --no-build --output artifacts/packages
 
@@ -50,3 +54,60 @@ jobs:
         name: drift-report
         path: drift-reports/
         if-no-files-found: ignore
+
+  # The samples in a real browser: pages answer 200 with no console errors, the CSP reports nothing it should not, the
+  # navigation and the pivot markup agree across the flavours. Runs the Release build from the build-test job's steps.
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+
+    - uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: '10.0.x'
+
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Restore and build
+      run: |
+        dotnet restore Modulus.slnx
+        dotnet build Modulus.slnx --configuration Release --no-restore
+
+    - name: Install Playwright and Chromium
+      run: |
+        pip install playwright
+        python3 -m playwright install --with-deps chromium
+
+    - name: Start the samples
+      run: |
+        dotnet run --no-build --configuration Release --project samples/Modulus.AdminTemplate.Mvc --urls http://localhost:5100 > mvc.log 2>&1 &
+        dotnet run --no-build --configuration Release --project samples/Modulus.AdminTemplate.RazorPages --urls http://localhost:5101 > razor.log 2>&1 &
+        dotnet run --no-build --configuration Release --project samples/Modulus.AdminTemplate.Blazor --urls http://localhost:5102 > blazor.log 2>&1 &
+        dotnet run --no-build --configuration Release --project samples/Modulus.Samples.Fluid --urls http://localhost:5103 > fluid.log 2>&1 &
+        for port in 5100 5101 5102 5103; do
+          for attempt in $(seq 1 60); do
+            curl -sf http://localhost:$port/health && break
+            sleep 2
+          done
+        done
+
+    - name: Smoke gate
+      env:
+        MODULUS_MVC: http://localhost:5100
+        MODULUS_RAZOR: http://localhost:5101
+        MODULUS_BLAZOR: http://localhost:5102
+        MODULUS_FLUID: http://localhost:5103
+      run: python3 tests/browser/smoke.py
+
+    - name: Markup parity gate
+      env:
+        MODULUS_MVC: http://localhost:5100
+        MODULUS_RAZOR: http://localhost:5101
+        MODULUS_BLAZOR: http://localhost:5102
+      run: python3 tests/browser/parity.py
+
+    - name: Sample logs
+      if: failure()
+      run: tail -n 60 mvc.log razor.log blazor.log fluid.log

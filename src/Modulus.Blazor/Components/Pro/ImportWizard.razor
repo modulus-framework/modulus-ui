@@ -1,0 +1,233 @@
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Forms
+@using Modulus.Ui.Abstractions
+@using Modulus.Ui.Abstractions.Import
+
+@*
+    The import wizard: choose a CSV file, match each field to a column, check the rows, then import the valid file.
+    It runs the same steps as ImportWizard in the library (the same reading, suggestions and checks) and draws the
+    classes of ImportWizardHtml, the MVC app-import-wizard. The rows go to OnImport, which owns the import itself and
+    returns the message the last step shows.
+
+    <ImportWizard Fields="_fields" OnImport="SaveAsync" />
+*@
+
+<div class="m-import" data-m-import>
+    <ol class="m-import-steps">
+        @foreach (var (step, label) in Stages)
+        {
+            <li class="m-import-step" data-state="@StateOf(step)">@label</li>
+        }
+    </ol>
+
+    @if (_error is { Length: > 0 })
+    {
+        <div class="m-import-error" role="alert">@_error</div>
+    }
+
+    @switch (_step)
+    {
+        case ImportStep.Upload:
+            <div class="m-import-form">
+                <label class="m-import-file">
+                    <span>CSV file</span>
+                    <InputFile OnChange="ChooseAsync" accept=".csv,text/csv" />
+                </label>
+                <p class="m-import-hint">Up to @(ImportLimits.MaxBytes / 1_000_000) MB and @ImportLimits.MaxRows.ToString("N0", CultureInfo.InvariantCulture) rows. The first line is the header.</p>
+                <h4 class="m-import-subhead">Columns this import reads</h4>
+                <ul class="m-import-columns">
+                    @foreach (var field in Fields)
+                    {
+                        <li>@field.Title@if (field.Required) { <span class="m-import-required">required</span> }</li>
+                    }
+                </ul>
+            </div>
+            break;
+
+        case ImportStep.Map:
+            <div class="m-import-form">
+                <div class="m-import-map">
+                    @foreach (var field in Fields)
+                    {
+                        var chosen = _mapping.Column(field.Key);
+                        <label class="m-import-field">
+                            <span>@field.Title@if (field.Required) { <span class="m-import-required">*</span> }</span>
+                            <select class="m-import-select" value="@(chosen?.ToString(CultureInfo.InvariantCulture) ?? "")" @onchange="e => SetColumn(field.Key, e.Value)">
+                                <option value="">Not in the file</option>
+                                @for (var c = 0; c < _table!.Headers.Count; c++)
+                                {
+                                    var index = c;
+                                    <option value="@index.ToString(CultureInfo.InvariantCulture)" selected="@(chosen == index)">@_table.Headers[index]</option>
+                                }
+                            </select>
+                        </label>
+                    }
+                </div>
+                <div class="m-import-actions">
+                    <button type="button" class="ant-btn ant-btn-primary" @onclick="Check">Check rows</button>
+                    <button type="button" class="ant-btn ant-btn-text" @onclick="Start">Start over</button>
+                </div>
+            </div>
+            break;
+
+        case ImportStep.Preview:
+            var preview = _preview ?? new ImportPreview([], []);
+            <div class="m-import-form">
+                <div class="m-import-summary">
+                    <span class="m-badge m-badge-green-lt">@preview.ValidCount.ToString("N0", CultureInfo.InvariantCulture) ready</span>
+                    <span class="m-badge @(preview.InvalidCount > 0 ? "m-badge-red-lt" : "m-badge-gray-lt")">@preview.InvalidCount.ToString("N0", CultureInfo.InvariantCulture) with problems</span>
+                </div>
+                @if (preview.Problems.Count > 0)
+                {
+                    <ul class="m-import-problems">
+                        @foreach (var problem in preview.Problems)
+                        {
+                            <li>@problem</li>
+                        }
+                    </ul>
+                }
+                @if (preview.Rows.Count > 0)
+                {
+                    <div class="m-import-table-wrap">
+                        <table class="ant-table m-import-table">
+                            <thead class="ant-table-thead">
+                                <tr>
+                                    <th class="ant-table-cell">Row</th>
+                                    @foreach (var field in Fields)
+                                    {
+                                        <th class="ant-table-cell">@field.Title</th>
+                                    }
+                                    <th class="ant-table-cell">Problems</th>
+                                </tr>
+                            </thead>
+                            <tbody class="ant-table-tbody">
+                                @foreach (var row in preview.Rows.Take(ImportWizardHtml.PreviewRows))
+                                {
+                                    <tr class="ant-table-row" data-valid="@(row.Valid ? "true" : "false")">
+                                        <td class="ant-table-cell">@row.Row.ToString(CultureInfo.InvariantCulture)</td>
+                                        @foreach (var field in Fields)
+                                        {
+                                            var bad = row.Issues.Any(i => i.Field == field.Key);
+                                            <td class="ant-table-cell @(bad ? "m-import-bad" : "")">@Display(row.Values.GetValueOrDefault(field.Key))</td>
+                                        }
+                                        <td class="ant-table-cell">@string.Join("; ", row.Issues.Select(i => $"{TitleOf(i.Field)}: {i.Message}"))</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    @if (preview.Rows.Count > ImportWizardHtml.PreviewRows)
+                    {
+                        <p class="m-import-hint">Showing the first @ImportWizardHtml.PreviewRows of @preview.Rows.Count.ToString("N0", CultureInfo.InvariantCulture) rows.</p>
+                    }
+                }
+                <div class="m-import-actions">
+                    <button type="button" class="ant-btn ant-btn-text" @onclick="BackToMapping">Back to columns</button>
+                    <button type="button" class="ant-btn ant-btn-primary" disabled="@(!preview.CanCommit)" @onclick="ImportAsync">Import @preview.ValidCount.ToString("N0", CultureInfo.InvariantCulture) rows</button>
+                </div>
+            </div>
+            break;
+
+        case ImportStep.Done:
+            <div class="m-import-done">
+                <p>@_message</p>
+                <button type="button" class="ant-btn ant-btn-primary" @onclick="Start">Import another file</button>
+            </div>
+            break;
+    }
+</div>
+
+@code {
+    private static readonly (ImportStep Step, string Label)[] Stages =
+    [
+        (ImportStep.Upload, "Upload"),
+        (ImportStep.Map, "Map columns"),
+        (ImportStep.Preview, "Check rows"),
+        (ImportStep.Done, "Import"),
+    ];
+
+    /// <summary>The fields the import reads, in the order the preview shows them.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<ImportField> Fields { get; set; } = [];
+
+    /// <summary>Imports the checked rows (all valid) and returns the message the last step shows.</summary>
+    [Parameter, EditorRequired] public Func<IReadOnlyList<ImportRow>, Task<string>> OnImport { get; set; } = _ => Task.FromResult("");
+
+    private ImportStep _step = ImportStep.Upload;
+    private string? _csv;
+    private CsvTable? _table;
+    private ImportMapping _mapping = ImportMapping.None;
+    private ImportPreview? _preview;
+    private string? _error;
+    private string? _message;
+
+    private string StateOf(ImportStep step) => step < _step ? "done" : step == _step ? "current" : "todo";
+
+    private string TitleOf(string key) => Fields.FirstOrDefault(f => f.Key == key)?.Title ?? key;
+
+    private static string Display(object? value) => value switch
+    {
+        null => "",
+        decimal number => number.ToString("N2", CultureInfo.InvariantCulture),
+        DateOnly date => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+        _ => value.ToString() ?? "",
+    };
+
+    private void Start()
+    {
+        _step = ImportStep.Upload;
+        _csv = null;
+        _table = null;
+        _mapping = ImportMapping.None;
+        _preview = null;
+        _error = null;
+    }
+
+    private async Task ChooseAsync(InputFileChangeEventArgs e)
+    {
+        string? text = null;
+        try
+        {
+            using var reader = new StreamReader(e.File.OpenReadStream(ImportLimits.MaxBytes));
+            text = await reader.ReadToEndAsync();
+        }
+        catch (IOException)
+        {
+            _error = ImportFlow.TooLarge;
+            return;
+        }
+        var view = ImportFlow.Load(text, Fields);
+        _error = view.Error;
+        if (view.Step != ImportStep.Map) return;
+        _csv = view.Csv;
+        _table = view.Table;
+        _mapping = view.Mapping ?? ImportMapping.None;
+        _step = ImportStep.Map;
+    }
+
+    private void SetColumn(string key, object? value)
+    {
+        var text = value?.ToString();
+        var columns = new Dictionary<string, int>(_mapping.Columns);
+        if (int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out var index) && index < _table!.Headers.Count)
+            columns[key] = index;
+        else columns.Remove(key);
+        _mapping = new ImportMapping(columns);
+    }
+
+    private void Check()
+    {
+        var view = ImportFlow.Check(_csv!, _mapping, Fields);
+        _preview = view.Preview;
+        _error = null;
+        _step = ImportStep.Preview;
+    }
+
+    private void BackToMapping() => _step = ImportStep.Map;
+
+    private async Task ImportAsync()
+    {
+        if (_preview is not { CanCommit: true } preview) return;
+        _message = await OnImport(preview.Rows);
+        _step = ImportStep.Done;
+    }
+}

@@ -5,7 +5,7 @@
     @if (Model.Id is { } id) { <input type="hidden" name="Id" value="@id" /> }
     <div class="m-drawer-form-body">
         <app-form-item asp-for="Title" label="Title"><app-input asp-for="Title" placeholder="Event title" autocomplete="off" /></app-form-item>
-        <app-form-item asp-for="Category" label="Category"><app-select asp-for="Category" items="CalendarView.AllCategories.Select(c => new SelectListItem(c.ToString(), c.ToString()))" /></app-form-item>
+        <app-form-item asp-for="Category" label="Category"><app-select asp-for="Category" items="Enum.GetValues<EventCategory>().Select(c => new SelectListItem(c.ToString(), c.ToString()))" /></app-form-item>
         <app-form-item asp-for="AllDay" label="All day"><app-switch asp-for="AllDay" aria-label="All day" /></app-form-item>
         <app-form-item asp-for="Start" label="Starts"><app-date-picker asp-for="Start" show-time /></app-form-item>
         <app-form-item asp-for="End" label="Ends"><app-date-picker asp-for="End" show-time /></app-form-item>

@@ -1,0 +1,61 @@
+@using Modulus.Ui.Abstractions.Workflow
+
+@*
+    A record's audit trail: the entries grouped by day, newest first, each with its time, action, who did it and the change.
+    The actions are filter buttons; a change of filter sets Action (bind it with @bind-Action to filter in place). The model is
+    AuditTrailModel, shared with the MVC app-audit-trail, which draws the same markup and filters with links.
+
+    <AuditTrail Entries="_entries" @bind-Action="_action" />
+*@
+
+<div class="m-audit" aria-label="@(AriaLabel ?? "Audit trail")">
+    <div class="m-audit-filters" role="group" aria-label="Filter by action">
+        <button type="button" class="ant-btn ant-btn-sm @(_view.Action is null ? "ant-btn-primary" : "ant-btn-default")" aria-pressed="@(_view.Action is null ? "true" : "false")" @onclick="() => SetAction(null)">All</button>
+        @foreach (var action in _view.Actions)
+        {
+            var selected = string.Equals(_view.Action, action, StringComparison.OrdinalIgnoreCase);
+            <button type="button" class="ant-btn ant-btn-sm @(selected ? "ant-btn-primary" : "ant-btn-default")" aria-pressed="@(selected ? "true" : "false")" @onclick="() => SetAction(action)">@action</button>
+        }
+    </div>
+    @if (_view.Days.Count == 0)
+    {
+        <div class="m-table-empty" style="padding:32px 0">No changes recorded</div>
+    }
+    @foreach (var day in _view.Days)
+    {
+        <section class="m-audit-day">
+            <h3 class="m-audit-date">@day.Day.ToString("ddd, MMM d, yyyy", System.Globalization.CultureInfo.InvariantCulture)</h3>
+            <ul class="m-audit-list">
+                @foreach (var row in day.Rows)
+                {
+                    <li class="m-audit-row">
+                        <time>@row.TimeText</time>
+                        <span class="m-audit-action">@row.Entry.Action</span>
+                        <span class="m-audit-actor">@row.Entry.Actor</span>
+                        @if (row.ChangeText.Length > 0) { <span class="m-audit-change">@row.ChangeText</span> }
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+</div>
+
+@code {
+    /// <summary>The entries to show, in any order.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<AuditEntry> Entries { get; set; } = [];
+
+    /// <summary>The action the list is filtered to (null for all).</summary>
+    [Parameter] public string? Action { get; set; }
+
+    /// <summary>Raised when a filter button is chosen (null for All).</summary>
+    [Parameter] public EventCallback<string?> ActionChanged { get; set; }
+
+    /// <summary>The label for screen readers. Defaults to "Audit trail".</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    private AuditTrailView _view = AuditTrailModel.Build([]);
+
+    protected override void OnParametersSet() => _view = AuditTrailModel.Build(Entries, Action);
+
+    private Task SetAction(string? action) => ActionChanged.InvokeAsync(action);
+}

@@ -498,10 +498,13 @@ public class EditableGridTagHelperTests
         grid.HeaderGroups = [new HeaderGroup("Plan", "status", "budget", "notes")];
         var html = await RenderAsync(grid);
 
-        // Drag handle + checkbox + Name, Plan, Owner + delete.
-        Assert.Contains("""<thead class="ant-table-thead"><tr class="m-header-bands"><td class="ant-table-cell m-header-band m-header-band-empty" colspan="3" data-m-span="3"></td>"""
+        // Drag handle, checkbox and Name are pinned left, Owner and the delete column pinned right: one placeholder each.
+        // Plan covers Status and Budget.
+        const string left = """<td class="ant-table-cell ant-table-cell-fix-left m-header-band m-header-band-empty m-header-band-pin" data-m-pin="left"></td>""";
+        const string right = """<td class="ant-table-cell ant-table-cell-fix-right m-header-band m-header-band-empty m-header-band-pin" data-m-pin="right"></td>""";
+        Assert.Contains("""<thead class="ant-table-thead"><tr class="m-header-bands">""" + left + left + left
             + """<th class="ant-table-cell m-header-band" scope="colgroup" colspan="2" data-m-span="2">Plan</th>"""
-            + """<td class="ant-table-cell m-header-band m-header-band-empty" colspan="2" data-m-span="2"></td></tr><tr>""", html);
+            + right + right + """</tr><tr>""", html);
         Assert.DoesNotContain("m-header-bands", await RenderAsync(Grid()));
     }
 }

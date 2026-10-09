@@ -358,8 +358,6 @@ public sealed class EventInput
 
 // Kanban -----------------------------------------------------------------------------
 
-public sealed record KanbanColumn(string Id, string Title);
-
 public sealed class KanbanTask
 {
     public int Id { get; init; }

@@ -1,0 +1,25 @@
+@page "/tables/print"
+@using Modulus.Samples.Shared
+
+<PageTitle>Printing · Modulus</PageTitle>
+
+@* Printing overview. Each link opens a print view on a blank page (PrintSheet.razor), which prints itself. The MVC and
+   Razor Pages samples link to the same two views (Samples.Web Views/Shared/Ui/Tables/Print.cshtml). *@
+<PageHeading Pretitle="Tables" Title="Printing" Subtitle="Print views set their own page (size, orientation and margin), repeat a table's header on every page, and print labels on a sheet, one sheet per page." />
+
+<div class="m-row-cards m-cols-2">
+    <div class="m-card">
+        <div class="m-card-body">
+            <h3 class="m-card-title">Parts list</h3>
+            <p class="m-muted">@PrintSamples.Overview.Parts parts over several A4 pages. The header row repeats at the top of each page; rows do not split across pages; the total is printed once, at the end.</p>
+            <a class="ant-btn ant-btn-primary" href="/tables/print/sheet?kind=table" target="_blank" rel="noopener">Print the parts list</a>
+        </div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-body">
+            <h3 class="m-card-title">Bin labels</h3>
+            <p class="m-muted">@PrintSamples.Overview.Labels labels, @PrintSamples.Overview.LabelsPerSheet to an A4 sheet (three across, seven down). Each sheet prints on its own page, with no page margin, so the labels line up with the stock.</p>
+            <a class="ant-btn ant-btn-primary" href="/tables/print/sheet?kind=labels" target="_blank" rel="noopener">Print the bin labels</a>
+        </div>
+    </div>
+</div>

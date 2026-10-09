@@ -215,18 +215,4 @@ public static class SampleUi
         "Private" => "var(--m-series-7)",
         _ => "var(--m-gray)",
     };
-
-    /// <summary>Due-date chip text and whether it's overdue (open tasks only).</summary>
-    public static (string Text, bool Late) KanbanDue(KanbanTask t) =>
-        t.Due is not { } d ? ("", false) : (d.ToString("MMM d", System.Globalization.CultureInfo.InvariantCulture), d < DateTime.Today && t.Column != "done");
-
-    public static string KanbanLabelTone(string label) => label switch
-    {
-        "UX" => "green",
-        "Code review" => "red",
-        "Dashboard" => "azure",
-        "Images" => "orange",
-        "App" => "purple",
-        _ => "teal",
-    };
 }

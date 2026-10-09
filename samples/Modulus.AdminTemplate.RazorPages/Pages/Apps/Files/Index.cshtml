@@ -1,0 +1,6 @@
+@page "/apps/files/{handler?}/{id:int?}"
+@model FilesModel
+@{
+    ViewData["Title"] = "Files";
+}
+<partial name="Ui/Apps/Files/Files" model="Model.View" />

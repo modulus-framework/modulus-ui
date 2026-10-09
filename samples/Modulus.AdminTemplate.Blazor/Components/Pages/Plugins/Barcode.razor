@@ -1,0 +1,26 @@
+@page "/plugins/barcode"
+@using Modulus.Samples.Shared
+@using Modulus.Ui.Abstractions.Barcode
+
+<PageTitle>Barcode · Modulus</PageTitle>
+
+<PageHeading Pretitle="Plugins" Title="Barcode" Subtitle="Code 128 for shipments and EAN-13 for products, drawn as SVG. A value the code cannot take says why." />
+
+<div class="m-row-cards m-cols-2">
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Shipment label</h3><p class="m-card-subtitle">Code 128, any printable text</p></div></div>
+        <div class="m-card-body"><AppBarcode Value="@BarcodePage.Shipment" AriaLabel="@($"Shipment {BarcodePage.Shipment}")" /></div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Product</h3><p class="m-card-subtitle">EAN-13; twelve digits get their check digit added</p></div></div>
+        <div class="m-card-body"><AppBarcode Value="@BarcodePage.Product" Kind="BarcodeKind.Ean13" Height="70" AriaLabel="Product EAN-13" /></div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Digit pairs</h3><p class="m-card-subtitle">Code 128 takes an even run of digits in pairs, so it is shorter</p></div></div>
+        <div class="m-card-body"><AppBarcode Value="@BarcodePage.Digits" Height="60" AriaLabel="Digits 0123456789" /></div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Refused</h3><p class="m-card-subtitle">A wrong check digit is not drawn</p></div></div>
+        <div class="m-card-body"><AppBarcode Value="@BarcodePage.WrongCheck" Kind="BarcodeKind.Ean13" /></div>
+    </div>
+</div>

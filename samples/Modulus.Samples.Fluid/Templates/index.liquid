@@ -1,0 +1,24 @@
+<header class="m-page-header">
+    <p class="m-muted">Liquid</p>
+    <h1>Invoices</h1>
+    <p>Each page is a Liquid template rendered by Fluid. Values are escaped; the status is a Modulus badge.</p>
+</header>
+<div class="m-card">
+    <div class="m-card-body">
+        <div class="m-liquid-scroll">
+            <table class="m-liquid-table">
+            <thead><tr><th>Number</th><th>Client</th><th>Status</th><th class="m-num">Total</th></tr></thead>
+            <tbody>
+            {% for row in rows %}
+                <tr>
+                    <td><a href="/invoices/{{ row.id }}">{{ row.number }}</a></td>
+                    <td>{{ row.company }}</td>
+                    <td>{{ row.status | status_badge: row.tone }}</td>
+                    <td class="m-num">{{ row.total | money }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>

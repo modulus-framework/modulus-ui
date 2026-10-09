@@ -1037,6 +1037,8 @@ tr.m-group-collapsed { display: none; }
 .m-table-group .anticon + span { margin-left: 8px; }
 /* Multi-level headers (HeaderGroups): band rows above the column titles; an empty cell runs on into the title below it. */
 .ant-table-thead > tr.m-header-bands > :is(th, td) { padding-top: 6px; padding-bottom: 6px; text-align: center; background: var(--m-bg-subtle); border-bottom: 1px solid var(--m-split); }
+/* A band cell over a pinned column stays above the bands that scroll under it (its offset is set by modulus-shell.js). */
+.ant-table-thead > tr.m-header-bands > .m-header-band-pin { position: sticky; z-index: 2; background: var(--m-bg-subtle); }
 .ant-table-thead > tr.m-header-bands > th.m-header-band { color: var(--m-text-secondary); font-weight: 600; box-shadow: inset 1px 0 0 var(--m-split), inset -1px 0 0 var(--m-split); }
 .ant-table-thead > tr.m-header-bands > td.m-header-band-empty { border-bottom-color: transparent; }
 /* Resizable columns (modulus-shell.js): a grip over the header's right edge. */
@@ -2022,6 +2024,13 @@ html[data-theme='dark'] :is(.ant-color-picker-color-block, .ant-color-picker-pre
 .m-lookup-row.m-lookup-row-active > td { background: var(--m-primary-bg); }
 .m-lookup-row.ant-table-row-selected > td { font-weight: 600; }
 .m-lookup-count { margin-top: 8px; color: var(--m-text-tertiary); font-size: 12px; }
+/* The shell sets an inline min-width (the field's width); the popup grows to its columns up to a cap (.m-cselect-dropdown sets 320px, so this rule is more specific). */
+.m-lookup-dropdown.m-lookup-multi { width: max-content; max-width: min(640px, calc(100vw - 16px)); }
+.m-lookup-head, .m-lookup-cells { display: grid; grid-template-columns: repeat(var(--m-lookup-cols, 2), minmax(96px, 1fr)); gap: 12px; }
+.m-lookup-head { padding: 4px 12px; border-bottom: 1px solid var(--m-split); color: var(--m-text-tertiary); font-size: 12px; font-weight: 500; }
+.m-lookup-cells { width: 100%; color: var(--m-text); }
+.m-lookup-cell { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-lookup-more-rows { margin-top: 8px; }
 
 /* Signature pad: always white paper and dark ink, so the image prints and embeds the same in dark mode. */
 .m-signature { display: flex; flex-direction: column; gap: 8px; width: 100%; }
@@ -2060,6 +2069,9 @@ html[data-theme='dark'] :is(.ant-color-picker-color-block, .ant-color-picker-pre
 .m-richtext-editor blockquote { margin: 0 0 0.5em; padding: 2px 12px; border-left: 3px solid var(--m-border-strong); color: var(--m-text-secondary); }
 .m-richtext-editor a { color: var(--m-primary); text-decoration: underline; }
 .m-richtext-editor :is(pre, code) { font-family: var(--m-font-mono); font-size: 0.92em; }
+.m-richtext-editor table { width: 100%; margin: 0 0 0.5em; border-collapse: collapse; table-layout: auto; }
+.m-richtext-editor :is(td, th) { min-width: 3em; padding: 4px 8px; border: 1px solid var(--m-border); vertical-align: top; text-align: left; }
+.m-richtext-editor th { background: var(--m-bg-subtle); font-weight: 600; }
 
 /* ---- Plugins: media player, WYSIWYG editor, maps, sortable (driven by modulus-plugins.js) ---- */
 
@@ -2747,3 +2759,113 @@ html[data-density='compact'] .m-query-filter-grid { column-gap: 16px; }
 html[data-density='compact'] .m-footer-toolbar { margin: 16px -16px -16px; padding: 8px 16px; }
 html[data-density='compact'] .m-settings-body { padding: 16px 24px; }
 html[data-density='compact'] .m-settings-title { margin-bottom: 16px; font-size: 18px; }
+
+/* Query builder (QueryBuilder / app-query-builder). A rule is one grid row: the join between rules, the field, the
+   operator, the value (or the two ends of a range) and the remove button. A nested group is an inset panel. */
+.m-qb { display: flex; flex-direction: column; gap: 16px; }
+.m-qb-group { display: flex; flex-direction: column; gap: 10px; }
+.m-qb-group[data-depth='1'], .m-qb-group[data-depth='2'] { margin-inline-start: 4px; padding: 12px 12px 6px 14px; border: 1px dashed var(--m-border); border-radius: var(--m-radius); background: var(--m-bg-subtle); }
+.m-qb-head, .m-qb-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.m-qb-label { color: var(--m-text-secondary); font-size: 13px; }
+.m-qb-head > .m-qb-join { width: auto; min-width: 88px; font-weight: 500; }
+.m-qb-items { display: flex; flex-direction: column; gap: 8px; }
+.m-qb-empty { margin: 0; padding: 16px 12px; border: 1px dashed var(--m-border-secondary); border-radius: var(--m-radius); color: var(--m-text-tertiary); font-size: 13px; text-align: center; }
+.m-qb-rule { display: grid; grid-template-columns: 52px minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.6fr) 32px; align-items: center; gap: 8px; }
+.m-qb-connector { color: var(--m-text-tertiary); font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.m-qb-rule .m-select { width: 100%; min-width: 0; }
+.m-qb-value { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.m-qb-value[hidden], .m-qb-to[hidden] { display: none; }
+.m-qb-value > .ant-input, .m-qb-value > .m-select, .m-qb-to > .ant-input { flex: 1 1 120px; min-width: 0; width: auto; }
+.m-qb-to { display: flex; flex: 1 1 220px; align-items: center; gap: 8px; min-width: 0; }
+.m-qb-remove { justify-self: end; width: 32px; min-width: 32px; padding: 0; color: var(--m-text-tertiary); }
+.m-qb-remove:hover { color: var(--m-error); background: var(--m-fill-secondary); }
+.m-qb-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px solid var(--m-border-secondary); }
+.m-qb-default { display: none; }
+.m-query-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0 12px; font-size: 14px; }
+.m-query-total { margin-inline-start: auto; }
+.m-query-builder-card { padding: 20px; }
+.m-query-table { width: 100%; }
+.m-query-more { padding: 12px 16px; font-size: 13px; }
+.m-qb-multi { position: relative; width: 100%; min-width: 0; }
+.m-qb-multi > summary { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; height: 32px; justify-content: flex-start; list-style: none; cursor: pointer; }
+.m-qb-multi > summary::-webkit-details-marker { display: none; }
+.m-qb-multi-text { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: start; }
+.m-qb-multi-empty { color: var(--m-text-tertiary); }
+.m-qb-multi-count { flex: none; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--m-primary); color: #fff; font-size: 12px; line-height: 20px; text-align: center; }
+.m-qb-multi-chevron { display: inline-flex; flex: none; margin-inline-start: auto; color: var(--m-text-tertiary); }
+.m-qb-multi-panel { left: 0; right: auto; min-width: 240px; max-height: 300px; overflow-y: auto; padding: 6px 0; border: 1px solid var(--m-border-secondary); border-radius: var(--m-radius); background: var(--m-bg-container); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12); }
+.m-qb-multi-option { display: flex; align-items: center; gap: 8px; margin: 0; padding: 6px 12px; cursor: pointer; }
+.m-qb-multi-option:hover { background: var(--m-fill-secondary); }
+@media (max-width: 1100px) {
+    .m-qb-rule { grid-template-columns: 52px minmax(0, 1fr) minmax(0, 1fr) 32px; }
+    .m-qb-rule > .m-qb-value { grid-column: 2 / 5; }
+}
+@media (max-width: 575.98px) {
+    .m-qb-rule { grid-template-columns: minmax(0, 1fr) 32px; }
+    .m-qb-connector { grid-column: 1 / -1; }
+    .m-qb-rule > .m-qb-value, .m-qb-rule > .m-qb-op, .m-qb-rule > .m-qb-field { grid-column: 1; }
+    .m-qb-remove { grid-row: 2; grid-column: 2; }
+}
+
+/* Import wizard (app-import-wizard / ImportWizard): a steps bar, then the form of the current step */
+.m-import { display: flex; flex-direction: column; gap: 16px; }
+.m-import-steps { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.m-import-step { padding: 4px 12px; border: 1px solid var(--m-border-secondary); border-radius: 999px; color: var(--m-text-secondary); font-size: 13px; }
+.m-import-step[data-state='current'] { color: var(--m-primary, #206bc4); border-color: currentColor; font-weight: 600; }
+.m-import-step[data-state='done'] { color: var(--m-success); border-color: var(--m-success); }
+.m-import-form { display: flex; flex-direction: column; gap: 12px; }
+.m-import-file { display: flex; flex-direction: column; gap: 6px; }
+.m-import-file span, .m-import-field span { font-weight: 500; }
+.m-import-hint { margin: 0; color: var(--m-text-secondary); font-size: 13px; }
+.m-import-subhead { margin: 8px 0 0; font-size: 14px; }
+.m-import-columns { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0; padding: 0; list-style: none; }
+.m-import-required { margin-inline-start: 6px; color: var(--m-text-secondary); font-size: 12px; font-weight: 400; }
+.m-import-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.m-import-map { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px 16px; }
+.m-import-field { display: flex; flex-direction: column; gap: 6px; }
+.m-import-select { width: 100%; min-height: 32px; padding: 4px 8px; border: 1px solid var(--m-border-secondary); border-radius: 6px; background: transparent; color: inherit; }
+.m-import-error { padding: 8px 12px; border-radius: 6px; background: var(--m-error-bg, #fdecec); color: var(--m-error); }
+.m-import-summary { display: flex; flex-wrap: wrap; gap: 8px; }
+.m-import-problems { margin: 0; padding-inline-start: 20px; color: var(--m-error); }
+.m-import-table-wrap { overflow-x: auto; max-width: 100%; }
+.m-import-table td.m-import-bad { color: var(--m-error); font-weight: 600; }
+.m-import-table tr[data-valid='false'] td:last-child { color: var(--m-error); }
+.m-import-done { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+@media (max-width: 575.98px) {
+    .m-import-map { grid-template-columns: 1fr; }
+}
+.m-import-example { margin: 0; white-space: pre; overflow-x: auto; font-size: 13px; }
+/* The rows of a query page scroll sideways inside their card on a phone, not the whole page */
+.m-card:has(> .m-query-table) { overflow-x: auto; }
+
+/* Printing (LabelHtml, PrintTable): label sheets, a table whose header repeats on every page, and print-only rules.
+   A print view sets its own @page (PrintCss.Page) and runs on the blank layout, so the shell is not in its page. */
+.m-labels { display: flex; flex-direction: column; gap: 16px; overflow-x: auto; }
+.m-label-sheet {
+    box-sizing: border-box; flex: none; width: 210mm; height: 297mm;
+    padding: var(--m-label-top) var(--m-label-left);
+    display: grid; grid-template-columns: repeat(var(--m-label-cols), var(--m-label-w)); grid-template-rows: repeat(var(--m-label-rows), var(--m-label-h));
+    column-gap: var(--m-label-gap-x); row-gap: var(--m-label-gap-y);
+    background: #fff; color: #000; box-shadow: 0 1px 3px rgb(0 0 0 / 20%);
+}
+.m-label { box-sizing: border-box; overflow: hidden; padding: 2.5mm 3mm; outline: 1px dashed #d0d0d0; font: 9pt/1.25 Arial, Helvetica, sans-serif; }
+.m-label p { margin: 0; }
+.m-label .m-label-title { margin-bottom: 1mm; font-size: 10pt; font-weight: 700; }
+.m-label .m-label-line { color: #333; }
+.m-print-table { width: 100%; border-collapse: collapse; font-size: 10pt; color: #000; background: #fff; }
+.m-print-table th, .m-print-table td { padding: 4px 8px; border-bottom: 1px solid #d0d0d0; text-align: left; vertical-align: top; }
+.m-print-table thead th { border-bottom: 1.5px solid #000; font-weight: 600; }
+.m-print-table tfoot th { border-top: 1.5px solid #000; font-weight: 700; }
+/* A browser repeats a tfoot on every printed page by default; the total prints once, after the last row */
+.m-print-table th.n, .m-print-table td.n { text-align: right; font-variant-numeric: tabular-nums; }
+.m-print-table tr { break-inside: avoid; }
+@media print {
+    .m-print-hide { display: none !important; }
+    .m-labels { overflow: visible; gap: 0; }
+    .m-label-sheet { box-shadow: none; break-after: page; }
+    .m-label-sheet:last-child { break-after: auto; }
+    .m-label { outline: none; }
+    .m-print-table thead { display: table-header-group; }
+    .m-print-table tfoot { display: table-row-group; }
+}
+.m-kanban-error { color: var(--m-error); font-size: 12px; }

@@ -12,7 +12,7 @@ public class KanbanController(SampleStore store) : SampleController
     public const string RefreshEvent = "kanban:refresh";
 
     [HttpGet("")]
-    public IActionResult Index() => Page("Kanban", "Apps/Kanban/Kanban", store.Tasks());
+    public IActionResult Index() => Page("Kanban", "Apps/Kanban/Kanban", KanbanPage.Board(store.Tasks()));
 
     [HttpPost("add")]
     public IActionResult Add(KanbanTaskInput input)

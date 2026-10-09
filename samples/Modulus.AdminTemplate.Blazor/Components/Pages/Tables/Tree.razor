@@ -1,0 +1,23 @@
+@page "/tables/tree"
+@inject BillOfMaterialsStore Store
+@inject IMessageService Message
+
+<PageTitle>Tree grid · Modulus</PageTitle>
+
+@* One NestedGrid in tree mode, driven by BillOfMaterials.Settings: the parts are one self-referencing list, every part
+   with children expands, and each level totals its extended cost. MVC and Razor Pages render the same page with
+   <app-nested-grid> (Samples.Web Views/Shared/Ui/Tables/Tree.cshtml). *@
+<PageHeading Pretitle="Tables" Title="Tree grid" Subtitle="A bill of materials: expand a part to load the parts under it. Each level totals its extended cost under the table." />
+
+<NestedGrid Settings="BillOfMaterials.Settings" HeaderTitle="Bill of materials" Load="LoadAsync" Save="SaveAsync" />
+
+@code {
+    private Task<NestedGridPage> LoadAsync(NestedGridRequest request) => Task.FromResult(Store.Load(BillOfMaterials.Settings, request));
+
+    private Task SaveAsync(NestedGridChanges changes)
+    {
+        Store.Save(changes);
+        _ = Message.SuccessAsync("Saved");
+        return Task.CompletedTask;
+    }
+}

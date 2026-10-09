@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq.Expressions;
+using Modulus.Ui.Abstractions.Query;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
@@ -86,6 +87,7 @@ public sealed class TableQuery<T>
     private readonly List<TotalDef> _totals = [];
     private string? _defaultField;
     private bool _defaultDescending;
+    private QueryBuilder<T>? _builder;
 
     /// <summary>The most totals a query keeps.</summary>
     public const int MaxTotals = 8;
@@ -145,6 +147,16 @@ public sealed class TableQuery<T>
     /// <summary>Whether <paramref name="field"/> can group the rows.</summary>
     public bool CanGroup(string field) => _groups.ContainsKey(field);
 
+    /// <summary>
+    /// The fields a visual filter may ask about: the request's <see cref="ProTableRequest.Where"/> filters the rows by
+    /// them, after the column searches. A filter naming a field the builder doesn't have drops that rule.
+    /// </summary>
+    public TableQuery<T> Filters(QueryBuilder<T> builder)
+    {
+        _builder = builder;
+        return this;
+    }
+
     /// <summary>Lets the column search of <paramref name="field"/> (<c>s.{field}</c>) filter with <paramref name="predicate"/> (given the trimmed text).</summary>
     public TableQuery<T> Search(string field, Func<string, Expression<Func<T, bool>>> predicate)
     {
@@ -187,6 +199,7 @@ public sealed class TableQuery<T>
         foreach (var (field, search) in _searches) if (allow(field)) copy._searches[field] = search;
         foreach (var (field, label) in _groups) if (copy._sorts.ContainsKey(field)) copy._groups[field] = label;
         copy._totals.AddRange(_totals.Where(t => allow(t.Field)));
+        copy._builder = _builder?.Restrict(allow);
         if (_defaultField is not null && copy._sorts.ContainsKey(_defaultField))
         {
             copy._defaultField = _defaultField;
@@ -209,6 +222,7 @@ public sealed class TableQuery<T>
             var max = ColumnSearch.IsValueList(query) ? ColumnSearch.MaxListLength : MaxSearchLength;
             source = source.Where(predicate(query.Length > max ? query[..max] : query));
         }
+        if (_builder?.Compile(FilterJson.FromText(request.Where)) is { } where) source = source.Where(where);
         return source;
     }
 

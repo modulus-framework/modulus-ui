@@ -1,0 +1,22 @@
+@model Modulus.Samples.Shared.WorkflowPage.Order
+@* The steps are app-approval-timeline and the trail app-audit-trail; the Blazor sample draws the same markup with
+   <ApprovalTimeline> and <AuditTrail>. *@
+<app-page-header pretitle="Apps" title="Approvals" subtitle="Purchase order PO-2041 going through approval: its steps, and the audit trail of every change."></app-page-header>
+
+<div class="m-workflow-grid">
+    <div class="m-card">
+        <div class="m-card-body">
+            <div class="m-workflow-title">
+                <span class="m-heading m-medium">@Model.Number</span>
+                <app-status-badge tone="@Model.StatusTone">@Model.Status</app-status-badge>
+            </div>
+            <app-approval-timeline steps="@Model.Steps" aria-label="Approval steps" />
+        </div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-body">
+            <div class="m-heading m-medium" style="margin-bottom:12px">Audit trail</div>
+            <app-audit-trail entries="@Model.Trail" action="@Model.Action" url="/apps/workflow" aria-label="Audit trail" />
+        </div>
+    </div>
+</div>

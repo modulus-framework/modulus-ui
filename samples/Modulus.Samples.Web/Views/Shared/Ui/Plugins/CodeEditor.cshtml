@@ -1,0 +1,27 @@
+@* Code editor: CodeMirror 6 with line numbers, folding, search and highlighting; the same page as the Blazor AppCodeEditor sample. *@
+<app-page-header pretitle="Plugins" title="Code editor" subtitle="CodeMirror 6 with highlighting, folding and search. The text goes to the form field as you type."></app-page-header>
+
+<div class="m-row-cards m-cols-2">
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">JSON rule</h3><p class="m-card-subtitle">Edit it: a pause in typing updates the form field</p></div></div>
+        <div class="m-card-body">
+            <app-code-editor name="rule" value="@PluginsContent.SampleRuleJson" language="json" label="Approval rule" height="300px" />
+        </div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">JavaScript, read only</h3><p class="m-card-subtitle">The same editor, locked for viewing</p></div></div>
+        <div class="m-card-body">
+            <app-code-editor name="total" value="@PluginsContent.SampleTotalScript" language="javascript" label="Order total" height="300px" read-only="true" />
+        </div>
+    </div>
+</div>
+
+<div class="m-card m-mt-16">
+    <div class="m-card-body">
+        <ul class="m-plain-list">
+            <li><span><code>language</code>: <code>javascript</code>, <code>typescript</code>, <code>json</code>, <code>css</code> or <code>html</code>; plain text when empty.</span></li>
+            <li><span><code>read-only</code>: the text can be selected and searched but not changed.</span></li>
+            <li><span>Tab moves focus out of the editor; Ctrl+F searches, and Ctrl+Z undoes.</span></li>
+        </ul>
+    </div>
+</div>

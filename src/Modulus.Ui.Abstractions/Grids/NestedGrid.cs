@@ -1,6 +1,30 @@
 using System.Globalization;
+using Modulus.Ui.Abstractions.Pivot;
 
 namespace Modulus.Ui.Abstractions;
+
+/// <summary>
+/// Tree mode of a nested grid (the ERP tree grids: a bill of materials, a chart of accounts). Every row is a child of
+/// one parent, so one level definition serves every depth: <see cref="NestedGridSettings.Levels"/> keeps its first
+/// level, repeated down to <see cref="MaxDepth"/>. Load returns the children of <see cref="NestedGridRequest.ParentId"/>.
+/// </summary>
+public sealed class NestedGridTree
+{
+    /// <summary>How deep the tree goes. A row at this depth never expands.</summary>
+    public int MaxDepth { get; set; } = 8;
+
+    /// <summary>
+    /// A numeric field of each row holding its number of children. Rows with none do not expand, so leaves show no
+    /// expander and cost no request. Without it every row expands and the first open loads an empty level.
+    /// </summary>
+    public string? ChildCountField { get; set; }
+
+    /// <summary>
+    /// Columns totalled (summed) over every row of a level that matches the request, shown under the level's table
+    /// (<see cref="NestedGridPage.Totals"/>). Each level totals its own rows, so a parent's children add up under it.
+    /// </summary>
+    public IReadOnlyList<string> Rollup { get; set; } = [];
+}
 
 /// <summary>
 /// One level of a nested grid (Blazor <c>NestedGrid</c>, MVC <c>app-nested-grid</c>): its columns, paging, search,
@@ -58,7 +82,17 @@ public sealed class NestedGridSettings
 {
     public IReadOnlyList<NestedGridLevel> Levels { get; set; } = [];
 
-    public NestedGridLevel? Level(int depth) => depth >= 0 && depth < Levels.Count ? Levels[depth] : null;
+    /// <summary>Tree mode: one level definition (the first) at every depth, up to <see cref="NestedGridTree.MaxDepth"/>.</summary>
+    public NestedGridTree? Tree { get; set; }
+
+    /// <summary>How many levels the grid has: the tree's <see cref="NestedGridTree.MaxDepth"/>, else the number of <see cref="Levels"/>.</summary>
+    public int LevelCount => Tree?.MaxDepth ?? Levels.Count;
+
+    public NestedGridLevel? Level(int depth)
+    {
+        if (Tree is not null) return depth >= 0 && depth < Tree.MaxDepth && Levels.Count > 0 ? Levels[0] : null;
+        return depth >= 0 && depth < Levels.Count ? Levels[depth] : null;
+    }
 
     /// <summary>The columns of level <paramref name="depth"/> under <paramref name="parent"/> (clones, safe to edit).</summary>
     public List<GridColumn> ColumnsFor(int depth, GridRecord? parent)
@@ -71,8 +105,12 @@ public sealed class NestedGridSettings
     }
 
     /// <summary>Whether a row of level <paramref name="depth"/> can expand into the next level.</summary>
-    public bool CanExpand(int depth, GridRecord row) =>
-        Level(depth) is { Expandable: true } level && depth + 1 < Levels.Count && (level.RowExpandable?.Invoke(row) ?? true);
+    public bool CanExpand(int depth, GridRecord row)
+    {
+        if (Level(depth) is not { Expandable: true } level || Level(depth + 1) is null) return false;
+        if (Tree?.ChildCountField is { } field && (GridSchema.Number(row[field]) ?? 0) <= 0) return false;
+        return level.RowExpandable?.Invoke(row) ?? true;
+    }
 }
 
 /// <summary>
@@ -125,7 +163,11 @@ public sealed record NestedGridRequest(int Level, string? ParentId, string? Keyw
 }
 
 /// <summary>A page of rows and the total that match the request.</summary>
-public sealed record NestedGridPage(IReadOnlyList<GridRecord> Rows, int Total);
+public sealed record NestedGridPage(IReadOnlyList<GridRecord> Rows, int Total)
+{
+    /// <summary>The level's <see cref="NestedGridTree.Rollup"/> totals over every row that matches (not just this page).</summary>
+    public IReadOnlyList<TableTotal> Totals { get; init; } = [];
+}
 
 /// <summary>What Save hands the app: the rows on the page as edited (new rows keep their temporary ids) and the ids deleted.</summary>
 public sealed record NestedGridChanges(int Level, string? ParentId, IReadOnlyList<GridColumn> Columns, IReadOnlyList<GridRecord> Rows, IReadOnlyList<string> DeletedIds)
@@ -140,7 +182,8 @@ public sealed record NestedGridChanges(int Level, string? ParentId, IReadOnlyLis
 /// <summary>Search, sort and paging over in-memory rows, by the grid's own formatting rules.</summary>
 public static class NestedGridQuery
 {
-    public static NestedGridPage Apply(IEnumerable<GridRecord> rows, IReadOnlyList<GridColumn> columns, NestedGridRequest request)
+    /// <param name="rollup">The level's <see cref="NestedGridTree.Rollup"/> columns, totalled over every matching row.</param>
+    public static NestedGridPage Apply(IEnumerable<GridRecord> rows, IReadOnlyList<GridColumn> columns, NestedGridRequest request, IReadOnlyList<string>? rollup = null)
     {
         IEnumerable<GridRecord> result = rows;
         // Matched in the current culture, the one the cells are displayed in ("$1,200" finds "$1,2").
@@ -152,7 +195,35 @@ public static class NestedGridQuery
         var size = Math.Clamp(request.PageSize, 1, 200);
         var pages = Math.Max(1, (int)Math.Ceiling(list.Count / (double)size));
         var page = Math.Clamp(request.Page, 1, pages);
-        return new NestedGridPage(list.Skip((page - 1) * size).Take(size).ToList(), list.Count);
+        return new NestedGridPage(list.Skip((page - 1) * size).Take(size).ToList(), list.Count) { Totals = Totals(list, columns, rollup) };
+    }
+
+    /// <summary>
+    /// The sum of each <paramref name="keys"/> column over <paramref name="rows"/> (keys that are not columns, or not
+    /// numeric, are skipped). Decimal places follow the most precise value, at least two for currency. Null when no row
+    /// had a value.
+    /// </summary>
+    public static IReadOnlyList<TableTotal> Totals(IEnumerable<GridRecord> rows, IReadOnlyList<GridColumn> columns, IReadOnlyList<string>? keys)
+    {
+        if (keys is not { Count: > 0 }) return [];
+        var list = rows as IReadOnlyList<GridRecord> ?? rows.ToList();
+        var totals = new List<TableTotal>();
+        foreach (var key in keys)
+        {
+            if (GridSchema.Find(columns, key) is not { Type: GridCellType.Number or GridCellType.Currency or GridCellType.Percent } column) continue;
+            decimal sum = 0;
+            var decimals = column.Type == GridCellType.Currency ? 2 : 0;
+            var any = false;
+            foreach (var row in list)
+            {
+                if (GridSchema.Number(row[key]) is not { } value) continue;
+                sum += value;
+                decimals = Math.Max(decimals, (int)value.Scale);
+                any = true;
+            }
+            totals.Add(new TableTotal(key, column.Title, PivotAggregate.Sum, any ? sum : null, decimals));
+        }
+        return totals;
     }
 
     /// <summary>

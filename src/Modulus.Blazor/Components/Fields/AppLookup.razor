@@ -24,8 +24,14 @@
 
     @if (_open)
     {
-        <div class="ant-select-dropdown ant-select-dropdown-placement-bottomLeft m-cselect-dropdown m-lookup-dropdown" @onmousedown:preventDefault>
+        <div class="@Cx("ant-select-dropdown ant-select-dropdown-placement-bottomLeft m-cselect-dropdown m-lookup-dropdown", Multi ? "m-lookup-multi" : null)" @onmousedown:preventDefault>
             <div class="m-cselect-list" id="@ListId" role="listbox" aria-label="@(AriaLabel ?? "Suggestions")">
+                @if (Multi && _suggestions.Count > 0)
+                {
+                    <div class="m-lookup-head" style="--m-lookup-cols:@ColumnList.Count" aria-hidden="true">
+                        @foreach (var c in ColumnList) { <span class="m-lookup-cell">@c.Title</span> }
+                    </div>
+                }
                 @if (_loading && _suggestions.Count == 0)
                 {
                     <div class="m-cselect-empty">Searching…</div>
@@ -43,10 +49,19 @@
                          id="@($"{ListId}-{index}")" role="option" aria-selected="@(on ? "true" : "false")"
                          @onclick="() => PickAsync(item)" @onmouseenter="() => _active = index">
                         <div class="ant-select-item-option-content">
+                            @if (Multi)
+                            {
+                                <div class="m-lookup-cells" style="--m-lookup-cols:@ColumnList.Count">
+                                    @foreach (var c in ColumnList) { <span class="m-lookup-cell">@LookupSearch.Cell(item, c.Key)</span> }
+                                </div>
+                            }
+                            else
+                            {
                             <span class="m-lookup-option-label">@item.Label</span>
                             @if (!string.IsNullOrEmpty(item.Description))
                             {
                                 <span class="m-lookup-option-desc">@item.Description</span>
+                            }
                             }
                         </div>
                     </div>
@@ -109,6 +124,10 @@
                                 </div>
                             </div>
                             <div class="m-lookup-count">@CountText</div>
+                            @if (_total < 0 || _total > _rows.Count)
+                            {
+                                <button type="button" class="ant-btn ant-btn-default ant-btn-block m-lookup-more-rows" @onclick="ShowMoreAsync">Show @DialogPageSize more</button>
+                            }
                         </div>
                         <div class="ant-modal-footer">
                             <button type="button" class="ant-btn ant-btn-default" @onclick="CloseDialogAsync"><span>Cancel</span></button>
@@ -169,12 +188,15 @@
     private string? _last = "\0", _query, _label;
     private IReadOnlyList<LookupItem>? _items;
     private bool _open, _dialog, _loading, _focusSearch;
-    private int _active = -1, _row = -1, _total;
+    private int _active = -1, _row = -1, _total, _limit;
     private IReadOnlyList<LookupItem> _suggestions = [], _rows = [];
     private LookupItem? _current;
     private CancellationTokenSource? _cts;
 
     private string ListId => $"m-lookup-{_uid}";
+
+    /// <summary>Whether <see cref="Columns"/> is set: the suggestions then show those columns too, as the dialog does.</summary>
+    private bool Multi => Columns is not null;
     private IReadOnlyList<LookupColumn> ColumnList => Columns ?? LookupSearch.DefaultColumns;
 
     private string RootClass => Cx("m-lookup", _open ? "m-lookup-open" : null, Disabled ? "m-lookup-disabled" : null, Class);
@@ -358,6 +380,7 @@
         _dialog = true;
         _focusSearch = true;
         _rows = [];
+        _limit = DialogPageSize;
         await DialogSearchAsync(debounce: false);
         var i = _rows.ToList().FindIndex(r => r.Value == Value);
         _row = i >= 0 ? i : _rows.Count > 0 ? 0 : -1;
@@ -383,7 +406,7 @@
         try
         {
             if (debounce && SearchAsync is not null) await Task.Delay(250, token);
-            (_rows, _total) = await FindAsync(_query, DialogPageSize, token);
+            (_rows, _total) = await FindAsync(_query, _limit, token);
         }
         catch (OperationCanceledException) { return; }
         _loading = false;
@@ -393,7 +416,15 @@
     private Task OnDialogInput(ChangeEventArgs e)
     {
         _query = e.Value as string ?? "";
+        _limit = DialogPageSize;
         return DialogSearchAsync(debounce: true);
+    }
+
+    // The search takes a count, not an offset: "more" asks for a longer list.
+    private Task ShowMoreAsync()
+    {
+        _limit += DialogPageSize;
+        return DialogSearchAsync(debounce: false);
     }
 
     private async Task DialogKey(KeyboardEventArgs e)

@@ -1,0 +1,17 @@
+{
+  "_comment": "Gzipped size budgets (bytes) for the Modulus scripts and stylesheets every page loads. Each is the size at 2026-10-09 plus 15%, rounded up to 1 KB. Raise one on purpose, in the same commit as the change that needs it.",
+  "gzip_level": 6,
+  "budgets": {
+    "src/Modulus.Ui.Assets/wwwroot/js/modulus-shell.js": 40960,
+    "src/Modulus.Ui.Assets/wwwroot/js/modulus-plugins.js": 34816,
+    "src/Modulus.Ui.Assets/wwwroot/js/modulus-spa.js": 9216,
+    "src/Modulus.Ui.Assets/wwwroot/js/modulus-mvc.js": 9216,
+    "src/Modulus.Ui.Assets/wwwroot/js/modulus-widgets.js": 43008,
+    "src/Modulus.Ui.Assets/wwwroot/js/modulus-theme.js": 4096,
+    "src/Modulus.Ui.Assets/wwwroot/js/modulus-virtual.js": 3072,
+    "src/Modulus.Ui.Assets/wwwroot/css/modulus.css": 49152,
+    "src/Modulus.Ui.Assets/wwwroot/css/modulus-shell.css": 24576,
+    "src/Modulus.Ui.Assets/wwwroot/css/modulus-pages.css": 29696,
+    "src/Modulus.Ui.Assets/wwwroot/css/antd-dark-brand.css": 5120
+  }
+}

@@ -15,7 +15,7 @@
                     @foreach (var b in group)
                     {
                         <button type="button" class="m-richtext-btn" data-cmd="@b.Command" data-arg="@b.Argument" data-state="@(b.Toggle ? "" : null)"
-                                aria-label="@b.Label" title="@b.Title" aria-pressed="@(b.Toggle ? "false" : null)" tabindex="-1">
+                                aria-label="@b.Label" title="@b.Title" aria-pressed="@(b.Toggle ? "false" : null)" disabled="@(b.NeedsTable ? true : null)" tabindex="-1">
                             @if (b.Icon is not null)
                             {
                                 <Icon Type="@b.Icon" />

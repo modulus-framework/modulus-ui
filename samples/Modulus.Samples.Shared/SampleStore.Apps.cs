@@ -1,4 +1,5 @@
 using Modulus.Ui.Abstractions;
+using Modulus.Ui.Abstractions.Kanban;
 
 namespace Modulus.Samples.Shared;
 

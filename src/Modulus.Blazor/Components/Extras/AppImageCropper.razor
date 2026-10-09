@@ -1,0 +1,65 @@
+@* Image cropper: Cropper.js over the picture, with aspect ratio buttons. The same markup as the MVC <app-image-cropper>
+   (CropperHtml, modulus-plugins.js). The root and the hidden input are Blazor elements, so the crop binds back to Crop
+   on each change (debounced by the script). Setting Src from outside starts the cropper on the new picture. *@
+@using Modulus.Ui.Abstractions.Plugins
+
+<div @key="Src" class="m-cropper@(string.IsNullOrEmpty(CssClass) ? "" : " " + CssClass)" id="@Id" data-m-cropper data-ratio="@Ratio"
+     role="group" aria-label="@(Label ?? "Crop the picture")" style="--m-cropper-height: @Height">
+    @((MarkupString)CropperHtml.Parts(Src, Alt, Ratio))
+    <input type="hidden" name="@Name" id="@(Id)-value" value="@_initial" data-m-cropper-value @onchange="Changed" />
+</div>
+
+@code {
+    /// <summary>Element id (the hidden input is "<see cref="Id"/>-value").</summary>
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+
+    /// <summary>A same-site path (starting with /) or an http(s) address of the picture.</summary>
+    [Parameter, EditorRequired] public string Src { get; set; } = "";
+
+    /// <summary>Alternative text of the picture.</summary>
+    [Parameter] public string Alt { get; set; } = "";
+
+    /// <summary>The crop, in the picture's natural pixels; null until the first crop is made.</summary>
+    [Parameter] public CropBox? Crop { get; set; }
+
+    /// <summary>Raised when the crop changes.</summary>
+    [Parameter] public EventCallback<CropBox?> CropChanged { get; set; }
+
+    /// <summary>The starting shape: free, 1, 4/3 or 16/9.</summary>
+    [Parameter] public string Ratio { get; set; } = "free";
+
+    /// <summary>CSS height of the picture area, e.g. "360px".</summary>
+    [Parameter] public string Height { get; set; } = "360px";
+
+    /// <summary>Form field name of the hidden input (the crop as JSON).</summary>
+    [Parameter] public string? Name { get; set; }
+
+    /// <summary>Accessible name of the cropper.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    [Parameter] public string? CssClass { get; set; }
+
+    private string _initial = "";
+    private CropBox? _last;
+    private bool _hasLast;
+
+    protected override void OnParametersSet()
+    {
+        // The crop the script reported (or the parent already holds) is the one the input shows; a crop from outside is written in.
+        if (!_hasLast || Crop != _last)
+        {
+            _last = Crop;
+            _hasLast = true;
+            _initial = CropperHtml.Format(Crop);
+        }
+    }
+
+    private async Task Changed(ChangeEventArgs e)
+    {
+        var box = CropperHtml.ParseBox(e.Value?.ToString());
+        if (box == _last) return;
+        _last = box;
+        _initial = CropperHtml.Format(box);
+        await CropChanged.InvokeAsync(box);
+    }
+}

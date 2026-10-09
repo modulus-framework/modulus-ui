@@ -440,6 +440,8 @@ public class LookupTagHelper : BoundControlTagHelper
             max = MaxSuggestions,
             page = DialogPageSize,
             columns = columns.Select(c => c.Key),
+            titles = columns.Select(c => c.Title),
+            multi = Columns is not null,
             disabled = Disabled,
         };
 
@@ -459,11 +461,12 @@ public class LookupTagHelper : BoundControlTagHelper
         sb.Append($"""<button type="button" class="m-lookup-more" aria-label="{Html.E(more)}" title="{Html.E(more)}"{Html.Attr("disabled", Disabled)} tabindex="-1" @mousedown.prevent @click="openDialog()">{AntIcons.Span("search")}</button></span></span>""");
 
         // Suggestions.
-        sb.Append($$"""<div class="ant-select-dropdown ant-select-dropdown-placement-bottomLeft m-cselect-dropdown m-lookup-dropdown" x-show="open" x-cloak style="display: none;" @mousedown.prevent>""");
+        sb.Append($$"""<div class="ant-select-dropdown ant-select-dropdown-placement-bottomLeft m-cselect-dropdown m-lookup-dropdown" :class="{ 'm-lookup-multi': multi }" x-show="open" x-cloak style="display: none;" @mousedown.prevent>""");
         sb.Append($$"""<div class="m-cselect-list" id="{{listId}}" role="listbox" aria-label="{{Html.E(AriaLabel ?? "Suggestions")}}">""");
+        sb.Append("""<div class="m-lookup-head" x-show="multi && list.length" x-cloak style="display: none;" :style="'--m-lookup-cols: ' + cols.length" aria-hidden="true"><template x-for="t in titles"><span class="m-lookup-cell" x-text="t"></span></template></div>""");
         sb.Append("""<div class="m-cselect-empty" x-show="!list.length" x-text="loading ? 'Searching…' : 'No matches'"></div>""");
         sb.Append($$"""<template x-for="(item, i) in list" :key="item.v"><div class="ant-select-item ant-select-item-option" :class="{ 'ant-select-item-option-selected': item.v === value, 'ant-select-item-option-active': i === active }" :id="'{{listId}}-' + i" role="option" :aria-selected="item.v === value ? 'true' : 'false'" @click="pick(item)" @mouseenter="active = i">""");
-        sb.Append("""<div class="ant-select-item-option-content"><span class="m-lookup-option-label" x-text="item.l"></span><span class="m-lookup-option-desc" x-show="item.d" x-text="item.d"></span></div></div></template></div>""");
+        sb.Append("""<div class="ant-select-item-option-content"><div class="m-lookup-cells" x-show="multi" x-cloak style="display: none;" :style="'--m-lookup-cols: ' + cols.length"><template x-for="c in cols"><span class="m-lookup-cell" x-text="cell(item, c)"></span></template></div><span class="m-lookup-option-label" x-show="!multi" x-text="item.l"></span><span class="m-lookup-option-desc" x-show="!multi && item.d" x-text="item.d"></span></div></div></template></div>""");
         sb.Append($"""<div class="m-cselect-footer"><button type="button" class="ant-btn ant-btn-text ant-btn-block m-cselect-add-new m-lookup-search-more" @click="openDialog()">{AntIcons.Span("search")}<span>{Html.E(SearchMoreText)}</span></button></div></div>""");
 
         // "Search more" dialog.
@@ -479,7 +482,7 @@ public class LookupTagHelper : BoundControlTagHelper
         sb.Append($"""</tr></thead><tbody class="ant-table-tbody"><tr class="ant-table-placeholder" x-show="!rows.length"><td class="ant-table-cell" colspan="{columns.Count}" x-text="loading ? 'Searching…' : 'No matches'"></td></tr>""");
         sb.Append("""<template x-for="(item, i) in rows" :key="item.v"><tr class="ant-table-row m-lookup-row" :class="{ 'ant-table-row-selected': item.v === value, 'm-lookup-row-active': i === row }" :aria-selected="item.v === value ? 'true' : 'false'" @click="pick(item)" @mouseenter="row = i">""");
         sb.Append("""<template x-for="c in cols"><td class="ant-table-cell" x-text="cell(item, c)"></td></template></tr></template></tbody></table></div></div></div></div>""");
-        sb.Append("""<div class="m-lookup-count" x-text="countText"></div></div>""");
+        sb.Append("""<div class="m-lookup-count" x-text="countText"></div><button type="button" class="ant-btn ant-btn-default ant-btn-block m-lookup-more-rows" x-show="total < 0 || total > rows.length" x-cloak style="display: none;" @click="more()" x-text="'Show ' + page + ' more'"></button></div>""");
         sb.Append("""<div class="ant-modal-footer"><button type="button" class="ant-btn ant-btn-default" @click="closeDialog()"><span>Cancel</span></button></div></div></div></div></div>""");
         output.Content.SetHtmlContent(sb.ToString());
     }
@@ -601,7 +604,7 @@ public class RichTextTagHelper : BoundControlTagHelper
                 sb.Append("""<span class="m-richtext-group">""");
                 foreach (var b in group)
                 {
-                    sb.Append($"""<button type="button" class="m-richtext-btn" data-cmd="{Html.E(b.Command)}"{Html.Attr("data-arg", b.Argument)}{(b.Toggle ? " data-state=\"\"" : "")} aria-label="{Html.E(b.Label)}" title="{Html.E(b.Title)}"{(b.Toggle ? " aria-pressed=\"false\"" : "")} tabindex="-1">""");
+                    sb.Append($"""<button type="button" class="m-richtext-btn" data-cmd="{Html.E(b.Command)}"{Html.Attr("data-arg", b.Argument)}{(b.Toggle ? " data-state=\"\"" : "")} aria-label="{Html.E(b.Label)}" title="{Html.E(b.Title)}"{(b.Toggle ? " aria-pressed=\"false\"" : "")}{(b.NeedsTable ? " disabled" : "")} tabindex="-1">""");
                     sb.Append(b.Icon is not null ? AntIcons.Span(b.Icon) : $"""<span class="m-richtext-btn-text">{Html.E(b.Text)}</span>""");
                     sb.Append("</button>");
                 }

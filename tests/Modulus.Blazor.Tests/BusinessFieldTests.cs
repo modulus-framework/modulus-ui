@@ -328,6 +328,68 @@ public class BusinessFieldTests : BunitContext
         Assert.Contains("ant-table-row-selected", cut.FindAll("tr.m-lookup-row")[6].ClassList);
     }
 
+    [Fact]
+    public void Lookup_WithColumns_SuggestionsShowTheColumnsUnderAHeader()
+    {
+        var columns = new[] { new LookupColumn("value", "Code"), new LookupColumn("label", "Name"), new LookupColumn("description", "Details") };
+        var cut = Bound<AppLookup>(h => [("Value", (string?)null), ("Items", Customers), ("Columns", columns)]);
+
+        cut.Find("input").Input("azure");
+        Assert.Equal(["Code", "Name", "Details"], cut.FindAll(".m-lookup-head .m-lookup-cell").Select(c => c.TextContent));
+        var first = cut.FindAll(".ant-select-item-option")[0];
+        Assert.Equal(["C1", "Azure Interior", "Fremont"], first.QuerySelectorAll(".m-lookup-cells .m-lookup-cell").Select(c => c.TextContent));
+        Assert.Empty(cut.FindAll(".m-lookup-option-label"));
+        Assert.Contains("m-lookup-multi", cut.Find(".m-lookup-dropdown").ClassList);
+    }
+
+    [Fact]
+    public void Lookup_WithoutColumns_SuggestionsKeepTheLabelAndDetails()
+    {
+        var cut = Bound<AppLookup>(h => [("Value", (string?)null), ("Items", Customers)]);
+
+        cut.Find("input").Input("azure");
+        Assert.Empty(cut.FindAll(".m-lookup-head"));
+        Assert.Empty(cut.FindAll(".m-lookup-cells"));
+        Assert.Equal("Azure Interior", cut.Find(".m-lookup-option-label").TextContent);
+        Assert.Equal("Fremont", cut.Find(".m-lookup-option-desc").TextContent);
+    }
+
+    [Fact]
+    public void Lookup_ShowMore_AddsAPageUntilTheListIsWhole()
+    {
+        var cut = Bound<AppLookup>(h => [("Value", (string?)null), ("Items", Customers), ("DialogPageSize", 3)]);
+
+        cut.Find("input").KeyDown(new KeyboardEventArgs { Key = "F4" });
+        Assert.Equal(3, cut.FindAll("tr.m-lookup-row").Count);
+        Assert.Equal("Show 3 more", cut.Find(".m-lookup-more-rows").TextContent);
+
+        cut.Find(".m-lookup-more-rows").Click();
+        Assert.Equal(4, cut.FindAll("tr.m-lookup-row").Count);
+        Assert.Equal("4 records", cut.Find(".m-lookup-count").TextContent);
+        Assert.Empty(cut.FindAll(".m-lookup-more-rows"));
+    }
+
+    [Fact]
+    public void Lookup_ServerSearch_ShowMoreAsksForALongerList()
+    {
+        var requests = new List<int>();
+        Task<IReadOnlyList<LookupItem>> Search(string text, int max, CancellationToken _)
+        {
+            requests.Add(max);
+            IReadOnlyList<LookupItem> all = Enumerable.Range(1, 100).Select(i => new LookupItem($"P{i}", $"Part {i}")).ToList();
+            return Task.FromResult<IReadOnlyList<LookupItem>>(LookupSearch.Filter(all, text, max));
+        }
+        var cut = Render<AppLookup>(p => p.Add(l => l.SearchAsync, Search).Add(l => l.DialogPageSize, 10));
+
+        cut.Find(".m-lookup-more").Click();
+        cut.Find(".m-lookup-more-rows").Click();
+
+        Assert.Equal([11, 21], requests);
+        Assert.Equal(20, cut.FindAll("tr.m-lookup-row").Count);
+        Assert.Equal("Showing the first 20. Refine the search to see more.", cut.Find(".m-lookup-count").TextContent);
+        Assert.Equal("Show 10 more", cut.Find(".m-lookup-more-rows").TextContent);
+    }
+
     // ---- Status bar ----
 
     private static readonly WorkflowStage[] Stages =
@@ -358,6 +420,15 @@ public class BusinessFieldTests : BunitContext
     }
 
     // ---- Rich text ----
+
+    [Fact]
+    public void RichText_RowAndColumnButtonsStartDisabled_AndTheTableButtonIsEnabled()
+    {
+        var cut = Bound<AppRichText>(h => [("Value", "<table><tr><td>a</td></tr></table>"), ("ValueChanged", h.Set<string?>(_ => { }))]);
+
+        Assert.False(cut.Find("[data-cmd='table-insert']").HasAttribute("disabled"));
+        Assert.Equal(4, cut.FindAll("[data-cmd^='table-']:not([data-cmd='table-insert'])").Count(b => b.HasAttribute("disabled")));
+    }
 
     [Fact]
     public void RichText_RendersCleanHtml_AndReportsCleanHtml()

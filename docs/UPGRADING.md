@@ -10,6 +10,10 @@ Modulus pins every third-party UI dependency in one place, so upgrades are delib
 | MapLibre GL JS (tile maps) | `src/Modulus.Ui.Assets/wwwroot/lib/maplibre/` | 5.24.0 |
 | Tiptap (WYSIWYG editor; a prebuilt bundle, see below) | `src/Modulus.Ui.Assets/wwwroot/lib/tiptap/` | 3.31.4 |
 | Univer (spreadsheet; a prebuilt bundle, see below) | `src/Modulus.Ui.Assets/wwwroot/lib/univer/` | 1.0.3 |
+| pdf.js (PDF viewer) | `src/Modulus.Ui.Assets/wwwroot/lib/pdfjs/` | 6.3.289 |
+| Uppy (drop area; a prebuilt bundle, see below) | `src/Modulus.Ui.Assets/wwwroot/lib/uppy/` | core 6.0.2, Dashboard and XHR upload 6.0.0 |
+| Cropper.js (image cropper; a prebuilt bundle, see below) | `src/Modulus.Ui.Assets/wwwroot/lib/cropper/` | 2.2.0 |
+| CodeMirror 6 (code editor; a prebuilt bundle, see below) | `src/Modulus.Ui.Assets/wwwroot/lib/codemirror/` | view 6.43.13 and the language packs listed in its LICENSE.md |
 | jsVectorMap (vector map, with `world.js`) | `src/Modulus.Ui.Assets/wwwroot/lib/jsvectormap/` | not recorded; its build has no version banner, so write it here at the next upgrade |
 
 ## What protects you
@@ -106,6 +110,74 @@ Modulus pins every third-party UI dependency in one place, so upgrades are delib
    `=SUM(B2:B5)` formula, switch sheets, save, and check the JSON posted), `/plugins/map` and `/plugins/map-fullsize`
    (markers, popups, the place list flying to a place, resizing the window) and `/plugins/map-vector` (fills,
    tooltips, legend), in light and dark mode, with SPA navigation on (leave the page and come back).
+
+## Upgrading Uppy, Cropper.js or CodeMirror
+
+Each is bundled by Modulus into one classic script, because the packages ship ESM only. `lib/<name>/LICENSE.md` lists
+the exact packages, their versions and the esbuild command; to upgrade:
+
+1. Pin the new versions with `npm install --save-exact`, rebuild the bundle with esbuild (the entry file is in the
+   LICENSE.md), and replace `lib/<name>/<name>.js` (and `uppy.min.css` for Uppy). Keep the file names: the widgets in
+   `modulus-plugins.js` load them by path. Update the table above and `DEPENDENCIES.md`.
+2. Read the release notes for the APIs Modulus calls:
+   - Uppy: `Uppy` (`restrictions`, `autoProceed`, `on('complete')`), `Dashboard` (`inline`, `target`, `theme`,
+     `hideUploadButton`, `note`, `setOptions`), `XHRUpload` (`endpoint`, `fieldName`, `formData`, `headers`,
+     `getResponseData`). The endpoint must answer 2xx; an empty reply is a success because `getResponseData` returns `{}`.
+   - Cropper.js: `new Cropper(image, { container })`, `getCropperSelection()`, `getCropperImage()`, the selection's
+     `aspectRatio`, `change`, `$toCanvas()`, and the picture's `$image` (natural size, for the crop in pixels).
+   - CodeMirror: `EditorView`, `EditorState` (`readOnly`, `allowMultipleSelections`), `Compartment` (the theme),
+     `EditorView.updateListener`, `EditorView.contentAttributes`, the keymaps, and the language packages.
+3. Run `/plugins/dropzone` (drop a PDF and an image, see the result line; drop a `.exe` and see it refused), `/plugins/image-cropper`
+   (pick 1:1, drag the box, see the readout and the preview) and `/plugins/code-editor` (type in the JSON rule, read the
+   form value, switch to dark mode) in all three samples.
+
+## Upgrading Fluid (`Modulus.AspNetCore.Fluid`)
+
+The version is pinned in `Directory.Packages.props` (`Fluid.Core`, 2.40.0, MIT). To upgrade:
+
+1. Change the pin, build, and run `tests/Modulus.AspNetCore.Fluid.Tests`. They cover escaping, the layout, the model types,
+   each tag and filter, parse errors and the file cache.
+2. Read the release notes for what `ModulusLiquid` and `ModulusLiquidTags` call: `FluidParser.RegisterEmptyTag`,
+   `RegisterExpressionTag`, `TemplateOptions.Filters.AddFilter`, `MemberAccessStrategy.Register<T>()`, `TemplateContext`,
+   `StringValue(text, encode)` (which prints a value unescaped when `encode` is false) and `FluidTemplate.Render`.
+3. Keep the renderer's public members clear of `TryParse`: ASP.NET Core's minimal APIs treat a `TryParse(string, out T)` method
+   on a parameter type as a binder and fail when the route is built (`ModulusLiquid.TryParseTemplate` is the name).
+
+## Hardening
+
+**What is on.** `AddModulusHardening()` and `UseModulusHardening()` (`Modulus.AspNetCore.Hosting`, called before the static
+files and the endpoints in each sample) add:
+
+- **Compression**: Brotli and gzip for HTML, CSS, JavaScript, JSON and SVG. Not over HTTPS by default (`EnableForHttps` is off):
+  a compressed page that echoes a secret next to attacker-controlled text can leak it (BREACH).
+- **Security headers** on every response: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`,
+  `X-Frame-Options: SAMEORIGIN`, `Permissions-Policy` with camera, microphone and location off.
+- **The Content-Security-Policy**, with a nonce per request. MVC and Razor Pages **enforce** it (`CspEnforce = true` in their
+  `Program.cs`). Blazor sends it **report-only**: its import map is an inline script, and Blazor 10 has no nonce for it, so an
+  enforced policy would stop the module loader. The browser console shows that one violation per page. Turning enforcement on
+  there needs the framework to nonce its import map, or a hash of it (which changes with every build).
+- **Scripts**: `script-src 'self' 'nonce-…' 'unsafe-eval'`. Alpine.js (the standard build, which evaluates `x-data` and
+  `x-show` expressions) needs `'unsafe-eval'`. Alpine's CSP build would remove it, at the cost of its expression syntax. Styles
+  allow `'unsafe-inline'`, because Ant Design sets styles from script.
+- **Connections**: `'self'`, WebSockets (Blazor), and `https:` (map tiles). Narrow it with `ConnectSources` and no `https:`
+  when the tile hosts are known. `CspReportUri` sends violations to an endpoint.
+
+**Nonces.** An inline script the app writes gets the request's nonce: `<script nonce="@CspNonce.Of(Context)">…</script>`.
+Modulus writes no inline scripts, so its own markup needs none.
+
+**Health.** `MapModulusHealth()` answers `/health` with `Healthy` (200) while the app's health checks pass, and 503 otherwise.
+Add checks with `AddHealthChecks()`. The samples report no checks beyond the defaults.
+
+**Caching.** The MVC head tags (`modulus-head`, `modulus-scripts`) add each library asset's content hash as `?v=`, so a changed
+file gets a new address. A versioned `/_content/` response is sent `Cache-Control: public, max-age=31536000, immutable`.
+Other assets, and everything in Blazor (whose head is not MVC), keep `no-cache` with an ETag, so the browser revalidates and
+gets 304 when nothing changed.
+
+**Not checked here.** The 500 page: each sample routes exceptions to its error page outside Development, but this was not
+triggered in this session. The 404 page and the htmx status codes were checked.
+
+**Upgrading.** Changing the policy: edit `HostingExtensions.PolicyFor`, and keep `tests/Modulus.AspNetCore.Hosting.Tests` green.
+Run `tests/browser/smoke.py` against the samples before enforcing a policy anywhere new: a zero-violation run is the evidence.
 
 ## Saved views (`MapModulusSavedViews`)
 

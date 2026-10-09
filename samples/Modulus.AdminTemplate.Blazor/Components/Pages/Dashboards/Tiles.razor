@@ -1,0 +1,28 @@
+@page "/dashboards/tiles"
+@using Modulus.Samples.Shared
+
+<PageTitle>Dashboard layout · Modulus</PageTitle>
+
+<PageHeading Pretitle="Dashboards" Title="Dashboard layout" Subtitle="Move a tile earlier or later, and make it wider or narrower, taller or shorter. The layout is kept for your account." />
+
+<DashboardGrid Id="@DashboardPage.Id" Tiles="DashboardPage.Tiles">
+    <Tile Context="tile">
+        @if (DashboardPage.Kpi(tile.Id) is { } kpi)
+        {
+            <div class="m-dash-kpi">
+                <div class="m-muted m-small">@kpi.Label</div>
+                <div class="m-dash-kpi-value">@kpi.Value</div>
+                <div class="m-small m-muted">@kpi.Note</div>
+            </div>
+        }
+        else
+        {
+            <ul class="m-plain-list">
+                @foreach (var line in DashboardPage.Activity)
+                {
+                    <li><span>@line</span></li>
+                }
+            </ul>
+        }
+    </Tile>
+</DashboardGrid>

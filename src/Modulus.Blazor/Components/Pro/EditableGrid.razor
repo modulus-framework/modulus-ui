@@ -867,6 +867,13 @@
     [Parameter] public IReadOnlyList<HeaderGroup>? HeaderGroups { get; set; }
 
     // The shown columns in order: the drag handle, expand and checkbox columns lead, the delete column ends.
+    // The pinned header cells: the leading helpers and pinned-left columns, and the trailing pinned-right columns and delete column.
+    private int PinnedLeft() =>
+        (RowDraggable ? 1 : 0) + (RowDetail is not null ? 1 : 0) + (Selectable ? 1 : 0) + GridSchema.Visible(Columns).TakeWhile(c => c.Fixed == GridFixed.Left).Count();
+
+    private int PinnedRight() =>
+        (AllowDeleteRow ? 1 : 0) + GridSchema.Visible(Columns).Reverse().TakeWhile(c => c.Fixed == GridFixed.Right).Count();
+
     private IEnumerable<string?> ShownColumns()
     {
         if (RowDraggable) yield return null;
@@ -877,7 +884,7 @@
     }
 
     private RenderFragment<GridRecord>? BandedHeader => HeaderGroups is not { Count: > 0 } ? null : model => @<text>
-        @((MarkupString)Modulus.Ui.Abstractions.HeaderGroups.Rows(ShownColumns(), HeaderGroups))
+        @((MarkupString)Modulus.Ui.Abstractions.HeaderGroups.Rows(ShownColumns(), HeaderGroups, PinnedLeft(), PinnedRight()))
         <TableRow>@RowCells(model)</TableRow>
     </text>;
 

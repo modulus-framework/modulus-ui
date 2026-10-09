@@ -1,0 +1,22 @@
+@using Modulus.Samples.Shared
+@* Barcode: Code 128 and EAN-13 as SVG (app-barcode); the Blazor page draws the same symbols with <AppBarcode>. *@
+
+<app-page-header pretitle="Plugins" title="Barcode" subtitle="Code 128 for shipments and EAN-13 for products, drawn as SVG. A value the code cannot take says why."></app-page-header>
+<div class="m-row-cards m-cols-2">
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Shipment label</h3><p class="m-card-subtitle">Code 128, any printable text</p></div></div>
+        <div class="m-card-body"><app-barcode value="@BarcodePage.Shipment" aria-label="Shipment @BarcodePage.Shipment" /></div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Product</h3><p class="m-card-subtitle">EAN-13; twelve digits get their check digit added</p></div></div>
+        <div class="m-card-body"><app-barcode value="@BarcodePage.Product" kind="Ean13" height="70" aria-label="Product EAN-13" /></div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Digit pairs</h3><p class="m-card-subtitle">Code 128 takes an even run of digits in pairs, so it is shorter</p></div></div>
+        <div class="m-card-body"><app-barcode value="@BarcodePage.Digits" height="60" aria-label="Digits 0123456789" /></div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Refused</h3><p class="m-card-subtitle">A wrong check digit is not drawn</p></div></div>
+        <div class="m-card-body"><app-barcode value="@BarcodePage.WrongCheck" kind="Ean13" /></div>
+    </div>
+</div>

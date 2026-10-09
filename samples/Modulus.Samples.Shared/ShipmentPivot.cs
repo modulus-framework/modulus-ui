@@ -23,6 +23,7 @@ public sealed record PivotTablePage(ShipmentFilter Filter, PivotResult Result, d
         .Measure("amount", "Amount", s => s.Amount)
         .Measure("average", "Average amount", s => s.Amount, PivotAggregate.Average)
         .Measure("largest", "Largest amount", s => s.Amount, PivotAggregate.Max)
+        .Ratio("per_shipment", "Amount per shipment", "amount", "count")
         .Default(rows: ["city"], columns: ["date:year"], measures: ["count", "amount"]);
 
     /// <summary>

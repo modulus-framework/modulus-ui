@@ -1,0 +1,80 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using Modulus.Ui.Abstractions.Dashboard
+@using Modulus.Ui.Abstractions.State
+
+@*
+    A dashboard of tiles on a 12-column grid. Each tile has its title, the buttons that move it earlier or later and make it
+    wider, narrower, taller or shorter, and the body that the Tile template draws for it. The layout is saved per signed-in user
+    in the IUiStateStore, so it comes back on the next visit; an anonymous visitor sees the default layout and is told to sign in.
+    The layout comes from DashboardModel, the same the MVC app-dashboard draws.
+
+    <DashboardGrid Id="home" Tiles="_tiles">
+        <Tile Context="tile">@(tile.Id == "activity" ? "Recent activity" : "A number")</Tile>
+    </DashboardGrid>
+*@
+
+<div class="m-dash" data-m-dashboard id="@Id">
+    @foreach (var tile in _view.Tiles)
+    {
+        var item = tile;
+        var spec = Tiles.First(s => s.Id == item.Id);
+        <section class="m-dash-tile" style="--w:@item.Width;--h:@item.Height" aria-label="@item.Title">
+            <header class="m-dash-head">
+                <h3 class="m-dash-title">@item.Title</h3>
+                <div class="m-dash-tools" role="group" aria-label="Arrange @item.Title">
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm" aria-label="Move @item.Title earlier" disabled="@item.First" @onclick='() => ActAsync("earlier", item.Id)'>Earlier</button>
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm" aria-label="Move @item.Title later" disabled="@item.Last" @onclick='() => ActAsync("later", item.Id)'>Later</button>
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm" aria-label="Make @item.Title narrower" disabled="@(item.Width <= 1)" @onclick='() => ActAsync("narrower", item.Id)'>Narrower</button>
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm" aria-label="Make @item.Title wider" disabled="@(item.Width >= DashboardModel.Columns)" @onclick='() => ActAsync("wider", item.Id)'>Wider</button>
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm" aria-label="Make @item.Title shorter" disabled="@(item.Height <= 1)" @onclick='() => ActAsync("shorter", item.Id)'>Shorter</button>
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm" aria-label="Make @item.Title taller" disabled="@(item.Height >= DashboardModel.MaxHeight)" @onclick='() => ActAsync("taller", item.Id)'>Taller</button>
+                </div>
+            </header>
+            <div class="m-dash-body">@Tile?.Invoke(spec)</div>
+        </section>
+    }
+</div>
+<div class="m-dash-foot">
+    @if (_user.Length == 0) { <span class="m-muted">Sign in to keep this layout.</span> }
+    <button type="button" class="ant-btn ant-btn-default ant-btn-sm" @onclick="ResetAsync">Reset layout</button>
+</div>
+
+@code {
+    /// <summary>The dashboard's id; its layout is saved under it.</summary>
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+
+    /// <summary>The tiles the dashboard can show, with their default sizes.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<DashboardTileSpec> Tiles { get; set; } = [];
+
+    /// <summary>Draws a tile's body.</summary>
+    [Parameter] public RenderFragment<DashboardTileSpec>? Tile { get; set; }
+
+    [Inject] private IUiStateStore Store { get; set; } = default!;
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthenticationState { get; set; }
+
+    private string _user = "";
+    private IReadOnlyList<DashboardPlacement> _layout = [];
+    private DashboardView _view = new("", []);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _user = UiUser.Key(AuthenticationState is null ? null : (await AuthenticationState).User);
+        _layout = await DashboardModel.LoadAsync(Store, _user, Id, Tiles);
+        _view = DashboardModel.View(Id, Tiles, _layout);
+    }
+
+    private async Task ActAsync(string op, string tile)
+    {
+        _layout = DashboardModel.Apply(_layout, op, tile);
+        _view = DashboardModel.View(Id, Tiles, _layout);
+        await DashboardModel.SaveAsync(Store, _user, Id, _layout);
+    }
+
+    private async Task ResetAsync()
+    {
+        await DashboardModel.ClearAsync(Store, _user, Id);
+        _layout = DashboardModel.Default(Tiles);
+        _view = DashboardModel.View(Id, Tiles, _layout);
+    }
+}

@@ -28,7 +28,8 @@ public enum PivotInterval
 public sealed record PivotFieldInfo(string Key, string Title, bool IsDate);
 
 /// <summary>A measure the pivot can show.</summary>
-public sealed record PivotMeasureInfo(string Key, string Title, int Decimals);
+/// <param name="Percent">A ratio shown as a percentage (the value is the fraction, shown ×100 with a % sign).</param>
+public sealed record PivotMeasureInfo(string Key, string Title, int Decimals, bool Percent = false);
 
 /// <summary>
 /// The group key of a pivot query: one slot per group-by level, text or number. A record, so in-memory sources group
@@ -110,6 +111,7 @@ public sealed class PivotQuery<T>
 
     private readonly List<Field> _fields = [];
     private readonly List<MeasureDef> _measures = [];
+    private readonly List<RatioDef> _ratios = [];
     private PivotState _default = new() { Measures = [Count] };
     private int _maxGroups = 10_000;
 
@@ -120,9 +122,11 @@ public sealed class PivotQuery<T>
     /// <summary>The fields to group by, in the order the header dropdown lists them.</summary>
     public IReadOnlyList<PivotFieldInfo> Fields => _fields.Select(f => new PivotFieldInfo(f.Key, f.Title, f.IsDate)).ToArray();
 
-    /// <summary>The measures, in the order the Measures menu lists them (<c>count</c> last, as in Odoo).</summary>
+    /// <summary>The measures, in the order the Measures menu lists them: the sums, then the ratios, <c>count</c> last (as in Odoo).</summary>
     public IReadOnlyList<PivotMeasureInfo> Measures =>
-        _measures.Select(m => new PivotMeasureInfo(m.Key, m.Title, m.Decimals)).Append(new PivotMeasureInfo(Count, "Count", 0)).ToArray();
+        _measures.Select(m => new PivotMeasureInfo(m.Key, m.Title, m.Decimals))
+            .Concat(_ratios.Select(r => new PivotMeasureInfo(r.Key, r.Title, r.Decimals, r.Percent)))
+            .Append(new PivotMeasureInfo(Count, "Count", 0)).ToArray();
 
     /// <summary>The state of a page that names none.</summary>
     public PivotState DefaultState => _default;
@@ -177,6 +181,21 @@ public sealed class PivotQuery<T>
         return this;
     }
 
+    /// <summary>
+    /// A derived measure: the <paramref name="numerator"/> measure divided by the <paramref name="denominator"/> measure,
+    /// worked out for every cell and total from their sums, so a total is the ratio of the totals (margin = profit ÷
+    /// sales), not the sum of the cells' ratios. A cell with no denominator shows nothing. Both must be registered
+    /// measures or <see cref="Count"/> (amount per shipment = amount ÷ count), and a ratio can't be a part of another.
+    /// </summary>
+    public PivotQuery<T> Ratio(string key, string title, string numerator, string denominator, int decimals = 2, bool percent = false)
+    {
+        if (key == Count || Measures.Any(m => m.Key == key)) throw new ArgumentException($"The measure '{key}' is already registered.", nameof(key));
+        if (!IsBase(numerator)) throw new ArgumentException($"'{numerator}' is not a measure registered before the ratio '{key}'.", nameof(numerator));
+        if (!IsBase(denominator)) throw new ArgumentException($"'{denominator}' is not a measure registered before the ratio '{key}'.", nameof(denominator));
+        _ratios.Add(new RatioDef(key, title, numerator, denominator, decimals, percent));
+        return this;
+    }
+
     /// <summary>A whole-number measure (quantities).</summary>
     public PivotQuery<T> Measure(string key, string title, Expression<Func<T, int>> value, PivotAggregate aggregate = PivotAggregate.Sum, int decimals = 0) =>
         Measure(key, title, Expression.Lambda<Func<T, decimal>>(Expression.Convert(value.Body, typeof(decimal)), value.Parameters), aggregate, decimals);
@@ -212,6 +231,8 @@ public sealed class PivotQuery<T>
         var copy = new PivotQuery<T> { _maxGroups = _maxGroups };
         copy._fields.AddRange(_fields.Where(f => allow(f.Key)));
         copy._measures.AddRange(_measures.Where(m => allow(m.Key)));
+        copy._ratios.AddRange(_ratios.Where(r => allow(r.Key) && Allowed(r.Numerator) && Allowed(r.Denominator)));
+        bool Allowed(string key) => key == Count || allow(key);
         var state = copy.Normalize(_default);
         // The default's open "Total" headers belong to group-bys that may have gone.
         copy._default = state with
@@ -245,14 +266,20 @@ public sealed class PivotQuery<T>
                 ? [.. groupBys.Concat(full.Skip(groupBys.Count).Select(Canonical).OfType<string>().Where(used.Add)).Take(Math.Max(groupBys.Count, max))]
                 : [];
         var known = Measures.Select(m => m.Key).ToHashSet(StringComparer.Ordinal);
-        var measures = state.Measures.Where(known.Contains).Distinct().Take(MaxMeasures).ToArray();
-        if (measures.Length == 0) measures = _default.Measures.Count > 0 ? [.. _default.Measures] : [Count];
+        // At most MaxMeasures shown, and at most MaxMeasures sums stored (a ratio stores its two measures).
+        var measures = new List<string>();
+        foreach (var m in state.Measures.Where(known.Contains).Distinct())
+        {
+            if (measures.Count == MaxMeasures) break;
+            if (Stored([.. measures, m]).Count <= MaxMeasures) measures.Add(m);
+        }
+        if (measures.Count == 0) measures = _default.Measures.Count > 0 ? [.. _default.Measures] : [Count];
         var sorted = state.SortMeasure is { } s && measures.Contains(s);
         return state with
         {
             Rows = rows,
             Columns = columns,
-            Measures = measures,
+            Measures = [.. measures],
             RowsFull = fullRows.Length > rows.Count ? fullRows : [],
             ColumnsFull = fullColumns.Length > columns.Length ? fullColumns : [],
             RowsAllDepth = Math.Clamp(state.RowsAllDepth, 0, rows.Count),
@@ -321,8 +348,10 @@ public sealed class PivotQuery<T>
             left -= groups.Count;
             levels.Add((level.RowDepth, level.ColumnDepth, groups));
         }
-        var aggregates = state.Measures.Where(m => m != Count).Select(m => _measures.First(x => x.Key == m).Aggregate).ToArray();
-        return PivotResult.Build(state, Fields, Measures, measures, aggregates, levels, Label, GroupByTitle, Order);
+        var stored = Stored(state.Measures);
+        var aggregates = stored.Select(m => _measures.First(x => x.Key == m).Aggregate).ToArray();
+        var ratios = _ratios.ToDictionary(r => r.Key, r => (r.Numerator, r.Denominator), StringComparer.Ordinal);
+        return PivotResult.Build(state, Fields, Measures, measures, stored, aggregates, ratios, levels, Label, GroupByTitle, Order);
     }
 
     /// <summary>
@@ -407,9 +436,31 @@ public sealed class PivotQuery<T>
     /// <c>source.GroupBy(x => new PivotKey { S0 = x.City, N1 = … }).Select(g => new PivotLeaf { Key = g.Key, Count =
     /// g.Count(), V0 = g.Sum(y => y.Amount), … })</c>: the rows' group-bys in the first slots, then the columns'.
     /// </summary>
+    private bool IsBase(string key) => key == Count || _measures.Any(m => m.Key == key);
+
+    // The sums a set of shown measures needs from the database, in slot order: a ratio needs its two measures.
+    private IReadOnlyList<string> Stored(IEnumerable<string> shown)
+    {
+        var list = new List<string>();
+        void Add(string key)
+        {
+            if (key != Count && !list.Contains(key)) list.Add(key);
+        }
+        foreach (var key in shown)
+        {
+            if (_ratios.Find(r => r.Key == key) is { } ratio)
+            {
+                Add(ratio.Numerator);
+                Add(ratio.Denominator);
+            }
+            else Add(key);
+        }
+        return list;
+    }
+
     private IQueryable<PivotLeaf> Group(IQueryable<T> source, IReadOnlyList<string> levels, PivotState state)
     {
-        var measures = state.Measures.Where(m => m != Count).Select(m => _measures.First(x => x.Key == m)).ToArray();
+        var measures = Stored(state.Measures).Select(m => _measures.First(x => x.Key == m)).ToArray();
 
         var x = Expression.Parameter(typeof(T), "x");
         var bindings = new List<MemberBinding>();
@@ -446,6 +497,8 @@ public sealed class PivotQuery<T>
 
     private sealed record Field(string Key, string Title, bool IsDate, Func<PivotInterval, (LambdaExpression Key, bool Text)> KeyFor,
         Func<PivotInterval, string, string> Label);
+
+    private sealed record RatioDef(string Key, string Title, string Numerator, string Denominator, int Decimals, bool Percent);
 
     private sealed record MeasureDef(string Key, string Title, Expression<Func<T, decimal>> Value, PivotAggregate Aggregate, int Decimals);
 

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Mvc.Razor.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.Razor.TagHelpers;
@@ -14,9 +15,12 @@ namespace Modulus.AspNetCore.Mvc.TagHelpers;
 /// radius are active from the first byte.
 /// </summary>
 [HtmlTargetElement("modulus-head", TagStructure = TagStructure.WithoutEndTag)]
-public class ModulusHeadTagHelper(IOptions<ModulusThemeOptions> options) : TagHelper
+public class ModulusHeadTagHelper(IOptions<ModulusThemeOptions> options, IFileVersionProvider versions) : TagHelper
 {
     [ViewContext, HtmlAttributeNotBound] public ViewContext ViewContext { get; set; } = default!;
+
+    /// <summary>The asset's address with its content version (<c>?v=…</c>), so the browser can cache it for a year.</summary>
+    private string Url(string path) => versions.AddFileVersionToPath(ViewContext.HttpContext.Request.PathBase, path);
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
@@ -28,17 +32,17 @@ public class ModulusHeadTagHelper(IOptions<ModulusThemeOptions> options) : TagHe
 
         output.TagName = null;
         output.Content.SetHtmlContent($"""
-            <link rel="preload" href="/_content/Modulus.Ui.Assets/fonts/inter/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
-            <link rel="stylesheet" href="/_content/AntDesign/css/ant-design-blazor.variable.min.css" data-theme-css="light" media="{(dark ? "not all" : "all")}" />
-            <link rel="stylesheet" href="/_content/AntDesign/css/ant-design-blazor.dark.min.css" data-theme-css="dark" media="{(dark ? "all" : "not all")}" />
-            <link rel="stylesheet" href="/_content/Modulus.Ui.Assets/css/antd-dark-brand.css" data-theme-css="dark" media="{(dark ? "all" : "not all")}" />
-            <link rel="stylesheet" href="/_content/Modulus.Ui.Assets/css/modulus.css" />
-            <link rel="stylesheet" href="/_content/Modulus.Ui.Assets/css/modulus-shell.css" />
-            <link rel="stylesheet" href="/_content/Modulus.Ui.Assets/css/modulus-pages.css" />
+            <link rel="preload" href="{Url("/_content/Modulus.Ui.Assets/fonts/inter/inter-latin-wght-normal.woff2")}" as="font" type="font/woff2" crossorigin />
+            <link rel="stylesheet" href="{Url("/_content/AntDesign/css/ant-design-blazor.variable.min.css")}" data-theme-css="light" media="{(dark ? "not all" : "all")}" />
+            <link rel="stylesheet" href="{Url("/_content/AntDesign/css/ant-design-blazor.dark.min.css")}" data-theme-css="dark" media="{(dark ? "all" : "not all")}" />
+            <link rel="stylesheet" href="{Url("/_content/Modulus.Ui.Assets/css/antd-dark-brand.css")}" data-theme-css="dark" media="{(dark ? "all" : "not all")}" />
+            <link rel="stylesheet" href="{Url("/_content/Modulus.Ui.Assets/css/modulus.css")}" />
+            <link rel="stylesheet" href="{Url("/_content/Modulus.Ui.Assets/css/modulus-shell.css")}" />
+            <link rel="stylesheet" href="{Url("/_content/Modulus.Ui.Assets/css/modulus-pages.css")}" />
             <style id="modulus-brand">{ThemeCss.Build(theme)}</style>
-            <script src="/_content/Modulus.Ui.Assets/js/modulus-theme.js" data-default="{@default}" {ThemeCss.ScriptAttributes(theme)}></script>
-            <script src="/_content/Modulus.Ui.Assets/js/modulus-shell.js" defer></script>
-            <script src="/_content/Modulus.Ui.Assets/js/modulus-plugins.js" defer></script>
+            <script src="{Url("/_content/Modulus.Ui.Assets/js/modulus-theme.js")}" data-default="{@default}" {ThemeCss.ScriptAttributes(theme)}></script>
+            <script src="{Url("/_content/Modulus.Ui.Assets/js/modulus-shell.js")}" defer></script>
+            <script src="{Url("/_content/Modulus.Ui.Assets/js/modulus-plugins.js")}" defer></script>
             """);
     }
 }
@@ -49,18 +53,21 @@ public class ModulusHeadTagHelper(IOptions<ModulusThemeOptions> options) : TagHe
 /// (<c>modulus-spa.js</c>, active when the layout's &lt;body&gt; has <c>data-m-spa</c>).
 /// </summary>
 [HtmlTargetElement("modulus-scripts", TagStructure = TagStructure.WithoutEndTag)]
-public class ModulusScriptsTagHelper : TagHelper
+public class ModulusScriptsTagHelper(IFileVersionProvider versions) : TagHelper
 {
+    [ViewContext, HtmlAttributeNotBound] public ViewContext ViewContext { get; set; } = default!;
+
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
         output.TagName = null;
-        output.Content.SetHtmlContent("""
-            <script src="/_content/Modulus.Ui.Assets/lib/htmx/htmx.min.js"></script>
-            <script src="/_content/Modulus.Ui.Assets/js/modulus-mvc.js"></script>
-            <script src="/_content/Modulus.Ui.Assets/js/modulus-spa.js"></script>
-            <script src="/_content/Modulus.Ui.Assets/js/modulus-virtual.js" defer></script>
-            <script src="/_content/Modulus.Ui.Assets/js/modulus-widgets.js"></script>
-            <script defer src="/_content/Modulus.Ui.Assets/lib/alpinejs/alpine.min.js"></script>
+        string Url(string path) => versions.AddFileVersionToPath(ViewContext.HttpContext.Request.PathBase, path);
+        output.Content.SetHtmlContent($"""
+            <script src="{Url("/_content/Modulus.Ui.Assets/lib/htmx/htmx.min.js")}"></script>
+            <script src="{Url("/_content/Modulus.Ui.Assets/js/modulus-mvc.js")}"></script>
+            <script src="{Url("/_content/Modulus.Ui.Assets/js/modulus-spa.js")}"></script>
+            <script src="{Url("/_content/Modulus.Ui.Assets/js/modulus-virtual.js")}" defer></script>
+            <script src="{Url("/_content/Modulus.Ui.Assets/js/modulus-widgets.js")}"></script>
+            <script defer src="{Url("/_content/Modulus.Ui.Assets/lib/alpinejs/alpine.min.js")}"></script>
             """);
     }
 }

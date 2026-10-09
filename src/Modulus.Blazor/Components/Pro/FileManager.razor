@@ -1,0 +1,178 @@
+@using Modulus.Ui.Abstractions.Files
+@using AntDesign
+
+@*
+    A file manager: the breadcrumb to walk up, a search within the folder, a list of its folders and files (size and date), and the
+    actions to create a folder, rename an entry and delete one after a confirmation. The listing comes from FileManagerModel, the
+    same the MVC app-file-manager draws. The page owns the tree: each change calls a callback and the page reloads Entries.
+
+    <FileManager Entries="_entries" Folder="_folder" Search="@_search" OnNavigate="NavigateAsync" OnCreate="CreateAsync"
+                 OnRename="RenameAsync" OnDelete="DeleteAsync" />
+*@
+
+<div class="m-files" data-m-files>
+    <div class="m-files-bar">
+        <nav class="m-files-crumbs" aria-label="Breadcrumb">
+            @for (var i = 0; i < _view.Crumbs.Count; i++)
+            {
+                var crumb = _view.Crumbs[i];
+                var last = i == _view.Crumbs.Count - 1;
+                @if (i > 0) { <span class="m-files-sep" aria-hidden="true">/</span> }
+                <button type="button" class="m-files-crumb" aria-current="@(last ? "page" : null)" @onclick="() => OnNavigate.InvokeAsync(new FileNavigation(crumb.Id))">@crumb.Name</button>
+            }
+        </nav>
+        <form class="m-files-search" @onsubmit="SearchAsync">
+            <input class="ant-input" @bind="_search" placeholder="Search this folder" aria-label="Search this folder" />
+        </form>
+        <button type="button" class="ant-btn ant-btn-primary" @onclick="() => _creating = true"><Ti Name="plus" /><span>New folder</span></button>
+    </div>
+
+    @if (_creating)
+    {
+        <form class="m-files-create" @onsubmit="CreateSubmitAsync">
+            <input class="ant-input" @bind="_newName" placeholder="Folder name" aria-label="New folder name" maxlength="@FileManagerModel.MaxNameLength" autofocus />
+            @if (_createError is not null) { <div class="m-files-error" role="alert">@_createError</div> }
+            <div class="m-flex m-gap-8">
+                <button type="submit" class="ant-btn ant-btn-primary ant-btn-sm"><span>Create</span></button>
+                <button type="button" class="ant-btn ant-btn-default ant-btn-sm" @onclick="() => _creating = false"><span>Cancel</span></button>
+            </div>
+        </form>
+    }
+
+    <div class="m-files-list" role="table" aria-label="Files in this folder">
+        <div class="m-files-row m-files-head" role="row">
+            <span role="columnheader">Name</span>
+            <span role="columnheader">Size</span>
+            <span role="columnheader">Modified</span>
+            <span role="columnheader"><span class="m-sr-only">Actions</span></span>
+        </div>
+        @foreach (var item in _view.Items)
+        {
+            var entry = item.Entry;
+            <div class="m-files-row" role="row" data-id="@entry.Id">
+                <div class="m-files-name" role="cell">
+                    @if (_renamingId == entry.Id)
+                    {
+                        <form class="m-files-rename" @onsubmit="RenameSubmitAsync">
+                            <input class="ant-input" @bind="_renameTo" aria-label="New name for @entry.Name" maxlength="@FileManagerModel.MaxNameLength" @onkeydown="OnRenameKey" autofocus />
+                            @if (_renameError is not null) { <div class="m-files-error" role="alert">@_renameError</div> }
+                            <div class="m-flex m-gap-8">
+                                <button type="submit" class="ant-btn ant-btn-primary ant-btn-sm"><span>Save</span></button>
+                                <button type="button" class="ant-btn ant-btn-default ant-btn-sm" @onclick="() => _renamingId = null"><span>Cancel</span></button>
+                            </div>
+                        </form>
+                    }
+                    else if (entry.IsFolder)
+                    {
+                        <button type="button" class="m-files-open" @onclick="() => OnNavigate.InvokeAsync(new FileNavigation(entry.Id))"><Ti Name="@item.Icon" /><span>@entry.Name</span></button>
+                    }
+                    else
+                    {
+                        <span class="m-files-file"><Ti Name="@item.Icon" /><span title="@item.Kind">@entry.Name</span></span>
+                    }
+                </div>
+                <span class="m-files-size" role="cell">@item.SizeText</span>
+                <span class="m-files-date" role="cell">@item.ModifiedText</span>
+                <div class="m-files-actions" role="cell">
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Rename @entry.Name" title="Rename" @onclick="() => StartRename(entry)"><Ti Name="edit" /></button>
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Delete @entry.Name" title="Delete" @onclick="() => _confirmDelete = item"><Ti Name="delete" /></button>
+                </div>
+            </div>
+        }
+        @if (_view.Items.Count == 0)
+        {
+            <div class="m-files-empty" role="row">@(_view.Search.Length > 0 ? $"Nothing here matches \"{_view.Search}\"." : "This folder is empty.")</div>
+        }
+    </div>
+</div>
+
+<Modal Title="@("Delete?")" Visible="_confirmDelete is not null" OkText="@("Delete")" OkButtonProps="@(new ButtonProps { Danger = true })"
+       OnOk="DeleteConfirmedAsync" OnCancel="() => _confirmDelete = null" Width="416">
+    @if (_confirmDelete is { } doomed)
+    {
+        <p style="margin:0">Delete "@doomed.Entry.Name"@(doomed.Entry.IsFolder ? " and everything in it" : "")? This can't be undone.</p>
+    }
+</Modal>
+
+@code {
+    /// <summary>The tree's entries; the component lists the folder's children.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<FileEntry> Entries { get; set; } = [];
+
+    /// <summary>The folder shown (null for the top level).</summary>
+    [Parameter] public int? Folder { get; set; }
+
+    /// <summary>The search text for this folder.</summary>
+    [Parameter] public string Search { get; set; } = "";
+
+    /// <summary>The time the dates are drawn against. Defaults to now.</summary>
+    [Parameter] public DateTime Now { get; set; } = DateTime.Now;
+
+    /// <summary>Moves to a folder (or applies a search), when a folder is opened or a crumb or the search is used.</summary>
+    [Parameter] public EventCallback<FileNavigation> OnNavigate { get; set; }
+
+    /// <summary>Creates a folder, once its name has passed the rules.</summary>
+    [Parameter] public EventCallback<FileCreate> OnCreate { get; set; }
+
+    /// <summary>Renames an entry, once its name has passed the rules.</summary>
+    [Parameter] public EventCallback<FileRename> OnRename { get; set; }
+
+    /// <summary>Deletes an entry (by id), after the confirmation.</summary>
+    [Parameter] public EventCallback<int> OnDelete { get; set; }
+
+    private FileManagerView _view = new(null, [new(null, "Files")], [], "");
+    private string _search = "";
+    private bool _creating;
+    private string _newName = "";
+    private string? _createError;
+    private int? _renamingId;
+    private string _renameTo = "";
+    private string? _renameError;
+    private FileItemView? _confirmDelete;
+
+    protected override void OnParametersSet()
+    {
+        _view = FileManagerModel.Build(Entries, Folder, Search, Now);
+        _search = Search;
+    }
+
+    private Task SearchAsync() => OnNavigate.InvokeAsync(new FileNavigation(Folder, _search));
+
+    private async Task CreateSubmitAsync()
+    {
+        _createError = FileManagerModel.NameError(_newName, Folder, Entries);
+        if (_createError is not null) return;
+        await OnCreate.InvokeAsync(new FileCreate(Folder, _newName.Trim()));
+        _newName = "";
+        _creating = false;
+    }
+
+    private void StartRename(FileEntry entry)
+    {
+        _renamingId = entry.Id;
+        _renameTo = entry.Name;
+        _renameError = null;
+    }
+
+    private void OnRenameKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") _renamingId = null;
+    }
+
+    private async Task RenameSubmitAsync()
+    {
+        if (_renamingId is not { } id) return;
+        var entry = Entries.FirstOrDefault(e => e.Id == id);
+        if (entry is null) { _renamingId = null; return; }
+        _renameError = FileManagerModel.NameError(_renameTo, entry.ParentId, Entries, id);
+        if (_renameError is not null) return;
+        _renamingId = null;
+        if (_renameTo.Trim() != entry.Name) await OnRename.InvokeAsync(new FileRename(id, _renameTo.Trim()));
+    }
+
+    private async Task DeleteConfirmedAsync()
+    {
+        if (_confirmDelete is not { } doomed) return;
+        _confirmDelete = null;
+        await OnDelete.InvokeAsync(doomed.Entry.Id);
+    }
+}

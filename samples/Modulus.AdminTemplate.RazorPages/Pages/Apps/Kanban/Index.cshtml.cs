@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Modulus.AspNetCore.Mvc.Htmx;
 using Modulus.Samples.Shared;
 using Modulus.Ui.Abstractions;
+using Modulus.Ui.Abstractions.Kanban;
 
 namespace Modulus.AdminTemplate.RazorPages.Pages.Apps.Kanban;
 
@@ -10,9 +11,9 @@ public class KanbanModel(SampleStore store) : SamplePageModel
 {
     public const string RefreshEvent = "kanban:refresh";
 
-    public IReadOnlyList<KanbanTask> Tasks { get; private set; } = [];
+    public KanbanBoardView Board { get; private set; } = KanbanPage.Board([]);
 
-    public void OnGet() => Tasks = store.Tasks();
+    public void OnGet() => Board = KanbanPage.Board(store.Tasks());
 
     public IActionResult OnPostAdd(KanbanTaskInput input)
     {

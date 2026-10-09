@@ -27,6 +27,11 @@
 (function () {
     'use strict';
 
+    // The full-screen button shows only where the browser allows it. It is decided here, in <head>, so the
+    // header already has the button's space at first paint; decided later (in modulus-shell.js), the button
+    // would appear on a hard refresh and push the search box and the tools along.
+    document.documentElement.classList.toggle('m-can-fullscreen', !!(document.fullscreenEnabled || document.webkitFullscreenEnabled));
+
     var THEME_COOKIE = 'modulus-theme';
     var COLLAPSED_COOKIE = 'modulus-collapsed';
     var root = document.documentElement;

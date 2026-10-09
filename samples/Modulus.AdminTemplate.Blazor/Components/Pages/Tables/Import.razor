@@ -1,0 +1,26 @@
+@page "/tables/import"
+@using Modulus.Samples.Shared
+@using Modulus.Ui.Abstractions.Import
+@inject CustomerImportStore Store
+
+<PageTitle>Import data · Modulus</PageTitle>
+
+@* The import wizard: a CSV file is checked row by row, then the valid file is imported into the customer store. The MVC
+   and Razor Pages samples run the same steps on the server (Samples.Web Views/Shared/Ui/Tables/Import.cshtml). *@
+<PageHeading Pretitle="Tables" Title="Import data" Subtitle="Import customers from a CSV file: upload it, match its columns, check every row, then import the file." />
+
+<div class="m-card">
+    <div class="m-card-body">
+        <ImportWizard Fields="CustomerImport.Fields" OnImport="SaveAsync" />
+    </div>
+</div>
+
+<details class="m-card">
+    <summary class="m-card-body">Example file</summary>
+    <div class="m-card-body"><pre class="m-import-example">@CustomerImport.Example</pre></div>
+</details>
+
+@code {
+    private Task<string> SaveAsync(IReadOnlyList<ImportRow> rows) =>
+        Task.FromResult(CustomerImport.Saved(rows.Count, Store.Add(rows)));
+}

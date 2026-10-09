@@ -1,0 +1,212 @@
+@using Modulus.Ui.Abstractions.Query
+
+@*
+    The visual filter: rules (field, operator, value, and the end of a range) and groups joined by all or any, to nest
+    three levels deep. Its markup has the classes and labels of QueryBuilderHtml (the MVC app-query-builder), and its
+    buttons run the same QueryBuilderForm.Edit, so one filter means the same in both flavours. Every change is reported
+    through Value (bind it; the edits apply at once, so there is no Apply button), and the page applies it to its rows, e.g. through TableQuery.Filters and ProTableRequest.Where.
+
+    <QueryBuilder Schema="_schema" @bind-Value="_filter" />
+*@
+
+<div class="m-qb" data-m-query-builder>
+    @Group(_model, "", 0, root: true)
+    <div class="m-qb-footer"><button type="button" class="ant-btn ant-btn-text" @onclick='() => Edit("clear")'>Clear</button></div>
+</div>
+
+@code {
+    /// <summary>The fields the builder offers, in menu order (QueryBuilder&lt;T&gt;.Schema).</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<QueryField> Schema { get; set; } = [];
+
+    /// <summary>The filter. Bind it to keep the page's rows in step with the rules.</summary>
+    [Parameter] public FilterGroup Value { get; set; } = FilterGroup.Empty;
+
+    [Parameter] public EventCallback<FilterGroup> ValueChanged { get; set; }
+
+    private FilterGroup _model = FilterGroup.Empty;
+
+    protected override void OnParametersSet() => _model = Value;
+
+    private async Task Commit(FilterGroup next)
+    {
+        _model = next;
+        await ValueChanged.InvokeAsync(next);
+    }
+
+    private Task Edit(string op) => Commit(QueryBuilderForm.Edit(Schema, _model, op));
+
+    // The node at a path ("" is the top group), or null when there is none.
+    private FilterNode? NodeAt(string path)
+    {
+        FilterNode? node = _model;
+        foreach (var part in path.Split('.', StringSplitOptions.RemoveEmptyEntries))
+            node = node is FilterGroup g && int.TryParse(part, out var i) && i < g.Items.Count ? g.Items[i] : null;
+        return node;
+    }
+
+    private static string Child(string path, int index) => path.Length == 0 ? index.ToString() : $"{path}.{index}";
+
+    private Task SetJoin(string path, object? value)
+    {
+        if (!Enum.TryParse<FilterJoin>(value?.ToString(), out var join)) return Task.CompletedTask;
+        if (path.Length == 0) return Commit(_model with { Join = join });
+        return NodeAt(path) is FilterGroup g ? Commit(QueryBuilderForm.Replace(_model, path, g with { Join = join })) : Task.CompletedTask;
+    }
+
+    private Task SetField(string path, object? value)
+    {
+        var key = value?.ToString();
+        if (NodeAt(path) is not FilterRule || Schema.FirstOrDefault(f => f.Key == key) is not { } field) return Task.CompletedTask;
+        return Commit(QueryBuilderForm.Replace(_model, path, new FilterRule(field.Key, QueryFieldOperators.For(field.Kind)[0])));
+    }
+
+    private Task SetOperator(string path, object? value)
+    {
+        if (NodeAt(path) is not FilterRule rule || !Enum.TryParse<FilterOperator>(value?.ToString(), out var op)) return Task.CompletedTask;
+        var next = rule with
+        {
+            Operator = op,
+            Value = QueryFieldOperators.NeedsValue(op) ? rule.Value : null,
+            To = QueryFieldOperators.NeedsTo(op) ? rule.To : null,
+        };
+        return Commit(QueryBuilderForm.Replace(_model, path, next));
+    }
+
+    private Task SetValue(string path, object? value, bool isTo)
+    {
+        if (NodeAt(path) is not FilterRule rule) return Task.CompletedTask;
+        var text = value?.ToString();
+        var next = isTo ? rule with { To = text } : rule with { Value = text };
+        return Commit(QueryBuilderForm.Replace(_model, path, next));
+    }
+
+    // A checkbox of a choice field: the picked values are kept in the field's option order, joined the way the MVC form posts them.
+    private Task ToggleValue(string path, string option, object? on)
+    {
+        if (NodeAt(path) is not FilterRule rule || Schema.FirstOrDefault(f => f.Key == rule.Field) is not { } field) return Task.CompletedTask;
+        var picked = (rule.Value ?? "").Split(ColumnSearch.ValueSeparator, StringSplitOptions.RemoveEmptyEntries).ToHashSet();
+        if (on is true) picked.Add(option);
+        else picked.Remove(option);
+        var values = field.Options.Where(o => picked.Contains(o.Value)).Select(o => o.Value).ToList();
+        return Commit(QueryBuilderForm.Replace(_model, path, rule with { Value = values.Count == 0 ? null : string.Join(ColumnSearch.ValueSeparator, values) }));
+    }
+
+    private RenderFragment Group(FilterGroup group, string path, int depth, bool root) => __builder =>
+    {
+        <div class="m-qb-group" data-depth="@depth">
+            <div class="m-qb-head">
+                <span class="m-qb-label">Match</span>
+                <select class="m-select m-select-sm m-qb-join" aria-label="Match all or any of these" @onchange="e => SetJoin(path, e.Value)">
+                    <option value="And" selected="@(group.Join == FilterJoin.And)">all</option>
+                    <option value="Or" selected="@(group.Join == FilterJoin.Or)">any</option>
+                </select>
+                <span class="m-qb-label">of the following</span>
+                @if (!root)
+                {
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-qb-remove" aria-label="Remove group" title="Remove group" @onclick='() => Edit($"remove:{path}")'><Ti Name="close" /></button>
+                }
+            </div>
+            <div class="m-qb-items">
+                @if (group.Items.Count == 0)
+                {
+                    <p class="m-qb-empty">@(root ? "No conditions yet. Add a rule to narrow the list." : "This group has no conditions yet.")</p>
+                }
+                @for (var i = 0; i < group.Items.Count; i++)
+                {
+                    var child = Child(path, i);
+                    var item = group.Items[i];
+                    var connector = i == 0 ? "" : group.Join == FilterJoin.And ? "and" : "or";
+                    if (item is FilterGroup sub)
+                    {
+                        @Group(sub, child, depth + 1, root: false)
+                    }
+                    else if (item is FilterRule rule)
+                    {
+                        @Rule(rule, child, connector)
+                    }
+                }
+            </div>
+            <div class="m-qb-actions">
+                <button type="button" class="ant-btn ant-btn-dashed ant-btn-sm m-qb-add" @onclick='() => Edit($"add-rule:{path}")'><Ti Name="plus" /><span>Add rule</span></button>
+                @if (depth + 1 < FilterLimits.MaxDepth)
+                {
+                    <button type="button" class="ant-btn ant-btn-dashed ant-btn-sm m-qb-add" @onclick='() => Edit($"add-group:{path}")'><Ti Name="plus" /><span>Add group</span></button>
+                }
+            </div>
+        </div>
+    };
+
+    private RenderFragment Rule(FilterRule rule, string path, string connector) => __builder =>
+    {
+        var field = Schema.FirstOrDefault(f => f.Key == rule.Field);
+        var kind = field?.Kind ?? QueryFieldKind.Text;
+        var picked = (rule.Value ?? "").Split(ColumnSearch.ValueSeparator, StringSplitOptions.RemoveEmptyEntries);
+        <div class="m-qb-rule">
+            <span class="m-qb-connector" aria-hidden="true">@connector</span>
+            <select class="m-select m-qb-field" aria-label="Field" @onchange="e => SetField(path, e.Value)">
+                @if (field is null)
+                {
+                    <option value="" selected>Choose a field</option>
+                }
+                @foreach (var f in Schema)
+                {
+                    <option value="@f.Key" selected="@(f.Key == rule.Field)">@f.Title</option>
+                }
+            </select>
+            <select class="m-select m-qb-op" aria-label="Operator" @onchange="e => SetOperator(path, e.Value)">
+                @foreach (var op in QueryFieldOperators.For(kind))
+                {
+                    <option value="@op" selected="@(op == rule.Operator)">@QueryFieldOperators.Label(op)</option>
+                }
+            </select>
+            <span class="m-qb-value" hidden="@(!QueryFieldOperators.NeedsValue(rule.Operator))">
+                @if (kind == QueryFieldKind.Choice)
+                {
+                    var chosen = field!.Options.Where(o => picked.Contains(o.Value)).Select(o => o.Label).ToList();
+                    <details class="m-dropdown m-qb-multi">
+                        <summary class="ant-btn ant-btn-default m-dropdown-trigger m-qb-multi-trigger" aria-label="Values">
+                            <span class="m-qb-multi-text@(chosen.Count == 0 ? " m-qb-multi-empty" : "")">@(chosen.Count == 0 ? "Choose values" : string.Join(", ", chosen))</span>
+                            @if (chosen.Count > 0) { <span class="m-qb-multi-count">@chosen.Count</span> }
+                            <span class="m-qb-multi-chevron" aria-hidden="true"><Ti Name="down" /></span>
+                        </summary>
+                        <div class="ant-dropdown m-dropdown-panel m-dropdown-left m-qb-multi-panel" role="group" aria-label="Values">
+                            @foreach (var o in field.Options)
+                            {
+                                var on = picked.Contains(o.Value);
+                                <label class="ant-checkbox-wrapper@(on ? " ant-checkbox-wrapper-checked" : "") m-qb-multi-option">
+                                    <span class="ant-checkbox@(on ? " ant-checkbox-checked" : "")"><input type="checkbox" class="ant-checkbox-input" checked="@on" @onchange="e => ToggleValue(path, o.Value, e.Value)" /><span class="ant-checkbox-inner"></span></span>
+                                    <span>@o.Label</span>
+                                </label>
+                            }
+                        </div>
+                    </details>
+                }
+                else
+                {
+                    @Input(kind, rule.Value, path, isTo: false, "Value")
+                    <span class="m-qb-to" hidden="@(!QueryFieldOperators.NeedsTo(rule.Operator))">
+                        <span class="m-qb-label">and</span>
+                        @Input(kind, rule.To, path, isTo: true, "Up to")
+                    </span>
+                }
+            </span>
+            <button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-qb-remove" aria-label="Remove rule" title="Remove rule" @onclick='() => Edit($"remove:{path}")'><Ti Name="close" /></button>
+        </div>
+    };
+
+    private RenderFragment Input(QueryFieldKind kind, string? value, string path, bool isTo, string label) => __builder =>
+    {
+        if (kind == QueryFieldKind.Date)
+        {
+            <input class="ant-input" type="date" value="@value" aria-label="@label" @onchange="e => SetValue(path, e.Value, isTo)" />
+        }
+        else if (kind == QueryFieldKind.Number)
+        {
+            <input class="ant-input" type="text" inputmode="decimal" autocomplete="off" value="@value" aria-label="@label" @onchange="e => SetValue(path, e.Value, isTo)" />
+        }
+        else
+        {
+            <input class="ant-input" type="text" autocomplete="off" value="@value" aria-label="@label" @onchange="e => SetValue(path, e.Value, isTo)" />
+        }
+    };
+}

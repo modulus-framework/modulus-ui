@@ -9,12 +9,8 @@
     <div class="m-card">
         <div class="m-card-header"><div><h3 class="m-card-title">Drag and drop, with previews</h3><p class="m-card-subtitle">@Limits A file that breaks a rule is refused with the reason.</p></div></div>
         <div class="m-card-body">
-            <Upload Name="file" Drag Multiple ListType="UploadListType.Picture" Accept="@PluginsContent.UploadAccept" Action="/plugins/dropzone/upload"
-                    BeforeUpload="Check" BeforeAllUpload="HasRoom" @bind-FileList="_files">
-                <p class="ant-upload-drag-icon"><Icon Type="inbox" /></p>
-                <p class="ant-upload-text">Drop files here or click to upload</p>
-                <p class="ant-upload-hint">@Limits</p>
-            </Upload>
+            <AppUploader Id="dropzone-uppy" Action="/plugins/dropzone/upload" Accept="@PluginsContent.UploadAccept" MaxSize="@(PluginsContent.MaxUploadMb * 1024L * 1024)"
+                         MaxCount="@PluginsContent.MaxUploadFiles" Note="@Limits" Label="Drop files to upload" />
         </div>
     </div>
 
@@ -45,7 +41,6 @@
 @code {
     private static readonly string Limits = $"PDF or images, up to {PluginsContent.MaxUploadMb} MB each, at most {PluginsContent.MaxUploadFiles} files.";
 
-    private List<UploadFileItem> _files = [];
     private List<UploadFileItem> _single = [];
 
     // The same rules as the server (PluginsContent.CheckUpload); AntD drops a rejected file, so say why.
@@ -53,13 +48,6 @@
     {
         if (PluginsContent.CheckUpload(file.FileName, file.Size) is not { } error) return true;
         Message.Error($"{file.FileName}: {error}");
-        return false;
-    }
-
-    private bool HasRoom(List<UploadFileItem> files)
-    {
-        if (_files.Count + files.Count <= PluginsContent.MaxUploadFiles) return true;
-        Message.Error($"At most {PluginsContent.MaxUploadFiles} files.");
         return false;
     }
 

@@ -8,7 +8,8 @@ namespace Modulus.Ui.Abstractions.Forms;
 /// Allow-list HTML cleaning for the rich text field (notes, terms and conditions, descriptions). Keeps paragraphs,
 /// line breaks, headings, emphasis, lists, quotes, code and links with an http(s), mailto, tel or relative href;
 /// drops every other tag (and the content of script, style and embedded documents), every attribute but
-/// <c>href</c>, and comments. Tags are balanced, so stored HTML can never close the page's own elements.
+/// <c>href</c> (and <c>colspan</c> / <c>rowspan</c> on table cells, as whole numbers), and comments. Tags are balanced, so
+/// stored HTML can never close the page's own elements.
 /// Run it on the server before storing or rendering what a browser posted.
 /// </summary>
 public static partial class RichText
@@ -16,7 +17,7 @@ public static partial class RichText
     private static readonly HashSet<string> Allowed = new(StringComparer.OrdinalIgnoreCase)
     {
         "p", "div", "br", "hr", "b", "strong", "i", "em", "u", "s", "strike", "sub", "sup", "code", "pre",
-        "h1", "h2", "h3", "h4", "blockquote", "ul", "ol", "li", "a",
+        "h1", "h2", "h3", "h4", "blockquote", "ul", "ol", "li", "a", "table", "thead", "tbody", "tfoot", "tr", "th", "td",
     };
 
     private static readonly HashSet<string> Void = new(StringComparer.OrdinalIgnoreCase) { "br", "hr" };
@@ -112,6 +113,13 @@ public static partial class RichText
                 var href = SafeHref(m.Groups[3].Value);
                 sb.Append(href is null ? "<a>" : $"<a href=\"{WebUtility.HtmlEncode(href)}\" rel=\"noopener noreferrer\">");
             }
+            else if (name is "td" or "th")
+            {
+                sb.Append('<').Append(name);
+                AppendSpan(sb, "colspan", m.Groups[3].Value);
+                AppendSpan(sb, "rowspan", m.Groups[3].Value);
+                sb.Append('>');
+            }
             else sb.Append('<').Append(name).Append('>');
             open.Add(name);
         }
@@ -126,6 +134,14 @@ public static partial class RichText
         // Block ends become spaces, inline tags vanish, and only then are entities decoded (so typed "&lt;b&gt;" stays text).
         var text = WebUtility.HtmlDecode(AnyTag().Replace(Breaks().Replace(Sanitize(html), " "), ""));
         return Spaces().Replace(text, " ").Trim();
+    }
+
+    /// <summary>Writes a cell's span when it is a whole number from 2 to 50; anything else is dropped.</summary>
+    private static void AppendSpan(StringBuilder sb, string attribute, string attributes)
+    {
+        var m = Regex.Match(attributes, $@"\b{attribute}\s*=\s*[""']?\s*(\d{{1,2}})\s*[""']?(?=[\s/>]|$)", RegexOptions.IgnoreCase);
+        if (m.Success && int.Parse(m.Groups[1].Value) is >= 2 and <= 50)
+            sb.Append(' ').Append(attribute).Append("=\"").Append(m.Groups[1].Value).Append('"');
     }
 
     private static string? SafeSrc(string attributes)
@@ -172,7 +188,7 @@ public static partial class RichText
     [GeneratedRegex("""\balt\s*=\s*("([^"]*)"|'([^']*)'|([^\s>"']+))""", RegexOptions.IgnoreCase)]
     private static partial Regex Alt();
 
-    [GeneratedRegex("<br>|</p>|</div>|</li>|</h[1-4]>")]
+    [GeneratedRegex("<br>|</p>|</div>|</li>|</h[1-4]>|</t[dhr]>")]
     private static partial Regex Breaks();
 
     [GeneratedRegex("<[^>]*>")]
@@ -219,6 +235,9 @@ public sealed record RichTextButton(string Command, string Label, string? Icon, 
 
     public string? Shortcut { get; init; }
 
+    /// <summary>Works only inside a table; the toolbar keeps it disabled until the caret is in one.</summary>
+    public bool NeedsTable { get; init; }
+
     public string Title => Shortcut is null ? Label : $"{Label} ({Shortcut})";
 }
 
@@ -247,6 +266,13 @@ public static class RichTextToolbar
         [
             new("createLink", "Link", "link") { Shortcut = "Ctrl+K" },
             new("unlink", "Remove link", "disconnect"),
+        ],
+        [
+            new("table-insert", "Insert table", "table"),
+            new("table-row-add", "Add row below", "arrow-down") { NeedsTable = true },
+            new("table-col-add", "Add column right", "arrow-right") { NeedsTable = true },
+            new("table-row-del", "Delete row", "minus") { NeedsTable = true },
+            new("table-col-del", "Delete column", "minus-square") { NeedsTable = true },
         ],
         [
             new("removeFormat", "Clear formatting", "clear"),

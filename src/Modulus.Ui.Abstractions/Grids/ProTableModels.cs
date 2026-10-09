@@ -25,6 +25,12 @@ public class ProTableRequest
 
     public string? SortField { get; set; }
 
+    /// <summary>
+    /// A visual filter, as <see cref="Query.FilterJson"/> text, that the table's <c>Filters</c> query applies (no filter when
+    /// empty or not a filter). Plain text so MVC binds it from the query string.
+    /// </summary>
+    public string? Where { get; set; }
+
     public SortDirection SortOrder { get; set; }
 
     /// <summary>

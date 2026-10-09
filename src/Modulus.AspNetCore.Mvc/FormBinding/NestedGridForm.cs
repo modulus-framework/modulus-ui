@@ -8,6 +8,7 @@ namespace Modulus.AspNetCore.Mvc;
 
 /// <summary>What <c>app-nested-grid</c> renders: one level's page, as loaded or as posted back.</summary>
 /// <param name="LoadedIds">Ids of the rows the page was loaded with; Save deletes the ones no longer posted.</param>
+/// <param name="Totals">The level's rollup totals over every matching row (<see cref="NestedGridPage.Totals"/>), shown under the table.</param>
 public sealed record NestedGridView(
     NestedGridSettings Settings,
     NestedGridRequest Request,
@@ -18,7 +19,8 @@ public sealed record NestedGridView(
     GridRecord? Parent = null,
     IEnumerable<GridError>? Errors = null,
     bool Dirty = false,
-    string? Title = null);
+    string? Title = null,
+    IReadOnlyList<TableTotal>? Totals = null);
 
 /// <summary>
 /// The URL state and form fields of an <c>app-nested-grid</c> level. Every level loads and posts to one endpoint:
@@ -41,7 +43,7 @@ public static partial class NestedGridForm
     /// </summary>
     public static NestedGridRequest ReadRequest(IQueryCollection query, NestedGridSettings settings)
     {
-        var level = int.TryParse(query["level"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var l) ? Math.Clamp(l, 0, Math.Max(0, settings.Levels.Count - 1)) : 0;
+        var level = int.TryParse(query["level"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var l) ? Math.Clamp(l, 0, Math.Max(0, settings.LevelCount - 1)) : 0;
         var parent = level == 0 ? null : NullIfEmpty(query["parent"]);
         var sort = NullIfEmpty(query["sort"])?.Split(':');
         var field = sort?[0] is { Length: > 0 } f ? f : null;

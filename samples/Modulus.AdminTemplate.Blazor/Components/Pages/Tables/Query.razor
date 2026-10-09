@@ -1,0 +1,68 @@
+@page "/tables/query"
+@using Modulus.Samples.Shared
+@using Modulus.Ui.Abstractions.Query
+
+<PageTitle>Query builder · Modulus</PageTitle>
+
+@* The visual filter over the shipments: a QueryBuilder whose filter the page runs through TableQuery.Filters. MVC and
+   Razor Pages render the same page with <app-query-builder> (Samples.Web Views/Shared/Ui/Tables/Query.cshtml). *@
+<PageHeading Pretitle="Tables" Title="Query builder" Subtitle="Build a filter from the fields, group conditions with all or any, and see the shipments it leaves." />
+
+<div class="m-card m-query-builder-card">
+    <QueryBuilder Schema="_page.Schema" Value="_filter" ValueChanged="ApplyAsync" />
+</div>
+
+<div class="m-query-summary">
+    <span class="m-badge m-badge-gray-lt">@_page.Matches.ToString("N0")</span>
+    <span>shipments match</span>
+    <span class="m-muted">· @_page.Sentence</span>
+    <span class="m-query-total">Total <strong>@_page.Total.ToString("N2")</strong></span>
+</div>
+
+<div class="m-card">
+    <table class="ant-table m-query-table" aria-label="Shipments that match the filter">
+        <thead class="ant-table-thead">
+            <tr>
+                <th class="ant-table-cell">Reference</th>
+                <th class="ant-table-cell">Customer</th>
+                <th class="ant-table-cell">City</th>
+                <th class="ant-table-cell">Status</th>
+                <th class="ant-table-cell" style="text-align: right;">Amount</th>
+                <th class="ant-table-cell">Date</th>
+            </tr>
+        </thead>
+        <tbody class="ant-table-tbody">
+            @foreach (var s in _page.Rows)
+            {
+                <tr class="ant-table-row">
+                    <td class="ant-table-cell">@s.Reference</td>
+                    <td class="ant-table-cell">@s.Customer</td>
+                    <td class="ant-table-cell">@s.City</td>
+                    <td class="ant-table-cell">@s.Status</td>
+                    <td class="ant-table-cell" style="text-align: right;">@s.Amount.ToString("N2")</td>
+                    <td class="ant-table-cell">@s.Date.ToString("yyyy-MM-dd")</td>
+                </tr>
+            }
+            @if (_page.Rows.Count == 0)
+            {
+                <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="6">No shipments match this filter.</td></tr>
+            }
+        </tbody>
+    </table>
+    @if (_page.Matches > _page.Rows.Count)
+    {
+        <div class="m-muted m-query-more">Showing the first @_page.Rows.Count of @_page.Matches.ToString("N0") rows.</div>
+    }
+</div>
+
+@code {
+    private FilterGroup _filter = FilterGroup.Empty;
+    private QueryPage _page = QueryPage.Load(FilterGroup.Empty);
+
+    private Task ApplyAsync(FilterGroup filter)
+    {
+        _filter = filter;
+        _page = QueryPage.Load(filter);
+        return Task.CompletedTask;
+    }
+}

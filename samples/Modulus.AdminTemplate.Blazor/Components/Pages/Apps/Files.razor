@@ -1,0 +1,64 @@
+@page "/apps/files"
+@using Modulus.Samples.Shared
+@using Modulus.Ui.Abstractions.Files
+@inject FileStore Store
+@inject IMessageService Message
+
+<PageTitle>Files · Modulus</PageTitle>
+
+<PageHeading Pretitle="Apps" Title="Files" Subtitle="Browse folders, search, create, rename and delete. Changes are kept in memory for this app's run." />
+
+<FileManager Entries="_entries" Folder="_folder" Search="@_search" OnNavigate="NavigateAsync" OnCreate="CreateAsync"
+             OnRename="RenameAsync" OnDelete="DeleteAsync" />
+
+@code {
+    [SupplyParameterFromQuery(Name = "folder")] public int? Folder { get; set; }
+
+    [SupplyParameterFromQuery(Name = "q")] public string? Q { get; set; }
+
+    private IReadOnlyList<FileEntry> _entries = [];
+    private int? _folder;
+    private string _search = "";
+
+    protected override void OnInitialized()
+    {
+        _folder = Folder;
+        _search = Q ?? "";
+        Reload();
+    }
+
+    private void Reload() => _entries = Store.Entries();
+
+    private Task NavigateAsync(FileNavigation to)
+    {
+        _folder = to.Folder;
+        _search = to.Search;
+        Reload();
+        return Task.CompletedTask;
+    }
+
+    private Task CreateAsync(FileCreate create)
+    {
+        var error = Store.Create(create, DateTime.Now);
+        if (error is null) _ = Message.SuccessAsync("Folder created");
+        else _ = Message.ErrorAsync(error);
+        Reload();
+        return Task.CompletedTask;
+    }
+
+    private Task RenameAsync(FileRename rename)
+    {
+        var error = Store.Rename(rename, DateTime.Now);
+        if (error is null) _ = Message.SuccessAsync("Renamed");
+        else _ = Message.ErrorAsync(error);
+        Reload();
+        return Task.CompletedTask;
+    }
+
+    private Task DeleteAsync(int id)
+    {
+        if (Store.Delete(id)) _ = Message.SuccessAsync("Deleted");
+        Reload();
+        return Task.CompletedTask;
+    }
+}

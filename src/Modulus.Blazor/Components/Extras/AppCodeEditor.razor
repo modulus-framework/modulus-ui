@@ -1,0 +1,67 @@
+@* Code editor: CodeMirror 6 with line numbers, folding, search, bracket matching and highlighting for JavaScript, TypeScript, JSON,
+   CSS and HTML. The same markup as the MVC <app-code-editor> (CodeEditorHtml, modulus-plugins.js). CodeMirror owns the text, so the
+   starting code renders once; the script writes each pause in typing to the hidden input and raises change, which binds Value.
+   Setting Value from outside starts a fresh editor with it. Tab moves focus out of the editor (Tab does not indent). *@
+@using Modulus.Ui.Abstractions.Plugins
+
+<div @key="_version" class="m-code@(string.IsNullOrEmpty(CssClass) ? "" : " " + CssClass)" id="@Id" data-m-code data-language="@Language"
+     data-readonly="@(ReadOnly ? "true" : null)" data-label="@(Label ?? "Code")" style="--m-code-height: @Height">
+    @((MarkupString)CodeEditorHtml.Host(_initial))
+    <input type="hidden" name="@Name" id="@(Id)-value" value="@_initial" data-m-code-value @onchange="Changed" />
+</div>
+
+@code {
+    /// <summary>Element id (the hidden input is "<see cref="Id"/>-value").</summary>
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+
+    /// <summary>The code. Edits come back through ValueChanged.</summary>
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>Raised after a pause in typing, with the whole text.</summary>
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    /// <summary>One of <see cref="CodeEditorHtml.Languages"/>; "" is plain text.</summary>
+    [Parameter] public string Language { get; set; } = "";
+
+    /// <summary>A read-only view of the code.</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>CSS height of the editor, e.g. "360px".</summary>
+    [Parameter] public string Height { get; set; } = "360px";
+
+    /// <summary>Form field name of the hidden input.</summary>
+    [Parameter] public string? Name { get; set; }
+
+    /// <summary>Accessible name of the editor.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    [Parameter] public string? CssClass { get; set; }
+
+    private string _initial = "";
+    private string? _last;
+    private bool _hasLast;
+    private int _version;
+
+    protected override void OnParametersSet()
+    {
+        if (!CodeEditorHtml.Languages.Contains(Language))
+            throw new ArgumentException($"A language is one of: {string.Join(", ", CodeEditorHtml.Languages.Where(l => l.Length > 0))}.", nameof(Language));
+
+        // Code the editor did not produce (the first render, a reset) starts a fresh editor with it.
+        if (!_hasLast || Value != _last)
+        {
+            _initial = Value ?? "";
+            _last = Value;
+            _hasLast = true;
+            _version++;
+        }
+    }
+
+    private async Task Changed(ChangeEventArgs e)
+    {
+        var text = e.Value?.ToString() ?? "";
+        if (text == (_last ?? "")) return;
+        _last = text;
+        await ValueChanged.InvokeAsync(text);
+    }
+}

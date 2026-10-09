@@ -1,0 +1,12 @@
+@model Modulus.Ui.Abstractions.Dashboard.DashboardView
+@using Microsoft.AspNetCore.Html
+@using Modulus.Samples.Shared
+@{
+    var bodies = new Dictionary<string, IHtmlContent>();
+    foreach (var kpi in DashboardPage.Kpis)
+        bodies[kpi.Id] = await Html.PartialAsync("Ui/Dashboards/Tiles/_Kpi", kpi);
+    bodies["activity"] = await Html.PartialAsync("Ui/Dashboards/Tiles/_Activity");
+}
+<app-page-header pretitle="Dashboards" title="Dashboard layout" subtitle="Move a tile earlier or later, and make it wider or narrower, taller or shorter. The layout is kept for your account."></app-page-header>
+
+<app-dashboard view="Model" path="@DashboardPage.Path" bodies="bodies" />

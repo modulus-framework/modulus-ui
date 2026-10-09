@@ -1,0 +1,41 @@
+@using Modulus.Ui.Abstractions.Workflow
+
+@*
+    An approval's steps as a vertical timeline: each step's dot in its tone, its name and state, who acted or is waiting, when,
+    and its note. The steps are drawn in the order given. The model is ApprovalTimelineModel, shared with the MVC
+    app-approval-timeline, which draws the same markup.
+
+    <ApprovalTimeline Steps="_steps" />
+*@
+
+<ol class="m-approval" aria-label="@(AriaLabel ?? "Approval")">
+    @foreach (var view in _views)
+    {
+        <li class="m-approval-step m-approval-@view.Tone">
+            <span class="m-approval-dot" aria-hidden="true"></span>
+            <div class="m-approval-body">
+                <div class="m-approval-head">
+                    <span class="m-heading m-medium">@view.Step.Name</span>
+                    <span class="m-approval-state">@view.StateText</span>
+                </div>
+                <div class="m-small m-muted">
+                    @if (view.Step.Who is { Length: > 0 }) { <span>@view.Step.Who</span> }
+                    @if (view.WhenText.Length > 0) { <span>@(view.Step.Who is { Length: > 0 } ? " · " : "")@view.WhenText</span> }
+                </div>
+                @if (view.Step.Note is { Length: > 0 }) { <div class="m-small m-approval-note">@view.Step.Note</div> }
+            </div>
+        </li>
+    }
+</ol>
+
+@code {
+    /// <summary>The steps, in order.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<ApprovalStep> Steps { get; set; } = [];
+
+    /// <summary>The name the timeline is labelled with for screen readers. Defaults to "Approval".</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    private IReadOnlyList<ApprovalStepView> _views = [];
+
+    protected override void OnParametersSet() => _views = ApprovalTimelineModel.Build(Steps);
+}

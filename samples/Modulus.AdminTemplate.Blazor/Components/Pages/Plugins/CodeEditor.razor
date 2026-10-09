@@ -1,0 +1,39 @@
+@page "/plugins/code-editor"
+
+<PageTitle>Code editor · Modulus</PageTitle>
+
+<PageHeading Pretitle="Plugins" Title="Code editor" Subtitle="CodeMirror 6 with highlighting, folding and search. The text goes to the form field as you type." />
+
+<div class="m-row-cards m-cols-2">
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">JSON rule</h3><p class="m-card-subtitle">Edit it: a pause in typing updates the value</p></div></div>
+        <div class="m-card-body">
+            <AppCodeEditor Id="rule-json" Name="rule" Value="@_rule" ValueChanged="OnRule" Language="json" Label="Approval rule" Height="300px" />
+            <p class="m-muted">@Lines(_rule) lines, @_rule.Length characters</p>
+        </div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">JavaScript, read only</h3><p class="m-card-subtitle">The same editor, locked for viewing</p></div></div>
+        <div class="m-card-body">
+            <AppCodeEditor Id="order-total" Name="total" Value="@PluginsContent.SampleTotalScript" Language="javascript" Label="Order total" Height="300px" ReadOnly />
+        </div>
+    </div>
+</div>
+
+<div class="m-card m-mt-16">
+    <div class="m-card-body">
+        <ul class="m-plain-list">
+            <li><span><code>Language</code>: <code>javascript</code>, <code>typescript</code>, <code>json</code>, <code>css</code> or <code>html</code>; plain text when empty.</span></li>
+            <li><span><code>ReadOnly</code>: the text can be selected and searched but not changed.</span></li>
+            <li><span>Tab moves focus out of the editor; Ctrl+F searches, and Ctrl+Z undoes.</span></li>
+        </ul>
+    </div>
+</div>
+
+@code {
+    private string _rule = PluginsContent.SampleRuleJson;
+
+    private void OnRule(string? text) => _rule = text ?? "";
+
+    private static int Lines(string text) => text.Split('\n').Length;
+}

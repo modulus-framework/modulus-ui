@@ -1,0 +1,20 @@
+@* PDF viewer: pdf.js renders one page at a time; the same viewer as the Blazor AppPdf page. *@
+
+<app-page-header pretitle="Plugins" title="PDF viewer" subtitle="pdf.js renders the page into a canvas: previous and next, a page box, zoom and a download link."></app-page-header>
+<div class="m-row-cards m-cols-2">
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Sample document</h3><p class="m-card-subtitle">Three pages, served from this site</p></div></div>
+        <div class="m-card-body"><app-pdf id="sample-pdf" url="/_content/Modulus.Samples.Web/samples/sample.pdf" label="Sample document" height="640px" /></div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Using the viewer</h3><p class="m-card-subtitle">What it does and what it refuses</p></div></div>
+        <div class="m-card-body">
+            <ul class="m-plain-list">
+                <li><span><code>url</code>: a same-site path, or an http(s) address. Other addresses (javascript:, data:) are refused.</span></li>
+                <li><span><code>page</code>: the page it opens on; the page box and arrows move from there.</span></li>
+                <li><span><code>label</code>: the name the region has for screen readers.</span></li>
+            </ul>
+            <p class="m-muted">pdf.js (Apache-2.0) is loaded the first time a viewer appears. Text is drawn as pictures, so it cannot be selected here yet.</p>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,22 @@
+@page "/apps/gantt"
+@using Modulus.Samples.Shared
+
+<PageTitle>Gantt · Modulus</PageTitle>
+
+<PageHeading Pretitle="Apps" Title="Gantt" Subtitle="The website relaunch, planned in weeks. Bars fill to their progress; the red line is today." />
+
+<Gantt Tasks="_tasks" From="_from" To="_to" Today="_today" />
+
+@code {
+    private DateTime _today = DateTime.Today;
+    private DateTime _from;
+    private DateTime _to;
+    private IReadOnlyList<Modulus.Ui.Abstractions.Gantt.GanttTask> _tasks = [];
+
+    protected override void OnInitialized()
+    {
+        _from = GanttPage.From(_today);
+        _to = GanttPage.To(_today);
+        _tasks = GanttPage.Tasks(_today);
+    }
+}

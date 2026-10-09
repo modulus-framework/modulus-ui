@@ -1,0 +1,65 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R] /Count 3 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 5 0 R >>
+endobj
+5 0 obj
+<< /Length 334 >>
+stream
+BT /F1 24 Tf 72 740 Td (Modulus PDF viewer) Tj ET
+BT /F1 12 Tf 72 706 Td (Page one: this document is a sample for the PDF viewer.) Tj ET
+BT /F1 12 Tf 72 686 Td (It renders with pdf.js, one page at a time.) Tj ET
+BT /F1 12 Tf 72 666 Td (Use the arrows, the page box, or zoom to read it.) Tj ET
+BT /F1 10 Tf 72 40 Td (Page 1 of 3) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 7 0 R >>
+endobj
+7 0 obj
+<< /Length 247 >>
+stream
+BT /F1 24 Tf 72 740 Td (Page two) Tj ET
+BT /F1 12 Tf 72 706 Td (Zoom in and out; the zoom resets to fit the width on a new page.) Tj ET
+BT /F1 12 Tf 72 686 Td (The download link saves the same file.) Tj ET
+BT /F1 10 Tf 72 40 Td (Page 2 of 3) Tj ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents 9 0 R >>
+endobj
+9 0 obj
+<< /Length 249 >>
+stream
+BT /F1 24 Tf 72 740 Td (Page three) Tj ET
+BT /F1 12 Tf 72 706 Td (The viewer keeps the page you were on while you zoom.) Tj ET
+BT /F1 12 Tf 72 686 Td (This is the last page. The page box shows 3 of 3.) Tj ET
+BT /F1 10 Tf 72 40 Td (Page 3 of 3) Tj ET
+endstream
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000133 00000 n 
+0000000203 00000 n 
+0000000329 00000 n 
+0000000714 00000 n 
+0000000840 00000 n 
+0000001138 00000 n 
+0000001264 00000 n 
+trailer
+<< /Size 10 /Root 1 0 R >>
+startxref
+1564
+%%EOF

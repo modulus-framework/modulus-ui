@@ -115,4 +115,16 @@ public class PluginsController : SampleController
 
     [HttpGet("map-vector")]
     public IActionResult MapVector() => Page("Map vector", "Plugins/MapVector");
+
+    [HttpGet("pdf")]
+    public IActionResult Pdf() => Page("PDF viewer", "Plugins/Pdf");
+
+    [HttpGet("image-cropper")]
+    public IActionResult ImageCropper() => Page("Image cropper", "Plugins/ImageCropper");
+
+    [HttpGet("code-editor")]
+    public IActionResult CodeEditor() => Page("Code editor", "Plugins/CodeEditor");
+
+    [HttpGet("barcode")]
+    public IActionResult Barcode() => Page("Barcode", "Plugins/Barcode");
 }

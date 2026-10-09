@@ -161,6 +161,31 @@ public class BusinessFieldTagHelperTests
     }
 
     [Fact]
+    public async Task Lookup_WithColumns_SendsTheTitlesAndDrawsTheColumnRows()
+    {
+        var html = await RenderAsync(new LookupTagHelper
+        {
+            For = For("Customer", "C1"), Items = Customers, AriaLabel = "Customer",
+            Columns = [new("value", "Code"), new("label", "Customer"), new("city", "City")],
+        }, "app-lookup");
+
+        Assert.Contains("&quot;multi&quot;:true", html);
+        Assert.Contains("&quot;titles&quot;:[&quot;Code&quot;,&quot;Customer&quot;,&quot;City&quot;]", html);
+        Assert.Contains("<div class=\"m-lookup-head\" x-show=\"multi && list.length\"", html);
+        Assert.Contains("<div class=\"m-lookup-cells\" x-show=\"multi\"", html);
+        Assert.Contains("class=\"m-lookup-option-label\" x-show=\"!multi\"", html);
+        Assert.Contains("class=\"ant-btn ant-btn-default ant-btn-block m-lookup-more-rows\" x-show=\"total < 0 || total > rows.length\"", html);
+        Assert.Contains("@click=\"more()\"", html);
+    }
+
+    [Fact]
+    public async Task Lookup_WithoutColumns_IsNotMultiColumn()
+    {
+        var html = await RenderAsync(new LookupTagHelper { For = For("Customer", "C1"), Items = Customers }, "app-lookup");
+        Assert.Contains("&quot;multi&quot;:false", html);
+    }
+
+    [Fact]
     public async Task Lookup_ServerSearch_UsesTheLabelGiven()
     {
         var html = await RenderAsync(new LookupTagHelper { For = For("Product", "P7"), SearchHref = "/products/search", Label = "Part 7" }, "app-lookup");
@@ -224,5 +249,15 @@ public class BusinessFieldTagHelperTests
         Assert.StartsWith("<div class=\"m-richtext m-richtext-empty m-richtext-disabled m-richtext-status-error\">", empty);
         Assert.Contains("contenteditable=\"false\"", empty);
         Assert.DoesNotContain("m-richtext-toolbar", empty);
+    }
+
+    [Fact]
+    public async Task RichText_TableRowAndColumnButtonsStartDisabled()
+    {
+        var html = await RenderAsync(new RichTextTagHelper { For = For("Notes", "<table><tr><td>a</td></tr></table>") }, "app-rich-text");
+
+        Assert.Contains("data-cmd=\"table-insert\"", html);
+        Assert.Equal(4, System.Text.RegularExpressions.Regex.Matches(html, "data-cmd=\"table-(row|col)-(add|del)\"[^>]* disabled").Count);
+        Assert.Contains("<table><tr><td>a</td></tr></table>", html);
     }
 }

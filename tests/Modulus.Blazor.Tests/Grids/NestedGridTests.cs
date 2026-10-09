@@ -66,6 +66,50 @@ public class NestedGridTests : BunitContext
     }
 
     [Fact]
+    public void TreeMode_RepeatsTheFirstLevel_AndExpandsOnlyRowsWithChildren()
+    {
+        var s = new NestedGridSettings
+        {
+            Levels = [new() { Title = "Parts", Columns = [Name, Qty] }],
+            Tree = new NestedGridTree { MaxDepth = 3, ChildCountField = "children" },
+        };
+        var parent = new GridRecord("p", new Dictionary<string, string?> { ["name"] = "Shirt", ["children"] = "2" });
+        var leaf = new GridRecord("l", new Dictionary<string, string?> { ["name"] = "Button", ["children"] = "0" });
+
+        Assert.Equal("Parts", s.Level(0)!.Title);
+        Assert.Equal("Parts", s.Level(2)!.Title);
+        Assert.Null(s.Level(3)); // MaxDepth
+        Assert.True(s.CanExpand(0, parent));
+        Assert.True(s.CanExpand(1, parent));
+        Assert.False(s.CanExpand(0, leaf));
+        Assert.False(s.CanExpand(2, parent)); // the last depth never expands
+
+        // Without a child count every row expands (the first open loads an empty level).
+        s.Tree.ChildCountField = null;
+        Assert.True(s.CanExpand(0, leaf));
+    }
+
+    [Fact]
+    public void Apply_TotalsTheRollupColumns_OverEveryMatchingRow()
+    {
+        GridColumn[] columns = [Name, Qty];
+        var rows = new[] { ("a", "Alpha", "5"), ("b", "Beta", null), ("c", "Gamma", "12"), ("d", "Delta", "1.5") }
+            .Select(t => new GridRecord(t.Item1, new Dictionary<string, string?> { ["name"] = t.Item2, ["qty"] = t.Item3 })).ToList();
+
+        // Page 1 holds two rows, but the totals cover all four; the text column is not summed.
+        var page = NestedGridQuery.Apply(rows, columns, new NestedGridRequest(0, null, PageSize: 2), ["name", "qty", "missing"]);
+        Assert.Equal(2, page.Rows.Count);
+        var total = Assert.Single(page.Totals);
+        Assert.Equal(("qty", 18.5m, 1), (total.Field, total.Value, total.Decimals));
+
+        // A filter narrows the totals too; a column without values totals to none.
+        var filtered = NestedGridQuery.Apply(rows, columns, new NestedGridRequest(0, null, Keyword: "beta"), ["qty"]);
+        Assert.Null(filtered.Totals.Single().Value);
+
+        Assert.Empty(NestedGridQuery.Apply(rows, columns, new NestedGridRequest(0, null)).Totals);
+    }
+
+    [Fact]
     public void RowOrder_MovesWithinThePage_AndKeepsOtherRowsInPlace()
     {
         var move = new Modulus.Ui.Abstractions.Plugins.SortMove("c", "rows", "rows", 0);

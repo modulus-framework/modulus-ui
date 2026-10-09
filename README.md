@@ -116,6 +116,17 @@ pixel-for-pixel where the controls allow it.
   Alpine state stay loaded. It aborts stale navigations, shows a progress bar, prefetches on hover (`SpaPrefetch`),
   restores scroll positions and moves focus to the page. Page code runs through `Modulus.page(fn)` or
   `Modulus.onPage(fn)`. See [UPGRADING](docs/UPGRADING.md#spa-navigation-and-ishtmx) before turning it on.
+- **Liquid templates** (`Modulus.AspNetCore.Fluid`, Fluid 2.40.0): pages and documents written as `.liquid` files, with a layout
+  (`{{ content }}` is the page body) and the same markup as the components. Every printed value is HTML-escaped; only a
+  `LiquidHtml` is printed as it is. `{% modulus_head %}` links the Modulus stylesheets and scripts, `{% icon "name" %}` draws
+  an Ant Design icon, `{% barcode "value" %}` a Code 128 symbol, `{{ text | status_badge: "success" }}` a status pill and
+  `{{ amount | money }}` the amount with two decimals. A model's properties are readable only once its type is registered
+  (`ModulusLiquidOptions.Register<T>()`). The sample `samples/Modulus.Samples.Fluid` (port 5103) lists and shows the invoices.
+- **Hosting defaults** (`Modulus.AspNetCore.Hosting`): `AddModulusHardening()` and `UseModulusHardening()` add Brotli and gzip for
+  text, the security headers (no MIME sniffing, a referrer policy, same-site framing, no camera, microphone or location), and a
+  Content-Security-Policy with a per-request nonce (`CspNonce.Of(Context)`). MVC and Razor Pages enforce it; Blazor reports
+  it, because its import map is an inline script with no nonce. The `MapModulusHealth()` endpoint answers `/health`. The
+  versioned asset URLs the MVC head writes (`?v=`) are cached for a year. See [UPGRADING](docs/UPGRADING.md#hardening).
 - **Charts with no JS dependency**: `LineChart` (line/area, crosshair tooltip), `ColumnChart` (grouped/stacked),
   `BarChart`, `DonutChart`, `HeatmapChart`, `Sparkline`, `MiniBar`, plus business charts (treemap, pareto, waterfall,
   variance, bullet, gauge, funnel, combo and more). The geometry is shared by Blazor and MVC, hover tooltips are
@@ -123,13 +134,18 @@ pixel-for-pixel where the controls allow it.
   series; `Links` / `links` makes columns and axis labels drill-down links.
 - **Plugins**, each a Blazor component and a tag helper over one shared renderer in `Modulus.Ui.Abstractions.Plugins`:
   `AppEditor` / `app-editor` (WYSIWYG on Tiptap; the HTML is cleaned by `RichText.Sanitize(images: true)`),
-  `AppMap` / `app-map` (MapLibre GL JS tile map with markers and popups), `AppVectorMap` / `app-vector-map` (jsVectorMap
+  `AppMap` / `app-map` (MapLibre GL JS tile map with markers and popups), `AppPdf` / `app-pdf` (pdf.js viewer: one page at a
+  time, zoom and a download link; same-site or http(s) addresses only), `AppVectorMap` / `app-vector-map` (jsVectorMap
   choropleth with hover values and a legend), `AppSpreadsheet` / `app-spreadsheet` (Excel-style multi-sheet grid with
   formulas on Univer; posts its sheets as JSON, follows the light and dark theme; prints from its ribbon, Ctrl+P or
   any `data-m-print="{id}"` button, as does the document editor), `AppMediaPlayer` /
-  `app-media-player` (video and audio with custom controls, poster and captions) and `AppSortable` / `app-sortable`
+  `app-media-player` (video and audio with custom controls, poster and captions), `AppUploader` / `app-uploader` (a drop area on
+  Uppy: each file uploads as it is dropped, with previews, progress and type, size and count limits), `AppImageCropper` /
+  `app-image-cropper` (Cropper.js: aspect ratio buttons; the crop goes to a form field as JSON), `AppCodeEditor` /
+  `app-code-editor` (CodeMirror 6: highlighting, folding and search for JavaScript, TypeScript, JSON, CSS and HTML; the text
+  posts as a form field) and `AppSortable` / `app-sortable`
   (reorder a list, drag between lists, handles, keyboard moves; posts the order). `modulus-plugins.js` loads Tiptap,
-  MapLibre, Univer and jsVectorMap only when a page uses them. `app-upload` also gains `action` (upload with per-file
+  MapLibre, Univer, jsVectorMap, pdf.js, Uppy, Cropper.js and CodeMirror only when a page uses them. `app-upload` also gains `action` (upload with per-file
   progress), `max-size`, `max-count` and `list-type="picture"`, and `app-date-picker` gains `picker="quarter"` /
   `"year"`; `app-range-picker presets` uses `DatePeriods`.
 - **Ant Design 5 components that AntD Blazor 1.6.2 lacks**, in both flavours: `AppQRCode` / `app-qr-code` (a tested QR
@@ -150,9 +166,11 @@ pixel-for-pixel where the controls allow it.
   `AppOtpInput` (one box per character, paste and SMS autofill spread over the boxes), `AppLookup` (a many-to-one
   field with type-ahead and a "Search more…" dialog; local items or a server search), `AppStatusBar` (workflow
   stages with folded ones), `AppSignaturePad` (PNG data URL) and `AppRichText` (a small `contenteditable` editor
-  whose HTML is cleaned by `RichText.Sanitize`). The parsing and checks live in `Modulus.Ui.Abstractions.Forms`
+  whose HTML is cleaned by `RichText.Sanitize`; its toolbar inserts a table and adds or deletes rows and columns, and Tab moves between cells).
+  `AppSchemaForm` / `app-schema-form` draws a whole form from a `FormSchema` (read from JSON with `FormSchema.Parse`, or built in code): text, multiline,
+  number, money, date, choice and switch fields, with the same rules on the server (`Validate`, then `Normalize` for what is stored). The parsing and checks live in `Modulus.Ui.Abstractions.Forms`
   (`NumberText`, `DurationText`, `Currency`, `UnitOfMeasure`, `InputMask`, `PhoneNumber`, `LookupSearch`,
-  `RichText`, `SignatureImage`), so the server validates exactly what the browser accepts. A server lookup takes
+  `RichText`, `SignatureImage`, `FormSchema`), so the server validates exactly what the browser accepts. A server lookup takes
   `GET {search-href}?q=text&max=n` and answers `[{ value, label, description, fields }]`.
 - **Theming from one options object**: primary, success, warning, error and info colours plus border radius.
   The 10-step palette is generated with a C# port of `@ant-design/colors` (tested against the official palettes).
@@ -182,7 +200,7 @@ pixel-for-pixel where the controls allow it.
   - **Extra**: 22 Tabler extra pages (gallery, search results, activity, tasks, logs, license, job listing, uptime,
     trial ended, cookie banner, widgets and more).
   - **Plugins**: advanced charts, colour picker, date picker, dropzone, sortable, media player, lightbox, map,
-    full-size map, vector map, tour, WYSIWYG editor and spreadsheet.
+    full-size map, vector map, tour, WYSIWYG editor, code editor, image cropper, PDF viewer, spreadsheet and a dropzone on Uppy.
 
 ## Quick start — Blazor
 
@@ -286,13 +304,13 @@ Tag helpers. `/ui/components` in the MVC and Razor Pages samples shows each one;
 | General | `app-button` (`loading`), `app-icon`, `app-title`, `app-text`, `app-paragraph`, `app-link`, `app-float-button`, `app-float-button-group` (click/hover trigger), `app-float-back-top` |
 | Layout | `app-divider`, `app-space`, `app-row` / `app-col` (24-column grid, gutters, xs–xxl), `app-flex`, `app-layout` / `app-layout-header` / `app-layout-sider` / `app-layout-content` / `app-layout-footer`, `app-splitter` / `app-splitter-panel` (drag and arrow keys) |
 | Navigation | `app-breadcrumb`, `app-tabs` / `app-tab`, `app-steps` / `app-step`, `app-dropdown` / `app-dropdown-item`, `app-dropdown-button`, `app-menu` / `app-sub-menu` / `app-menu-item` / `app-menu-divider` (horizontal, vertical, inline), `app-pagination` (htmx or plain links), `app-anchor` / `app-anchor-link` (scroll-spy), `app-affix`, `app-back-top` |
-| Data entry | `app-form-item` (`asp-for` + validation), `app-input` (affixes, addons, clear, password, datalist AutoComplete), `app-input-search`, `app-textarea` (count), `app-input-number`, `app-select`, `app-date-picker` (date/week/month/time), `app-range-picker`, `app-checkbox`, `app-checkbox-group`, `app-radio-group`, `app-switch`, `app-slider`, `app-rate`, `app-segmented`, `app-upload`, `app-cascader`, `app-tree-select`, `app-transfer`, `app-auto-complete`, `app-mentions`, `app-input-group` (compact), `app-color-picker` (hex/rgb, alpha, presets, clear), `app-creatable-select` ("Add item" row with tag colours; `add-href` saves new options) |
+| Data entry | `app-form-item` (`asp-for` + validation), `app-input` (affixes, addons, clear, password, datalist AutoComplete), `app-input-search`, `app-textarea` (count), `app-input-number`, `app-select`, `app-date-picker` (date/week/month/time), `app-range-picker`, `app-checkbox`, `app-checkbox-group`, `app-radio-group`, `app-switch`, `app-slider`, `app-rate`, `app-segmented`, `app-upload`, `app-cascader`, `app-tree-select`, `app-transfer`, `app-auto-complete`, `app-mentions`, `app-input-group` (compact), `app-color-picker` (hex/rgb, alpha, presets, clear), `app-creatable-select` ("Add item" row with tag colours; `add-href` saves new options), `app-schema-form` (a dynamic form from a `FormSchema`) |
 | Data display | `app-card` (`app-card-cover`, `app-card-meta`, `app-card-action`), `app-comment` / `comment-action`, `app-countdown`, `app-image-group` (shared preview), `app-avatar` / `app-avatar-group`, `app-badge` / `app-badge-ribbon`, `app-tag`, `app-statistic`, `app-descriptions`, `app-table` (`hidden-columns`, `density`, `scroll-x`, `table-footer`), `app-table-columns` (column picker), `app-table-settings` (reload, density), `app-list`, `app-timeline`, `app-collapse` / `app-panel`, `app-image`, `app-tooltip`, `app-popover`, `app-empty`, `app-tree` (checkable), `app-calendar`, `app-carousel` / `carousel-slide`, `app-qr-code` (icon, status), `app-tour` / `tour-step` |
 | Feedback | `app-alert`, `app-progress` (line/circle/dashboard), `app-result`, `app-skeleton`, `app-spin`, `app-modal`, `app-drawer` (right/left/top/bottom), `app-watermark`; plus `Response.HxMessage`, `HxNotify`, `HxCloseModal` and `hx-confirm` |
-| Pro | `app-page-container`, `app-page-header`, `app-statistic-card`, `app-trend`, `app-editable-grid` (`grid-toolbar`, `grid-title-extra`, `grid-filters`, `grid-batch`, `grid-summary`, `row-draggable`; read posts with `EditableGridForm.Read` / `Apply`), `app-nested-grid` (one level per request; state and saves through `NestedGridForm`), `app-pivot-grid` (Odoo-style pivot: expand/flip/measures/sort in the URL, `cell-href` drill-down, xlsx download) |
+| Pro | `app-dashboard` (tiles on a 12-column grid, moved and resized by buttons, saved per user; `DashboardModel`, `MapModulusDashboard`), `app-file-manager` (folders, breadcrumb, search, create, rename, delete; `FileManagerModel`), `app-page-container`, `app-page-header`, `app-statistic-card`, `app-trend`, `app-editable-grid` (`grid-toolbar`, `grid-title-extra`, `grid-filters`, `grid-batch`, `grid-summary`, `row-draggable`; read posts with `EditableGridForm.Read` / `Apply`), `app-nested-grid` (one level per request; state and saves through `NestedGridForm`), `app-pivot-grid` (Odoo-style pivot: expand/flip/measures/sort in the URL, `cell-href` drill-down, xlsx download) |
 | Large data | `app-load-more` (infinite scroll), `app-virtual-table` (virtual scrolling, `modulus-virtual.js`) |
 | Charts | `app-line-chart`, `app-column-chart`, `app-bar-chart`, `app-donut-chart`, `app-heatmap`, `app-sparkline`, `app-mini-bar` and the business charts; `legend-toggle`, `links` |
-| Plugins | `app-editor` (Tiptap), `app-map` (MapLibre), `app-vector-map` (jsVectorMap), `app-spreadsheet` (Univer), `app-media-player`, `app-sortable` / `app-sortable-item`, `app-lightbox` |
+| Plugins | `app-barcode` (Code 128, EAN-13 as SVG), `app-editor` (Tiptap), `app-map` (MapLibre), `app-vector-map` (jsVectorMap), `app-pdf` (pdf.js), `app-spreadsheet` (Univer), `app-uploader` (Uppy), `app-image-cropper` (Cropper.js), `app-code-editor` (CodeMirror), `app-media-player`, `app-sortable` / `app-sortable-item`, `app-lightbox` |
 | Icons | `app-icon` (Ant Design), `app-ti` (an Ant Design outline icon by name, drawn inline like the shell's; `tb:` names for the Tabler fallbacks where Ant Design has no icon) |
 
 Controls bind with `asp-for` (name, id, value and validation state) or a plain `name`. Any other attributes you add,
@@ -335,13 +353,17 @@ the first paint.
 | Project | Purpose |
 |---|---|
 | `src/Modulus.Ui.Abstractions` | Flavor-agnostic: theme options and palette generation, menu contributors, the shell renderer, `ProTableRequest/Response`, `TableQuery`, `Paging`, chart geometry, form rules, plugin renderers |
-| `src/Modulus.Ui.Assets` | CSS (`modulus.css`, `modulus-shell.css`, `modulus-pages.css`, `antd-dark-brand.css`), scripts (`modulus-theme.js`, `modulus-shell.js`, `modulus-mvc.js`, `modulus-widgets.js`, `modulus-plugins.js`, `modulus-spa.js`, `modulus-virtual.js`), vendored htmx 2.0.11, Alpine.js 3.17.4, MapLibre GL JS 5.24.0, Tiptap 3.31.4 (bundle), Univer 1.0.3 (bundle) and jsVectorMap |
+| `src/Modulus.Ui.Assets` | CSS (`modulus.css`, `modulus-shell.css`, `modulus-pages.css`, `antd-dark-brand.css`), scripts (`modulus-theme.js`, `modulus-shell.js`, `modulus-mvc.js`, `modulus-widgets.js`, `modulus-plugins.js`, `modulus-spa.js`, `modulus-virtual.js`), vendored htmx 2.0.11, Alpine.js 3.17.4, MapLibre GL JS 5.24.0, Tiptap 3.31.4 (bundle), Univer 1.0.3 (bundle), jsVectorMap and pdf.js 6.3.289 (ESM) |
 | `src/Modulus.Blazor` | `AddModulusBlazor`, `App*` aliases, ProLayout shell, Pro components, charts (no server framework dependency, so it is WASM-compatible) |
 | `src/Modulus.AspNetCore.Mvc` | `AddModulusMvc`, tag helpers, `_ModulusLayout` and partials, htmx response helpers, `AntIcons` |
 | `samples/Modulus.AdminTemplate.*` | The Blazor, MVC and Razor Pages admin templates |
+| `src/Modulus.AspNetCore.Hosting` | Hosting defaults: response compression, security headers, the CSP with a nonce, the `/health` endpoint |
+| `src/Modulus.AspNetCore.Fluid` | Liquid templates for pages and documents: `ModulusLiquid` (escaped output, layouts, the file cache), the `modulus_head`, `icon` and `barcode` tags and the `status_badge` and `money` filters |
 | `samples/Modulus.Samples.Shared` | Models, in-memory stores, menu and page data shared by all three samples |
+| `samples/Modulus.Samples.Fluid` | A Liquid sample on port 5103: an invoice list and an invoice page, rendered from `Templates/` |
 | `samples/Modulus.Samples.Web` | Page bodies (`Views/Shared/Ui/**`) shared by MVC and Razor Pages: controllers and page models only bind input and pick the view |
-| `tests/*` | bUnit component tests, palette/menu/table/chart unit tests, tag helper and icon tests |
+| `tests/*` | bUnit component tests, palette/menu/table/chart unit tests, tag helper and icon tests, the Liquid and hosting tests |
+| `tests/browser` | The quality gates (CI's `browser` job, run against the samples on 5100 to 5103): `smoke.py` (pages, console, CSP, compression, health, SPA), `parity.py` (the pivot markup across the flavours) and `budgets.py` (gzipped asset sizes, in the build job) |
 | `tools/antd-drift` | Checks the manifest and aliases against the pinned AntDesign package (see [UPGRADING](docs/UPGRADING.md)) |
 
 ## Build, test, run
@@ -354,6 +376,7 @@ dotnet run --project tools/antd-drift
 dotnet run --project samples/Modulus.AdminTemplate.Blazor       # http://localhost:5100
 dotnet run --project samples/Modulus.AdminTemplate.Mvc          # http://localhost:5101
 dotnet run --project samples/Modulus.AdminTemplate.RazorPages   # http://localhost:5102
+dotnet run --project samples/Modulus.Samples.Fluid               # http://localhost:5103
 ```
 
 Run the samples in the **Development** environment (the default launch profile does this) or publish them;
@@ -384,14 +407,14 @@ CI packs `-ci.<run>` prereleases as the `packages` artifact; a local `dotnet pac
   Splitter, ColorPicker, Tour and the rest run on small Alpine components (`modulus-widgets.js`); form widgets post
   through hidden inputs, so forms still submit without script. The manifest lists the MVC equivalent for every component.
 - **Business fields are Modulus components** with no AntD Blazor counterpart. The `AppRichText` field covers
-  formatting, lists and links only (use `AppEditor` for images), and the HTML of both must still be sanitized on the
+  formatting, lists, links and tables only (use `AppEditor` for images), and the HTML of both must still be sanitized on the
   server (`RichText.Sanitize`). Phone numbers are checked for shape (`+`, calling code, 8–15 digits), not against each
   country's numbering plan.
 - **ColorPicker, FloatButton, QRCode and Tour are Modulus components**, not AntD Blazor ones (1.6.2 has none). They emit
   the antd v5 DOM, styled by `modulus.css`, and may differ in detail from antd v5.
 - **Native pickers in MVC.** `app-date-picker` and `app-range-picker` use the browser's date/time inputs inside antd chrome,
   so the calendar popup follows the browser, not antd.
-- **Plugin libraries are third-party.** The editor, maps and vector map wrap Tiptap, MapLibre and jsVectorMap, loaded from
+- **Plugin libraries are third-party.** The editor, maps, vector map, PDF viewer, drop area, cropper and code editor wrap Tiptap, MapLibre, jsVectorMap, pdf.js, Uppy, Cropper.js and CodeMirror, loaded from
   `Modulus.Ui.Assets` on first use. Tile maps load their tiles from `tile.openstreetmap.org`, whose usage policy does not
   cover heavy production traffic, so they need network access and, for real use, your own tile server.
 - **Localization covers the framework**, not the sample texts: Ant Design's built-in strings, dates and numbers follow the

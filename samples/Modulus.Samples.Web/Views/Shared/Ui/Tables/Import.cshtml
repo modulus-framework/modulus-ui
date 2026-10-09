@@ -1,0 +1,16 @@
+@model ImportWizardView
+@using Modulus.Ui.Abstractions.Import
+@* Import data: the wizard (app-import-wizard) posts each step back to this page; ImportPageActions runs the steps and
+   imports the checked file. The Blazor sample draws the same wizard with <ImportWizard>. *@
+<app-page-header pretitle="Tables" title="Import data" subtitle="Import customers from a CSV file: upload it, match its columns, check every row, then import the file."></app-page-header>
+
+<div class="m-card">
+    <div class="m-card-body">
+        <app-import-wizard view="Model" action="/tables/import" />
+    </div>
+</div>
+
+<details class="m-card">
+    <summary class="m-card-body">Example file</summary>
+    <div class="m-card-body"><pre class="m-import-example">@CustomerImport.Example</pre></div>
+</details>

@@ -24,7 +24,7 @@ public class LargeModel : SamplePageModel
         request.Searches = Request.Query.ColumnSearches();
         var rowsUrl = Request.Path + QueryString.Create(Request.Query
             .Where(q => q.Key is not ("current" or "pageSize" or "cursor"))
-            .Select(q => new KeyValuePair<string, string?>(q.Key, q.Value.ToString())));
+            .SelectMany(q => q.Value.Select(v => new KeyValuePair<string, string?>(q.Key, v))));
         return Partial("~/Views/Shared/Ui/Tables/_LargeRows.cshtml", LargeTablePage.Rows(mode, filter, request), ("RowsUrl", rowsUrl));
     }
 }

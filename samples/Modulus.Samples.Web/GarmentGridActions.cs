@@ -76,7 +76,7 @@ public static class GarmentGridActions
         var page = store.Load(settings, request);
         return new NestedGridView(settings, request with { Page = NestedGridQuery.ClampPage(request, page.Total) },
             settings.ColumnsFor(request.Level, parent), page.Rows, page.Total, page.Rows.Select(r => r.Id).ToList(), parent,
-            Title: Title(settings, request.Level, parent));
+            Title: Title(settings, request.Level, parent), Totals: page.Totals);
     }
 
     // The grid as posted (with its edits), for errors and row operations.

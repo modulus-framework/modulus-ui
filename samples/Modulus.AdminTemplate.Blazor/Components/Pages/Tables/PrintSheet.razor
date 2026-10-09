@@ -1,0 +1,35 @@
+@page "/tables/print/sheet"
+@layout BlankLayout
+@using Modulus.Samples.Shared
+@using Modulus.Ui.Abstractions.Printing
+@inject IJSRuntime JS
+
+<PageTitle>@_sheet.Title · Modulus</PageTitle>
+
+@* A print view: the content alone on a blank page, which prints itself as soon as it has rendered. The MVC and Razor
+   Pages samples draw the same page with app-print-table and app-label-sheet. *@
+<style>@((MarkupString)_sheet.PageCss)</style>
+<div class="m-print-sheet">
+    @if (_sheet.Labels)
+    {
+        <LabelSheet Items="_sheet.Items" Layout="_sheet.Layout" />
+    }
+    else
+    {
+        <h1 class="m-print-title">@_sheet.Title</h1>
+        <PrintTable Columns="_sheet.Columns" Rows="_sheet.Rows" Total="_sheet.Total" />
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "kind")] public string? Kind { get; set; }
+
+    private PrintSheetPage _sheet = default!;
+
+    protected override void OnParametersSet() => _sheet = PrintSamples.Sheet(Kind);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await JS.InvokeVoidAsync("print");
+    }
+}

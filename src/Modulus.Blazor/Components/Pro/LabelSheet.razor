@@ -1,0 +1,18 @@
+@using Modulus.Ui.Abstractions.Printing
+
+@*
+    A sheet of labels: the items fill the sheet left to right, top to bottom, and each full sheet prints on its own page.
+    The markup is LabelHtml's, the same the MVC app-label-sheet draws.
+
+    <LabelSheet Items="_labels" Layout="LabelLayout.A4ThreeBySeven" />
+*@
+
+@((MarkupString)LabelHtml.Render(Items, Layout))
+
+@code {
+    /// <summary>The labels, in print order.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<LabelItem> Items { get; set; } = [];
+
+    /// <summary>The sheet the labels print on.</summary>
+    [Parameter] public LabelLayout Layout { get; set; } = LabelLayout.A4ThreeBySeven;
+}

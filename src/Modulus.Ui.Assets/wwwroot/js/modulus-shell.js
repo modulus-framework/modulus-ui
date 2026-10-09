@@ -2042,7 +2042,7 @@
     // Toolbar buttons run editing commands on the editor (mousedown keeps the selection), pastes arrive as plain
     // text, and every change is written to the hidden input at once; its change event (which Blazor's AppRichText
     // listens to) is debounced while typing and sent straight away when the editor loses focus or its form submits.
-    // The server cleans what it receives with RichText.Sanitize.
+    // The server cleans what it receives with RichText.Sanitize. Tables are edited with the toolbar's table buttons and Tab.
     function richEditor(root) { return root.querySelector('.m-richtext-editor'); }
     function richHidden(root) { return root.querySelector(':scope > input[type=hidden]'); }
     function richFlush(root) {
@@ -2054,7 +2054,7 @@
     }
     function richChanged(root) {
         var editor = richEditor(root), html = editor.innerHTML;
-        if (!editor.textContent.trim() && !editor.querySelector('li, hr')) html = '';
+        if (!editor.textContent.trim() && !editor.querySelector('li, hr, table')) html = '';
         root.classList.toggle('m-richtext-empty', !html);
         var hidden = richHidden(root);
         if (hidden && hidden.value !== html) {
@@ -2076,6 +2076,75 @@
             b.classList.toggle('m-richtext-btn-active', on);
             b.setAttribute('aria-pressed', on ? 'true' : 'false');
         });
+        // The row and column buttons work only with the caret in a table cell.
+        var inTable = !!richCellOf(root);
+        root.querySelectorAll('.m-richtext-btn[data-cmd^="table-"]').forEach(function (b) {
+            if (b.getAttribute('data-cmd') !== 'table-insert') b.disabled = !inTable;
+        });
+    }
+    // The table cell the caret is in, when it is inside this editor.
+    function richCellOf(root) {
+        var editor = richEditor(root), sel = document.getSelection(), node = sel && sel.anchorNode;
+        var el = node && (node.nodeType === 1 ? node : node.parentElement);
+        var cell = el && el.closest ? el.closest('td, th') : null;
+        return cell && editor && editor.contains(cell) ? cell : null;
+    }
+    function richCaret(el) {
+        var range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(true);
+        var sel = document.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+    function richNewCell(tag) {
+        var cell = document.createElement(tag);
+        cell.innerHTML = '<br>';
+        return cell;
+    }
+    // Tables: Insert table, and add or delete a row or column of the table the caret is in. Each one is an edit
+    // of the markup, so the caret ends in a sensible cell and the change is written out like any other.
+    function richTable(root, cmd) {
+        var editor = richEditor(root);
+        if (cmd === 'table-insert') {
+            var head = '<thead><tr><th><br></th><th><br></th><th><br></th></tr></thead>';
+            var body = '<tbody><tr><td><br></td><td><br></td><td><br></td></tr><tr><td><br></td><td><br></td><td><br></td></tr></tbody>';
+            document.execCommand('insertHTML', false, '<table>' + head + body + '</table><p><br></p>');
+            return;
+        }
+        var cell = richCellOf(root);
+        if (!cell) return;
+        var tr = cell.parentElement, table = cell.closest('table'), index = cell.cellIndex, target = null;
+        var tag = tr.parentElement.tagName === 'THEAD' ? 'th' : 'td';
+        if (cmd === 'table-row-add') {
+            var added = document.createElement('tr');
+            for (var n = 0; n < tr.cells.length; n++) added.appendChild(richNewCell(tag));
+            tr.parentNode.insertBefore(added, tr.nextSibling);
+            target = added.cells[index] || added.cells[0];
+        } else if (cmd === 'table-col-add') {
+            Array.prototype.forEach.call(table.rows, function (row) {
+                var ref = row.cells[index], made = richNewCell(row.parentElement.tagName === 'THEAD' ? 'th' : 'td');
+                if (ref) row.insertBefore(made, ref.nextSibling); else row.appendChild(made);
+            });
+            target = tr.cells[index + 1] || tr.cells[index];
+        } else if (cmd === 'table-row-del') {
+            var other = Array.prototype.find.call(table.rows, function (r) { return r !== tr; });
+            if (!other) { table.remove(); target = editor; }
+            else { target = other.cells[Math.min(index, other.cells.length - 1)]; tr.remove(); }
+        } else if (cmd === 'table-col-del') {
+            var cols = Math.max.apply(null, Array.prototype.map.call(table.rows, function (r) { return r.cells.length; }));
+            if (cols <= 1) { table.remove(); target = editor; }
+            else {
+                target = tr.cells[index + 1] || tr.cells[index - 1];
+                Array.prototype.forEach.call(table.rows, function (row) { if (row.cells[index]) row.cells[index].remove(); });
+            }
+        }
+        if (target) richCaret(target);
+    }
+    function richApplyTable(root, cmd) {
+        richTable(root, cmd);
+        richChanged(root);
+        richToolbar(root);
     }
     function richLink() {
         var url = window.prompt('Link address', 'https://');
@@ -2087,6 +2156,7 @@
         var editor = richEditor(root);
         if (!editor || editor.getAttribute('contenteditable') === 'false' || !editor.hasAttribute('contenteditable')) return;
         editor.focus();
+        if (cmd.indexOf('table-') === 0) { richApplyTable(root, cmd); return; }
         if (cmd === 'createLink') { arg = richLink(); if (!arg) return; }
         document.execCommand(cmd, false, arg || null);
         richChanged(root);
@@ -2120,6 +2190,14 @@
     document.addEventListener('keydown', function (e) {
         var editor = e.target instanceof Element && e.target.closest('.m-richtext-editor');
         if (editor && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); richCommand(editor.closest('.m-richtext'), 'createLink'); }
+        // Tab moves between the cells of a table; Tab in the last cell adds a row. Elsewhere Tab keeps its usual meaning.
+        var cell = editor && e.key === 'Tab' ? richCellOf(editor.closest('.m-richtext')) : null;
+        if (!cell) return;
+        e.preventDefault();
+        var root = editor.closest('.m-richtext'), cells = Array.prototype.slice.call(cell.closest('table').querySelectorAll('td, th'));
+        var next = cells[cells.indexOf(cell) + (e.shiftKey ? -1 : 1)];
+        if (next) richCaret(next);
+        else if (!e.shiftKey) richApplyTable(root, 'table-row-add');
     });
     document.addEventListener('selectionchange', function () {
         var sel = document.getSelection(), node = sel && sel.anchorNode;
@@ -2375,4 +2453,34 @@
         var closeButton = part('close');
         if (closeButton) closeButton.focus();
     }
+
+    // ---- Pinned band cells: a band row's cells over pinned columns copy the offset of the header cell below them ----
+    // HeaderGroups.Rows marks them data-m-pin. Their offsets follow the column widths, so this runs when a table renders and
+    // when a column is resized. A cell's style is written only when it changes, so the observer does not feed back on it.
+    function syncBandPins() {
+        document.querySelectorAll('tr.m-header-bands').forEach(function (band) {
+            var head = band.parentElement && band.parentElement.querySelector('tr:not(.m-header-bands)');
+            if (!head) return;
+            var cells = head.children;
+            var lefts = band.querySelectorAll('[data-m-pin="left"]');
+            for (var i = 0; i < lefts.length && i < cells.length; i++)
+                if (lefts[i].style.left !== cells[i].style.left) lefts[i].style.left = cells[i].style.left;
+            var rights = band.querySelectorAll('[data-m-pin="right"]');
+            for (var j = 0; j < rights.length; j++) {
+                var cell = cells[cells.length - rights.length + j];
+                if (cell && rights[j].style.right !== cell.style.right) rights[j].style.right = cell.style.right;
+            }
+        });
+    }
+    var bandPinsQueued = false;
+    function queueBandPins() {
+        if (bandPinsQueued) return;
+        bandPinsQueued = true;
+        requestAnimationFrame(function () { bandPinsQueued = false; syncBandPins(); });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', queueBandPins); else queueBandPins();
+    if ('MutationObserver' in window) new MutationObserver(queueBandPins).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['style'] });
+    window.addEventListener('resize', queueBandPins);
+    document.addEventListener('htmx:afterSettle', queueBandPins);
+    if (window.Blazor && window.Blazor.addEventListener) window.Blazor.addEventListener('enhancedload', queueBandPins);
 })();

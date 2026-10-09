@@ -26,6 +26,12 @@
  *                          button and take Ctrl+P too): the content as HTML in a hidden frame, not the canvas.
  *   [data-m-file-submit]   a file input that submits its form as soon as a file is picked.
  *   [data-m-copy]          copies its value to the clipboard on click.
+ *   [data-m-uploader]      drop area on Uppy: files upload as they are dropped (one POST each, progress and limits
+ *                          from data-accept, data-max-size and data-max-count); the result line says how many went up.
+ *   [data-m-cropper]       image cropper on Cropper.js: aspect ratio buttons; the crop (natural pixels) goes to
+ *                          [data-m-cropper-value] as JSON with a change event, and a preview of the crop is drawn.
+ *   [data-m-code]          code editor on CodeMirror 6 (data-language, data-readonly); the text goes to
+ *                          [data-m-code-value] with a debounced change event.
  */
 (function () {
     'use strict';
@@ -1701,10 +1707,271 @@
         }
     });
 
+    // ---- PDF viewer (pdf.js 6.3.289, Apache-2.0; lib/pdfjs holds its ESM builds, imported on first use) ------
+
+    var PDFJS = LIB + 'pdfjs/pdf.min.mjs';
+    var PDFJS_WORKER = LIB + 'pdfjs/pdf.worker.min.mjs';
+    var pdfLib = null;
+
+    function loadPdf() {
+        if (!pdfLib) pdfLib = import(PDFJS).then(function (m) { m.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; return m; });
+        return pdfLib;
+    }
+
+    // One page at a time: prev / next, a page box, zoom (1 is fit to the width) and a download link.
+    function pdfSync(el) {
+        var s = el._mPdf;
+        var count = s.doc ? s.doc.numPages : 0;
+        el.querySelector('[data-m-pdf-page]').value = count ? s.page : '';
+        el.querySelector('[data-m-pdf-page]').max = count || 1;
+        el.querySelector('[data-m-pdf-count]').textContent = count ? String(count) : '\u2013';
+        el.querySelector('[data-m-pdf-prev]').disabled = s.page <= 1;
+        el.querySelector('[data-m-pdf-next]').disabled = !count || s.page >= count;
+        el.querySelector('[data-m-pdf-zoom-label]').textContent = Math.round(s.zoom * 100) + '%';
+        el.querySelector('[data-m-pdf-zoom-out]').disabled = s.zoom <= 0.5;
+        el.querySelector('[data-m-pdf-zoom-in]').disabled = s.zoom >= 3;
+    }
+
+    function pdfRender(el) {
+        var s = el._mPdf;
+        if (!s.doc) return;
+        var token = ++s.token;
+        s.doc.getPage(s.page).then(function (page) {
+            if (token !== s.token || !document.contains(el)) return null;
+            var scroll = el.querySelector('[data-m-pdf-scroll]');
+            var base = page.getViewport({ scale: 1 });
+            var fit = Math.max(160, scroll.clientWidth - 24) / base.width;
+            var css = fit * s.zoom;
+            var dpr = Math.min(window.devicePixelRatio || 1, 2);
+            var viewport = page.getViewport({ scale: css * dpr });
+            var canvas = document.createElement('canvas');
+            canvas.width = Math.floor(viewport.width);
+            canvas.height = Math.floor(viewport.height);
+            canvas.style.width = Math.floor(viewport.width / dpr) + 'px';
+            canvas.style.height = Math.floor(viewport.height / dpr) + 'px';
+            canvas.setAttribute('role', 'img');
+            canvas.setAttribute('aria-label', 'Page ' + s.page + ' of ' + s.doc.numPages);
+            return page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise.then(function () {
+                if (token !== s.token || !document.contains(el)) return;
+                el.querySelector('[data-m-pdf-canvas]').replaceChildren(canvas);
+                el.classList.remove('m-pdf-busy');
+                pdfSync(el);
+            });
+        }).catch(function () { el.classList.add('m-pdf-failed'); });
+        el.classList.add('m-pdf-busy');
+    }
+
+    function pdfGo(el, page) {
+        var s = el._mPdf;
+        if (!s.doc) return;
+        s.page = Math.min(Math.max(1, page), s.doc.numPages);
+        pdfSync(el);
+        pdfRender(el);
+    }
+
+    function initPdf(el) {
+        el.setAttribute('data-m-ready', '');
+        var s = el._mPdf = { page: Math.max(1, Number(el.getAttribute('data-page')) || 1), zoom: 1, doc: null, token: 0 };
+        el.addEventListener('click', function (e) {
+            var t = e.target instanceof Element ? e.target : null;
+            if (!t) return;
+            if (t.closest('[data-m-pdf-prev]')) pdfGo(el, s.page - 1);
+            else if (t.closest('[data-m-pdf-next]')) pdfGo(el, s.page + 1);
+            else if (t.closest('[data-m-pdf-zoom-in]') && s.zoom < 3) { s.zoom = Math.min(3, Math.round((s.zoom + 0.25) * 100) / 100); pdfRender(el); pdfSync(el); }
+            else if (t.closest('[data-m-pdf-zoom-out]') && s.zoom > 0.5) { s.zoom = Math.max(0.5, Math.round((s.zoom - 0.25) * 100) / 100); pdfRender(el); pdfSync(el); }
+        });
+        el.querySelector('[data-m-pdf-page]').addEventListener('change', function (e) {
+            var n = parseInt(e.target.value, 10);
+            if (isFinite(n)) pdfGo(el, n); else pdfSync(el);
+        });
+        pdfSync(el);
+        loadPdf().then(function (pdfjs) {
+            return pdfjs.getDocument({ url: el.getAttribute('data-src'), withCredentials: false }).promise;
+        }).then(function (doc) {
+            if (!document.contains(el)) return;
+            s.doc = doc;
+            s.page = Math.min(s.page, doc.numPages);
+            el.querySelector('[data-m-pdf-loading]').hidden = true;
+            pdfSync(el);
+            pdfRender(el);
+        }).catch(function () { el.classList.add('m-pdf-failed'); el.querySelector('[data-m-pdf-loading]').hidden = true; });
+        keepAlive(el, function () { if (s.doc) s.doc.destroy(); s.token++; });
+    }
+
+    // ---- Uppy drop area (Uppy 6, MIT; lib/uppy holds one IIFE with the engine, the Dashboard and XHR upload) ----
+
+    var UPPY = [LIB + 'uppy/uppy.js'];
+    var UPPY_CSS = LIB + 'uppy/uppy.min.css';
+
+    function splitList(text) {
+        return text ? text.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : null;
+    }
+
+    // Each file uploads as soon as it is dropped or picked; the limits are checked here first and again on the server.
+    function initUploader(root) {
+        var host = root.querySelector('[data-m-uploader-host]');
+        if (!host) return;
+        root.setAttribute('data-m-ready', '');
+        libs([UPPY_CSS], UPPY).then(function () {
+            if (!document.contains(root) || root._mUppy) return;
+            var U = window.ModulusUppy;
+            var maxSize = Number(root.getAttribute('data-max-size')) || 0;
+            var maxCount = Number(root.getAttribute('data-max-count')) || 0;
+            var uppy = new U.Uppy({
+                autoProceed: true,
+                restrictions: {
+                    maxFileSize: maxSize || null,
+                    maxNumberOfFiles: maxCount || null,
+                    allowedFileTypes: splitList(root.getAttribute('data-accept'))
+                }
+            });
+            uppy.use(U.Dashboard, {
+                target: host, inline: true, height: 300, width: '100%', theme: sheetDark() ? 'dark' : 'light',
+                proudlyDisplayPoweredByUppy: false, showProgressDetails: true, hideUploadButton: true,
+                note: root.getAttribute('data-note') || undefined
+            });
+            // The antiforgery token rides along as the page's htmx header does (MVC checks it); an empty reply is a success.
+            var csrf = {};
+            try { csrf = JSON.parse(document.body.getAttribute('hx-headers') || '{}'); } catch (err) { /* no token */ }
+            uppy.use(U.XHRUpload, {
+                endpoint: root.getAttribute('data-action') || '',
+                fieldName: root.getAttribute('data-name') || 'file',
+                formData: true,
+                headers: csrf,
+                getResponseData: function () { return {}; }
+            });
+            var result = root.querySelector('[data-m-uploader-result]');
+            uppy.on('complete', function (outcome) {
+                var ok = outcome.successful.length;
+                var bad = outcome.failed.length;
+                if (result) result.textContent = ok + (ok === 1 ? ' file uploaded' : ' files uploaded') + (bad ? ', ' + bad + ' failed' : '');
+            });
+            var fallback = root.querySelector('[data-m-uploader-fallback]');
+            if (fallback) fallback.remove();
+            root._mUppy = uppy;
+            keepAlive(root, function () { uppy.destroy(); });
+        }).catch(function () { root.classList.add('m-uploader-failed'); });
+    }
+
+    window.addEventListener('modulus:theme', function () {
+        document.querySelectorAll('[data-m-uploader]').forEach(function (root) {
+            if (root._mUppy) root._mUppy.getPlugin('Dashboard').setOptions({ theme: sheetDark() ? 'dark' : 'light' });
+        });
+    });
+
+    // ---- Image cropper (Cropper.js 2.2.0, MIT; lib/cropper holds one IIFE) ---------------------------------
+
+    var CROPPER = [LIB + 'cropper/cropper.js'];
+    var CROP_RATIOS = { free: NaN, '1': 1, '4/3': 4 / 3, '16/9': 16 / 9 };
+
+    function initCropper(root) {
+        var img = root.querySelector('[data-m-cropper-image]');
+        if (!img) return;
+        root.setAttribute('data-m-ready', '');
+        libs([], CROPPER).then(function () {
+            if (!document.contains(root) || root._mCrop) return;
+            var cropper = new window.ModulusCropper(img, { container: root.querySelector('[data-m-cropper-stage]') });
+            var selection = cropper.getCropperSelection();
+            var picture = cropper.getCropperImage();
+            if (!selection || !picture) { root.classList.add('m-cropper-failed'); return; }
+            var output = root.querySelector('[data-m-cropper-box]');
+            var preview = root.querySelector('[data-m-cropper-preview]');
+            var value = root.querySelector('[data-m-cropper-value]');
+            var buttons = root.querySelectorAll('[data-m-cropper-ratio]');
+            var timer = 0;
+
+            // The crop in the picture's natural pixels: the selection's box on screen, scaled by the picture's size.
+            function crop() {
+                var natural = picture.$image;
+                if (!natural || !natural.naturalWidth) return null;
+                var box = picture.getBoundingClientRect();
+                var edge = selection.getBoundingClientRect();
+                var k = natural.naturalWidth / box.width;
+                return {
+                    x: Math.round((edge.left - box.left) * k),
+                    y: Math.round((edge.top - box.top) * k),
+                    width: Math.round(edge.width * k),
+                    height: Math.round(edge.height * k)
+                };
+            }
+
+            function report() {
+                var box = crop();
+                if (!box) return;
+                output.textContent = box.width + ' × ' + box.height + ' px, from ' + box.x + ', ' + box.y;
+                clearTimeout(timer);
+                timer = setTimeout(function () { raiseChange(value, JSON.stringify(box)); }, 200);
+                selection.$toCanvas().then(function (canvas) {
+                    if (!document.contains(root)) return;
+                    canvas.setAttribute('role', 'img');
+                    canvas.setAttribute('aria-label', 'Preview of the crop');
+                    preview.replaceChildren(canvas);
+                }).catch(function () { /* the preview is optional */ });
+            }
+
+            function pick(key) {
+                selection.aspectRatio = CROP_RATIOS[key];
+                buttons.forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-m-cropper-ratio') === key ? 'true' : 'false'); });
+            }
+
+            var start = root.getAttribute('data-ratio') || 'free';
+            pick(start in CROP_RATIOS ? start : 'free');
+            buttons.forEach(function (b) {
+                // The shape applies on the next microtask, so the readout is read after it.
+                b.addEventListener('click', function () { pick(b.getAttribute('data-m-cropper-ratio')); setTimeout(report, 0); });
+            });
+            selection.addEventListener('change', report);
+            picture.$image.addEventListener('load', report);
+            report();
+            root._mCrop = cropper;
+            keepAlive(root, function () { clearTimeout(timer); cropper.destroy(); });
+        }).catch(function () { root.classList.add('m-cropper-failed'); });
+    }
+
+    // ---- Code editor (CodeMirror 6; lib/codemirror holds one IIFE with the language packs) ---------------
+
+    var CODEMIRROR = [LIB + 'codemirror/codemirror.js'];
+
+    // The text starts from the hidden input (the server put it there, escaped); edits go back to it, debounced.
+    function initCode(root) {
+        var host = root.querySelector('[data-m-code-host]');
+        if (!host) return;
+        root.setAttribute('data-m-ready', '');
+        libs([], CODEMIRROR).then(function () {
+            if (!document.contains(root) || root._mCode) return;
+            var value = root.querySelector('[data-m-code-value]');
+            var timer = 0;
+            host.replaceChildren();
+            var editor = window.ModulusCodeMirror.mount(host, {
+                doc: value.value,
+                language: root.getAttribute('data-language') || '',
+                readOnly: root.hasAttribute('data-readonly'),
+                dark: sheetDark(),
+                label: root.getAttribute('data-label') || 'Code',
+                onChange: function (text) {
+                    clearTimeout(timer);
+                    timer = setTimeout(function () { raiseChange(value, text); }, 300);
+                }
+            });
+            root._mCode = editor;
+            keepAlive(root, function () { clearTimeout(timer); editor.destroy(); });
+        }).catch(function () { root.classList.add('m-code-failed'); });
+    }
+
+    window.addEventListener('modulus:theme', function () {
+        document.querySelectorAll('[data-m-code]').forEach(function (root) {
+            if (root._mCode) root._mCode.setDark(sheetDark());
+        });
+    });
+
     // ---- Start widgets as they appear ----------------------------------------------------------------------
 
     widget('[data-m-map]', initMap);
     widget('[data-m-vector-map]', initVectorMap);
+    widget('[data-m-pdf]', initPdf);
+    widget('[data-m-uploader]', initUploader);
+    widget('[data-m-cropper]', initCropper);
+    widget('[data-m-code]', initCode);
     widget('[data-m-editor]', initEditor);
     widget('[data-m-sheet]', initSheet);
     widget('[data-m-doc]', initDoc);

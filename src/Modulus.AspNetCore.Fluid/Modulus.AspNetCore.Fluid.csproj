@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Description>Liquid templates for Modulus pages and documents: a Fluid renderer with HTML-escaped output, a page layout, and tags that expand to Modulus components.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Modulus.Ui.Abstractions\Modulus.Ui.Abstractions.csproj" />
+    <!-- The stylesheets and scripts {% modulus_head %} links, and the AntDesign package the icon tag reads. -->
+    <ProjectReference Include="..\Modulus.Ui.Assets\Modulus.Ui.Assets.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Fluid.Core" />
+  </ItemGroup>
+
+</Project>

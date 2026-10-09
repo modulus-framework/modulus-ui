@@ -51,6 +51,7 @@ public class NestedGridTagHelper : TagHelper
             ShowSave = level.Editable,
             ShowDiscard = level.Editable,
             RowDetail = child is not null && level.Expandable ? row => new HtmlString(Detail(row, loaded, child)) : null,
+            RowExpandable = row => v.Settings.CanExpand(r.Level, row),
             // Search and filters run on the server for a level (they page); the toolbar and filter row below send them.
             Searchable = false,
             ClientFilters = false,
@@ -77,7 +78,8 @@ public class NestedGridTagHelper : TagHelper
 
         var toolbar = Toolbar(level, r, container);
         var filters = Filters(r, container, level.Searchable);
-        var summary = Pager(r, v.Total, container, Math.Max(1, level.PageSize));
+        // The pager, then the level's rollup totals (a tree level's children add up under their parent).
+        var summary = Pager(r, v.Total, container, Math.Max(1, level.PageSize)) + (v.Total > 0 ? TableGroups.Totals(v.Totals, v.Total) : "");
         var gridContext = new TagHelperContext("app-editable-grid", [], new Dictionary<object, object>(), context.UniqueId + "-g");
         var gridOutput = new TagHelperOutput("app-editable-grid", [new TagHelperAttribute("id", container + "-grid")], (_, _) =>
         {

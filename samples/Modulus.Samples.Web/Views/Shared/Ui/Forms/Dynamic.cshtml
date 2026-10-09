@@ -1,0 +1,38 @@
+@model DynamicFormState
+@* A dynamic form: the fields come from the JSON schema in DynamicFormDemo (FormSchema.Parse), and the same schema checks the post.
+   The Blazor sample draws the same form with AppSchemaForm. *@
+<app-page-header pretitle="Forms" title="Dynamic form" subtitle="The fields are read from a JSON schema, so the page has no fields of its own."></app-page-header>
+
+<div class="m-row-cards m-cols-8-4">
+    <div class="m-card">
+        <form method="post" action="/forms/dynamic" asp-antiforgery="true" class="ant-form ant-form-vertical" novalidate>
+            <div class="m-card-header"><div><h2 class="m-card-title">Expense claim</h2><p class="m-card-subtitle">Submit the empty form to see every message.</p></div></div>
+            <div class="m-card-body">
+                <app-schema-form schema="@DynamicFormDemo.Schema" values="@Model.Values" problems="@Model.Problems" id-prefix="claim" />
+            </div>
+            <div class="m-card-footer m-form-actions">
+                <app-button type="primary" html-type="submit">Submit claim</app-button>
+                <a class="ant-btn ant-btn-default" href="/forms/dynamic"><span>Reset</span></a>
+            </div>
+        </form>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><h2 class="m-card-title">Stored values</h2><p class="m-card-subtitle">@(Model.Saved is null ? "Filled in once the claim is valid" : "Normalised by the schema")</p></div>
+        <div class="m-card-body">
+            @if (Model.Saved is null)
+            {
+                <p class="m-muted">Nothing saved yet.</p>
+            }
+            else
+            {
+                <ul class="m-plain-list">
+                    @foreach (var (key, value) in Model.Saved)
+                    {
+                        <li><span class="m-muted">@key</span><span>@value</span></li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</div>

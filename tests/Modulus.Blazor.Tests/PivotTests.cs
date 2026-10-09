@@ -164,6 +164,89 @@ public class PivotTests
         Assert.True(desc.SortDescending);
     }
 
+    // Derived measures -----------------------------------------------------------------------------------------
+
+    private sealed record Sale(string Region, decimal Profit, decimal Sales);
+
+    private static readonly Sale[] Sales =
+    [
+        new("A", 10m, 100m), new("A", 5m, 50m), new("B", 3m, 0m),
+    ];
+
+    private static PivotQuery<Sale> SalesPivot() => PivotQuery<Sale>.Create()
+        .Dimension("region", "Region", s => s.Region)
+        .Measure("profit", "Profit", s => s.Profit)
+        .Measure("sales", "Sales", s => s.Sales)
+        .Ratio("margin", "Margin", "profit", "sales", decimals: 1, percent: true)
+        .Ratio("per_record", "Profit per record", "profit", "count");
+
+    [Fact]
+    public void Ratio_IsWorkedOutFromTheSums_NotAddedUpFromTheCells()
+    {
+        var pivot = SalesPivot();
+        var state = pivot.Normalize(new PivotState { Rows = ["region"], Measures = ["margin", "sales"] }).ExpandAll();
+        var result = pivot.Run(Sales.AsQueryable(), state);
+
+        // Region A: 15 / 150 = 10%. Region B has no sales, so no margin. The total is 18 / 150 = 12%, not 10% + nothing.
+        Assert.Equal(0.1m, result.Value(PivotChild("A"), PivotPath.Root, "margin"));
+        Assert.Null(result.Value(PivotChild("B"), PivotPath.Root, "margin"));
+        Assert.Equal(0.12m, result.Value(PivotPath.Root, PivotPath.Root, "margin"));
+        Assert.Equal(150m, result.Value(PivotChild("A"), PivotPath.Root, "sales"));
+    }
+
+    [Fact]
+    public void Ratio_WithCount_AndPercentFormatting()
+    {
+        var pivot = SalesPivot();
+        var state = pivot.Normalize(new PivotState { Measures = ["per_record", "margin"] });
+        var result = pivot.Run(Sales.AsQueryable(), state);
+
+        Assert.Equal(6m, result.Value(PivotPath.Root, PivotPath.Root, "per_record")); // 18 profit over 3 records
+        var margin = result.Measures.Single(m => m.Key == "margin");
+        Assert.True(margin.Percent);
+        Assert.EndsWith("%", result.Format(0.12m, margin));
+        Assert.Contains("12", result.Format(0.12m, margin));
+        Assert.Equal("", result.Format(null, margin));
+    }
+
+    [Fact]
+    public void Ratio_StoresOnlyTheSumsItNeeds_AndIsDroppedWithAHiddenMeasure()
+    {
+        var pivot = SalesPivot();
+        var state = pivot.Normalize(new PivotState { Measures = ["margin"] });
+        Assert.Equal(["margin"], state.Measures);
+
+        // The query sums profit and sales for the ratio; restricting sales hides the ratio and the state drops it.
+        var restricted = pivot.Restrict(k => k != "sales");
+        Assert.DoesNotContain(restricted.Measures, m => m.Key == "margin");
+        Assert.DoesNotContain(restricted.Measures, m => m.Key == "sales");
+        Assert.Equal(["count"], restricted.Normalize(new PivotState { Measures = ["margin"] }).Measures);
+    }
+
+    [Fact]
+    public void Ratio_RejectsUnknownOrDuplicateMeasures()
+    {
+        var pivot = SalesPivot();
+        Assert.Throws<ArgumentException>(() => pivot.Ratio("x", "X", "nope", "sales"));
+        Assert.Throws<ArgumentException>(() => pivot.Ratio("x", "X", "profit", "margin")); // a ratio is not a measure to divide by
+        Assert.Throws<ArgumentException>(() => pivot.Ratio("margin", "Again", "profit", "sales"));
+    }
+
+    [Fact]
+    public void Ratio_ShowsAPercentInTheWorkbook()
+    {
+        var pivot = SalesPivot();
+        var result = pivot.Run(Sales.AsQueryable(), pivot.Normalize(new PivotState { Rows = ["region"], Measures = ["margin"] }).ExpandAll());
+        using var zip = new ZipArchive(new MemoryStream(PivotXlsx.Write(result, "Sales")));
+        using var reader = new StreamReader(zip.GetEntry("xl/worksheets/sheet1.xml")!.Open());
+        var sheet = reader.ReadToEnd();
+
+        // The percent style (7, or 8 for totals): the fraction 0.1 stored, shown as 10.00%.
+        Assert.Matches("s=\"[78]\"><v>0\\.1</v>", sheet);
+    }
+
+    private static string PivotChild(string key) => PivotPath.Child(PivotPath.Root, key);
+
     // Query and totals -----------------------------------------------------------------------------------------
 
     [Fact]

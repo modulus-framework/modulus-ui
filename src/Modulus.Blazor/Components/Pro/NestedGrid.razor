@@ -3,7 +3,8 @@
     expand renders another NestedGrid for the next level, which loads its rows the first time it is shown.
     Every level has its own columns (or column set picked by a parent field), search, filters, header sorting and
     column searches (all on the server), paging, editing and Save. The number of levels in the settings is the
-    nesting limit.
+    nesting limit. With <c>Settings.Tree</c> the grid is a tree: one level definition at every depth, rows expand only
+    when <c>ChildCountField</c> says they have children, and <c>Rollup</c> totals show under each level.
 
     <NestedGrid Settings="_settings" Load="LoadAsync" Save="SaveAsync" />
 
@@ -57,6 +58,10 @@
                 <Pagination Current="_page" Total="_total" PageSize="_pageSize" Size="PaginationSize.Small" Disabled="_dirty" ShowTotal="ShowTotal"
                             ShowSizeChanger="true" PageSizeOptions="@Paging.SizesWith(LevelPageSize).ToArray()"
                             OnChange="e => PageAsync(e.Page, e.PageSize)" Class="m-nested-pager" />
+            }
+            @if (_totals.Count > 0)
+            {
+                @((MarkupString)TableGroups.Totals(_totals, _total))
             }
         </Summary>
     </EditableGrid>
@@ -134,6 +139,7 @@
 
     private List<GridColumn> _columns = [];
     private List<GridRecord> _rows = [];
+    private IReadOnlyList<TableTotal> _totals = [];
     private HashSet<string> _loadedIds = [];
     private int _total, _page = 1, _pageSize;
     private string? _keyword, _sortField;
@@ -171,6 +177,7 @@
         var result = await Load(new NestedGridRequest(Level, Parent?.Id, _keyword, _sortField, _descending, _page, _pageSize, filters.Count == 0 ? null : filters, _searches));
         _rows = [.. result.Rows];
         _total = result.Total;
+        _totals = result.Totals;
         _page = NestedGridQuery.ClampPage(new NestedGridRequest(Level, Parent?.Id, Page: _page, PageSize: _pageSize), _total);
         _loadedIds = [.. _rows.Select(r => r.Id)];
         _dirty = false;

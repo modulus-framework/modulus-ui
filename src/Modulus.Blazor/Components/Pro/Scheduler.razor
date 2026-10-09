@@ -1,0 +1,145 @@
+@using Modulus.Ui.Abstractions.Scheduler
+@using AntDesign
+
+@*
+    An event calendar: a side panel with the category filters, the next events and an add button, and the main area with the
+    month grid or the agenda list. The calendar is drawn from SchedulerView, the same the MVC app-scheduler draws. The page owns
+    the events: a change of month, view or filter calls OnQuery with the new query, and the page loads that view. Adding on a
+    day calls OnAdd; choosing an event calls OnEdit. The form that edits an event is the page's.
+
+    <Scheduler View="_view" OnQuery="QueryAsync" OnAdd="AddAsync" OnEdit="EditAsync" />
+*@
+
+<div class="m-card m-app m-app-calendar" data-m-scheduler>
+    <aside class="m-app-side">
+        <div class="m-app-side-head">
+            <button type="button" class="ant-btn ant-btn-primary ant-btn-block" @onclick="() => OnAdd.InvokeAsync(View.Today)"><Ti Name="plus" /><span>Add event</span></button>
+        </div>
+        <div class="m-app-side-body">
+            <div class="m-subheader m-app-nav-title" style="margin-top:0">Event filters</div>
+            <div class="m-cal-filters">
+                @foreach (var c in View.Categories)
+                {
+                    var category = c;
+                    <Checkbox Style="@($"--c:{category.Color}")" Checked="View.IsOn(category.Name)" CheckedChanged="on => FilterAsync(category.Name, on)">@category.Name</Checkbox>
+                }
+            </div>
+            <div class="m-subheader m-app-nav-title">Upcoming</div>
+            @{ var upcoming = View.Upcoming(); }
+            @if (upcoming.Count == 0)
+            {
+                <div class="m-small m-muted" style="padding:0 8px">Nothing coming up this month</div>
+            }
+            @foreach (var e in upcoming)
+            {
+                var item = e;
+                <button type="button" class="m-cal-agenda-row" @onclick="() => OnEdit.InvokeAsync(item)">
+                    <span class="m-app-dot" style="--c:@View.ColorOf(item.Category)"></span>
+                    <span class="m-truncate" style="flex:1"><span class="m-heading m-medium">@item.Title</span><br /><span class="m-xsmall m-muted">@item.Start.ToString("ddd, MMM d", System.Globalization.CultureInfo.InvariantCulture) · @SchedulerModel.TimeLabel(item)</span></span>
+                </button>
+            }
+        </div>
+    </aside>
+
+    <section class="m-app-main" aria-label="@View.Title">
+        <div class="m-cal-toolbar">
+            <div class="ant-btn-group" style="display:inline-flex">
+                <button type="button" class="ant-btn ant-btn-default ant-btn-icon-only" aria-label="Previous month" title="Previous month" @onclick="() => GoAsync(View.Month.AddMonths(-1))"><Ti Name="left" /></button>
+                <button type="button" class="ant-btn ant-btn-default ant-btn-icon-only" aria-label="Next month" title="Next month" @onclick="() => GoAsync(View.Month.AddMonths(1))"><Ti Name="right" /></button>
+            </div>
+            <button type="button" class="ant-btn ant-btn-default" @onclick="() => GoAsync(new DateTime(View.Today.Year, View.Today.Month, 1))"><span>Today</span></button>
+            <h2 class="m-cal-title">@View.Title</h2>
+            <span class="m-spacer"></span>
+            <div class="ant-segmented" role="group" aria-label="View">
+                <div class="ant-segmented-group">
+                    <button type="button" class="ant-segmented-item@(View.List ? "" : " ant-segmented-item-selected")" aria-pressed="@(!View.List)" @onclick="() => SetListAsync(false)"><div class="ant-segmented-item-label">Month</div></button>
+                    <button type="button" class="ant-segmented-item@(View.List ? " ant-segmented-item-selected" : "")" aria-pressed="@View.List" @onclick="() => SetListAsync(true)"><div class="ant-segmented-item-label">List</div></button>
+                </div>
+            </div>
+        </div>
+        @if (View.List)
+        {
+            var agenda = View.Agenda.ToList();
+            @if (agenda.Count == 0)
+            {
+                <div class="m-table-empty" style="padding:64px 0">No events this month</div>
+            }
+            @foreach (var (day, events) in agenda)
+            {
+                <div class="m-cal-agenda-day@(day == View.Today ? " today" : "")">
+                    <div class="m-cal-agenda-date">@day.ToString("ddd, MMM d", System.Globalization.CultureInfo.InvariantCulture)@(day == View.Today ? " · Today" : "")</div>
+                    <div>
+                        @foreach (var e in events)
+                        {
+                            var item = e;
+                            <button type="button" class="m-cal-agenda-row" @onclick="() => OnEdit.InvokeAsync(item)">
+                                <time>@SchedulerModel.TimeLabel(item)</time>
+                                <span class="m-app-dot" style="--c:@View.ColorOf(item.Category)"></span>
+                                <span class="m-heading m-medium">@item.Title</span>
+                                @if (item.Location is { Length: > 0 }) { <span class="m-small m-muted m-truncate">@item.Location</span> }
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="m-cal-head" aria-hidden="true">
+                @foreach (var d in new[] { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" }) { <div>@d</div> }
+            </div>
+            <div class="m-cal-grid">
+                @foreach (var day in View.Days)
+                {
+                    var date = day;
+                    var events = View.On(day).ToList();
+                    <div class="@CellClass(day)">
+                        <button type="button" class="m-cal-add" aria-label="Add event on @day.ToString("MMMM d", System.Globalization.CultureInfo.InvariantCulture)" @onclick="() => OnAdd.InvokeAsync(date)"></button>
+                        <span class="m-cal-num">@day.Day</span>
+                        @foreach (var e in events.Take(3))
+                        {
+                            var item = e;
+                            <button type="button" class="m-cal-event@(item.AllDay ? " allday" : "")" style="--c:@View.ColorOf(item.Category)" title="@item.Title" @onclick="() => OnEdit.InvokeAsync(item)">
+                                @if (!item.AllDay) { <span class="m-cal-dot"></span><time>@SchedulerModel.TimeLabel(item)</time> }
+                                <span>@item.Title</span>
+                            </button>
+                        }
+                        @if (events.Count > 3)
+                        {
+                            <span class="m-cal-more">+@(events.Count - 3) more</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </section>
+</div>
+
+@code {
+    /// <summary>The calendar to draw (<see cref="SchedulerView.Build"/>): its query, categories and events.</summary>
+    [Parameter, EditorRequired] public SchedulerView View { get; set; } = default!;
+
+    /// <summary>Asks for another query (a month, the agenda or the grid, or a category filter). The page loads that view.</summary>
+    [Parameter] public EventCallback<SchedulerQuery> OnQuery { get; set; }
+
+    /// <summary>Adds an event on a day (the add button passes today).</summary>
+    [Parameter] public EventCallback<DateTime> OnAdd { get; set; }
+
+    /// <summary>Opens an event to edit.</summary>
+    [Parameter] public EventCallback<SchedulerEvent> OnEdit { get; set; }
+
+    private string CellClass(DateTime day) =>
+        "m-cal-cell" + (day.Month != View.Month.Month ? " other" : "") + (day == View.Today ? " today" : "");
+
+    private Task GoAsync(DateTime month) => OnQuery.InvokeAsync(View.Query with { Month = month });
+
+    private Task SetListAsync(bool list) => OnQuery.InvokeAsync(View.Query with { List = list });
+
+    private Task FilterAsync(string category, bool on)
+    {
+        var categories = View.Query.Categories.ToHashSet();
+        if (on) categories.Add(category);
+        else categories.Remove(category);
+        return OnQuery.InvokeAsync(View.Query with { Categories = categories });
+    }
+}

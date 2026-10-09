@@ -185,6 +185,11 @@ public class BusinessFieldRuleTests
     [InlineData("</div></body>x", "x")]
     [InlineData("a < b <!-- c --> & d", "a &lt; b  &amp; d")]
     [InlineData("line<br/>two<hr>", "line<br>two<hr>")]
+    [InlineData("<table><tr><td>a</td><th>b</th></tr></table>", "<table><tr><td>a</td><th>b</th></tr></table>")]
+    [InlineData("<table><thead><tr><th colspan=\"2\">h</th></tr></thead><tbody><tr><td rowspan=3>x</td></tr></tbody></table>", "<table><thead><tr><th colspan=\"2\">h</th></tr></thead><tbody><tr><td rowspan=\"3\">x</td></tr></tbody></table>")]
+    [InlineData("<table><tr><td colspan=\"999\" style=\"color:red\" onclick=\"x()\">a</td><td colspan=1>b</td></tr></table>", "<table><tr><td>a</td><td>b</td></tr></table>")]
+    [InlineData("<table><script>alert(1)</script><tr><td>ok</td></tr></table>", "<table><tr><td>ok</td></tr></table>")]
+    [InlineData("<table><tr><td>open", "<table><tr><td>open</td></tr></table>")]
     public void RichText_KeepsFormattingAndDropsEverythingElse(string html, string expected) =>
         Assert.Equal(expected, RichText.Sanitize(html));
 
@@ -194,6 +199,7 @@ public class BusinessFieldRuleTests
         Assert.Equal("Title One two", RichText.ToPlainText("<h3>Title</h3><p>One</p><p>two</p>"));
         Assert.Equal("<b> stays text", RichText.ToPlainText("&lt;b&gt; stays text"));
         Assert.Equal("", RichText.ToPlainText("<p><br></p>"));
+        Assert.Equal("a b c", RichText.ToPlainText("<table><tr><td>a</td><td>b</td></tr><tr><td>c</td></tr></table>"));
         Assert.Equal("", RichText.Sanitize(null));
     }
 
@@ -218,5 +224,8 @@ public class BusinessFieldRuleTests
         Assert.All(buttons, b => Assert.False(string.IsNullOrWhiteSpace(b.Label)));
         Assert.All(buttons, b => Assert.True(b.Icon is not null || b.Text is not null, b.Label));
         Assert.Contains(buttons, b => b is { Command: "formatBlock", Argument: "h3" });
+        // Row and column buttons need the caret in a table; Insert table does not.
+        Assert.Equal(["table-row-add", "table-col-add", "table-row-del", "table-col-del"], buttons.Where(b => b.NeedsTable).Select(b => b.Command));
+        Assert.All(buttons.Where(b => b.NeedsTable), b => Assert.StartsWith("table-", b.Command));
     }
 }

@@ -216,7 +216,7 @@ public class GroupByTests : BunitContext
             Table(["Key", "Count", "V0", "V1", "V2", "V3"], [1, 10, 780m, 780m, 120m, 55m]));
         await using var db = new RowDb(interceptor);
 
-        var page = await Query.PageAsync(db.Rows, Grouped(1, 2), countAsync: (q, ct) => q.CountAsync(ct));
+        var page = await Query.PageAsync(db.Rows, Grouped(1, 2), countAsync: (q, ct) => q.CountAsync(ct), cancellationToken: Xunit.TestContext.Current.CancellationToken);
 
         Assert.Equal(4, interceptor.Sql.Count);   // count, rows, the page's groups, every row
         var groups = interceptor.Sql[2];

@@ -7,6 +7,7 @@ using Modulus.Samples.Shared;
 using Modulus.Samples.Web;
 using Modulus.Samples.Web.Models;
 using Modulus.Ui.Abstractions;
+using Modulus.Ui.Abstractions.Import;
 using Modulus.Ui.Abstractions.Plugins;
 using Modulus.Ui.Abstractions.State;
 
@@ -42,7 +43,7 @@ public class TablesController : SampleController
         request.Searches = Request.Query.ColumnSearches();
         ViewData["RowsUrl"] = Request.Path + QueryString.Create(Request.Query
             .Where(q => q.Key is not ("current" or "pageSize" or "cursor"))
-            .Select(q => new KeyValuePair<string, string?>(q.Key, q.Value.ToString())));
+            .SelectMany(q => q.Value.Select(v => new KeyValuePair<string, string?>(q.Key, v))));
         return PartialView("~/Views/Shared/Ui/Tables/_LargeRows.cshtml", LargeTablePage.Rows(mode, filter, request));
     }
 
@@ -112,6 +113,41 @@ public class TablesController : SampleController
     public IActionResult NestedLevelPost([FromServices] GarmentStore store) => PartialView(NestedLevelView, GarmentGridActions.Post(store, Request, Response));
 
     private const string NestedLevelView = "~/Views/Shared/Ui/Tables/_NestedLevel.cshtml";
+
+    /// <summary>Visual filter: a builder (app-query-builder) whose filter, in the URL, the shipments are filtered by.</summary>
+    [HttpGet("query")]
+    public IActionResult Query() => Page("Query builder", "Tables/Query", QueryPageActions.Load(Request.Query));
+
+    /// <summary>Tree grid: a bill of materials; expanded parts load their parts from tree/level.</summary>
+    /// <summary>Printing: the overview with links to the two print views.</summary>
+    [HttpGet("print")]
+    public IActionResult Print() => Page("Printing", "Tables/Print", PrintSamples.Overview);
+
+    /// <summary>A print view: the parts list or the bin labels alone on a blank page; it opens the print dialog.</summary>
+    [HttpGet("print/sheet")]
+    public IActionResult PrintSheet(string? kind)
+    {
+        var sheet = PrintSamples.Sheet(kind);
+        ViewData["Title"] = sheet.Title;
+        ViewData["Layout"] = "_BlankLayout";
+        return View("~/Views/Shared/Ui/Tables/PrintSheet.cshtml", sheet);
+    }
+
+    /// <summary>Import data: a CSV file in four steps (upload, map columns, check rows, import); see ImportPageActions.</summary>
+    [HttpGet("import")]
+    [HttpPost("import")]
+    [RequestSizeLimit(ImportLimits.MaxBytes + 64 * 1024)]
+    public async Task<IActionResult> Import([FromServices] CustomerImportStore store) =>
+        Page("Import data", "Tables/Import", await ImportPageActions.RespondAsync(Request, store));
+
+    [HttpGet("tree")]
+    public IActionResult Tree([FromServices] BillOfMaterialsStore store) => Page("Tree grid", "Tables/Tree", TreeGridActions.Page(store, Request.Query));
+
+    [HttpGet("tree/level")]
+    public IActionResult TreeLevel([FromServices] BillOfMaterialsStore store) => PartialView(NestedLevelView, TreeGridActions.Get(store, Request.Query));
+
+    [HttpPost("tree/level")]
+    public IActionResult TreeLevelPost([FromServices] BillOfMaterialsStore store) => PartialView(NestedLevelView, TreeGridActions.Post(store, Request, Response));
 
     /// <summary>Editable grid: the saved schema and rows.</summary>
     [HttpGet("editable")]

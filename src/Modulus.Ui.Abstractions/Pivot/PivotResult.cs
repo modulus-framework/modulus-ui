@@ -74,12 +74,14 @@ public sealed record PivotCell(PivotHeader Row, PivotColumn Column, string Measu
 public sealed class PivotResult
 {
     private readonly Dictionary<(string Row, string Column), Totals> _cells;
-    private readonly string[] _valueMeasures;
+    private readonly string[] _stored;
     private readonly PivotAggregate[] _aggregates;
+    private readonly IReadOnlyDictionary<string, (string Numerator, string Denominator)> _ratios;
 
     private PivotResult(PivotState state, IReadOnlyList<PivotFieldInfo> fields, IReadOnlyList<PivotMeasureInfo> allMeasures,
         IReadOnlyList<PivotMeasureInfo> measures, PivotHeader rows, PivotHeader columns, Dictionary<(string, string), Totals> cells,
-        PivotAggregate[] aggregates, Func<string, string> groupByTitle, string? error)
+        IReadOnlyList<string> stored, PivotAggregate[] aggregates, IReadOnlyDictionary<string, (string, string)> ratios,
+        Func<string, string> groupByTitle, string? error)
     {
         State = state;
         Fields = fields;
@@ -88,8 +90,9 @@ public sealed class PivotResult
         Rows = rows;
         Columns = columns;
         _cells = cells;
+        _stored = [.. stored];
         _aggregates = aggregates;
-        _valueMeasures = state.Measures.Where(m => m != PivotQuery<object>.Count).ToArray();
+        _ratios = ratios;
         GroupByTitle = groupByTitle;
         Error = error;
     }
@@ -121,13 +124,21 @@ public sealed class PivotResult
 
     /// <summary>
     /// The value of a measure for a row and column header (for the headers' groups), or null when no record falls in
-    /// both.
+    /// both. A ratio is its numerator over its denominator for that cell, null when the denominator is zero.
     /// </summary>
     public decimal? Value(string rowPath, string columnPath, string measure)
     {
         if (!_cells.TryGetValue((rowPath, columnPath), out var t)) return null;
+        if (!_ratios.TryGetValue(measure, out var ratio)) return Base(t, measure);
+        var numerator = Base(t, ratio.Numerator);
+        var denominator = Base(t, ratio.Denominator);
+        return numerator is { } n && denominator is { } d && d != 0 ? n / d : null;
+    }
+
+    private decimal? Base(Totals t, string measure)
+    {
         if (measure == PivotQuery<object>.Count) return t.Count;
-        var i = Array.IndexOf(_valueMeasures, measure);
+        var i = Array.IndexOf(_stored, measure);
         if (i < 0) return null;
         return _aggregates[i] switch
         {
@@ -210,8 +221,12 @@ public sealed class PivotResult
     }
 
     /// <summary>A measure's value as the table shows it (group separators, the measure's decimals; blank for none).</summary>
-    public string Format(decimal? value, PivotMeasureInfo measure) =>
-        value is { } v ? v.ToString("N" + measure.Decimals.ToString(CultureInfo.InvariantCulture), CultureInfo.CurrentCulture) : "";
+    public string Format(decimal? value, PivotMeasureInfo measure)
+    {
+        if (value is not { } v) return "";
+        var format = "N" + measure.Decimals.ToString(CultureInfo.InvariantCulture);
+        return measure.Percent ? (v * 100).ToString(format, CultureInfo.CurrentCulture) + "%" : v.ToString(format, CultureInfo.CurrentCulture);
+    }
 
     // Building -------------------------------------------------------------------------------------------------
 
@@ -223,7 +238,7 @@ public sealed class PivotResult
 
     internal static PivotResult TooMany(PivotState state, IReadOnlyList<PivotFieldInfo> fields, IReadOnlyList<PivotMeasureInfo> allMeasures,
         IReadOnlyList<PivotMeasureInfo> measures, int max, Func<string, string> groupByTitle) =>
-        new(state, fields, allMeasures, measures, Root(), Root(), [], [], groupByTitle,
+        new(state, fields, allMeasures, measures, Root(), Root(), [], [], [], new Dictionary<string, (string, string)>(), groupByTitle,
             $"This table would show more than {max.ToString("N0", CultureInfo.CurrentCulture)} groups. Collapse a header or group by fewer fields.");
 
     private static PivotHeader Root() => new(PivotPath.Root, "", "Total", 0, null, null);
@@ -233,7 +248,8 @@ public sealed class PivotResult
     /// under), with the values the database computed for it, so nothing is added up here.
     /// </summary>
     internal static PivotResult Build(PivotState state, IReadOnlyList<PivotFieldInfo> fields, IReadOnlyList<PivotMeasureInfo> allMeasures,
-        IReadOnlyList<PivotMeasureInfo> measures, PivotAggregate[] aggregates,
+        IReadOnlyList<PivotMeasureInfo> measures, IReadOnlyList<string> stored, PivotAggregate[] aggregates,
+        IReadOnlyDictionary<string, (string Numerator, string Denominator)> ratios,
         IReadOnlyList<(int RowDepth, int ColumnDepth, IReadOnlyList<PivotLeaf> Groups)> levels,
         Func<string, string, string> label, Func<string, string> groupByTitle, Func<string, string, string, int> order)
     {
@@ -254,7 +270,7 @@ public sealed class PivotResult
             cells[(row.Path, column.Path)] = t;
         }
 
-        var result = new PivotResult(state, fields, allMeasures, measures, rows, columns, cells, aggregates, groupByTitle, null);
+        var result = new PivotResult(state, fields, allMeasures, measures, rows, columns, cells, stored, aggregates, ratios, groupByTitle, null);
         Finish(rows, state, PivotAxis.Rows, order, result);
         Finish(columns, state, PivotAxis.Columns, order, null);
         return result;

@@ -1,0 +1,33 @@
+@* Drop area on Uppy: files upload as they are dropped (one POST each, with progress), within the limits. The same markup as the
+   MVC <app-uploader> (UploaderHtml, modulus-plugins.js). The endpoint checks each file again; Uppy only spares the round trip. *@
+@using Modulus.Ui.Abstractions.Plugins
+
+@((MarkupString)UploaderHtml.Dashboard(Id, Action, Name, Accept, MaxSize, MaxCount, Note, Label, CssClass))
+
+@code {
+    /// <summary>Element id.</summary>
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+
+    /// <summary>Where each file is posted: a same-site path (starting with /) or an http(s) address.</summary>
+    [Parameter, EditorRequired] public string Action { get; set; } = "";
+
+    /// <summary>Form field name of each file.</summary>
+    [Parameter] public string Name { get; set; } = "file";
+
+    /// <summary>Extensions (.pdf) and MIME patterns (image/*), comma separated.</summary>
+    [Parameter] public string? Accept { get; set; }
+
+    /// <summary>The largest file in bytes; 0 is no limit.</summary>
+    [Parameter] public long MaxSize { get; set; }
+
+    /// <summary>The most files the drop area takes; 0 is no limit.</summary>
+    [Parameter] public int MaxCount { get; set; }
+
+    /// <summary>A line under the drop area, for example the limits.</summary>
+    [Parameter] public string? Note { get; set; }
+
+    /// <summary>Accessible name of the uploader.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    [Parameter] public string? CssClass { get; set; }
+}

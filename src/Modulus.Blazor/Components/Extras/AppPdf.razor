@@ -1,0 +1,24 @@
+@* A PDF viewer (pdf.js): one page at a time, with previous and next, zoom and a download link. The same markup as the MVC
+   <app-pdf> (PdfHtml.Viewer); modulus-plugins.js loads pdf.js on first use and owns the page's inside. *@
+@using Modulus.Ui.Abstractions.Plugins
+
+@((MarkupString)PdfHtml.Viewer(Id, Url, Label, Height, Page, CssClass))
+
+@code {
+    /// <summary>Element id.</summary>
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+
+    /// <summary>A same-site path (starting with /) or an http(s) address of the PDF. Other addresses are refused.</summary>
+    [Parameter, EditorRequired] public string Url { get; set; } = "";
+
+    /// <summary>Accessible name of the viewer.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>CSS height, e.g. "640px" or "100%".</summary>
+    [Parameter] public string Height { get; set; } = "640px";
+
+    /// <summary>The page the viewer opens on.</summary>
+    [Parameter] public int Page { get; set; } = 1;
+
+    [Parameter] public string? CssClass { get; set; }
+}

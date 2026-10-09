@@ -1,0 +1,29 @@
+@* A barcode (Code 128 or EAN-13) as inline SVG, the same markup as the MVC <app-barcode> (BarcodeSvg.Render). The background
+   stays white by default so a dark theme does not stop a scanner reading it. *@
+@using Modulus.Ui.Abstractions.Barcode
+
+@((MarkupString)BarcodeSvg.Render(Kind, Value, Height, ModuleWidth, ShowText, Color, Background, AriaLabel, Class))
+
+@code {
+    /// <summary>The value to draw: printable ASCII for Code 128; 12 or 13 digits for EAN-13.</summary>
+    [Parameter, EditorRequired] public string Value { get; set; } = "";
+
+    [Parameter] public BarcodeKind Kind { get; set; } = BarcodeKind.Code128;
+
+    /// <summary>Height of the bars in pixels (the value is printed under them).</summary>
+    [Parameter] public int Height { get; set; } = 80;
+
+    /// <summary>Width of one module in pixels.</summary>
+    [Parameter] public int ModuleWidth { get; set; } = 2;
+
+    /// <summary>Prints the value under the bars.</summary>
+    [Parameter] public bool ShowText { get; set; } = true;
+
+    [Parameter] public string Color { get; set; } = "#000";
+
+    [Parameter] public string Background { get; set; } = "#fff";
+
+    [Parameter] public string? AriaLabel { get; set; }
+
+    [Parameter] public string? Class { get; set; }
+}

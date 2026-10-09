@@ -15,6 +15,8 @@
     <PackageVersion Include="DocumentFormat.OpenXml" Version="3.1.1" />
     <!-- Samples: saved views kept in a SQLite file (EfUiStateStore). -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
+    <!-- Liquid templates (Modulus.AspNetCore.Fluid): the parser and renderer. Pinned exactly; 2.40.0 was published 2026-08-20. -->
+    <PackageVersion Include="Fluid.Core" Version="2.40.0" />
     <!-- Test packages -->
     <PackageVersion Include="xunit.v3" Version="4.0.1" />
     <PackageVersion Include="bunit" Version="2.11.3" />

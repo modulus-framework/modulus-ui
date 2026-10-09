@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.Extensions.Primitives;
 using Modulus.AspNetCore.Mvc.TagHelpers;
 using Modulus.Ui.Abstractions;
+using Modulus.Ui.Abstractions.Pivot;
 using Xunit;
 
 namespace Modulus.AspNetCore.Mvc.Tests;
@@ -30,6 +31,28 @@ public class NestedGridTagHelperTests
         using var writer = new StringWriter();
         output.WriteTo(writer, HtmlEncoder.Default);
         return writer.ToString();
+    }
+
+    [Fact]
+    public async Task RendersTheLevelTotals_UnderThePager()
+    {
+        var s = Settings();
+        var totals = new[] { new TableTotal("qty", "Qty", PivotAggregate.Sum, 18.5m, 1) };
+        var html = await RenderAsync(new NestedGridView(s, new NestedGridRequest(0, null), s.ColumnsFor(0, null), [Row("PO-1", "PO-1")], 3, ["PO-1"], Totals: totals));
+        Assert.Contains("m-table-totals", html);
+        Assert.True(html.IndexOf("m-nested-pager", StringComparison.Ordinal) < html.IndexOf("m-table-totals", StringComparison.Ordinal));
+
+        var none = await RenderAsync(new NestedGridView(s, new NestedGridRequest(0, null), s.ColumnsFor(0, null), [Row("PO-1", "PO-1")], 3, ["PO-1"]));
+        Assert.DoesNotContain("m-table-totals", none);
+    }
+
+    [Fact]
+    public void ReadRequest_InTreeMode_ReadsEveryDepthUpToMaxDepth()
+    {
+        var tree = new NestedGridSettings { Levels = [new() { Title = "Parts", Columns = [new() { Key = "code", Title = "Code" }] }], Tree = new NestedGridTree { MaxDepth = 4 } };
+        var deep = NestedGridForm.ReadRequest(new QueryCollection(new Dictionary<string, StringValues> { ["level"] = "3", ["parent"] = "P-1" }), tree);
+        Assert.Equal(3, deep.Level);
+        Assert.Equal(3, NestedGridForm.ReadRequest(new QueryCollection(new Dictionary<string, StringValues> { ["level"] = "4" }), tree).Level); // clamped to the deepest level
     }
 
     [Fact]

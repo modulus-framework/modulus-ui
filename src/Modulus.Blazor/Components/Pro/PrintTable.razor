@@ -1,0 +1,21 @@
+@using Modulus.Ui.Abstractions.Printing
+
+@*
+    A table for a printed page: its header repeats at the top of every page it runs onto, and rows do not split across
+    pages. The markup is PrintTableHtml's, the same the MVC app-print-table draws.
+
+    <PrintTable Columns="_columns" Rows="_rows" Total="_total" />
+*@
+
+@((MarkupString)PrintTableHtml.Render(Columns, Rows, Total))
+
+@code {
+    /// <summary>The columns, in order.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<PrintColumn> Columns { get; set; } = [];
+
+    /// <summary>The rows; each cell is text.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<IReadOnlyList<string>> Rows { get; set; } = [];
+
+    /// <summary>The total row under the last row, if the table has one.</summary>
+    [Parameter] public IReadOnlyList<string>? Total { get; set; }
+}

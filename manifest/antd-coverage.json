@@ -678,6 +678,11 @@
         "note": "AppVectorMap (Components/Extras): jsVectorMap choropleth (MapHtml.Vector)",
         "mvc": "app-vector-map"
       },
+      "Pdf": {
+        "status": "modulus",
+        "note": "AppPdf (Components/Extras): pdf.js PDF viewer, one page at a time with zoom and a download link (PdfHtml.Viewer)",
+        "mvc": "app-pdf"
+      },
       "MediaPlayer": {
         "status": "modulus",
         "note": "AppMediaPlayer (Components/Extras): video and audio with custom controls, poster and captions (MediaPlayerHtml)",
@@ -692,6 +697,21 @@
         "status": "modulus",
         "note": "AppSpreadsheet (Components/Extras): Excel-style grid with formulas on Univer (SpreadsheetHtml); posts its sheets as JSON",
         "mvc": "app-spreadsheet"
+      },
+      "Upload.Drop": {
+        "status": "modulus",
+        "note": "AppUploader (Components/Extras): drop area on Uppy; each file uploads as it is dropped, with previews, progress and limits (UploaderHtml)",
+        "mvc": "app-uploader"
+      },
+      "ImageCropper": {
+        "status": "modulus",
+        "note": "AppImageCropper (Components/Extras): Cropper.js crop box with aspect ratio buttons; the crop goes to a form field as JSON (CropperHtml)",
+        "mvc": "app-image-cropper"
+      },
+      "CodeEditor": {
+        "status": "modulus",
+        "note": "AppCodeEditor (Components/Extras): CodeMirror 6 editor with highlighting for JavaScript, TypeScript, JSON, CSS and HTML (CodeEditorHtml)",
+        "mvc": "app-code-editor"
       }
     }
   },

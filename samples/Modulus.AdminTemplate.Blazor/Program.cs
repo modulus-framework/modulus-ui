@@ -1,3 +1,4 @@
+using Modulus.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Localization;
@@ -25,6 +26,8 @@ builder.Services.AddRazorComponents()
 // Saved views in a SQLite file (App_Data/ui-state.db), so they outlive a restart; without it they stay in memory.
 builder.Services.AddSampleUiState(builder.Environment.ContentRootPath);
 builder.Services.AddModulusBlazor(theme => builder.Configuration.GetSection("Modulus:Theme").Bind(theme));
+// Compression, security headers and the CSP (report-only: Blazor's import map is an inline script with no nonce, see docs/UPGRADING.md), and /health.
+builder.Services.AddModulusHardening();
 builder.Services.AddTransient<IMenuContributor, AdminMenuContributor>();
 builder.Services.AddSingleton<IShellContentProvider, SampleShellContentProvider>();
 builder.Services.AddHttpContextAccessor();
@@ -48,6 +51,9 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddSingleton<SampleStore>();
 builder.Services.AddSingleton<ProjectGridStore>();
 builder.Services.AddSingleton<GarmentStore>();
+builder.Services.AddSingleton<BillOfMaterialsStore>();
+builder.Services.AddSingleton<CustomerImportStore>();
+builder.Services.AddSingleton<FileStore>();
 builder.Services.AddSingleton<PurchaseStore>();
 
 var app = builder.Build();
@@ -58,6 +64,7 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
 }
+app.UseModulusHardening();
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
@@ -82,6 +89,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseAntiforgery();
 
+app.MapModulusHealth().AllowAnonymous();
 app.MapStaticAssets().AllowAnonymous();
 
 // Sign in and out. The login page validates with AntD, then posts a native form here (a circuit can't set cookies).

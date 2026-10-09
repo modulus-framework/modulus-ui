@@ -71,6 +71,15 @@ public class FormsController : SampleController
         return Redirect("~/forms/business");
     }
 
+    // A dynamic form: the fields come from DynamicFormDemo's JSON schema, and the same schema checks the post. The page
+    // shows what was saved on the same request, so the stored values are on screen after a valid submit.
+    [HttpGet("dynamic")]
+    public IActionResult Dynamic() => Page("Dynamic form", "Forms/Dynamic", DynamicFormDemo.Empty);
+
+    [HttpPost("dynamic")]
+    public IActionResult Dynamic(IFormCollection form) =>
+        Page("Dynamic form", "Forms/Dynamic", DynamicFormDemo.Submit(form.ToDictionary(f => f.Key, f => (string?)f.Value.LastOrDefault())));
+
     // The product lookup's search (app-lookup search-href): JSON LookupItems.
     [HttpGet("business/products")]
     public IActionResult Products(string? q, int max = 20) => Json(BusinessFormsDemo.SearchProducts(q, max));

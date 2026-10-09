@@ -1,0 +1,23 @@
+@* Image cropper: Cropper.js draws a crop box over the picture, with aspect ratio buttons. The crop goes to the form field as
+   JSON; the same page as the Blazor AppImageCropper sample. *@
+<app-page-header pretitle="Plugins" title="Image cropper" subtitle="Cropper.js draws a crop box over the picture. Pick a shape, then drag the box or its corners."></app-page-header>
+
+<div class="m-row-cards m-cols-2">
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Crop a photo</h3><p class="m-card-subtitle">Free, square, 4:3 or 16:9</p></div></div>
+        <div class="m-card-body">
+            <app-image-cropper id="photo-crop" src="@PluginsContent.CropPicture" alt="Alpine lake" name="crop" label="Crop the photo" />
+        </div>
+    </div>
+    <div class="m-card">
+        <div class="m-card-header"><div><h3 class="m-card-title">Using the cropper</h3><p class="m-card-subtitle">What it sends and what it accepts</p></div></div>
+        <div class="m-card-body">
+            <ul class="m-plain-list">
+                <li><span><code>src</code>: a same-site path, an http(s) address or an image data URI. Other addresses are refused.</span></li>
+                <li><span><code>ratio</code>: the starting shape: <code>free</code>, <code>1</code>, <code>4/3</code> or <code>16/9</code>.</span></li>
+                <li><span><code>name</code>: the form field. It holds <code>{ x, y, width, height }</code> in the photo's own pixels.</span></li>
+            </ul>
+            <p class="m-muted">Cropper.js 2 (MIT) is loaded the first time a cropper appears.</p>
+        </div>
+    </div>
+</div>

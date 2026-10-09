@@ -1,0 +1,174 @@
+@using Modulus.Ui.Abstractions.Kanban
+@using AntDesign
+
+@*
+    A kanban board: columns of cards that can be dragged between columns and reordered, or moved from a card's menu, with
+    tasks added at the bottom of a column and deleted after a confirmation. The columns, cards and their display (due
+    chips, label tones, avatars) come from KanbanModel, the same the MVC app-kanban draws. The page owns the data: each
+    change calls OnMove, OnAdd or OnDelete, and the page reloads Cards.
+
+    <KanbanBoard Columns="_columns" Cards="_cards" Labels="_labels" OnMove="MoveAsync" OnAdd="AddAsync" OnDelete="DeleteAsync" />
+*@
+
+<div class="m-kanban" data-m-kanban>
+    @foreach (var col in _view.Columns)
+    {
+        var column = col.Column;
+        <section class="m-kanban-col@(_over == column.Id ? " drop" : "")" aria-label="@column.Title"
+                 @ondragover="() => _over = column.Id" @ondragover:preventDefault
+                 @ondrop="() => DropAsync(column.Id, col.Cards.Count)" @ondrop:preventDefault>
+            <div class="m-kanban-head">
+                <h3>@column.Title</h3>
+                <span class="m-badge m-badge-gray-lt">@col.Cards.Count</span>
+            </div>
+            <div class="m-kanban-list">
+                @for (var i = 0; i < col.Cards.Count; i++)
+                {
+                    var view = col.Cards[i];
+                    var card = view.Card;
+                    var index = i;
+                    <article class="m-kanban-card@(_dragId == card.Id ? " dragging" : "")" draggable="true" data-id="@card.Id" @key="card.Id"
+                             @ondragstart="() => _dragId = card.Id" @ondragend="() => { _dragId = null; _over = null; }"
+                             @ondrop="() => DropAsync(column.Id, index)" @ondrop:preventDefault @ondrop:stopPropagation>
+                        <div class="m-kanban-card-top">
+                            <span class="m-badge m-badge-@(view.LabelTone)-lt">@card.Label</span>
+                            <Dropdown Trigger="@(new[] { Trigger.Click })" Placement="Placement.BottomRight">
+                                <Overlay>
+                                    <Menu>
+                                        @foreach (var target in _view.Columns.Select(c => c.Column).Where(c => c.Id != card.ColumnId))
+                                        {
+                                            var to = target;
+                                            <MenuItem OnClick="() => MoveAsync(card.Id, to.Id, 999)">Move to @to.Title</MenuItem>
+                                        }
+                                        <MenuItem Class="ant-dropdown-menu-item-danger" OnClick="() => _confirmDelete = card">Delete</MenuItem>
+                                    </Menu>
+                                </Overlay>
+                                <ChildContent>
+                                    <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-icon-only" aria-label="Actions for @card.Title" title="Actions"><Ti Name="ellipsis" /></button>
+                                </ChildContent>
+                            </Dropdown>
+                        </div>
+                        <div class="m-kanban-card-title">@card.Title</div>
+                        <div class="m-kanban-meta">
+                            @if (view.DueText.Length > 0)
+                            {
+                                <span class="m-kanban-due@(view.Late ? " late" : "")" title="@(view.Late ? "Overdue" : "Due")"><Ti Name="calendar" />@view.DueText</span>
+                            }
+                            @if (card.Comments > 0) { <span title="Comments"><Ti Name="message" />@card.Comments</span> }
+                            @if (card.Attachments > 0) { <span title="Attachments"><Ti Name="paper-clip" />@card.Attachments</span> }
+                            <span class="m-avatar-list">
+                                @foreach (var who in view.Avatars)
+                                {
+                                    <span class="m-avatar m-avatar-xs m-av-@who.Tint" title="@who.Name">@who.Initials</span>
+                                }
+                            </span>
+                        </div>
+                    </article>
+                }
+            </div>
+            <div class="m-kanban-add">
+                @if (_adding == column.Id)
+                {
+                    <form class="m-kanban-add" style="padding:0" @onsubmit="SubmitAsync">
+                        <input class="ant-input" @bind="_newTitle" placeholder="Task title" aria-label="Task title in @column.Title" maxlength="@KanbanModel.MaxTitleLength" @onkeydown="OnTitleKey" />
+                        @if (_error is not null) { <div class="m-kanban-error" role="alert">@_error</div> }
+                        <select class="m-select" @bind="_newLabel" aria-label="Label">
+                            @foreach (var label in _view.Labels) { <option value="@label">@label</option> }
+                        </select>
+                        <div class="m-flex m-gap-8">
+                            <button type="submit" class="ant-btn ant-btn-primary ant-btn-sm"><span>Add</span></button>
+                            <button type="button" class="ant-btn ant-btn-default ant-btn-sm" @onclick="() => _adding = null"><span>Cancel</span></button>
+                        </div>
+                    </form>
+                }
+                else
+                {
+                    <button type="button" class="ant-btn ant-btn-text ant-btn-block" @onclick="() => StartAdd(column.Id)"><Ti Name="plus" /><span>Add task</span></button>
+                }
+            </div>
+        </section>
+    }
+</div>
+
+<Modal Title="@("Delete task?")" Visible="_confirmDelete is not null" OkText="@("Delete")" OkButtonProps="@(new ButtonProps { Danger = true })"
+       OnOk="DeleteConfirmedAsync" OnCancel="() => _confirmDelete = null" Width="416">
+    @if (_confirmDelete is not null) { <p style="margin:0">Delete "@_confirmDelete.Title"?</p> }
+</Modal>
+
+@code {
+    /// <summary>The board's columns, in order.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<KanbanColumn> Columns { get; set; } = [];
+
+    /// <summary>The cards on the board. A card in a column that is not listed is not shown.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<KanbanCard> Cards { get; set; } = [];
+
+    /// <summary>The labels a card can take (the add form's choices).</summary>
+    [Parameter] public IReadOnlyList<string> Labels { get; set; } = [];
+
+    /// <summary>The column whose cards count as finished: a card there is never overdue.</summary>
+    [Parameter] public string DoneColumnId { get; set; } = "done";
+
+    /// <summary>Moves a card to a column at an index (the card's menu passes an index past the end).</summary>
+    [Parameter] public EventCallback<KanbanMove> OnMove { get; set; }
+
+    /// <summary>Adds a card: its column, title and label.</summary>
+    [Parameter] public EventCallback<KanbanNewCard> OnAdd { get; set; }
+
+    /// <summary>Deletes a card (by id) after the confirmation.</summary>
+    [Parameter] public EventCallback<int> OnDelete { get; set; }
+
+    private KanbanBoardView _view = new([], []);
+    private int? _dragId;
+    private string? _over;
+    private string? _adding;
+    private string? _newTitle;
+    private string _newLabel = "";
+    private string? _error;
+    private KanbanCard? _confirmDelete;
+
+    protected override void OnParametersSet()
+    {
+        _view = KanbanModel.Build(Columns, Cards, Labels, DoneColumnId, DateTime.Today);
+        if (_newLabel.Length == 0 && Labels.Count > 0) _newLabel = Labels[0];
+    }
+
+    private async Task DropAsync(string column, int index)
+    {
+        if (_dragId is { } id)
+        {
+            _dragId = null;
+            _over = null;
+            await MoveAsync(id, column, index);
+        }
+    }
+
+    private Task MoveAsync(int id, string column, int index) => OnMove.InvokeAsync(new KanbanMove(id, column, index));
+
+    private void StartAdd(string column)
+    {
+        _adding = column;
+        _newTitle = null;
+        _error = null;
+        _newLabel = Labels.Count > 0 ? Labels[0] : "";
+    }
+
+    private void OnTitleKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") _adding = null;
+    }
+
+    private async Task SubmitAsync()
+    {
+        _error = KanbanModel.TitleError(_newTitle);
+        if (_error is not null || _adding is null) return;
+        await OnAdd.InvokeAsync(new KanbanNewCard(_adding, _newTitle!.Trim(), _newLabel));
+        _adding = null;
+    }
+
+    private async Task DeleteConfirmedAsync()
+    {
+        var card = _confirmDelete;
+        _confirmDelete = null;
+        if (card is not null) await OnDelete.InvokeAsync(card.Id);
+    }
+}

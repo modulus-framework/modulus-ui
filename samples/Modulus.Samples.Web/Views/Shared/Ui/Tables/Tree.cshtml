@@ -1,0 +1,7 @@
+@model NestedLevelModel
+@* Tree grid: one <app-nested-grid> over a self-referencing list of parts. Every part with children expands with
+   htmx, down to four levels; each level sums its own extended cost under the table. The Blazor sample renders the
+   same page with <NestedGrid Settings="BillOfMaterials.Settings">. *@
+<app-page-header pretitle="Tables" title="Tree grid" subtitle="A bill of materials: expand a part to load the parts under it. Each level totals its extended cost under the table."></app-page-header>
+
+<partial name="Ui/Tables/_NestedLevel" model="Model" />

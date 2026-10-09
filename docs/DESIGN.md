@@ -40,7 +40,7 @@ Modulus.Ui.Abstractions   theme options + palette, menus, ShellRenderer, ProTabl
         │
 Modulus.Ui.Assets         modulus*.css (tokens, v5 refresh, shell, pages), antd-dark-brand.css, modulus-*.js
         │                 (theme, shell, mvc, widgets, plugins, spa, virtual), htmx 2.0.11, Alpine 3.17.4,
-        │                 MapLibre, Tiptap, jsVectorMap; brings AntDesign + ProLayout static CSS to every flavor
+        │                 MapLibre, Tiptap, jsVectorMap, pdf.js; brings AntDesign + ProLayout static CSS to every flavor
    ┌────┴─────────────┐
 Modulus.Blazor         Modulus.AspNetCore.Mvc
 App* aliases, ProLayout    tag helpers, _ModulusLayout, htmx response helpers, AntIcons
@@ -172,8 +172,18 @@ charts
   `[{ value, label, description, fields }]`. `fields` fill the dialog's extra `Columns`.
 - **One-time code**: typed keys are handled in `beforeinput` (replace the box, move on), so fast typing never depends
   on the caret; a paste or an autofill into one box spreads over the boxes. Blazor sees every change as `input`.
-- **Rich text** is `contenteditable` with `document.execCommand` for the toolbar. The posted HTML is never trusted:
-  pages sanitize it before saving, and `ToPlainText` backs required and length checks.
+- **Hosting** (`Modulus.AspNetCore.Hosting`): one place for compression, the security headers, the CSP with a nonce, and `/health`,
+  added by each sample's `Program.cs`. The CSP is report-only until a page set shows no violations (see UPGRADING *Hardening*).
+- **Quality gates** (`tests/browser`): the samples in a real browser, in CI's `browser` job. The gates fail the job; they do not
+  report and continue. `budgets.py` runs in the build job.
+- **Dynamic forms** are a `FormSchema` (fields as data, read from JSON with `Parse`). `FormSchemaHtml` writes the MVC `app-schema-form`
+  markup; the Blazor `AppSchemaForm` writes the same item classes and messages in Razor, because its controls are Blazor elements.
+  A `MarkupString` must hold balanced HTML: a fragment with an open `div` is closed by the browser where it ends, which moves any
+  Blazor element that follows it out of its box (the first version did this, and the labels sat far from their inputs).
+- **Rich text** is `contenteditable` with `document.execCommand` for the toolbar. Tables are built as markup (Insert table,
+  row and column buttons that need the caret in a cell, Tab between cells). The posted HTML is never trusted: pages sanitize
+  it before saving (tables keep their cells, with `colspan` and `rowspan` as whole numbers only), and `ToPlainText` backs
+  required and length checks.
 
 ### MVC / Razor Pages
 
@@ -378,15 +388,15 @@ stands (2026-10-01; PLAN §7.3 has the plan):
 | ERP UI surface | Modulus today | Planned |
 |---|---|---|
 | Data grid: grouping, aggregates, multi-level headers, saved layouts | `ProTable`, `EditableGrid`, `NestedGrid`, column picker, density; single-column sort | Phase 23 grid engine: multi-sort, group headers/footers/aggregates, multi-level headers, checkbox filter menu, row states |
-| Pivot analysis | `PivotQuery` / `AppPivotGrid` (written, §7.1) | Pivot UI extensions (derived-measure display) |
-| Tree / BOM grids | `NestedGrid` (parent → child levels, lazy load) | Phase 23: TreeGrid mode — self-referencing flat rows, per-level aggregates |
-| Query builder / advanced filtering | `QueryFilter`, filter row, `ColumnSearch` | Phase 24 QueryBuilder component |
-| Import | — | Phase 25 import wizard UI |
-| Scheduler, gantt, kanban | Calendar and Kanban sample pages | P1: promoted to library components; Gantt |
+| Pivot analysis | `PivotQuery` / `AppPivotGrid` (§7.1); derived measures (`PivotQuery.Ratio`) | Done (phase 23) |
+| Tree / BOM grids | `NestedGrid` (parent → child levels, lazy load); TreeGrid mode (`NestedGridSettings.Tree`): one level repeated to `MaxDepth`, child-count expanders, per-level rollup totals | TreeGrid sample at `/tables/tree` (done) |
+| Query builder / advanced filtering | `QueryFilter`, filter row, `ColumnSearch`; `QueryBuilder<T>` with AND/OR groups (phase 24, `TableQuery.Filters` + `ProTableRequest.Where`) | Done (phase 24) |
+| Import | `Modulus.Ui.Abstractions/Import` (`CsvReader`, `ImportMapping`, `ImportValidator`, `ImportFlow`); `ImportWizard` (Blazor), `app-import-wizard` (MVC) | Done (phase 25): upload, map columns, check rows, import; the import is the app's callback |
+| Scheduler, gantt, kanban | Kanban, Scheduler and Gantt are library components: `KanbanBoard` / `app-kanban` (`Modulus.Ui.Abstractions/Kanban`), `Scheduler` / `app-scheduler` (`Modulus.Ui.Abstractions/Scheduler`) and `Gantt` / `app-gantt` (`Modulus.Ui.Abstractions/Gantt`, read only) | Promoted (P1); Gantt editing (drag to reschedule, dependencies) not yet |
 | Lookups | `AppLookup` (type-ahead, "Search more…" dialog) | P1: multi-column, paged dialog |
 | Workflow UI | `AppStatusBar`, `WorkflowStage` | P1: `ApprovalTimeline`, history/audit drawer, `StatusBadge` |
 | Saved layouts per user | grid/pivot state in the URL; column picker in localStorage | Phase 22 `IUiStateStore` + saved views |
-| Printing | invoice print page, `@media print` basics | Phase 26 printing components |
+| Printing | `Modulus.Ui.Abstractions/Printing` (`PrintCss.Page`, `PrintTableHtml`, `LabelHtml`); `LabelSheet`, `PrintTable` (Blazor), `app-label-sheet`, `app-print-table` (MVC); print views on the blank layout | Done (phase 26): page setup, repeating table headers, label sheets, invoice print |
 
 Out of scope for the framework, on purpose: report definitions and scheduling, document pipelines beyond phase 21,
 and any product data store. The ERP Report Studio reviewed on 2026-10-01 is a separate future solution that will
@@ -418,10 +428,11 @@ Adapted from the 2.0 proposal; new components follow them.
   helper both call it, so they emit the same DOM. `modulus-plugins.js` finds the `[data-m-*]` roots (`data-m-editor`,
   `data-m-map`, `data-m-vector-map`, `data-m-player`, `data-m-sortable`, `data-m-sheet`) and wires them in both
   flavours, after htmx swaps and Blazor renders alike.
-- **Libraries load on first use.** Tiptap, MapLibre, Univer and jsVectorMap are vendored in
-  `Modulus.Ui.Assets/wwwroot/lib` and loaded (script and CSS) only when a page has a matching root, so pages without a
-  plugin pay nothing. Maps, the editor and the spreadsheet wrap the library (Tiptap and Univer as prebuilt IIFE
-  bundles, `lib/tiptap` and `lib/univer`, because both are ESM-only); the media player and sortable are Modulus code.
+- **Libraries load on first use.** Tiptap, MapLibre, Univer, jsVectorMap, pdf.js, Uppy, Cropper.js and CodeMirror are vendored in
+  `Modulus.Ui.Assets/wwwroot/lib` and loaded only when a page has a matching root, so pages without a plugin pay nothing.
+  Maps, the editor, the spreadsheet and the PDF viewer wrap the library. Tiptap and Univer ship as prebuilt IIFE bundles
+  (`lib/tiptap`, `lib/univer`, and `lib/uppy`, `lib/cropper`, `lib/codemirror` for the three new ones), because they are ESM-only. pdf.js ships ESM as it is: its two `.mjs` files are imported
+  with `import()` and the worker is set on `GlobalWorkerOptions`. The media player and sortable are Modulus code.
 - **Values post as form fields.** The editor writes its HTML into a hidden input (`[data-m-editor-value]`) and raises
   `change`; Sortable writes the order; the spreadsheet writes its sheets as JSON (`[data-m-sheet-value]`, flushed on
   submit) and raises `change` debounced while editing. Servers clean editor HTML with `RichText.Sanitize(images: true)`.
@@ -479,7 +490,6 @@ Adapted from the 2.0 proposal; new components follow them.
 
 See [PLAN.md](PLAN.md) for status. Not started:
 
-- A Fluid (Liquid) flavour: `Modulus.AspNetCore.Fluid` with a Liquid layout and tag expander.
 - Hardening: error policy, CSP nonce, compression and caching, observability.
 - Quality gates in CI: parity snapshots, Playwright flows, performance budgets.
 - Replace `AntIcons` reflection if AntDesign makes its icon store public.

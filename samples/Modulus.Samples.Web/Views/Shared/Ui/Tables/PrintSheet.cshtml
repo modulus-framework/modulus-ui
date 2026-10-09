@@ -1,0 +1,17 @@
+@model PrintSheetPage
+@using Modulus.Ui.Abstractions.Printing
+@* A print view: the content alone on a blank page. PageCss is the @page rule for this view's paper; the page prints as
+   soon as it loads, like the invoice print view. *@
+<style>@Html.Raw(Model.PageCss)</style>
+<div class="m-print-sheet">
+    @if (Model.Labels)
+    {
+        <app-label-sheet items="Model.Items" layout="Model.Layout" />
+    }
+    else
+    {
+        <h1 class="m-print-title">@Model.Title</h1>
+        <app-print-table columns="Model.Columns" rows="Model.Rows" total="Model.Total" />
+    }
+</div>
+<script>window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 300); });</script>

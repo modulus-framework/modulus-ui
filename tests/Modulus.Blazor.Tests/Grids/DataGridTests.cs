@@ -505,23 +505,23 @@ public class EditableGridTests : BunitContext
         IElement Save() => cut.FindAll("button").First(b => b.TextContent.Trim() == "Save");
         IElement Row(string name) => cut.FindAll("tbody tr.ant-table-row").Single(tr => tr.TextContent.Contains(name));
 
-        await Save().ClickAsync(new());
+        await cut.InvokeAsync(() => Save().ClickAsync(new()));
         Assert.Equal(0, saved);
         Assert.Contains("1 row needs attention", cut.Find(".ant-alert").TextContent);
         Assert.Contains("m-grid-row-error", Row("Mobile").ClassList);
         Assert.Equal("Over the limit.", Row("Mobile").QuerySelector(".m-grid-row-message")!.TextContent);
 
         // Fixing the cell clears the row's error at once.
-        await Row("Mobile").QuerySelector("[aria-label^='Edit Budget:']")!.ClickAsync(new());
-        await Row("Mobile").QuerySelector("input[type=number]")!.InputAsync(new ChangeEventArgs { Value = "800" });
+        await cut.InvokeAsync(() => Row("Mobile").QuerySelector("[aria-label^='Edit Budget:']")!.ClickAsync(new()));
+        await cut.InvokeAsync(() => Row("Mobile").QuerySelector("input[type=number]")!.InputAsync(new ChangeEventArgs { Value = "800" }));
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".m-grid-row-error")));
 
-        await Save().ClickAsync(new());
+        await cut.InvokeAsync(() => Save().ClickAsync(new()));
         Assert.Equal(1, saved);
         cut.WaitForAssertion(() => Assert.Equal("Portal is checked out by Ann.", Row("Portal").QuerySelector(".m-grid-row-message")!.TextContent));
         Assert.NotEmpty(cut.FindAll(".m-grid-dirty"));
 
-        await Save().ClickAsync(new());
+        await cut.InvokeAsync(() => Save().ClickAsync(new()));
         Assert.Equal(2, saved);
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".m-grid-row-error, .m-grid-dirty")));
     }

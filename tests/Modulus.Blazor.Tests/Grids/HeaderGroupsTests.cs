@@ -65,6 +65,33 @@ public class HeaderGroupsTests : BunitContext
         Assert.Equal("", HeaderGroups.Rows(["name"], Groups));   // no band over a shown column
     }
 
+    [Fact]
+    public void Rows_PinnedColumns_GetPlaceholderCells_AndTheBandsSpanOnlyTheMiddle()
+    {
+        string[] columns = ["name", "position", "dept", "salary", "bonus", "status"];
+        var html = HeaderGroups.Rows(columns, Groups, pinnedLeft: 2, pinnedRight: 1);
+        var rows = html.Split("</tr>", StringSplitOptions.RemoveEmptyEntries);
+
+        // The top band row: two left placeholders, the middle bands, one right placeholder.
+        Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(rows[0], "data-m-pin=\"left\"").Count);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(rows[0], "data-m-pin=\"right\""));
+        Assert.StartsWith("<tr class=\"m-header-bands\"><td class=\"ant-table-cell ant-table-cell-fix-left m-header-band m-header-band-empty m-header-band-pin\" data-m-pin=\"left\"></td>", rows[0]);
+        Assert.EndsWith("<td class=\"ant-table-cell ant-table-cell-fix-right m-header-band m-header-band-empty m-header-band-pin\" data-m-pin=\"right\"></td>", rows[0]);
+
+        // Name and Position are pinned left and Status right, so the middle is Dept, Salary, Bonus: Job spans 1, Pay spans 2.
+        Assert.Contains("""colspan="1" data-m-span="1">Job</th>""", rows[1]);
+        Assert.Contains("""colspan="2" data-m-span="2">Pay</th>""", rows[1]);
+        Assert.DoesNotContain("data-m-span=\"6\"", html);
+    }
+
+    [Fact]
+    public void Rows_PinnedCountsAreClamped()
+    {
+        // More pins than columns: the pins stop at the columns that exist; with nothing left in the middle no band row is emitted.
+        Assert.Equal("", HeaderGroups.Rows(["position", "salary"], Groups, pinnedLeft: 5, pinnedRight: 5));
+
+    }
+
     public sealed class Row
     {
         public int Id { get; set; }
@@ -136,12 +163,16 @@ public class HeaderGroupsTests : BunitContext
         var heads = cut.FindAll("thead > tr");
         Assert.Equal(2, heads.Count);
         // Drag handle + checkbox + Name, Plan, Owner + delete.
-        Assert.Equal(["3", "2", "2"], heads[0].Children.Select(c => c.GetAttribute("colspan")));
-        Assert.Equal("Plan", heads[0].Children[1].TextContent);
-        Assert.Equal(heads[1].QuerySelectorAll("th").Length, heads[0].Children.Sum(c => int.Parse(c.GetAttribute("colspan")!)));
+        // The drag handle and checkbox are pinned: one placeholder each, then Name, Plan, Owner, and the delete column pinned right.
+        var band = heads[0].Children;
+        Assert.Equal(["left", "left"], band.Take(2).Select(c => c.GetAttribute("data-m-pin")));
+        Assert.Equal(["1", "2", "1"], band.Skip(2).Take(3).Select(c => c.GetAttribute("colspan")));   // Name, Plan, Owner
+        Assert.Equal("Plan", band[3].TextContent);
+        Assert.Equal("right", band[^1].GetAttribute("data-m-pin"));
+        Assert.Equal(heads[1].QuerySelectorAll("th").Length, band.Sum(c => c.HasAttribute("colspan") ? int.Parse(c.GetAttribute("colspan")!) : 1));
 
         columns[2].Hidden = true;
         cut.Render(p => p.Add(g => g.Columns, columns));
-        Assert.Equal(["3", "1", "2"], cut.FindAll("thead tr.m-header-bands > *").Select(c => c.GetAttribute("colspan")));
+        Assert.Equal(["1", "1", "1"], cut.FindAll("thead tr.m-header-bands > [colspan]").Select(c => c.GetAttribute("colspan")));
     }
 }

@@ -46,6 +46,9 @@ public class EditableGridTagHelper : TagHelper
     /// <summary>Content of an expanded row, e.g. a Razor template <c>@&lt;div&gt;…@item["notes"]…&lt;/div&gt;</c>.</summary>
     public Func<GridRecord, IHtmlContent>? RowDetail { get; set; }
 
+    /// <summary>Which rows expand (the Blazor grid's RowExpandable): a row that doesn't gets no expander. Default: all.</summary>
+    public Func<GridRecord, bool>? RowExpandable { get; set; }
+
     public bool AllowAddRow { get; set; } = true;
 
     /// <summary>Tooltip of the add-row button ("Add style", say).</summary>
@@ -307,12 +310,17 @@ public class EditableGridTagHelper : TagHelper
     // ---- Headers: sorting and column search, in the browser or (the nested grid) on the server ----
 
     // The band rows over the shown columns: the drag handle, checkbox and expand columns lead, the delete column ends.
-    private string BandRows(IReadOnlyList<GridColumn> visible, bool detail) =>
-        Modulus.Ui.Abstractions.HeaderGroups.Rows(
+    // The pinned columns: the leading helpers and pinned-left columns, and the trailing pinned-right columns and delete column.
+    private string BandRows(IReadOnlyList<GridColumn> visible, bool detail)
+    {
+        var left = (RowDraggable ? 1 : 0) + (Selectable ? 1 : 0) + (detail ? 1 : 0) + visible.TakeWhile(c => c.Fixed == GridFixed.Left).Count();
+        var right = (AllowDeleteRow ? 1 : 0) + visible.Reverse().TakeWhile(c => c.Fixed == GridFixed.Right).Count();
+        return Modulus.Ui.Abstractions.HeaderGroups.Rows(
             [.. Enumerable.Repeat<string?>(null, (RowDraggable ? 1 : 0) + (Selectable ? 1 : 0) + (detail ? 1 : 0)),
              .. visible.Select(c => (string?)c.Key),
              .. (AllowDeleteRow ? new string?[] { null } : [])],
-            HeaderGroups);
+            HeaderGroups, left, right);
+    }
 
     private int DragWidth => RowDraggable ? SortableHtml.RowHandleWidth : 0;
 
@@ -374,9 +382,12 @@ public class EditableGridTagHelper : TagHelper
         if (detail)
         {
             var fix = hasLeft ? $" style=\"position: sticky; left: {DragWidth + (Selectable ? SelectionWidth : 0)}px;\"" : "";
+            var expandable = !newRow && (RowExpandable?.Invoke(row) ?? true);
             var button = newRow
                 ? """<button type="button" class="ant-table-row-expand-icon ant-table-row-expand-icon-spaced" aria-hidden="true" tabindex="-1"></button>"""
-                : """<button type="button" class="ant-table-row-expand-icon ant-table-row-expand-icon-collapsed" aria-label="Expand row" title="Show or hide the details" aria-expanded="false" @click="toggleRow($el)"></button>""";
+                : expandable
+                    ? """<button type="button" class="ant-table-row-expand-icon ant-table-row-expand-icon-collapsed" aria-label="Expand row" title="Show or hide the details" aria-expanded="false" @click="toggleRow($el)"></button>"""
+                    : "";
             sb.Append($"""<td class="{Html.Cx("ant-table-cell", "ant-table-row-expand-icon-cell", hasLeft ? "ant-table-cell-fix-left" : null)}"{fix}>{index}{button}</td>""");
             index = "";
         }

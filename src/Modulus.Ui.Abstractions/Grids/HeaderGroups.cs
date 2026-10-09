@@ -58,18 +58,29 @@ public static class HeaderGroups
     /// The band rows over <paramref name="columns"/>, outermost first, for the top of a <c>&lt;thead&gt;</c>; empty
     /// when no band covers a shown column. A band's cell carries <c>data-m-span</c> (its columns), so hiding a column
     /// in the browser can narrow it (modulus-shell.js).
+    /// <para>
+    /// The first <paramref name="pinnedLeft"/> and last <paramref name="pinnedRight"/> columns are pinned (sticky) in the
+    /// header row. Their band cells are pinned too, one per column, so the bands that scroll under them stay under them;
+    /// modulus-shell.js copies each pinned cell's offset from the header cell below it. The bands span only the columns
+    /// between.
+    /// </para>
     /// </summary>
-    public static string Rows(IEnumerable<string?> columns, IEnumerable<HeaderGroup>? groups)
+    public static string Rows(IEnumerable<string?> columns, IEnumerable<HeaderGroup>? groups, int pinnedLeft = 0, int pinnedRight = 0)
     {
         var list = groups?.ToList() ?? [];
         if (list.Count == 0) return "";
         var shown = columns.ToList();
+        var lead = Math.Clamp(pinnedLeft, 0, shown.Count);
+        var trail = Math.Clamp(pinnedRight, 0, shown.Count - lead);
+        var middle = shown.Skip(lead).Take(shown.Count - lead - trail).ToList();
         var html = new StringBuilder();
         foreach (var level in Levels(list))
         {
-            var bands = Bands(shown, list, level);
+            var bands = Bands(middle, list, level);
             if (!bands.Any(b => b.Title is not null)) continue;
             html.Append("<tr class=\"m-header-bands\">");
+            for (var i = 0; i < lead; i++)
+                html.Append("<td class=\"ant-table-cell ant-table-cell-fix-left m-header-band m-header-band-empty m-header-band-pin\" data-m-pin=\"left\"></td>");
             foreach (var band in bands)
             {
                 var span = band.Span.ToString(CultureInfo.InvariantCulture);
@@ -79,6 +90,8 @@ public static class HeaderGroups
                     html.Append("<th class=\"ant-table-cell m-header-band\" scope=\"colgroup\" colspan=\"").Append(span).Append("\" data-m-span=\"").Append(span).Append("\">")
                         .Append(WebUtility.HtmlEncode(band.Title)).Append("</th>");
             }
+            for (var i = 0; i < trail; i++)
+                html.Append("<td class=\"ant-table-cell ant-table-cell-fix-right m-header-band m-header-band-empty m-header-band-pin\" data-m-pin=\"right\"></td>");
             html.Append("</tr>");
         }
         return html.ToString();

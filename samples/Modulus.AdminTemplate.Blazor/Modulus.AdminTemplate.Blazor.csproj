@@ -8,6 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Modulus.AspNetCore.Hosting\Modulus.AspNetCore.Hosting.csproj" />
     <ProjectReference Include="..\..\src\Modulus.Blazor\Modulus.Blazor.csproj" />
     <ProjectReference Include="..\..\src\Modulus.Ui.Assets\Modulus.Ui.Assets.csproj" />
     <ProjectReference Include="..\..\src\Modulus.Ui.Abstractions\Modulus.Ui.Abstractions.csproj" />

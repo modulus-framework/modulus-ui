@@ -1,0 +1,52 @@
+@model QueryPage
+@* Visual filter: the builder (app-query-builder) is a GET form whose fields are the filter; the page filters the
+   shipments with TableQuery.Filters and lists the rows it leaves. The Blazor sample draws the same builder with the
+   QueryBuilder component. *@
+<app-page-header pretitle="Tables" title="Query builder" subtitle="Build a filter from the fields, group conditions with all or any, and see the shipments it leaves."></app-page-header>
+
+<div class="m-card m-query-builder-card">
+    <app-query-builder schema="Model.Schema" model="Model.Filter" action="/tables/query" />
+</div>
+
+<div class="m-query-summary">
+    <span class="m-badge m-badge-gray-lt">@Model.Matches.ToString("N0")</span>
+    <span>shipments match</span>
+    <span class="m-muted">· @Model.Sentence</span>
+    <span class="m-query-total">Total <strong>@Model.Total.ToString("N2")</strong></span>
+</div>
+
+<div class="m-card">
+    <table class="ant-table m-query-table" aria-label="Shipments that match the filter">
+        <thead class="ant-table-thead">
+            <tr>
+                <th class="ant-table-cell">Reference</th>
+                <th class="ant-table-cell">Customer</th>
+                <th class="ant-table-cell">City</th>
+                <th class="ant-table-cell">Status</th>
+                <th class="ant-table-cell" style="text-align: right;">Amount</th>
+                <th class="ant-table-cell">Date</th>
+            </tr>
+        </thead>
+        <tbody class="ant-table-tbody">
+            @foreach (var s in Model.Rows)
+            {
+                <tr class="ant-table-row">
+                    <td class="ant-table-cell">@s.Reference</td>
+                    <td class="ant-table-cell">@s.Customer</td>
+                    <td class="ant-table-cell">@s.City</td>
+                    <td class="ant-table-cell">@s.Status</td>
+                    <td class="ant-table-cell" style="text-align: right;">@s.Amount.ToString("N2")</td>
+                    <td class="ant-table-cell">@s.Date.ToString("yyyy-MM-dd")</td>
+                </tr>
+            }
+            @if (Model.Rows.Count == 0)
+            {
+                <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="6">No shipments match this filter.</td></tr>
+            }
+        </tbody>
+    </table>
+    @if (Model.Matches > Model.Rows.Count)
+    {
+        <div class="m-muted m-query-more">Showing the first @Model.Rows.Count of @Model.Matches.ToString("N0") rows.</div>
+    }
+</div>

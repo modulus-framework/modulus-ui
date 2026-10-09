@@ -1,0 +1,18 @@
+@*
+    A record's status as a pill: its tone (success, processing, error, warning or default) colours the dot and the text.
+    The MVC app-status-badge draws the same markup.
+
+    <StatusBadge Tone="success">Approved</StatusBadge>
+*@
+
+<span class="m-status-badge m-status-@Tone">
+    <span class="m-status-dot" aria-hidden="true"></span>@ChildContent
+</span>
+
+@code {
+    /// <summary>The tone: success, processing, error, warning or default.</summary>
+    [Parameter] public string Tone { get; set; } = "default";
+
+    /// <summary>The status text.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

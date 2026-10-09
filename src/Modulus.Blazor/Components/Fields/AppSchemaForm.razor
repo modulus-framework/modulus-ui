@@ -1,0 +1,135 @@
+@* Dynamic form: the fields of a FormSchema, drawn from its kinds and bound to Values (text by field key; a switch is "true" or "false").
+   The item classes and messages come from FormSchemaHtml, so the markup matches the MVC <app-schema-form>. Checks run where the page
+   asks (Schema.Validate) and come back through Problems. Values raises ValuesChanged after each change, so @bind-Values works. *@
+@using Modulus.Ui.Abstractions.Forms
+
+<div class="m-schema-form" id="@Id">
+    @foreach (var field in Schema.Fields)
+    {
+        var fieldId = Id + "-" + field.Key;
+        var errors = FormSchemaHtml.Messages(Problems ?? [], field.Key);
+        var value = Get(field.Key);
+        var invalid = errors.Count > 0 ? "true" : null;
+
+        <div class="@FormSchemaHtml.ItemClass(field, errors)" data-key="@field.Key">
+            <div class="ant-row ant-form-item-row ant-form-item-row-vertical">
+                <div class="ant-form-item-label"><label for="@fieldId" class="@(field.Required ? "ant-form-item-required" : null)">@field.Label</label></div>
+                <div class="ant-col ant-form-item-control">
+                    <div class="ant-form-item-control-input">
+                        <div class="ant-form-item-control-input-content">
+                            @switch (field.Kind)
+                            {
+                                case FormFieldKind.Multiline:
+                                    <textarea class="ant-input" id="@fieldId" name="@field.Key" rows="3" maxlength="@field.MaxLength" placeholder="@field.Placeholder"
+                                              aria-invalid="@invalid" @onchange="e => Set(field.Key, e)">@value</textarea>
+                                    break;
+
+                                case FormFieldKind.Choice:
+                                    <select class="m-select" id="@fieldId" name="@field.Key" aria-invalid="@invalid" @onchange="e => Set(field.Key, e)">
+                                        @if (field.Placeholder is not null)
+                                        {
+                                            <option value="" selected="@(value is null or "")">@field.Placeholder</option>
+                                        }
+                                        @foreach (var option in field.Options)
+                                        {
+                                            <option value="@option.Value" selected="@(option.Value == value)">@option.Label</option>
+                                        }
+                                    </select>
+                                    break;
+
+                                case FormFieldKind.Switch:
+                                    <label class="ant-checkbox-wrapper">
+                                        <span class="ant-checkbox">
+                                            <input type="checkbox" class="ant-checkbox-input" id="@fieldId" name="@field.Key" value="true" checked="@FormSchema.IsOn(value)"
+                                                   aria-invalid="@invalid" @onchange="e => SetSwitch(field.Key, e)" />
+                                            <span class="ant-checkbox-inner"></span>
+                                        </span>
+                                        <span>@(field.Placeholder ?? "Yes")</span>
+                                    </label>
+                                    break;
+
+                                case FormFieldKind.Money:
+                                    <span class="ant-input-wrapper ant-input-group">
+                                        <span class="ant-input-group-addon">@field.Currency</span>
+                                        <input type="number" inputmode="decimal" step="any" class="ant-input" id="@fieldId" name="@field.Key" value="@value"
+                                               min="@field.Min" max="@field.Max" placeholder="@field.Placeholder" aria-invalid="@invalid" @onchange="e => Set(field.Key, e)" />
+                                    </span>
+                                    break;
+
+                                case FormFieldKind.Number:
+                                    <input type="number" inputmode="decimal" step="any" class="ant-input" id="@fieldId" name="@field.Key" value="@value"
+                                           min="@field.Min" max="@field.Max" placeholder="@field.Placeholder" aria-invalid="@invalid" @onchange="e => Set(field.Key, e)" />
+                                    break;
+
+                                case FormFieldKind.Date:
+                                    <input type="date" class="ant-input" id="@fieldId" name="@field.Key" value="@value" aria-invalid="@invalid" @onchange="e => Set(field.Key, e)" />
+                                    break;
+
+                                default:
+                                    <input type="text" class="ant-input" id="@fieldId" name="@field.Key" value="@value" maxlength="@field.MaxLength"
+                                           placeholder="@field.Placeholder" aria-invalid="@invalid" @onchange="e => Set(field.Key, e)" />
+                                    break;
+                            }
+                        </div>
+                    </div>
+                    @if (errors.Count > 0)
+                    {
+                        <div class="ant-form-item-explain ant-form-item-explain-connected" role="alert">
+                            @foreach (var error in errors)
+                            {
+                                <div class="ant-form-item-explain-error">@error</div>
+                            }
+                        </div>
+                    }
+                    else if (field.Help is not null)
+                    {
+                        <div class="ant-form-item-explain"><div>@field.Help</div></div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>The form's fields and their rules.</summary>
+    [Parameter, EditorRequired] public FormSchema Schema { get; set; } = default!;
+
+    /// <summary>The values by field key. Changes made in the form come back through ValuesChanged.</summary>
+    [Parameter] public IReadOnlyDictionary<string, string?>? Values { get; set; }
+
+    /// <summary>Raised after each change, with a copy of every value.</summary>
+    [Parameter] public EventCallback<IReadOnlyDictionary<string, string?>> ValuesChanged { get; set; }
+
+    /// <summary>The messages to show, from <see cref="FormSchema.Validate"/>.</summary>
+    [Parameter] public IReadOnlyList<FormProblem>? Problems { get; set; }
+
+    /// <summary>Prefix of the control ids (the field's id is "<c>Id</c>-<c>key</c>").</summary>
+    [Parameter] public string Id { get; set; } = "schema";
+
+    private Dictionary<string, string?> _values = [];
+    private IReadOnlyDictionary<string, string?>? _last;
+    private bool _hasLast;
+
+    protected override void OnParametersSet()
+    {
+        // A values dictionary from outside (or the copy this form sent back) replaces what the form holds.
+        if (_hasLast && ReferenceEquals(Values, _last)) return;
+        _values = Values is null ? [] : new Dictionary<string, string?>(Values);
+        _last = Values;
+        _hasLast = true;
+    }
+
+    private string? Get(string key) => _values.TryGetValue(key, out var v) ? v : null;
+
+    private Task Set(string key, ChangeEventArgs e) => Store(key, e.Value?.ToString());
+
+    private Task SetSwitch(string key, ChangeEventArgs e) =>
+        Store(key, (e.Value is bool on ? on : FormSchema.IsOn(e.Value?.ToString())) ? "true" : "false");
+
+    private async Task Store(string key, string? value)
+    {
+        _values[key] = value;
+        await ValuesChanged.InvokeAsync(new Dictionary<string, string?>(_values));
+    }
+}

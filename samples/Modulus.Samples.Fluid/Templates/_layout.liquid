@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title }} · Modulus Liquid</title>
+    {% modulus_head %}
+    <style>
+        .m-liquid-scroll { overflow-x: auto; }
+        .m-liquid-table { width: 100%; border-collapse: collapse; }
+        .m-liquid-table th, .m-liquid-table td { padding: 8px 10px; border-bottom: 1px solid var(--m-border); text-align: left; }
+        .m-liquid-table th { color: var(--m-text-secondary); font-weight: 600; }
+        .m-liquid-table .m-num { text-align: right; font-variant-numeric: tabular-nums; }
+    </style>
+</head>
+<body>
+    <main class="m-liquid-page" style="max-width: 1100px; margin: 0 auto; padding: 24px 16px;">
+        {{ content }}
+    </main>
+</body>
+</html>

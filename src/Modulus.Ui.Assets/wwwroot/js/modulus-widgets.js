@@ -629,8 +629,11 @@
                 // Clicks inside the popup -------------------------------------------------------------------
                 pick: function (e) {
                     var t = e.target instanceof Element ? e.target : null;
-                    if (!t) return;
-                    var nav = t.closest('[data-nav]');
+                    var drop = this.$refs.drop;
+                    if (!t || !drop || !drop.contains(t)) return;
+                    // The lookups stop at the popup: a page's own [data-nav] (html has one) must not match a click on a cell.
+                    var within = function (sel) { var el = t.closest(sel); return el && drop.contains(el) ? el : null; };
+                    var nav = within('[data-nav]');
                     if (nav) {
                         // Months in the date and week panels (±1, ±12); years elsewhere (±12 is a year, ±120 a decade).
                         var step = +nav.getAttribute('data-nav');
@@ -640,9 +643,9 @@
                         this.year = d.getFullYear(); this.month = d.getMonth();
                         return;
                     }
-                    var mode = t.closest('[data-mode]');
+                    var mode = within('[data-mode]');
                     if (mode) { this.mode = mode.getAttribute('data-mode'); return; }
-                    var preset = t.closest('[data-preset]');
+                    var preset = within('[data-preset]');
                     if (preset) {
                         var p = cfg.presets[+preset.getAttribute('data-preset')];
                         this.values = [parseAny(p.from), parseAny(p.to)];
@@ -653,10 +656,10 @@
                         this.close(false);
                         return;
                     }
-                    if (t.closest('[data-today]')) { this.commit(new Date()); return; }
-                    if (t.closest('[data-now]')) { this.commit(new Date()); return; }
-                    if (t.closest('[data-ok]')) { this.commit(this.pending || new Date()); return; }
-                    var time = t.closest('[data-time]');
+                    if (within('[data-today]')) { this.commit(new Date()); return; }
+                    if (within('[data-now]')) { this.commit(new Date()); return; }
+                    if (within('[data-ok]')) { this.commit(this.pending || new Date()); return; }
+                    var time = within('[data-time]');
                     if (time) {
                         var v = time.getAttribute('data-time'), n = +v.slice(1), pd = new Date((this.pending || new Date(new Date().setHours(0, 0, 0, 0))).getTime());
                         if (v[0] === 'h') pd.setHours(n); else if (v[0] === 'm') pd.setMinutes(n); else pd.setSeconds(n);
@@ -668,7 +671,7 @@
                         this.$nextTick(function () { self2.scrollTime(); });
                         return;
                     }
-                    var cell = t.closest('td[data-v]');
+                    var cell = within('td[data-v]');
                     if (!cell || cell.classList.contains('ant-picker-cell-disabled')) return;
                     var day = parseAny(cell.getAttribute('data-v'));
                     if (this.mode === 'year') {
@@ -2534,6 +2537,8 @@
                 value: cfg.value || '', label: cfg.label || '', text: cfg.label || '', cols: cfg.columns || [],
                 open: false, active: -1, list: [], loading: false,
                 dialog: false, query: '', rows: [], total: 0, row: -1,
+                // Columns set: the suggestions show the columns too. limit is how many the dialog asks for; "more" raises it by a page.
+                multi: !!cfg.multi, titles: cfg.titles || [], page: cfg.page || 50, limit: cfg.page || 50,
                 // total is -1 when a server search found more than it returned (its real count is unknown).
                 get countText() {
                     if (this.total < 0) return 'Showing the first ' + this.rows.length + '. Refine the search to see more.';
@@ -2644,12 +2649,14 @@
                     var input = this.$refs.input;
                     this.$nextTick(function () { input.focus(); });
                 },
-                search: function (first) {
+                more: function () { this.limit += this.page; this.search(false, true); },
+                search: function (first, more) {
                     var self = this, mine = ++seq;
+                    if (!more) this.limit = this.page;
                     clearTimeout(timer);
                     this.loading = true;
                     var run = function () {
-                        self.find(self.query, cfg.page).then(function (r) {
+                        self.find(self.query, self.limit).then(function (r) {
                             if (mine !== seq) return;
                             self.rows = r.items;
                             self.total = r.total;

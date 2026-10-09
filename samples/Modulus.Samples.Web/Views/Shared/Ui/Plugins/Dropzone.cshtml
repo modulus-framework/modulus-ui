@@ -1,5 +1,5 @@
-@* Dropzone: drag-and-drop uploads with previews, progress, type / size / count limits and remove. Files go to
-   POST /plugins/dropzone/upload (the same URL in every sample), which checks them and throws them away. *@
+@* Dropzone: drag-and-drop uploads on Uppy (previews, progress, type / size / count limits, remove) and a one-file button upload.
+   Files go to POST /plugins/dropzone/upload (the same URL in every sample), which checks them and throws them away. *@
 @{
     var limits = $"PDF or images, up to {PluginsContent.MaxUploadMb} MB each, at most {PluginsContent.MaxUploadFiles} files.";
 }
@@ -9,8 +9,8 @@
     <div class="m-card">
         <div class="m-card-header"><div><h3 class="m-card-title">Drag and drop, with previews</h3><p class="m-card-subtitle">@limits A file that breaks a rule is refused with the reason.</p></div></div>
         <div class="m-card-body">
-            <app-upload name="file" drag multiple list-type="picture" accept="@PluginsContent.UploadAccept" max-size="PluginsContent.MaxUploadMb" max-count="PluginsContent.MaxUploadFiles"
-                        action="/plugins/dropzone/upload" text="Drop files here or click to upload" hint="@limits" />
+            <app-uploader id="dropzone-uppy" action="/plugins/dropzone/upload" accept="@PluginsContent.UploadAccept" max-size="@(PluginsContent.MaxUploadMb * 1024L * 1024)"
+                          max-count="@PluginsContent.MaxUploadFiles" note="@limits" label="Drop files to upload" />
         </div>
     </div>
 
@@ -18,7 +18,7 @@
         <div class="m-card">
             <div class="m-card-header"><div><h3 class="m-card-title">Button upload</h3><p class="m-card-subtitle">One file at a time, uploaded at once</p></div></div>
             <div class="m-card-body">
-                <app-upload name="file" accept=".pdf" max-size="PluginsContent.MaxUploadMb" action="/plugins/dropzone/upload" text="Upload a PDF" hint="PDF only; the new file replaces the old one." />
+                <app-upload name="file" accept=".pdf" max-size="@PluginsContent.MaxUploadMb" action="/plugins/dropzone/upload" text="Upload a PDF" hint="PDF only; the new file replaces the old one." />
             </div>
         </div>
         <div class="m-card">

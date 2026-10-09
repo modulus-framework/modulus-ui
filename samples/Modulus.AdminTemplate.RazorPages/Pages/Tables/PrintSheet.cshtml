@@ -1,0 +1,7 @@
+@page "/tables/print/sheet"
+@model PrintSheetModel
+@{
+    ViewData["Title"] = Model.Sheet.Title;
+    Layout = "_BlankLayout";
+}
+<partial name="Ui/Tables/PrintSheet" model="Model.Sheet" />

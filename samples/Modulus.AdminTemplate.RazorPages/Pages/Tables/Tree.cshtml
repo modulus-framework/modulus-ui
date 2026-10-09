@@ -1,0 +1,6 @@
+@page "/tables/tree/{handler?}"
+@model TreeModel
+@{
+    ViewData["Title"] = "Tree grid";
+}
+<partial name="Ui/Tables/Tree" model="Model.Grid" />
