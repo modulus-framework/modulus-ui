@@ -524,7 +524,9 @@ html[data-nav='dark'] .m-hnav-item.active > details > .m-hnav-link::after { back
     html[data-layout='vertical'] .m-topbar-brand { display: none; }
 }
 
+.m-crumbs-bar { display: none; }
 @media (max-width: 991.98px) {
+    .m-crumbs-bar { display: block; padding: 6px 16px; border-bottom: 1px solid var(--m-border, #e5e7eb); background: var(--m-bg-container, #fff); overflow-x: auto; }
     .m-navbar { display: none; }
     .m-topbar-brand { margin-inline-end: auto; }
     .m-sidebar {
@@ -624,14 +626,33 @@ html[data-nav='dark'] .m-nav-app :is(.m-hnav-item.active > .m-hnav-link, .m-hnav
 @media (max-width: 639.98px) { .m-module-menu-wide .m-module-grid { grid-template-columns: minmax(0, 1fr); } }
 
 /* Where the page sits in the app's menu: SAP breadcrumbs, links in the tone, "/" between */
-.m-nav-crumbs { display: flex; flex: none; align-items: center; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--m-nav-muted); white-space: nowrap; }
-.m-nav-crumbs li { display: flex; align-items: center; gap: 8px; }
-.m-nav-crumbs li + li::before { content: '/'; color: var(--m-nav-muted); opacity: 0.6; }
-.m-nav-crumbs a { color: var(--m-app-tone); }
-.m-nav-crumbs a:hover { color: var(--m-app-tone); text-decoration: underline; }
-.m-nav-crumbs [aria-current] { color: var(--m-nav-text-strong); font-weight: 500; }
-html[data-nav='dark'] .m-nav-crumbs a { color: rgba(255, 255, 255, 0.85); }
-@media (max-width: 1199.98px) { .m-nav-crumbs { display: none; } }
+/* Breadcrumb trail (CrumbHtml): the Odoo control-panel path. Levels are separated by slashes, the current page is bold and not a
+   link, the first level is the app with its icon. Long trails collapse into a "…" menu (a native details); on a phone the middle
+   levels move into that menu. Labels truncate rather than wrap. */
+.m-crumbs { display: flex; min-width: 0; flex: 0 1 auto; }
+.m-crumbs-list { display: flex; align-items: center; flex-wrap: nowrap; min-width: 0; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--m-nav-muted); }
+.m-crumb { display: flex; align-items: center; min-width: 0; white-space: nowrap; }
+.m-crumb + .m-crumb::before { content: '/'; margin: 0 8px; color: var(--m-nav-muted); opacity: 0.6; }
+.m-crumb a { display: inline-flex; align-items: center; gap: 6px; min-width: 0; padding: 2px 4px; margin: 0 -4px; border-radius: 4px; color: var(--m-app-tone); text-decoration: none; }
+.m-crumb a:hover { background: color-mix(in srgb, var(--m-app-tone) 10%, transparent); text-decoration: none; }
+.m-crumb a:focus-visible, .m-crumb-menu a:focus-visible { outline: 2px solid var(--m-app-tone); outline-offset: 1px; }
+.m-crumb-label { overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+.m-crumb-icon { width: 15px; height: 15px; flex: none; }
+.m-crumb-current { color: var(--m-nav-text-strong); font-weight: 600; }
+.m-crumb-more { position: relative; }
+.m-crumb-menu-wrap summary { list-style: none; cursor: pointer; padding: 0 6px; border-radius: 4px; color: var(--m-nav-muted); line-height: 1.5; }
+.m-crumb-menu-wrap summary::-webkit-details-marker { display: none; }
+.m-crumb-menu-wrap summary:hover, .m-crumb-menu-wrap[open] summary { background: color-mix(in srgb, var(--m-app-tone) 10%, transparent); color: var(--m-app-tone); }
+.m-crumb-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; min-width: 200px; max-width: 320px; margin: 0; padding: 6px; list-style: none; background: var(--m-nav-surface, #fff); border: 1px solid var(--m-border, #e5e7eb); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12); }
+.m-crumb-menu li a, .m-crumb-menu li span { display: block; padding: 6px 10px; border-radius: 6px; color: var(--m-text, #1f2937); text-decoration: none; }
+.m-crumb-menu li a:hover { background: color-mix(in srgb, var(--m-app-tone) 10%, transparent); }
+.m-crumb-menu li span { color: var(--m-nav-muted); }
+.m-crumb-phone-only { display: none; }
+html[data-nav='dark'] .m-crumb a { color: rgba(255, 255, 255, 0.85); }
+@media (max-width: 639.98px) {
+    .m-crumb-mid { display: none; }
+    .m-crumb-phone-only { display: flex; }
+}
 
 /* App's own menu: sidebar. The module switcher heads it on a card of the app's tone; the menu below is
    compact, grouped under small section labels, and marks the page with a bar and tile of the tone. */
@@ -1280,8 +1301,6 @@ html[data-nav='dark'] .m-mini-navline, .m-mini-darkline { fill: rgba(255, 255, 2
 .m-nav-app .m-hnav-item:not(.active) > details > .m-hnav-link:hover::after {
     content: ''; position: absolute; inset-inline: 14px; bottom: 0; height: 3px; border-radius: 3px 3px 0 0; background: var(--m-nav-border);
 }
-.m-nav-crumbs a { display: inline-flex; align-items: center; gap: 6px; }
-.m-nav-crumbs-icon { width: 15px; height: 15px; }
 /* Sidebar (app menu): the open page on a wash of the tone that fades toward the end. */
 .m-nav-app .m-snav > .m-snav-item.active > .m-snav-link {
     background: linear-gradient(90deg, color-mix(in srgb, var(--m-app-tone) 15%, transparent), color-mix(in srgb, var(--m-app-tone) 5%, transparent));

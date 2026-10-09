@@ -1,4 +1,5 @@
 @page "/ui/components"
+@using Modulus.Blazor.Components.Navigation
 @inject IMessageService Message
 @inject INotificationService Notification
 @inject SampleStore Store
@@ -164,6 +165,10 @@
 <section id="navigation" class="m-demo-section">
     <h2 class="m-section-title">Navigation</h2>
     <div class="m-demo-grid">
+        <Card Bordered="false" Title="Control-panel breadcrumb">
+            <p class="m-demo-desc">The Odoo-style trail: the app first, the current page bold. A long trail folds its middle levels into a "…" menu.</p>
+            <AppCrumbs Items="_demoCrumbs" />
+        </Card>
         <Card Bordered="false" Title="Breadcrumb and Tabs">
             <p class="m-demo-desc">Show where the user is, and switch between views of the same object.</p>
             <Breadcrumb>
@@ -750,6 +755,15 @@
 </section>
 
 @code {
+    private static readonly List<Modulus.Ui.Abstractions.Navigation.Crumb> _demoCrumbs =
+    [
+        new("Home", "/", "home"),
+        new("Forms", "/forms/layouts"),
+        new("Tables", "/tables/large"),
+        new("Query", "/tables/query"),
+        new("Orders by region"),
+    ];
+
     private static readonly (string Id, string Label)[] Sections =
         [("general", "General"), ("layout", "Layout"), ("navigation", "Navigation"), ("data-entry", "Data Entry"), ("data-display", "Data Display"), ("feedback", "Feedback")];
 

@@ -172,6 +172,16 @@
     <section id="navigation" class="m-demo-section">
         <h2 class="m-section-title">Navigation</h2>
         <div class="m-demo-grid">
+            <app-card title="Control-panel breadcrumb">
+                <p class="m-demo-desc">The Odoo-style trail: the app first, the current page bold. A long trail folds its middle levels into a "…" menu.</p>
+                <app-crumbs>
+                    <app-crumb href="/" icon="home">Home</app-crumb>
+                    <app-crumb href="/forms/layouts">Forms</app-crumb>
+                    <app-crumb href="/tables/large">Tables</app-crumb>
+                    <app-crumb href="/tables/query">Query</app-crumb>
+                    <app-crumb>Orders by region</app-crumb>
+                </app-crumbs>
+            </app-card>
             <app-card title="Breadcrumb and Tabs">
                 <p class="m-demo-desc">Show where the user is, and switch between views of the same object.</p>
                 <app-breadcrumb>

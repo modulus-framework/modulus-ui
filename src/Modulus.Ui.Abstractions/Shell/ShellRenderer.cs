@@ -164,7 +164,10 @@ public static class ShellRenderer
     /// The header row and the horizontal navbar in one wrapper, which the theme settings' header modes (sticky,
     /// floating) and the condensed layout (menu inside the header row) style as a unit. Render it once, after the sidebar.
     /// </summary>
-    public static string Header(ShellView view) => """<div class="m-header" id="m-header">""" + Topbar(view) + Navbar(view) + "</div>";
+    public static string Header(ShellView view) =>
+        """<div class="m-header" id="m-header">""" + Topbar(view) + Navbar(view) +
+        // The module bar (with its trail) is hidden below 992 px, so the trail is repeated in a strip that shows only there.
+        (ModuleTrail(view) is { Length: > 0 } strip ? $"""<div class="m-crumbs-bar">{strip}</div>""" : "") + "</div>";
 
     public static string Topbar(ShellView view)
     {
@@ -540,16 +543,22 @@ public static class ShellRenderer
             ModuleSwitcher(sb, view, shellApp);
             foreach (var item in menu.Children) NavbarItem(sb, item, view.Path, icons: false);
             sb.Append("</ul>");
-            if (Breadcrumb(menu, view.Path) is { Count: > 0 } trail)
-            {
-                sb.Append($"""<ol class="m-nav-crumbs" aria-label="You are here"><li><a href="{Url(shellApp.Href)}">{Icon(shellApp.Icon, "m-nav-crumbs-icon")}{E(shellApp.Name)}</a></li>""");
-                for (var i = 0; i < trail.Count; i++)
-                    sb.Append(i == trail.Count - 1 ? $"""<li aria-current="page">{E(trail[i].Label)}</li>""" : $"""<li>{E(trail[i].Label)}</li>""");
-                sb.Append("</ol>");
-            }
+            sb.Append(ModuleTrail(view));
             sb.Append("</div></nav>");
         }
         return sb.ToString();
+    }
+
+    // The app, then the sections down to the page on screen, as a breadcrumb trail; empty when no app or menu item matches.
+    private static string ModuleTrail(ShellView view)
+    {
+        var app = FindApp(view);
+        if (app is not var (shellApp, menu) || Breadcrumb(menu, view.Path) is not { Count: > 0 } trail) return "";
+        // The app first, then the sections and the page; the page is the current level and is not a link.
+        var crumbs = new List<Crumb> { new(shellApp.Name, Url(shellApp.Href), shellApp.Icon) };
+        crumbs.AddRange(trail.Select((item, i) => new Crumb(item.Label,
+            i == trail.Count - 1 || item.Href is null ? null : Url(item.Href), item.Icon)));
+        return CrumbHtml.Trail(crumbs);
     }
 
     // The app's name opens a list of every app to jump to (SAP's product switch), and the full launcher.

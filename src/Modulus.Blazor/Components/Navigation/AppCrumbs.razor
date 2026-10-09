@@ -1,0 +1,16 @@
+@* The breadcrumb trail (CrumbHtml): the levels from the app down to the current page, collapsing into a "…" menu when long.
+   The same markup as the MVC <app-crumbs>. *@
+@using Modulus.Ui.Abstractions.Navigation
+
+@((MarkupString)CrumbHtml.Trail(Items.ToList(), MaxVisible, Label))
+
+@code {
+    /// <summary>The levels, first (the app) to last (the current page, which is not a link).</summary>
+    [Parameter, EditorRequired] public IEnumerable<Crumb> Items { get; set; } = [];
+
+    /// <summary>The most levels shown inline; a longer trail keeps the first and last and folds the middle into "…".</summary>
+    [Parameter] public int MaxVisible { get; set; } = 4;
+
+    /// <summary>Accessible name of the trail.</summary>
+    [Parameter] public string Label { get; set; } = "You are here";
+}
