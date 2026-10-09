@@ -443,10 +443,11 @@ a.ant-btn-lg { line-height: 42px; }
 /* The wrapper draws nothing, not even when focused (the global focus rule would ring it with !important, a second
    border around the textarea's own); the textarea draws the one border. antd removes the border of an .ant-input in an
    affix wrapper (`.ant-input-affix-wrapper > .ant-input { border: none }`), so it is put back on the textarea. */
-.ant-input-textarea-show-count .ant-input-affix-wrapper:has(> textarea) {
+.ant-input-textarea-show-count > .ant-input-affix-wrapper:has(> textarea.ant-input)::before { content: none; display: none; }
+.ant-input-textarea-show-count > .ant-input-affix-wrapper:has(> textarea.ant-input) {
     display: block; padding: 0; border: 0 !important; border-radius: 0; background: none; box-shadow: none !important; outline: 0;
 }
-.ant-input-textarea-show-count .ant-input-affix-wrapper > textarea.ant-input { border: 1px solid var(--m-border); background: var(--m-bg-container, transparent); }
+.ant-input-textarea-show-count .ant-input-affix-wrapper > textarea.ant-input { display: block; border: 1px solid var(--m-border); background: var(--m-bg-container, transparent); }
 .ant-input-textarea-show-count .ant-input-affix-wrapper > textarea.ant-input:hover { border-color: var(--m-border-strong); }
 .ant-input-textarea-show-count .ant-input-affix-wrapper > textarea.ant-input:focus {
     border-color: color-mix(in srgb, var(--m-primary) 60%, var(--m-border));
@@ -2869,3 +2870,19 @@ html[data-density='compact'] .m-settings-title { margin-bottom: 16px; font-size:
     .m-print-table tfoot { display: table-row-group; }
 }
 .m-kanban-error { color: var(--m-error); font-size: 12px; }
+
+/* A rounded input (the form elements page): the field takes a pill shape, with room for its icons. */
+.ant-input.m-input-rounded { border-radius: 999px; padding-inline: 16px; }
+
+/* Form elements: a stacked radio or checkbox group (vertical), a floating label over a field (the label sits in the field until
+   the field is focused or filled; the field needs placeholder=" "), a spinning loader icon in a field (the field gets class
+   m-input-loading), and the description under a checkbox. */
+.m-choice-vertical.ant-radio-group, .m-choice-vertical.ant-checkbox-group,
+.m-choice-vertical > .ant-radio-group, .m-choice-vertical > .ant-checkbox-group { display: flex; flex-direction: column; gap: 8px; }
+.m-float { position: relative; }
+.m-float > .ant-input { padding-top: 18px; padding-bottom: 2px; }
+.m-float > label { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--m-text-secondary, #666); pointer-events: none; transition: top 0.15s, font-size 0.15s, transform 0.15s; }
+.m-float > .ant-input:focus + label, .m-float > .ant-input:not(:placeholder-shown) + label { top: 7px; transform: none; font-size: 12px; }
+@keyframes m-spin { to { transform: rotate(360deg); } }
+.m-input-loading .ant-input-prefix > span, .m-input-loading .ant-input-suffix > span { display: inline-flex; animation: m-spin 1s linear infinite; }
+.m-check-desc { margin: 2px 0 10px 24px; color: var(--m-text-secondary, #666); font-size: 12px; }

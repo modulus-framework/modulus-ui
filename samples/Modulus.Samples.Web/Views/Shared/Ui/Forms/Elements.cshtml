@@ -1,0 +1,118 @@
+@model FormElementsPage
+@using Microsoft.AspNetCore.Mvc.Rendering
+@* Every form element of the Tabler form-elements page, one Modulus control each: inputs and their sizes, icons and add-ons,
+   textareas, selects, datalists, switches, radios, checkboxes, ranges, dates, colours, files and validation states. The form
+   submits with GET and keeps no state. The Blazor sample renders the same page. *@
+@{
+    static IEnumerable<SelectListItem> Items(IEnumerable<string> values) => values.Select(v => new SelectListItem(v, v));
+    string[] Chosen = ["C#", "Go"];
+    static IEnumerable<SelectListItem> Picked(IEnumerable<string> values, params string[] chosen) => values.Select(v => new SelectListItem(v, v, chosen.Contains(v)));
+}
+<app-page-header pretitle="Forms" title="Form elements" subtitle="Every input, select, choice, range, date, colour and file control, with the variants of the Tabler form elements page."></app-page-header>
+
+<form method="get" action="/forms/elements" class="ant-form ant-form-vertical" novalidate>
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card" id="text-inputs">
+            <div class="m-card-header"><div><h2 class="m-card-title">Text inputs</h2><p class="m-card-subtitle">Types, states, shapes and icons of the single-line input.</p></div></div>
+            <div class="m-card-body">
+                <app-form-item label="Text"><app-input asp-for="Input.Text" placeholder="Text input" /></app-form-item>
+                <app-form-item label="Password"><app-input asp-for="Input.Password" type="password" placeholder="Password" /></app-form-item>
+                <app-form-item label="Disabled"><app-input name="disabled" value="Can't be changed" disabled /></app-form-item>
+                <app-form-item label="Readonly"><input class="ant-input" name="readonly" value="Read only" readonly /></app-form-item>
+                <app-form-item label="Rounded"><input class="ant-input m-input-rounded" name="rounded" placeholder="Rounded corners" /></app-form-item>
+                <app-form-item label="Flush (no border)"><app-input name="flush" bordered="false" placeholder="Flush control" /></app-form-item>
+                <app-form-item label="Leading search icon"><app-input name="search-icon" prefix-icon="search" placeholder="Search" /></app-form-item>
+                <app-form-item label="Leading user icon"><app-input name="user-icon" prefix-icon="user" placeholder="Username" /></app-form-item>
+                <app-form-item label="Sizes">
+                    <div>
+                        <app-input name="size-large" size="large" placeholder="Large" />
+                        <app-input name="size-default" placeholder="Default" />
+                        <app-input name="size-small" size="small" placeholder="Small" />
+                    </div>
+                </app-form-item>
+                <app-form-item label="Floating label"><div class="m-float"><input class="ant-input" id="float-email" name="float-email" placeholder=" " /><label for="float-email">Email address</label></div></app-form-item>
+                <app-form-item label="Trailing loader"><app-input name="loader-trailing" class="m-input-loading" suffix-icon="loading" placeholder="Checking" /></app-form-item>
+                <app-form-item label="Leading loader"><app-input name="loader-leading" class="m-input-loading" prefix-icon="loading" placeholder="Checking" /></app-form-item>
+                <app-form-item label="Separated input with button"><app-input-search asp-for="Input.Search" placeholder="Search the site" enter-button="Search" /></app-form-item>
+            </div>
+        </div>
+
+        <div class="m-card" id="input-groups">
+            <div class="m-card-header"><div><h2 class="m-card-title">Input groups and validation</h2><p class="m-card-subtitle">Text before or after the field, and the states a field can show.</p></div></div>
+            <div class="m-card-body">
+                <app-form-item label="Prepended and appended text"><app-input asp-for="Input.Text" addon-before="https://" addon-after=".com" /></app-form-item>
+                <app-form-item label="Prefix and suffix"><app-input name="amount" prefix="$" suffix="USD" placeholder="0.00" /></app-form-item>
+                <app-form-item label="Appended link"><app-input name="forgot" type="password" addon-after-html="<a href='/forms/elements'>Forgot?</a>" placeholder="Password" /></app-form-item>
+                <app-form-item label="Appended shortcut hint"><app-input name="search-hint" addon-after-html="<kbd>Ctrl K</kbd>" placeholder="Search" /></app-form-item>
+                <app-form-item label="Error state"><app-input name="error-state" status="error" value="Not a valid value" /></app-form-item>
+                <app-form-item label="Warning state"><app-input name="warning-state" status="warning" value="Check this value" /></app-form-item>
+                <app-form-item label="Textarea"><app-textarea asp-for="Input.Notes" rows="4" show-count placeholder="Write a note" /></app-form-item>
+            </div>
+        </div>
+
+        <div class="m-card" id="selects">
+            <div class="m-card-header"><div><h2 class="m-card-title">Selects and datalist</h2><p class="m-card-subtitle">A single choice from a list, and a field that suggests as you type.</p></div></div>
+            <div class="m-card-body">
+                <app-form-item label="Select"><app-select asp-for="Input.Topic" items="Items(FormElementsPage.Topics)" placeholder="Choose a topic" /></app-form-item>
+                <app-form-item label="Datalist (suggestions as you type)"><app-auto-complete asp-for="Input.Language" options="FormElementsPage.Languages" placeholder="Type a language" /></app-form-item>
+                <app-form-item label="Multiple select"><app-select name="languages" multiple items="Picked(FormElementsPage.Languages, Chosen)" /></app-form-item>
+            </div>
+        </div>
+
+        <div class="m-card" id="switches">
+            <div class="m-card-header"><div><h2 class="m-card-title">Switches</h2><p class="m-card-subtitle">Two opposite states, on or off.</p></div></div>
+            <div class="m-card-body">
+                <app-form-item label="Toggle with text"><app-switch asp-for="Input.Notify" checked-text="On" unchecked-text="Off" /></app-form-item>
+                <app-form-item label="Disabled, on"><app-switch name="disabled-on" checked disabled /></app-form-item>
+                <app-form-item label="Disabled, off"><app-switch name="disabled-off" disabled /></app-form-item>
+                <app-form-item label="Terms agreement"><app-switch name="terms-switch" aria-label="I agree to the terms" /></app-form-item>
+            </div>
+        </div>
+
+        <div class="m-card" id="choices">
+            <div class="m-card-header"><div><h2 class="m-card-title">Radios and checkboxes</h2><p class="m-card-subtitle">One choice from a set, or several from a set.</p></div></div>
+            <div class="m-card-body">
+                <app-form-item label="Radios"><app-radio-group asp-for="Input.Plan" items="Items(FormElementsPage.Plans)" /></app-form-item>
+                <app-form-item label="Radio buttons"><app-radio-group asp-for="Input.Plan" items="Items(FormElementsPage.Plans)" button-style="solid" /></app-form-item>
+                <app-form-item label="Checkbox"><app-checkbox asp-for="Input.Terms">I agree to the terms</app-checkbox></app-form-item>
+                <app-form-item label="Checkbox, checked"><app-checkbox name="checked-box" checked>Checked by default</app-checkbox></app-form-item>
+                <app-form-item label="Checkbox, disabled"><app-checkbox name="disabled-box" disabled>Not available</app-checkbox></app-form-item>
+                <app-form-item label="Checkboxes"><app-checkbox-group asp-for="Input.Channels" items="Items(FormElementsPage.Channels)" /></app-form-item>
+                <app-form-item label="Radios, stacked"><app-radio-group asp-for="Input.Plan" items="Items(FormElementsPage.Plans)" vertical /></app-form-item>
+                <app-form-item label="Checkboxes, stacked"><app-checkbox-group asp-for="Input.Channels" items="Items(FormElementsPage.Channels)" vertical /></app-form-item>
+                <app-form-item label="Checkbox with description"><app-checkbox name="digest">Weekly digest</app-checkbox><div class="m-check-desc">A summary of the week, every Monday morning.</div></app-form-item>
+            </div>
+        </div>
+
+        <div class="m-card" id="ranges-dates">
+            <div class="m-card-header"><div><h2 class="m-card-title">Range, date, colour</h2><p class="m-card-subtitle">Pick a value on a slider, a date or a time, or a colour.</p></div></div>
+            <div class="m-card-body">
+                <app-form-item label="Range slider"><app-slider asp-for="Input.Volume" show-value /></app-form-item>
+                <app-form-item label="Date"><app-date-picker asp-for="Input.Starts" /></app-form-item>
+                <app-form-item label="Date and time"><app-date-picker asp-for="Input.Reminder" show-time /></app-form-item>
+                <app-form-item label="Time"><input class="ant-input" type="time" name="time" value="09:30" /></app-form-item>
+                <app-form-item label="Colour"><app-color-picker asp-for="Input.Color" /></app-form-item>
+            </div>
+        </div>
+
+        <div class="m-card" id="files">
+            <div class="m-card-header"><div><h2 class="m-card-title">File input</h2><p class="m-card-subtitle">One file, or several dropped on the area.</p></div></div>
+            <div class="m-card-body">
+                <app-form-item label="Files"><app-upload name="files" multiple drag accept=".pdf,image/*" hint="PDF or images up to 10 MB" /></app-form-item>
+            </div>
+        </div>
+
+        <div class="m-card" id="horizontal">
+            <div class="m-card-header"><div><h2 class="m-card-title">Horizontal form and footer</h2><p class="m-card-subtitle">Labels beside the fields, and the submit row.</p></div></div>
+            <div class="m-card-body">
+                <app-form-item label="Name" layout="horizontal"><app-input name="h-name" placeholder="Serena Park" /></app-form-item>
+                <app-form-item label="Email" layout="horizontal"><app-input name="h-email" placeholder="you@company.com" /></app-form-item>
+                <app-form-item label="Plan" layout="horizontal"><app-select name="h-plan" items="Items(FormElementsPage.Plans)" placeholder="Choose a plan" /></app-form-item>
+                <div class="m-form-actions">
+                    <app-button type="primary" html-type="submit">Submit</app-button>
+                    <a class="ant-btn ant-btn-default" href="/forms/elements"><span>Cancel</span></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

@@ -13,6 +13,10 @@ public class FormsController : SampleController
     [HttpGet("layouts")]
     public IActionResult Layouts() => LayoutsPage(FormLayoutsPage.Load());
 
+    // Form elements: every control of the Tabler form-elements page, bound to one read-only model (the form submits with GET).
+    [HttpGet("elements")]
+    public IActionResult Elements() => Page("Form elements", "Forms/Elements", FormElementsPage.Load());
+
     [HttpPost("layouts/contact")]
     public IActionResult Contact([Bind(Prefix = "Contact")] ContactFormInput input) =>
         ModelState.IsValid ? Done("Message sent. We reply within one business day.") : LayoutsPage(FormLayoutsPage.Load(contact: input));

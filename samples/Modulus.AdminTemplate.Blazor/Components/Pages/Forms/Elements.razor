@@ -1,0 +1,171 @@
+@page "/forms/elements"
+@using Modulus.Samples.Shared
+
+<PageTitle>Form elements · Modulus</PageTitle>
+
+@* Every form element of the Tabler form-elements page, one Modulus control each. MVC and Razor Pages render the same page from
+   Samples.Web Views/Shared/Ui/Forms/Elements.cshtml. The form submits with GET and keeps no state. *@
+<PageHeading Pretitle="Forms" Title="Form elements" Subtitle="Every input, select, choice, range, date, colour and file control, with the variants of the Tabler form elements page." />
+
+<Form Model="_input" Layout="FormLayout.Vertical">
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card" id="text-inputs">
+            <div class="m-card-header"><div><h2 class="m-card-title">Text inputs</h2><p class="m-card-subtitle">Types, states, shapes and icons of the single-line input.</p></div></div>
+            <div class="m-card-body">
+                <FormItem Label="Text"><Input @bind-Value="_input.Text" Placeholder="Text input" /></FormItem>
+                <FormItem Label="Password"><InputPassword @bind-Value="_input.Password" Placeholder="Password" /></FormItem>
+                <FormItem Label="Disabled"><Input TValue="string" Value="@("Cannot be changed")" Disabled="true" /></FormItem>
+                <FormItem Label="Readonly"><input class="ant-input" name="readonly" value="Read only" readonly /></FormItem>
+                <FormItem Label="Rounded"><input class="ant-input m-input-rounded" name="rounded" placeholder="Rounded corners" /></FormItem>
+                <FormItem Label="Flush (no border)"><Input TValue="string" Bordered="false" Placeholder="Flush control" /></FormItem>
+                <FormItem Label="Leading search icon"><Input TValue="string" Prefix="@SearchIcon" Placeholder="Search" /></FormItem>
+                <FormItem Label="Leading user icon"><Input TValue="string" Prefix="@UserIcon" Placeholder="Username" /></FormItem>
+                <FormItem Label="Sizes">
+                    <div>
+                        <Input TValue="string" Size="InputSize.Large" Placeholder="Large" />
+                        <Input TValue="string" Placeholder="Default" />
+                        <Input TValue="string" Size="InputSize.Small" Placeholder="Small" />
+                    </div>
+                </FormItem>
+                <FormItem Label="Floating label"><div class="m-float"><input class="ant-input" id="float-email" name="float-email" placeholder=" " /><label for="float-email">Email address</label></div></FormItem>
+                <FormItem Label="Trailing loader"><div class="m-input-loading"><Input TValue="string" Suffix="@LoaderIcon" Placeholder="Checking" /></div></FormItem>
+                <FormItem Label="Leading loader"><div class="m-input-loading"><Input TValue="string" Prefix="@LoaderIcon" Placeholder="Checking" /></div></FormItem>
+                <FormItem Label="Separated input with button"><Search @bind-Value="_input.Search" Placeholder="Search the site" EnterButton="true" /></FormItem>
+            </div>
+        </div>
+
+        <div class="m-card" id="input-groups">
+            <div class="m-card-header"><div><h2 class="m-card-title">Input groups and validation</h2><p class="m-card-subtitle">Text before or after the field, and the states a field can show.</p></div></div>
+            <div class="m-card-body">
+                <FormItem Label="Prepended and appended text"><Input @bind-Value="_input.Text" AddOnBefore="Https" AddOnAfter="Dotcom" /></FormItem>
+                <FormItem Label="Prefix and suffix"><Input TValue="string" Prefix="@Dollar" Suffix="@Usd" Placeholder="0.00" /></FormItem>
+                <FormItem Label="Appended link"><Input TValue="string" Placeholder="Password" AddOnAfter="ForgotLink" /></FormItem>
+                <FormItem Label="Appended shortcut hint"><Input TValue="string" Placeholder="Search" AddOnAfter="ShortcutHint" /></FormItem>
+                <FormItem Label="Error state"><Input TValue="string" Value="@("Not a valid value")" Status="error" /></FormItem>
+                <FormItem Label="Warning state"><Input TValue="string" Value="@("Check this value")" Status="warning" /></FormItem>
+                <FormItem Label="Textarea"><TextArea @bind-Value="_input.Notes" Rows="4" ShowCount Placeholder="Write a note" /></FormItem>
+            </div>
+        </div>
+
+        <div class="m-card" id="selects">
+            <div class="m-card-header"><div><h2 class="m-card-title">Selects and datalist</h2><p class="m-card-subtitle">A single choice from a list, and a field that suggests as you type.</p></div></div>
+            <div class="m-card-body">
+                <FormItem Label="Select"><Select TItemValue="string" TItem="string" @bind-Value="_input.Topic" DataSource="FormElementsPage.Topics" Placeholder="Choose a topic" /></FormItem>
+                <FormItem Label="Datalist (suggestions as you type)"><AutoComplete TOption="string" @bind-Value="_input.Language" Options="FormElementsPage.Languages" Placeholder="Type a language" /></FormItem>
+                <FormItem Label="Multiple select"><Select Mode="SelectMode.Multiple" TItemValue="string" TItem="string" DataSource="FormElementsPage.Languages" Values="_chosen" ValuesChanged="v => _chosen = v.ToList()" Placeholder="Choose languages" /></FormItem>
+            </div>
+        </div>
+
+        <div class="m-card" id="switches">
+            <div class="m-card-header"><div><h2 class="m-card-title">Switches</h2><p class="m-card-subtitle">Two opposite states, on or off.</p></div></div>
+            <div class="m-card-body">
+                <FormItem Label="Toggle with text"><Switch @bind-Checked="_input.Notify" CheckedChildren="OnText" UnCheckedChildren="OffText" /></FormItem>
+                <FormItem Label="Disabled, on"><Switch Checked="true" Disabled="true" /></FormItem>
+                <FormItem Label="Disabled, off"><Switch Disabled="true" /></FormItem>
+                <FormItem Label="Terms agreement"><Switch aria-label="I agree to the terms" /></FormItem>
+            </div>
+        </div>
+
+        <div class="m-card" id="choices">
+            <div class="m-card-header"><div><h2 class="m-card-title">Radios and checkboxes</h2><p class="m-card-subtitle">One choice from a set, or several from a set.</p></div></div>
+            <div class="m-card-body">
+                <FormItem Label="Radios">
+                    <RadioGroup TValue="string" @bind-Value="_input.Plan">
+                        @foreach (var plan in FormElementsPage.Plans)
+                        {
+                            <Radio Value="@("plan")">@plan</Radio>
+                        }
+                    </RadioGroup>
+                </FormItem>
+                <FormItem Label="Radio buttons">
+                    <RadioGroup TValue="string" @bind-Value="_input.Plan" ButtonStyle="RadioButtonStyle.Solid">
+                        @foreach (var plan in FormElementsPage.Plans)
+                        {
+                            <Radio RadioButton Value="@("plan")">@plan</Radio>
+                        }
+                    </RadioGroup>
+                </FormItem>
+                <FormItem Label="Checkbox"><Checkbox Checked="_input.Terms" CheckedChanged="on => _input.Terms = on">I agree to the terms</Checkbox></FormItem>
+                <FormItem Label="Checkbox, checked"><Checkbox Checked="true">Checked by default</Checkbox></FormItem>
+                <FormItem Label="Checkbox, disabled"><Checkbox Disabled="true">Not available</Checkbox></FormItem>
+                <FormItem Label="Checkboxes"><CheckboxGroup TValue="string" Options="_channelOptions" @bind-Value="_input.Channels" /></FormItem>
+                <FormItem Label="Radios, stacked">
+                    <div class="m-choice-vertical">
+                        <RadioGroup TValue="string" @bind-Value="_input.Plan">
+                            @foreach (var plan in FormElementsPage.Plans)
+                            {
+                                <Radio Value="plan">@plan</Radio>
+                            }
+                        </RadioGroup>
+                    </div>
+                </FormItem>
+                <FormItem Label="Checkboxes, stacked">
+                    <div class="m-choice-vertical">
+                        <CheckboxGroup TValue="string" Options="_channelOptions" @bind-Value="_input.Channels" />
+                    </div>
+                </FormItem>
+                <FormItem Label="Checkbox with description"><Checkbox>Weekly digest</Checkbox><div class="m-check-desc">A summary of the week, every Monday morning.</div></FormItem>
+            </div>
+        </div>
+
+        <div class="m-card" id="ranges-dates">
+            <div class="m-card-header"><div><h2 class="m-card-title">Range, date, colour</h2><p class="m-card-subtitle">Pick a value on a slider, a date or a time, or a colour.</p></div></div>
+            <div class="m-card-body">
+                <FormItem Label="Range slider"><Slider TValue="double" @bind-Value="_input.Volume" /></FormItem>
+                <FormItem Label="Date"><DatePicker TValue="DateTime?" @bind-Value="_input.Starts" Style="width: 100%" /></FormItem>
+                <FormItem Label="Date and time"><DatePicker TValue="DateTime?" @bind-Value="_input.Reminder" ShowTime="true" Style="width: 100%" /></FormItem>
+                <FormItem Label="Time"><TimePicker TValue="DateTime?" @bind-Value="_time" Format="HH:mm" Style="width: 100%" /></FormItem>
+                <FormItem Label="Colour"><AppColorPicker @bind-Value="_input.Color" ShowText="true" AriaLabel="Colour" /></FormItem>
+            </div>
+        </div>
+
+        <div class="m-card" id="files">
+            <div class="m-card-header"><div><h2 class="m-card-title">File input</h2><p class="m-card-subtitle">One file, or several dropped on the area.</p></div></div>
+            <div class="m-card-body">
+                <FormItem Label="Files">
+                    <Upload Name="files" Accept=".pdf,image/*" Multiple="true" Drag="true" BeforeUpload="NoUpload" />
+                    <div class="m-muted">PDF or images up to 10 MB</div>
+                </FormItem>
+            </div>
+        </div>
+
+        <div class="m-card" id="horizontal">
+            <div class="m-card-header"><div><h2 class="m-card-title">Horizontal form and footer</h2><p class="m-card-subtitle">Labels beside the fields, and the submit row.</p></div></div>
+            <div class="m-card-body">
+                <Form Context="horizontal" Model="_input" Layout="FormLayout.Horizontal">
+                <FormItem Label="Name"><Input TValue="string" Placeholder="Serena Park" /></FormItem>
+                <FormItem Label="Email"><Input TValue="string" Placeholder="you@company.com" /></FormItem>
+                <FormItem Label="Plan"><Select TItemValue="string" TItem="string" DataSource="FormElementsPage.Plans" Placeholder="Choose a plan" /></FormItem>
+                </Form>
+                <div class="m-form-actions">
+                    <Button Type="@ButtonType.Primary" HtmlType="submit">Submit</Button>
+                    <a class="ant-btn ant-btn-default" href="/forms/elements"><span>Cancel</span></a>
+                </div>
+            </div>
+        </div>
+    </div>
+</Form>
+
+@code {
+    private readonly FormElementsInput _input = new();
+    private DateTime? _time = new DateTime(2026, 10, 15, 9, 30, 0);
+    private List<string> _chosen = ["C#", "Go"];
+    private readonly CheckboxOption<string>[] _channelOptions =
+        FormElementsPage.Channels.Select(c => new CheckboxOption<string> { Value = c, Label = c }).ToArray();
+
+    private static readonly RenderFragment SearchIcon = @<Icon Type="search" />;
+    private static readonly RenderFragment UserIcon = @<Icon Type="user" />;
+    private static readonly RenderFragment Dollar = @<text>$</text>;
+    private static readonly RenderFragment Usd = @<text>USD</text>;
+    private static readonly RenderFragment Https = @<text>https://</text>;
+    private static readonly RenderFragment Dotcom = @<text>.com</text>;
+    private static readonly RenderFragment OnText = @<text>On</text>;
+    private static readonly RenderFragment OffText = @<text>Off</text>;
+
+    private static readonly RenderFragment LoaderIcon = @<Icon Type="loading" />;
+    private static readonly RenderFragment ForgotLink = @<a href="/forms/elements">Forgot?</a>;
+    private static readonly RenderFragment ShortcutHint = @<kbd>Ctrl K</kbd>;
+
+    // Choosing a file only: the server endpoint is not part of this demo, so nothing is sent.
+    private static bool NoUpload(UploadFileItem _) => false;
+}

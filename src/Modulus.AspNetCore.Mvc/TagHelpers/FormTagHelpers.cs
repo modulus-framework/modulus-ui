@@ -75,22 +75,31 @@ public class SelectTagHelper : TagHelper
     /// <summary>Use the enum member name as the option value (model binding friendly).</summary>
     public bool EnumNames { get; set; }
 
+    /// <summary>Several options can be chosen. A bound list (asp-for on a string collection) marks each chosen option.</summary>
+    public bool Multiple { get; set; }
+
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
         var name = For?.Name ?? Name ?? "";
         var current = For?.Model?.ToString();
+        var chosen = Multiple && For?.Model is System.Collections.IEnumerable list and not string
+            ? list.Cast<object?>().Select(Html.Format).ToHashSet()
+            : [];
         output.TagName = "select";
         output.TagMode = TagMode.StartTagAndEndTag;
         output.Attributes.SetAttribute("name", name);
         output.Attributes.SetAttribute("id", TagBuilder.CreateSanitizedId(name, "_"));
+        if (Multiple) output.Attributes.SetAttribute("multiple", "multiple");
         output.AddClasses("m-select");
 
         var html = new System.Text.StringBuilder();
-        if (Placeholder is not null) html.Append($"""<option value="">{Html.E(Placeholder)}</option>""");
+        if (Placeholder is not null && !Multiple) html.Append($"""<option value="">{Html.E(Placeholder)}</option>""");
         foreach (var item in Items)
         {
             var value = EnumNames ? item.Text : item.Value;
-            var selected = item.Selected || (current is not null && (value == current || item.Value == current || item.Text == current));
+            var selected = Multiple
+                ? item.Selected || chosen.Contains(value) || chosen.Contains(item.Value)
+                : item.Selected || (current is not null && (value == current || item.Value == current || item.Text == current));
             html.Append($"""<option value="{Html.E(value)}"{(selected ? " selected" : "")}>{Html.E(item.Text)}</option>""");
         }
         output.Content.SetHtmlContent(html.ToString());
@@ -111,6 +120,9 @@ public class RadioGroupTagHelper : TagHelper
     /// <summary>none (classic radios) | outline | solid (button style)</summary>
     public string ButtonStyle { get; set; } = "none";
 
+    /// <summary>Stacks the choices one under another. The default lays them out in a row.</summary>
+    public bool Vertical { get; set; }
+
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
         var name = For.Name;
@@ -119,6 +131,7 @@ public class RadioGroupTagHelper : TagHelper
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;
         output.AddClasses("ant-radio-group", "ant-radio-group-" + (ButtonStyle == "solid" ? "solid" : "outline"));
+        if (Vertical) output.AddClasses("m-choice-vertical");
         output.Attributes.SetAttribute("role", "radiogroup");
 
         var html = new System.Text.StringBuilder();

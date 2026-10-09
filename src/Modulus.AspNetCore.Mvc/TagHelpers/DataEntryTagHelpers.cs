@@ -83,6 +83,15 @@ public class InputTagHelper : BoundControlTagHelper
     public string? AddonBefore { get; set; }
     public string? AddonAfter { get; set; }
 
+    /// <summary>
+    /// Markup in the add-on before the field (a link or a shortcut hint, say). It is written as it is, so only trusted HTML goes
+    /// here, never user input; <see cref="AddonBefore"/> is the escaped text form.
+    /// </summary>
+    [HtmlAttributeName("addon-before-html")] public string? AddonBeforeHtml { get; set; }
+
+    /// <summary>Markup in the add-on after the field, written as it is (trusted HTML only); see <see cref="AddonBeforeHtml"/>.</summary>
+    [HtmlAttributeName("addon-after-html")] public string? AddonAfterHtml { get; set; }
+
     /// <summary>Shows a clear button while the field has a value.</summary>
     public bool AllowClear { get; set; }
 
@@ -97,7 +106,7 @@ public class InputTagHelper : BoundControlTagHelper
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
-        var addon = AddonBefore is not null || AddonAfter is not null;
+        var addon = AddonBefore is not null || AddonAfter is not null || AddonBeforeHtml is not null || AddonAfterHtml is not null;
         // Without addons the control itself is the outermost element and receives the author's class/style.
         var (outerClass, outerStyle) = addon ? (null, null) : TakeClassAndStyle(output);
         var password = Type == "password";
@@ -135,8 +144,8 @@ public class InputTagHelper : BoundControlTagHelper
         {
             control =
                 $"""<span class="ant-input-wrapper ant-input-group">""" +
-                (AddonBefore is null ? "" : $"""<span class="ant-input-group-addon">{Html.E(AddonBefore)}</span>""") + control +
-                (AddonAfter is null ? "" : $"""<span class="ant-input-group-addon">{Html.E(AddonAfter)}</span>""") + "</span>";
+                (AddonBeforeHtml is not null ? $"""<span class="ant-input-group-addon">{AddonBeforeHtml}</span>""" : AddonBefore is null ? "" : $"""<span class="ant-input-group-addon">{Html.E(AddonBefore)}</span>""") + control +
+                (AddonAfterHtml is not null ? $"""<span class="ant-input-group-addon">{AddonAfterHtml}</span>""" : AddonAfter is null ? "" : $"""<span class="ant-input-group-addon">{Html.E(AddonAfter)}</span>""") + "</span>";
             output.TagName = "span";
             output.AddClasses("ant-input-group-wrapper", SizeClass("ant-input-group-wrapper"), StatusClass("ant-input-group-wrapper"));
         }
@@ -625,6 +634,9 @@ public class CheckboxGroupTagHelper : BoundControlTagHelper
 {
     public IEnumerable<SelectListItem> Items { get; set; } = [];
 
+    /// <summary>Stacks the boxes one under another. The default lays them out in a row.</summary>
+    public bool Vertical { get; set; }
+
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
         var (name, _, _) = Bound();
@@ -635,6 +647,7 @@ public class CheckboxGroupTagHelper : BoundControlTagHelper
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;
         output.AddClasses("ant-checkbox-group");
+        if (Vertical) output.AddClasses("m-choice-vertical");
         output.Attributes.SetAttribute("role", "group");
         var sb = new StringBuilder();
         foreach (var item in Items)
