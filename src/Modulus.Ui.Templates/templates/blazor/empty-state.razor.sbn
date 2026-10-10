@@ -1,0 +1,24 @@
+@* Empty state: shown when a list or search has no results *@
+
+<div class="empty text-center py-5">
+    <p class="empty-title h3">@Title</p>
+    @if (!string.IsNullOrEmpty(Message))
+    {
+        <p class="empty-subtitle text-secondary">@Message</p>
+    }
+    @if (!string.IsNullOrEmpty(ActionText))
+    {
+        <div class="empty-action">
+            <a href="@ActionUrl" class="btn btn-primary">@ActionText</a>
+        </div>
+    }
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Nothing here yet";
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public string? ActionText { get; set; }
+    [Parameter] public string ActionUrl { get; set; } = "#";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -1,0 +1,27 @@
+@* Donut chart: sample data below, replace it with your own (a query, an API call). *@
+@page "/charts/donut"
+@using Modulus.Blazor.Components.Charts
+@using Modulus.Ui.Abstractions.Charts
+
+<PageTitle>Donut chart</PageTitle>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Donut chart</h3></div>
+            <div class="card-body">
+                <DonutChart Slices="_channels" CenterLabel="Visits" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly ChartSlice[] _channels =
+    [
+        new("Search", 540),
+        new("Direct", 320),
+        new("Referral", 180),
+        new("Social", 110),
+    ];
+}

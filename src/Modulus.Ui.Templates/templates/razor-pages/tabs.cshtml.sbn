@@ -1,0 +1,31 @@
+@* Tabs component *@
+<ul class="nav nav-tabs" role="tablist">
+    @{
+        var tabs = ViewBag.Tabs as System.Collections.Generic.List<dynamic> ?? new System.Collections.Generic.List<dynamic>();
+    }
+    @foreach (var (tab, index) in tabs.Select((t, i) => (t, i)))
+    {
+        <li class="nav-item" role="presentation">
+            <button
+                class="nav-link @(index == 0 ? "active" : "")"
+                id="tab-@tab.id-tab"
+                data-bs-toggle="tab"
+                data-bs-target="#tab-@tab.id"
+                type="button"
+                role="tab">
+                @tab.label
+            </button>
+        </li>
+    }
+</ul>
+<div class="tab-content">
+    @foreach (var (tab, index) in tabs.Select((t, i) => (t, i)))
+    {
+        <div
+            class="tab-pane @(index == 0 ? "show active" : "")"
+            id="tab-@tab.id"
+            role="tabpanel">
+            @Html.Raw(tab.content)
+        </div>
+    }
+</div>

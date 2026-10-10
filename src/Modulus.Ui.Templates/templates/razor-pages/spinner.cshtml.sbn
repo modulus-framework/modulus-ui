@@ -1,4 +1,4 @@
-@* Spinner component for Razor Pages *}
+@* Spinner component for Razor Pages *@
 @{
     var spinnerClass = "spinner-border";
     if (!string.IsNullOrEmpty(ViewBag.Size))

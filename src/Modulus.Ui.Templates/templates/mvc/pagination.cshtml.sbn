@@ -1,4 +1,4 @@
-@* Pagination component *}
+@* Pagination component *@
 @{
     var currentPage = ViewBag.CurrentPage ?? 1;
     var totalPages = ViewBag.TotalPages ?? 1;

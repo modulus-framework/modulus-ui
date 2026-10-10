@@ -1,0 +1,84 @@
+@* Two-factor authentication page: talks to the Modulus.Identity account endpoints on this host (/account/...) *@
+@page "/auth/two-factor"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{
+    ViewData["Title"] = "Two-factor authentication";
+}
+
+<div class="page page-center">
+    <div class="container container-tight py-4">
+        <div class="card card-md">
+            <div class="card-body">
+                <h2 class="h2 text-center mb-4">Two-factor authentication</h2>
+                <div id="result" class="alert" role="alert" hidden></div>
+                <div id="step-start">
+                    <p class="text-secondary">Protect your account with an authenticator app (Microsoft Authenticator, Google Authenticator, 1Password ...).</p>
+                    <button id="start" type="button" class="btn btn-primary w-100">Set up two-factor authentication</button>
+                </div>
+                <div id="step-confirm" hidden>
+                    <p>Add this key to your authenticator app, or open the link on your phone:</p>
+                    <p><code id="key"></code></p>
+                    <p><a id="uri" href="#">Open in authenticator app</a></p>
+                    <div class="mb-3">
+                        <label class="form-label" for="code">Code from the app</label>
+                        <input id="code" class="form-control" inputmode="numeric" autocomplete="one-time-code" />
+                    </div>
+                    <button id="enable" type="button" class="btn btn-primary w-100">Turn on</button>
+                </div>
+                <div id="step-codes" hidden>
+                    <p class="text-success fw-bold">Two-factor authentication is on.</p>
+                    <p>Save these recovery codes. Each works once, and they are not shown again:</p>
+                    <pre id="codes"></pre>
+                </div>
+                <hr />
+                <div id="step-disable">
+                    <div class="mb-3">
+                        <label class="form-label" for="password">Password (to turn it off)</label>
+                        <input id="password" type="password" class="form-control" autocomplete="current-password" />
+                    </div>
+                    <button id="disable" type="button" class="btn btn-outline-danger w-100">Turn off two-factor authentication</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function post(url, body) {
+        const res = await fetch(url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
+            body: body === undefined ? undefined : JSON.stringify(body)
+        });
+        let data = null;
+        try { data = await res.json(); } catch (e) { }
+        return { ok: res.ok, data: data };
+    }
+    function show(id, message, ok) {
+        const el = document.getElementById(id);
+        el.textContent = message;
+        el.className = 'alert ' + (ok ? 'alert-success' : 'alert-danger');
+        el.hidden = false;
+    }
+    function reveal(id) { document.getElementById(id).hidden = false; }
+    document.getElementById('start').addEventListener('click', async function () {
+        const r = await post('/account/2fa/setup');
+        if (!r.ok) { show('result', 'Sign in first, then set up two-factor authentication.', false); return; }
+        document.getElementById('key').textContent = r.data.sharedKey;
+        document.getElementById('uri').href = r.data.authenticatorUri;
+        document.getElementById('step-start').hidden = true;
+        reveal('step-confirm');
+    });
+    document.getElementById('enable').addEventListener('click', async function () {
+        const r = await post('/account/2fa/enable', { code: document.getElementById('code').value });
+        if (!r.ok) { show('result', (r.data && r.data.error) || 'The code is not valid.', false); return; }
+        document.getElementById('codes').textContent = r.data.recoveryCodes.join('\n');
+        document.getElementById('step-confirm').hidden = true;
+        reveal('step-codes');
+    });
+    document.getElementById('disable').addEventListener('click', async function () {
+        const r = await post('/account/2fa/disable', { password: document.getElementById('password').value });
+        show('result', r.ok ? 'Two-factor authentication is off.' : (r.data && r.data.error) || 'Could not turn it off.', r.ok);
+    });
+</script>

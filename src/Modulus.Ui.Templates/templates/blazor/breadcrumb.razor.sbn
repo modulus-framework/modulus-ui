@@ -1,4 +1,4 @@
-@* Breadcrumb component for Blazor *}
+@* Breadcrumb component for Blazor *@
 
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">

@@ -1,0 +1,30 @@
+@* Heatmap: sample data below, replace it with your own (a query, an API call). *@
+@page "/charts/heatmap"
+@using Modulus.Blazor.Components.Charts
+@using Modulus.Ui.Abstractions.Charts
+
+<PageTitle>Heatmap</PageTitle>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Heatmap</h3></div>
+            <div class="card-body">
+                <HeatmapChart Rows="_days" Columns="_hours" Values="_values" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly string[] _days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+    private readonly string[] _hours = ["9", "11", "13", "15", "17"];
+    private readonly double[][] _values =
+    [
+        [4, 8, 6, 9, 3],
+        [5, 9, 7, 8, 4],
+        [3, 7, 9, 6, 5],
+        [6, 8, 8, 7, 2],
+        [2, 5, 6, 4, 1],
+    ];
+}

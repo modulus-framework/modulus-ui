@@ -1,7 +1,7 @@
-@* Tabs component for Blazor *}
+@* Tabs component for Blazor *@
 
 <ul class="nav nav-tabs" role="tablist">
-    @foreach (var (tab, index) in Tabs.Select((t, i) => (t, i)))
+    @foreach (var (tab, index) in (Items ?? []).Select((t, i) => (t, i)))
     {
         <li class="nav-item" role="presentation">
             <button
@@ -15,7 +15,7 @@
     }
 </ul>
 <div class="tab-content">
-    @foreach (var (tab, index) in Tabs.Select((t, i) => (t, i)))
+    @foreach (var (tab, index) in (Items ?? []).Select((t, i) => (t, i)))
     {
         <div
             class="tab-pane @(ActiveTab == index ? "show active" : "")"
@@ -27,7 +27,7 @@
 
 @code {
     [Parameter]
-    public List<TabItem>? Tabs { get; set; }
+    public List<TabItem>? Items { get; set; }
 
     [Parameter]
     public int ActiveTab { get; set; } = 0;

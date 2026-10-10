@@ -12,7 +12,7 @@
                     <h2 class="page-title">{{ entity_name_plural }}</h2>
                     <nav aria-label="breadcrumb" class="ms-2">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="/{{ entity_name_plural | downcase }}">{{ entity_name_plural }}</a></li>
+                            <li class="breadcrumb-item"><a href="/{{ entity_name_plural | string.downcase }}">{{ entity_name_plural }}</a></li>
                             <li class="breadcrumb-item active" aria-current="page">@(Item?.Id == Guid.Empty ? "Create" : "Edit")</li>
                         </ol>
                     </nav>
@@ -71,7 +71,7 @@
                                                 <span>Create</span>
                                             }
                                         </button>
-                                        <a href="/{{ entity_name_plural | downcase }}" class="btn btn-link">Cancel</a>
+                                        <a href="/{{ entity_name_plural | string.downcase }}" class="btn btn-link">Cancel</a>
                                     </div>
                                 </EditForm>
                             }
@@ -93,7 +93,7 @@
     {
         if (Id.HasValue && Id.Value != Guid.Empty)
         {
-            Item = await Http.GetFromJsonAsync<{{ entity_name }}Dto>($"/api/{{ entity_name_plural | downcase }}/{Id}");
+            Item = await Http.GetFromJsonAsync<{{ entity_name }}Dto>($"/api/{{ entity_name_plural | string.downcase }}/{Id}");
         }
         else
         {
@@ -104,6 +104,6 @@
     private async Task HandleSubmit()
     {
         // TODO: Implement save logic
-        Navigation.NavigateTo($"/{{ entity_name_plural | downcase }}");
+        Navigation.NavigateTo($"/{{ entity_name_plural | string.downcase }}");
     }
 }

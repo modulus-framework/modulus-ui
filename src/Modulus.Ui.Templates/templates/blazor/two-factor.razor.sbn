@@ -1,0 +1,105 @@
+@* Two-factor authentication page: talks to the Modulus.Identity account endpoints on this host (/account/2fa/...) *@
+@page "/auth/two-factor"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject HttpClient Http
+
+<PageTitle>Two-factor authentication</PageTitle>
+
+<div class="page page-center">
+    <div class="container container-tight py-4">
+        <div class="card card-md">
+            <div class="card-body">
+                <h2 class="h2 text-center mb-4">Two-factor authentication</h2>
+                @if (_message is not null)
+                {
+                    <div class="alert @(_ok ? "alert-success" : "alert-danger")" role="alert">@_message</div>
+                }
+
+                @if (_recoveryCodes is not null)
+                {
+                    <p class="text-success fw-bold">Two-factor authentication is on.</p>
+                    <p>Save these recovery codes. Each works once, and they are not shown again:</p>
+                    <pre>@string.Join("\n", _recoveryCodes)</pre>
+                }
+                else if (_setup is not null)
+                {
+                    <p>Add this key to your authenticator app, or open the link on your phone:</p>
+                    <p><code>@_setup.SharedKey</code></p>
+                    <p><a href="@_setup.AuthenticatorUri">Open in authenticator app</a></p>
+                    <div class="mb-3">
+                        <label class="form-label">Code from the app</label>
+                        <input @bind="_code" class="form-control" inputmode="numeric" autocomplete="one-time-code" />
+                    </div>
+                    <button type="button" class="btn btn-primary w-100" @onclick="EnableAsync">Turn on</button>
+                }
+                else
+                {
+                    <p class="text-secondary">Protect your account with an authenticator app (Microsoft Authenticator, Google Authenticator, 1Password ...).</p>
+                    <button type="button" class="btn btn-primary w-100" @onclick="StartAsync">Set up two-factor authentication</button>
+                }
+
+                <hr />
+                <div class="mb-3">
+                    <label class="form-label">Password (to turn it off)</label>
+                    <input @bind="_password" type="password" class="form-control" autocomplete="current-password" />
+                </div>
+                <button type="button" class="btn btn-outline-danger w-100" @onclick="DisableAsync">Turn off two-factor authentication</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private sealed record Setup(string SharedKey, string AuthenticatorUri);
+    private sealed record Codes(string[] RecoveryCodes);
+    private sealed record ErrorBody(string? Error);
+
+    private Setup? _setup;
+    private string[]? _recoveryCodes;
+    private string _code = "";
+    private string _password = "";
+    private string? _message;
+    private bool _ok;
+
+    private async Task StartAsync()
+    {
+        var response = await Http.PostAsync("/account/2fa/setup", null);
+        if (!response.IsSuccessStatusCode) { Fail("Sign in first, then set up two-factor authentication."); return; }
+        _setup = await response.Content.ReadFromJsonAsync<Setup>();
+        _message = null;
+    }
+
+    private async Task EnableAsync()
+    {
+        var response = await Http.PostAsJsonAsync("/account/2fa/enable", new { code = _code });
+        if (!response.IsSuccessStatusCode)
+        {
+            Fail((await response.Content.ReadFromJsonAsync<ErrorBody>())?.Error ?? "The code is not valid.");
+            return;
+        }
+        _recoveryCodes = (await response.Content.ReadFromJsonAsync<Codes>())?.RecoveryCodes ?? [];
+        _message = null;
+    }
+
+    private async Task DisableAsync()
+    {
+        var response = await Http.PostAsJsonAsync("/account/2fa/disable", new { password = _password });
+        if (response.IsSuccessStatusCode)
+        {
+            _ok = true;
+            _message = "Two-factor authentication is off.";
+            _setup = null;
+            _recoveryCodes = null;
+        }
+        else
+        {
+            Fail((await response.Content.ReadFromJsonAsync<ErrorBody>())?.Error ?? "Could not turn it off.");
+        }
+    }
+
+    private void Fail(string message)
+    {
+        _ok = false;
+        _message = message;
+    }
+}

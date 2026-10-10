@@ -1,4 +1,4 @@
-@* Card component for Razor Pages *}
+@* Card component for Razor Pages *@
 <div class="card @ViewBag.CssClass">
     @if (!string.IsNullOrEmpty(ViewBag.Title))
     {

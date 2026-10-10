@@ -1,0 +1,17 @@
+@* Avatar component: an image, or initials when there is no image *@
+@{
+    string name = ViewBag.Name ?? "";
+    string? src = ViewBag.Src;
+    string size = ViewBag.Size ?? "md";
+    var sizeClass = size switch { "sm" => "avatar-sm", "lg" => "avatar-lg", "xl" => "avatar-xl", _ => "" };
+    var initials = string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
+}
+
+@if (!string.IsNullOrEmpty(src))
+{
+    <span class="avatar @sizeClass" style="background-image: url('@src')" title="@name" role="img" aria-label="@name"></span>
+}
+else
+{
+    <span class="avatar @sizeClass" title="@name" role="img" aria-label="@name">@initials</span>
+}

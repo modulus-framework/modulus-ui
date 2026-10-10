@@ -1,39 +1,33 @@
+@* Form input: label, control, hint and validation message, bound with @bind-Value *@
 @using System.Linq.Expressions
-@typeparam TValue
-@inherits InputBase<TValue>
 
 <div class="mb-3">
-    <label class="form-label" for="@FieldIdentifier.FieldName">
+    <label class="form-label">
         @Label
         @if (Required)
         {
-            <span class="badge badge-pill badge-danger">Required</span>
+            <span class="text-danger">*</span>
         }
     </label>
-    <input
-        id="@FieldIdentifier.FieldName"
-        type="text"
-        class="form-control @CssClass"
-        placeholder="@Placeholder"
-        @attributes="AdditionalAttributes"
-        @bind="CurrentValue" />
+    <InputText Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression"
+               class="form-control" placeholder="@Placeholder" type="@Type" />
     @if (!string.IsNullOrEmpty(HelpText))
     {
         <small class="form-hint">@HelpText</small>
     }
-    <ValidationMessage For="() => Value" class="form-text text-danger" />
+    @if (ValueExpression is not null)
+    {
+        <ValidationMessage For="ValueExpression" class="form-text text-danger" />
+    }
 </div>
 
 @code {
-    [Parameter]
-    public string? Label { get; set; }
-
-    [Parameter]
-    public string? Placeholder { get; set; }
-
-    [Parameter]
-    public bool Required { get; set; }
-
-    [Parameter]
-    public string? HelpText { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public Expression<Func<string?>>? ValueExpression { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string Type { get; set; } = "text";
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public string? HelpText { get; set; }
 }

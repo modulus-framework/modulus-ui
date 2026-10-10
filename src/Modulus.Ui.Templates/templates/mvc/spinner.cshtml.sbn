@@ -1,4 +1,4 @@
-@* Spinner/Loading indicator component *}
+@* Spinner/Loading indicator component *@
 @{
     var spinnerClass = "spinner-border";
     if (!string.IsNullOrEmpty(ViewBag.Size))

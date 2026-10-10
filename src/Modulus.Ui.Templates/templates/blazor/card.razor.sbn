@@ -1,4 +1,4 @@
-@* Card component for Blazor *}
+@* Card component for Blazor *@
 
 <div class="card @CssClass">
     @if (!string.IsNullOrEmpty(Title))

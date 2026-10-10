@@ -16,7 +16,7 @@
                 {% for column in columns %}
                 <td>
                     {% if column.format == 'badge' %}
-                        <span class="badge badge-{{ item[column.key] | downcase }}">{{ item[column.key] }}</span>
+                        <span class="badge badge-{{ item[column.key] | string.downcase }}">{{ item[column.key] }}</span>
                     {% else %}
                         {{ item[column.key] }}
                     {% endif %}
@@ -29,7 +29,7 @@
             {% endfor %}
         {% else %}
             <tr>
-                <td colspan="{{ columns.size | plus: 1 }}" class="text-center text-muted py-4">
+                <td colspan="{{ columns.size | math.plus 1 }}" class="text-center text-muted py-4">
                     No records found.
                 </td>
             </tr>

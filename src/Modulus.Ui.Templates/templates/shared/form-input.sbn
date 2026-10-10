@@ -13,7 +13,7 @@
         type="text"
         name="{{ name }}"
         class="form-control"
-        placeholder="Enter {{ label | downcase }}"
+        placeholder="Enter {{ label | string.downcase }}"
         {% if required %}required{% endif %}
         {% if value %}value="{{ value }}"{% endif %} />
     {% if help_text %}

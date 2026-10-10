@@ -1,4 +1,4 @@
-@* Admin Users Management page for MVC *}
+@* Admin Users Management page for MVC *@
 @{
     ViewData["Title"] = "User Management";
 }

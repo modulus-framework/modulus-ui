@@ -1,4 +1,4 @@
-@* Modal component for Razor Pages *}
+@* Modal component for Razor Pages *@
 <div class="modal fade" id="@ViewBag.ModalId" tabindex="-1" role="dialog">
     <div class="modal-dialog @(ViewBag.Size == "lg" ? "modal-lg" : ViewBag.Size == "sm" ? "modal-sm" : "")" role="document">
         <div class="modal-content">

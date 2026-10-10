@@ -1,4 +1,4 @@
-@* Modal component for Blazor *}
+@* Modal component for Blazor *@
 
 <div class="modal fade @(IsOpen ? "show" : "")" style="display: @(IsOpen ? "block" : "none")" tabindex="-1" role="dialog">
     <div class="modal-dialog @GetModalSize()" role="document">

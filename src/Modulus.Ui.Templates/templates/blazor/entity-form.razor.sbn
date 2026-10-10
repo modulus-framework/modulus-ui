@@ -1,0 +1,77 @@
+@page "/{{ entity_name_plural | string.downcase }}/edit/{Id:guid?}"
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>@(Item?.Id == Guid.Empty ? "Create" : "Edit") {{ entity_name }}</PageTitle>
+
+<div class="page-wrapper">
+    <div class="page-body">
+        <div class="container-xl">
+            <div class="row">
+                <div class="col-md-8 col-lg-6">
+                    <div class="card">
+                        <div class="card-body">
+                            @if (Item == null)
+                            {
+                                <p><em>Loading...</em></p>
+                            }
+                            else
+                            {
+                                <EditForm Model="Item" OnValidSubmit="HandleSubmit">
+                                    <DataAnnotationsValidator />
+{{ for f in fields ~}}
+                                    <div class="mb-3">
+{{ if f.kind == "checkbox" ~}}
+                                        <label class="form-check">
+                                            <InputCheckbox @bind-Value="Item.{{ f.name }}" class="form-check-input" />
+                                            <span class="form-check-label">{{ f.label }}</span>
+                                        </label>
+{{ else ~}}
+                                        <label class="form-label">{{ f.label }}{{ if f.required }} <span class="badge badge-pill badge-danger">Required</span>{{ end }}</label>
+{{ if f.kind == "textarea" ~}}
+                                        <InputTextArea @bind-Value="Item.{{ f.name }}" class="form-control" rows="4" />
+{{ else if f.kind == "number" ~}}
+                                        <InputNumber @bind-Value="Item.{{ f.name }}" class="form-control" />
+{{ else if f.kind == "date" || f.kind == "datetime" ~}}
+                                        <InputDate @bind-Value="Item.{{ f.name }}" class="form-control" />
+{{ else ~}}
+                                        <InputText @bind-Value="Item.{{ f.name }}" class="form-control" />
+{{ end ~}}
+{{ end ~}}
+                                        <ValidationMessage For="() => Item.{{ f.name }}" class="form-text text-danger" />
+                                    </div>
+{{ end ~}}
+                                    <div class="form-footer">
+                                        <button type="submit" class="btn btn-primary">@(Item.Id == Guid.Empty ? "Create" : "Update")</button>
+                                        <a href="/{{ entity_name_plural | string.downcase }}" class="btn btn-link">Cancel</a>
+                                    </div>
+                                </EditForm>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    private {{ entity_name }}Dto? Item { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Item = Id.HasValue && Id.Value != Guid.Empty
+            ? await Http.GetFromJsonAsync<{{ entity_name }}Dto>($"/api/{{ entity_name_plural | string.downcase }}/{Id}")
+            : new {{ entity_name }}Dto();
+    }
+
+    private async Task HandleSubmit()
+    {
+        // TODO: save through the API
+        Navigation.NavigateTo("/{{ entity_name_plural | string.downcase }}");
+        await Task.CompletedTask;
+    }
+}

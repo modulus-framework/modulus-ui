@@ -1,4 +1,4 @@
-@page "/{{ entity_name_plural | downcase }}/Details/{id}"
+@page "/{{ entity_name_plural | string.downcase }}/Details/{id}"
 @using Modulus.Samples.Shared
 @model {{ entity_name }}Dto
 @{
@@ -13,13 +13,13 @@
                     <h2 class="page-title">{{ entity_name }} Details</h2>
                     <nav aria-label="breadcrumb" class="ms-2">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="/{{ entity_name_plural | downcase }}">{{ entity_name_plural }}</a></li>
+                            <li class="breadcrumb-item"><a href="/{{ entity_name_plural | string.downcase }}">{{ entity_name_plural }}</a></li>
                             <li class="breadcrumb-item active" aria-current="page">@ViewData["Title"]</li>
                         </ol>
                     </nav>
                 </div>
                 <div class="col-auto">
-                    <a href="/{{ entity_name_plural | downcase }}/Edit/@Model.Id" class="btn btn-primary">
+                    <a href="/{{ entity_name_plural | string.downcase }}/Edit/@Model.Id" class="btn btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
                             <path d="M4 13.5v6.5c0 1.5 1 2.5 2.5 2.5h12c1.5 0 2.5-1 2.5-2.5v-6"></path>
                             <path d="M13.5 2.5h-6c-1.5 0-2.5 1-2.5 2.5m8-5L3 16"></path>
@@ -84,8 +84,8 @@
                             </div>
 
                             <div class="form-footer">
-                                <a href="/{{ entity_name_plural | downcase }}/Edit/@Model.Id" class="btn btn-primary">Edit</a>
-                                <a href="/{{ entity_name_plural | downcase }}" class="btn btn-link">Back to List</a>
+                                <a href="/{{ entity_name_plural | string.downcase }}/Edit/@Model.Id" class="btn btn-primary">Edit</a>
+                                <a href="/{{ entity_name_plural | string.downcase }}" class="btn btn-link">Back to List</a>
                             </div>
                         </div>
                     </div>

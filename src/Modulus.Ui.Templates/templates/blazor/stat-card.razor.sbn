@@ -1,0 +1,22 @@
+@* Stat card: one headline number with a label and an optional change *@
+
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex align-items-baseline">
+            <div class="h1 mb-0 me-2">@Value</div>
+            @if (!string.IsNullOrEmpty(Change))
+            {
+                <div class="ms-auto">
+                    <span class="badge @(Change.StartsWith('-') ? "bg-danger" : "bg-success")">@Change</span>
+                </div>
+            }
+        </div>
+        <div class="text-secondary">@Label</div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Value { get; set; } = "0";
+    [Parameter] public string? Change { get; set; }
+}

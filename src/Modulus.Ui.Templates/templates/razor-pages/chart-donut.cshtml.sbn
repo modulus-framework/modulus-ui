@@ -1,0 +1,25 @@
+@* Donut chart: sample data below, replace it with your own (a query, an API call). *@
+@page "/charts/donut"
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Charts
+@{
+    ViewData["Title"] = "Donut chart";
+    var channels = new[]
+    {
+        new ChartSlice("Search", 540),
+        new ChartSlice("Direct", 320),
+        new ChartSlice("Referral", 180),
+        new ChartSlice("Social", 110),
+    };
+}
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Donut chart</h3></div>
+            <div class="card-body">
+                <app-donut-chart slices="channels" center-label="Visits" />
+            </div>
+        </div>
+    </div>
+</div>

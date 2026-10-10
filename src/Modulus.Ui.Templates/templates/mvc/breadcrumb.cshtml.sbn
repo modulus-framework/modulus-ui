@@ -1,4 +1,4 @@
-@* Breadcrumb navigation component *}
+@* Breadcrumb navigation component *@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
         @{

@@ -1,0 +1,109 @@
+@* Session manager: lists the caller's sessions and sign-in history from the Modulus.Identity account endpoints (/account/sessions, /account/login-history) *@
+@page "/auth/sessions"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>Sessions</PageTitle>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="card-body">
+                @if (_message is not null)
+                {
+                    <div class="alert @(_ok ? "alert-success" : "alert-danger")" role="alert">@_message</div>
+                }
+                <div class="d-flex align-items-center mb-2">
+                    <h3 class="card-title mb-0">Active sessions</h3>
+                    <button type="button" class="btn btn-outline-danger btn-sm ms-auto" @onclick="RevokeAllAsync">Sign out everywhere</button>
+                </div>
+                <div class="table-responsive mb-4">
+                    <table class="table table-vcenter card-table">
+                        <thead><tr><th>Type</th><th>Application</th><th>Started</th><th>Expires</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var s in _sessions)
+                            {
+                                <tr>
+                                    <td>@s.Type</td>
+                                    <td>@s.ClientId</td>
+                                    <td>@s.CreatedAt?.ToLocalTime().ToString("g")</td>
+                                    <td>@s.ExpiresAt?.ToLocalTime().ToString("g")</td>
+                                    <td><button type="button" class="btn btn-sm btn-outline-danger" @onclick="() => RevokeAsync(s.Id)">Revoke</button></td>
+                                </tr>
+                            }
+                            @if (_sessions.Count == 0)
+                            {
+                                <tr><td colspan="5" class="text-secondary">No active sessions.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <h3 class="card-title">Recent sign-ins</h3>
+                <div class="table-responsive">
+                    <table class="table table-vcenter card-table">
+                        <thead><tr><th>When</th><th>Event</th><th>Result</th><th>Application</th></tr></thead>
+                        <tbody>
+                            @foreach (var e in _history)
+                            {
+                                <tr>
+                                    <td>@e.OccurredAt.ToLocalTime().ToString("g")</td>
+                                    <td>@e.Action</td>
+                                    <td>@(e.Succeeded ? "OK" : "Refused" + (e.Reason is null ? "" : $" ({e.Reason})"))</td>
+                                    <td>@e.ClientId</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private sealed record SessionRow(string Id, string Type, string? ClientId, DateTimeOffset? CreatedAt, DateTimeOffset? ExpiresAt);
+    private sealed record LoginRow(DateTimeOffset OccurredAt, string Action, bool Succeeded, string? Reason, string? ClientId);
+
+    private List<SessionRow> _sessions = [];
+    private List<LoginRow> _history = [];
+    private string? _message;
+    private bool _ok;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        var sessions = await Http.GetAsync("/account/sessions");
+        if (!sessions.IsSuccessStatusCode)
+        {
+            Fail("Sign in to see your sessions.");
+            return;
+        }
+        _sessions = await sessions.Content.ReadFromJsonAsync<List<SessionRow>>() ?? [];
+        _history = await Http.GetFromJsonAsync<List<LoginRow>>("/account/login-history?take=25") ?? [];
+    }
+
+    private async Task RevokeAsync(string id)
+    {
+        var response = await Http.DeleteAsync($"/account/sessions/{Uri.EscapeDataString(id)}");
+        _ok = response.IsSuccessStatusCode;
+        _message = _ok ? "Session ended." : "Could not end the session.";
+        await LoadAsync();
+    }
+
+    private async Task RevokeAllAsync()
+    {
+        var response = await Http.PostAsync("/account/sessions/revoke-all", null);
+        if (response.IsSuccessStatusCode)
+            Navigation.NavigateTo("/", forceLoad: true);
+        else
+            Fail("Could not sign out everywhere.");
+    }
+
+    private void Fail(string message)
+    {
+        _ok = false;
+        _message = message;
+    }
+}

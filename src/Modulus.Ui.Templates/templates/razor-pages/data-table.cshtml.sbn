@@ -1,0 +1,39 @@
+@* Data table: ViewBag.Columns is a list of (Title, Key); ViewBag.Rows a list of dictionaries keyed by Key *@
+@{
+    var columns = ViewBag.Columns as IEnumerable<(string Title, string Key)> ?? [];
+    var rows = ViewBag.Rows as IEnumerable<IDictionary<string, object?>> ?? [];
+    string empty = ViewBag.EmptyMessage ?? "No records found.";
+}
+
+<div class="table-responsive">
+    <table class="table table-vcenter card-table">
+        <thead>
+            <tr>
+                @foreach (var column in columns)
+                {
+                    <th>@column.Title</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @if (rows.Any())
+            {
+                foreach (var row in rows)
+                {
+                    <tr>
+                        @foreach (var column in columns)
+                        {
+                            <td>@(row.TryGetValue(column.Key, out var cell) ? cell : null)</td>
+                        }
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="@Math.Max(1, columns.Count())" class="text-center text-muted py-4">@empty</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

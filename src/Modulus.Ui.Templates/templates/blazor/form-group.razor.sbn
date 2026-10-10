@@ -1,0 +1,33 @@
+@* Form group wrapper: label, the control as child content, hint and error *@
+
+<div class="mb-3">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="form-label">
+            @Label
+            @if (Required)
+            {
+                <span class="text-danger">*</span>
+            }
+        </label>
+    }
+
+    @ChildContent
+
+    @if (!string.IsNullOrEmpty(Help))
+    {
+        <small class="form-hint d-block mt-2">@Help</small>
+    }
+    @if (!string.IsNullOrEmpty(Error))
+    {
+        <div class="text-danger small mt-2">@Error</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public string? Help { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

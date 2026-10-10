@@ -1,4 +1,4 @@
-@* Dropdown menu component *}
+@* Dropdown menu component *@
 <div class="dropdown">
     <button
         class="btn @(ViewBag.Variant ?? "btn-primary") dropdown-toggle"

@@ -1,4 +1,4 @@
-@* Alert component for Blazor *}
+@* Alert component for Blazor *@
 
 <div class="@GetAlertClass()" role="alert">
     <div class="d-flex">

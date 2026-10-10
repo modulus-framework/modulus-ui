@@ -1,0 +1,26 @@
+@* Dropdown menu component *@
+
+<div class="dropdown">
+    <button class="btn @Variant dropdown-toggle" type="button" data-bs-toggle="dropdown">@Label</button>
+    <ul class="dropdown-menu">
+        @foreach (var item in Items)
+        {
+            @if (item.Divider)
+            {
+                <li><hr class="dropdown-divider" /></li>
+            }
+            else
+            {
+                <li><a class="dropdown-item" href="@item.Url">@item.Label</a></li>
+            }
+        }
+    </ul>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Actions";
+    [Parameter] public string Variant { get; set; } = "btn-primary";
+    [Parameter] public IEnumerable<DropdownItem> Items { get; set; } = [];
+
+    public sealed record DropdownItem(string Label = "", string Url = "#", bool Divider = false);
+}

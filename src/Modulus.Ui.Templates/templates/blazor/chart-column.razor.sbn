@@ -1,0 +1,26 @@
+@* Column chart: sample data below, replace it with your own (a query, an API call). *@
+@page "/charts/column"
+@using Modulus.Blazor.Components.Charts
+@using Modulus.Ui.Abstractions.Charts
+
+<PageTitle>Column chart</PageTitle>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Column chart</h3></div>
+            <div class="card-body">
+                <ColumnChart Labels="_quarters" Series="_series" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly string[] _quarters = ["Q1", "Q2", "Q3", "Q4"];
+    private readonly ChartSeries[] _series =
+    [
+        new("North", [40, 52, 47, 61]),
+        new("South", [33, 38, 45, 49]),
+    ];
+}

@@ -1,0 +1,77 @@
+@* Session manager: lists the caller's sessions and sign-in history from the Modulus.Identity account endpoints (/account/sessions, /account/login-history) *@
+@{
+    ViewData["Title"] = "Sessions";
+}
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="card-body">
+                <div id="result" class="alert" role="alert" hidden></div>
+                <div class="d-flex align-items-center mb-2">
+                    <h3 class="card-title mb-0">Active sessions</h3>
+                    <button id="revoke-all" type="button" class="btn btn-outline-danger btn-sm ms-auto">Sign out everywhere</button>
+                </div>
+                <div class="table-responsive mb-4">
+                    <table class="table table-vcenter card-table">
+                        <thead><tr><th>Type</th><th>Application</th><th>Started</th><th>Expires</th><th></th></tr></thead>
+                        <tbody id="sessions"><tr><td colspan="5" class="text-secondary">Loading ...</td></tr></tbody>
+                    </table>
+                </div>
+                <h3 class="card-title">Recent sign-ins</h3>
+                <div class="table-responsive">
+                    <table class="table table-vcenter card-table">
+                        <thead><tr><th>When</th><th>Event</th><th>Result</th><th>Application</th></tr></thead>
+                        <tbody id="history"><tr><td colspan="4" class="text-secondary">Loading ...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function cell(row, text) { const td = document.createElement('td'); td.textContent = text || ''; row.appendChild(td); return td; }
+    function when(value) { return value ? new Date(value).toLocaleString() : ''; }
+    function show(message, ok) {
+        const el = document.getElementById('result');
+        el.textContent = message;
+        el.className = 'alert ' + (ok ? 'alert-success' : 'alert-danger');
+        el.hidden = false;
+    }
+    async function load() {
+        const s = await fetch('/account/sessions', { credentials: 'same-origin' });
+        const body = document.getElementById('sessions');
+        body.replaceChildren();
+        if (!s.ok) { show('Sign in to see your sessions.', false); return; }
+        const sessions = await s.json();
+        if (sessions.length === 0) { const r = document.createElement('tr'); cell(r, 'No active sessions.').colSpan = 5; body.appendChild(r); }
+        sessions.forEach(function (x) {
+            const r = document.createElement('tr');
+            cell(r, x.type); cell(r, x.clientId); cell(r, when(x.createdAt)); cell(r, when(x.expiresAt));
+            const btn = document.createElement('button');
+            btn.type = 'button'; btn.className = 'btn btn-sm btn-outline-danger'; btn.textContent = 'Revoke';
+            btn.addEventListener('click', async function () {
+                const res = await fetch('/account/sessions/' + encodeURIComponent(x.id), { method: 'DELETE', credentials: 'same-origin' });
+                show(res.ok ? 'Session ended.' : 'Could not end the session.', res.ok);
+                load();
+            });
+            cell(r, '').appendChild(btn);
+            body.appendChild(r);
+        });
+        const h = await fetch('/account/login-history?take=25', { credentials: 'same-origin' });
+        const hb = document.getElementById('history');
+        hb.replaceChildren();
+        (h.ok ? await h.json() : []).forEach(function (e) {
+            const r = document.createElement('tr');
+            cell(r, when(e.occurredAt)); cell(r, e.action); cell(r, e.succeeded ? 'OK' : 'Refused' + (e.reason ? ' (' + e.reason + ')' : '')); cell(r, e.clientId);
+            hb.appendChild(r);
+        });
+    }
+    document.getElementById('revoke-all').addEventListener('click', async function () {
+        if (!confirm('Sign out of every device, including this one?')) return;
+        const res = await fetch('/account/sessions/revoke-all', { method: 'POST', credentials: 'same-origin' });
+        if (res.ok) { window.location.href = '/'; } else { show('Could not sign out everywhere.', false); }
+    });
+    load();
+</script>

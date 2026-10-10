@@ -1,0 +1,23 @@
+@* Column chart: sample data below, replace it with your own (a query, an API call). *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Charts
+@{
+    ViewData["Title"] = "Column chart";
+    var quarters = new[] { "Q1", "Q2", "Q3", "Q4" };
+    var series = new[]
+    {
+        new ChartSeries("North", new double[] { 40, 52, 47, 61 }),
+        new ChartSeries("South", new double[] { 33, 38, 45, 49 }),
+    };
+}
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Column chart</h3></div>
+            <div class="card-body">
+                <app-column-chart labels="quarters" series="series" />
+            </div>
+        </div>
+    </div>
+</div>

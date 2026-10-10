@@ -1,4 +1,4 @@
-@* Audit Logs page for MVC *}
+@* Audit Logs page for MVC *@
 @{
     ViewData["Title"] = "Audit Logs";
 }

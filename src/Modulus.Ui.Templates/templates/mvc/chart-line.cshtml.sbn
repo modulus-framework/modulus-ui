@@ -1,0 +1,23 @@
+@* Line chart: sample data below, replace it with your own (a query, an API call). *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Charts
+@{
+    ViewData["Title"] = "Line chart";
+    var months = new[] { "Jan", "Feb", "Mar", "Apr", "May", "Jun" };
+    var series = new[]
+    {
+        new ChartSeries("Revenue", new double[] { 12, 19, 14, 22, 27, 31 }),
+        new ChartSeries("Costs", new double[] { 9, 11, 12, 15, 16, 18 }),
+    };
+}
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Line chart</h3></div>
+            <div class="card-body">
+                <app-line-chart labels="months" series="series" area />
+            </div>
+        </div>
+    </div>
+</div>

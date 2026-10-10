@@ -1,4 +1,4 @@
-@* Form group wrapper for consistent styling *}
+@* Form group wrapper: label, a control passed as ViewBag.Content (markup), hint and error *@
 @{
     var size = ViewBag.Size ?? "md";
     var gridClass = size switch
@@ -23,7 +23,7 @@
             </label>
         }
 
-        @RenderBody()
+        @ViewBag.Content
 
         @if (!string.IsNullOrEmpty(ViewBag.Help))
         {

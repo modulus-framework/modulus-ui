@@ -1,4 +1,4 @@
-@* System Health Monitoring page for MVC *}
+@* System Health Monitoring page for MVC *@
 @{
     ViewData["Title"] = "System Health";
 }

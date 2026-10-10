@@ -1,4 +1,4 @@
-@* Admin Settings page for MVC *}
+@* Admin Settings page for MVC *@
 @{
     ViewData["Title"] = "System Settings";
 }

@@ -1,0 +1,22 @@
+@* Avatar component: an image, or initials when there is no image *@
+
+@if (!string.IsNullOrEmpty(Src))
+{
+    <span class="avatar @SizeClass" style="background-image: url('@Src')" title="@Name" role="img" aria-label="@Name"></span>
+}
+else
+{
+    <span class="avatar @SizeClass" title="@Name" role="img" aria-label="@Name">@Initials</span>
+}
+
+@code {
+    [Parameter] public string Name { get; set; } = "";
+    [Parameter] public string? Src { get; set; }
+    /// <summary>sm, md, lg or xl.</summary>
+    [Parameter] public string Size { get; set; } = "md";
+
+    private string SizeClass => Size switch { "sm" => "avatar-sm", "lg" => "avatar-lg", "xl" => "avatar-xl", _ => "" };
+
+    private string Initials =>
+        string.Concat(Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
+}

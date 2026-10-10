@@ -1,4 +1,4 @@
-@* Tabs component *}
+@* Tabs component *@
 <ul class="nav nav-tabs" role="tablist">
     @{
         var tabs = ViewBag.Tabs as System.Collections.Generic.List<dynamic> ?? new System.Collections.Generic.List<dynamic>();

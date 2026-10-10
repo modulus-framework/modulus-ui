@@ -1,4 +1,4 @@
-@* Alert component for Razor Pages *}
+@* Alert component for Razor Pages *@
 @{
     var alertClass = "alert";
     var type = ViewBag.Type?.ToString()?.ToLower() ?? "info";

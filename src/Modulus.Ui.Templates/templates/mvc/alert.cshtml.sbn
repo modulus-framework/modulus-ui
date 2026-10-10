@@ -1,4 +1,4 @@
-@* Alert component for notifications and messages *}
+@* Alert component for notifications and messages *@
 @{
     var alertClass = "alert";
     var type = ViewBag.Type?.ToString()?.ToLower() ?? "info";

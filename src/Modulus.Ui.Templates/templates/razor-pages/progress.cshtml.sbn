@@ -1,4 +1,4 @@
-@* Progress bar component for Razor Pages *}
+@* Progress bar component for Razor Pages *@
 @{
     var percentage = ViewBag.Percentage ?? 0;
     var color = ViewBag.Color ?? "primary";

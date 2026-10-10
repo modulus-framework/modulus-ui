@@ -1,4 +1,4 @@
-@* Card component - versatile container #}
+@* Card component - versatile container *@
 <div class="card @ViewBag.CssClass">
     @if (!string.IsNullOrEmpty(ViewBag.Title))
     {

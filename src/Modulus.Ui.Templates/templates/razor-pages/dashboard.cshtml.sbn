@@ -1,4 +1,4 @@
-@* Admin Dashboard for Razor Pages *}
+@* Admin Dashboard for Razor Pages *@
 @page "/dashboard"
 @{
     ViewData["Title"] = "Dashboard";

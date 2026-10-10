@@ -1,4 +1,4 @@
-@* Reports & Analytics Dashboard for MVC *}
+@* Reports & Analytics Dashboard for MVC *@
 @{
     ViewData["Title"] = "Reports & Analytics";
 }

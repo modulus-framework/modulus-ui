@@ -1,4 +1,4 @@
-@* Admin Dashboard template for MVC *}
+@* Admin Dashboard template for MVC *@
 @{
     ViewData["Title"] = "Dashboard";
 }

@@ -1,0 +1,26 @@
+@* Line chart: sample data below, replace it with your own (a query, an API call). *@
+@page "/charts/line"
+@using Modulus.Blazor.Components.Charts
+@using Modulus.Ui.Abstractions.Charts
+
+<PageTitle>Line chart</PageTitle>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Line chart</h3></div>
+            <div class="card-body">
+                <LineChart Labels="_months" Series="_series" Area />
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly string[] _months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
+    private readonly ChartSeries[] _series =
+    [
+        new("Revenue", [12, 19, 14, 22, 27, 31]),
+        new("Costs", [9, 11, 12, 15, 16, 18]),
+    ];
+}

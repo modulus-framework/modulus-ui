@@ -1,0 +1,21 @@
+@* Empty state: shown when a list or search has no results *@
+@{
+    string title = ViewBag.Title ?? "Nothing here yet";
+    string? message = ViewBag.Message;
+    string? actionText = ViewBag.ActionText;
+    string actionUrl = ViewBag.ActionUrl ?? "#";
+}
+
+<div class="empty text-center py-5">
+    <p class="empty-title h3">@title</p>
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <p class="empty-subtitle text-secondary">@message</p>
+    }
+    @if (!string.IsNullOrEmpty(actionText))
+    {
+        <div class="empty-action">
+            <a href="@actionUrl" class="btn btn-primary">@actionText</a>
+        </div>
+    }
+</div>

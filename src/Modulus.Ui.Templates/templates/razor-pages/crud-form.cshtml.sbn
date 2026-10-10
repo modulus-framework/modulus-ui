@@ -1,5 +1,5 @@
-@page "/{{ entity_name_plural | downcase }}/Create"
-@page "/{{ entity_name_plural | downcase }}/Edit/{id}"
+@page "/{{ entity_name_plural | string.downcase }}/Create"
+@page "/{{ entity_name_plural | string.downcase }}/Edit/{id}"
 @using Modulus.Samples.Shared
 @model {{ entity_name }}Dto
 @{
@@ -14,7 +14,7 @@
                     <h2 class="page-title">{{ entity_name_plural }}</h2>
                     <nav aria-label="breadcrumb" class="ms-2">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="/{{ entity_name_plural | downcase }}">{{ entity_name_plural }}</a></li>
+                            <li class="breadcrumb-item"><a href="/{{ entity_name_plural | string.downcase }}">{{ entity_name_plural }}</a></li>
                             <li class="breadcrumb-item active" aria-current="page">@ViewData["Title"]</li>
                         </ol>
                     </nav>
@@ -65,7 +65,7 @@
                                             <span>Create</span>
                                         }
                                     </button>
-                                    <a href="/{{ entity_name_plural | downcase }}" class="btn btn-link">Cancel</a>
+                                    <a href="/{{ entity_name_plural | string.downcase }}" class="btn btn-link">Cancel</a>
                                 </div>
                             </form>
                         </div>
