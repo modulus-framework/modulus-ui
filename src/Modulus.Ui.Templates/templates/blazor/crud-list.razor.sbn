@@ -1,0 +1,35 @@
+@page "/{{ route_prefix }}/list"
+@using Modulus.Ui.Abstractions.Grids
+@using Modulus.Samples.Shared
+@inject NavigationManager Nav
+
+<PageTitle>{{ entity_name_plural }}</PageTitle>
+
+<div class="page-wrapper">
+    <div class="container-xl">
+        <div class="page-header d-mb-4">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h2 class="page-title">{{ entity_name_plural }}</h2>
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-primary" @onclick="@(() => Nav.NavigateTo("/{{ route_prefix }}/create"))">
+                        New {{ entity_name }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="page-body">
+        <div class="container-xl">
+            <div class="row row-deck row-cards">
+                <div class="col-12">
+                    <div class="card">
+                        @* ProTable component will be rendered here *@
+                        @* Template to be filled based on actual component API *@
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

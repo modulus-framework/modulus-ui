@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <!--
+    Template content package: no code, only manifests and embedded Scriban templates.
+    The CLI renders templates from here at scaffold time, so every template version matches the kit version exactly.
+  -->
+
+  <ItemGroup>
+    <!-- Embed the manifest and all .sbn templates -->
+    <EmbeddedResource Include="ui-kit.json" />
+    <EmbeddedResource Include="templates/**/*.sbn" />
+  </ItemGroup>
+
+</Project>

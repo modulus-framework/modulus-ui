@@ -15,6 +15,7 @@
     <Project Path="src/Modulus.Documents/Modulus.Documents.csproj" />
     <Project Path="src/Modulus.Ui.Abstractions/Modulus.Ui.Abstractions.csproj" />
     <Project Path="src/Modulus.Ui.Assets/Modulus.Ui.Assets.csproj" />
+    <Project Path="src/Modulus.Ui.Templates/Modulus.Ui.Templates.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Modulus.AspNetCore.Fluid.Tests/Modulus.AspNetCore.Fluid.Tests.csproj" />

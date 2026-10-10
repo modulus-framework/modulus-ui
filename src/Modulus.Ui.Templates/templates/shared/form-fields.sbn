@@ -1,0 +1,36 @@
+{{~# Shared form fields for CRUD templates
+  Use this in create/edit forms: {{ include 'shared/form-fields' }}
+~}}
+
+@{
+    var model = ViewBag.{{ entity_name }};
+}
+
+<div class="form-group">
+    <label class="form-label">Name</label>
+    <input
+        type="text"
+        class="form-control"
+        name="name"
+        value="@model?.Name"
+        placeholder="Enter {{ entity_name_lower }} name"
+        required />
+</div>
+
+<div class="form-group">
+    <label class="form-label">Description</label>
+    <textarea
+        class="form-control"
+        name="description"
+        placeholder="Enter description"
+        rows="4">@model?.Description</textarea>
+</div>
+
+<div class="form-group">
+    <label class="form-label">Status</label>
+    <select class="form-control" name="status" required>
+        <option value="">Select status...</option>
+        <option value="active" @(model?.Status == "active" ? "selected" : "")>Active</option>
+        <option value="inactive" @(model?.Status == "inactive" ? "selected" : "")>Inactive</option>
+    </select>
+</div>

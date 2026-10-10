@@ -1,0 +1,52 @@
+@using Modulus.Ui.Abstractions.Grids
+@using Modulus.Samples.Shared
+@model ProTableRequest
+
+@{
+    ViewData["Title"] = "{{ entity_name_plural }}";
+}
+
+<div class="page-wrapper">
+    <div class="container-xl">
+        <div class="page-header d-mb-4">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h2 class="page-title">{{ entity_name_plural }}</h2>
+                </div>
+                <div class="col-auto">
+                    <a href="@Url.Action("Create")" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                            <path d="M12 5v14m-7-7h14"></path>
+                        </svg>
+                        New {{ entity_name }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="page-body">
+        <div class="container-xl">
+            <div class="row row-deck row-cards">
+                <div class="col-12">
+                    <div class="card">
+                        <app-pro-table
+                            request="@Model"
+                            data-src="@Url.Action("List")"
+                            searchable="true"
+                            sortable="true"
+                            pageable="true">
+                            <app-table-column title="ID" data-index="id" width="80" align="center"></app-table-column>
+                            <app-table-column title="Name" data-index="name" sortable="true"></app-table-column>
+                            <app-table-column title="Status" data-index="status" width="150"></app-table-column>
+                            <app-table-column title="Actions" width="100" align="center">
+                                <button class="btn btn-sm btn-ghost-primary">
+                                    <a href="#">Edit</a>
+                                </button>
+                            </app-table-column>
+                        </app-pro-table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

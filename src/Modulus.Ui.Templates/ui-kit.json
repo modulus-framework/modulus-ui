@@ -1,0 +1,145 @@
+{
+  "version": "0.9.0",
+  "name": "Modulus UI Kit",
+  "description": "Admin template and components for MVC, Razor Pages, Blazor, and Fluid.",
+  "engines": ["mvc", "razor-pages", "blazor", "fluid", "none"],
+  "features": {
+    "shell": {
+      "description": "Shell layout with header, navbar/sidebar, footer.",
+      "files": {
+        "mvc": [
+          "Views/Shared/_Layout.cshtml",
+          "Views/Shared/Components/Shell/Default.cshtml"
+        ],
+        "razor-pages": [
+          "Pages/Shared/_Layout.cshtml",
+          "Pages/Shared/Components/Shell/Default.cshtml"
+        ],
+        "blazor": [
+          "Components/Layout/AppShell.razor"
+        ],
+        "fluid": [
+          "Templates/_layout.liquid"
+        ]
+      },
+      "packages": {
+        "mvc": ["Modulus.AspNetCore.Mvc", "Modulus.Ui.Assets", "Modulus.Ui.Abstractions", "Modulus.AspNetCore.Hosting"],
+        "razor-pages": ["Modulus.AspNetCore.Mvc", "Modulus.Ui.Assets", "Modulus.Ui.Abstractions", "Modulus.AspNetCore.Hosting"],
+        "blazor": ["Modulus.Blazor", "Modulus.Ui.Assets", "Modulus.Ui.Abstractions", "Modulus.AspNetCore.Hosting"],
+        "fluid": ["Modulus.AspNetCore.Fluid", "Modulus.Ui.Assets", "Modulus.AspNetCore.Hosting"]
+      }
+    },
+    "crud": {
+      "description": "CRUD pages: list with TableQuery, form, detail view.",
+      "files": {
+        "mvc": [
+          "Controllers/[Entity]Controller.cs",
+          "Views/[Entity]/Index.cshtml",
+          "Views/[Entity]/Create.cshtml",
+          "Views/[Entity]/Edit.cshtml",
+          "Views/[Entity]/Details.cshtml"
+        ],
+        "razor-pages": [
+          "Pages/[Entity]/Index.cshtml.cs",
+          "Pages/[Entity]/Index.cshtml",
+          "Pages/[Entity]/Create.cshtml.cs",
+          "Pages/[Entity]/Create.cshtml",
+          "Pages/[Entity]/Edit.cshtml.cs",
+          "Pages/[Entity]/Edit.cshtml"
+        ],
+        "blazor": [
+          "Pages/[Entity]/Index.razor",
+          "Pages/[Entity]/Create.razor",
+          "Pages/[Entity]/Edit.razor"
+        ],
+        "fluid": [
+          "Templates/[entity]-list.liquid",
+          "Templates/[entity]-detail.liquid"
+        ]
+      },
+      "packages": {
+        "mvc": ["Modulus.Ui.Abstractions"],
+        "razor-pages": ["Modulus.Ui.Abstractions"],
+        "blazor": ["Modulus.Ui.Abstractions"],
+        "fluid": ["Modulus.Ui.Abstractions"]
+      }
+    },
+    "auth": {
+      "description": "Authentication pages: sign-in, sign-out, register.",
+      "files": {
+        "mvc": [
+          "Controllers/AuthController.cs",
+          "Views/Auth/Login.cshtml",
+          "Views/Auth/Register.cshtml"
+        ],
+        "razor-pages": [
+          "Pages/Auth/Login.cshtml.cs",
+          "Pages/Auth/Login.cshtml",
+          "Pages/Auth/Register.cshtml.cs",
+          "Pages/Auth/Register.cshtml"
+        ],
+        "blazor": [
+          "Pages/Auth/Login.razor",
+          "Pages/Auth/Register.razor"
+        ],
+        "fluid": [
+          "Templates/login.liquid",
+          "Templates/register.liquid"
+        ]
+      },
+      "packages": {
+        "mvc": ["Modulus.Ui.Abstractions"],
+        "razor-pages": ["Modulus.Ui.Abstractions"],
+        "blazor": ["Modulus.Ui.Abstractions"],
+        "fluid": []
+      }
+    },
+    "errors": {
+      "description": "Error pages: 404, 403, 500.",
+      "files": {
+        "mvc": [
+          "Views/Shared/Error.cshtml"
+        ],
+        "razor-pages": [
+          "Pages/Error.cshtml.cs",
+          "Pages/Error.cshtml"
+        ],
+        "blazor": [
+          "Components/Pages/Error.razor"
+        ],
+        "fluid": [
+          "Templates/error.liquid"
+        ]
+      },
+      "packages": {}
+    },
+    "state-store": {
+      "description": "UI state store for saved views.",
+      "files": {
+        "mvc": [
+          "Services/UiStateStore.cs"
+        ],
+        "razor-pages": [
+          "Services/UiStateStore.cs"
+        ],
+        "blazor": [
+          "Services/UiStateStore.cs"
+        ],
+        "fluid": []
+      },
+      "packages": {
+        "mvc": ["Modulus.Ui.Abstractions"],
+        "razor-pages": ["Modulus.Ui.Abstractions"],
+        "blazor": ["Modulus.Ui.Abstractions"],
+        "fluid": []
+      }
+    }
+  },
+  "templates": {
+    "description": "Entry point method to add and use Modulus UI in Program.cs",
+    "mvc": "builder.Services.AddModulusMvc(theme => builder.Configuration.GetSection(\"Modulus:Theme\").Bind(theme));",
+    "razor-pages": "builder.Services.AddModulusMvc(theme => builder.Configuration.GetSection(\"Modulus:Theme\").Bind(theme));",
+    "blazor": "builder.Services.AddModulusBlazor(theme => builder.Configuration.GetSection(\"Modulus:Theme\").Bind(theme));",
+    "fluid": "builder.Services.AddSingleton(new ModulusLiquid(new ModulusLiquidOptions()));"
+  }
+}
