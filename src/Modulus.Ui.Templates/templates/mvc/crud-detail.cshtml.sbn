@@ -1,0 +1,96 @@
+@using Modulus.Samples.Shared
+@model {{ entity_name }}Dto
+
+@{
+    ViewData["Title"] = "{{ entity_name }} Details";
+}
+
+<div class="page-wrapper">
+    <div class="container-xl">
+        <div class="page-header d-mb-4">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h2 class="page-title">{{ entity_name }} Details</h2>
+                    <nav aria-label="breadcrumb" class="ms-2">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="@Url.Action("Index")">{{ entity_name_plural }}</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">@ViewData["Title"]</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="col-auto">
+                    <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
+                            <path d="M4 13.5v6.5c0 1.5 1 2.5 2.5 2.5h12c1.5 0 2.5-1 2.5-2.5v-6"></path>
+                            <path d="M13.5 2.5h-6c-1.5 0-2.5 1-2.5 2.5m8-5L3 16"></path>
+                        </svg>
+                        Edit
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="page-body">
+        <div class="container-xl">
+            <div class="row">
+                <div class="col-md-8 col-lg-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-sm-3">
+                                    <label class="form-label fw-bold">ID</label>
+                                </div>
+                                <div class="col-sm-9">
+                                    <p>@Model.Id</p>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-sm-3">
+                                    <label class="form-label fw-bold">Name</label>
+                                </div>
+                                <div class="col-sm-9">
+                                    <p>@Model.Name</p>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-sm-3">
+                                    <label class="form-label fw-bold">Description</label>
+                                </div>
+                                <div class="col-sm-9">
+                                    <p>@(string.IsNullOrEmpty(Model.Description) ? "N/A" : Model.Description)</p>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-sm-3">
+                                    <label class="form-label fw-bold">Status</label>
+                                </div>
+                                <div class="col-sm-9">
+                                    <p>
+                                        <span class="badge badge-pill badge-success">Active</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-sm-3">
+                                    <label class="form-label fw-bold">Created</label>
+                                </div>
+                                <div class="col-sm-9">
+                                    <p>@Model.CreatedAt?.ToString("g")</p>
+                                </div>
+                            </div>
+
+                            <div class="form-footer">
+                                <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-primary">Edit</a>
+                                <a href="@Url.Action("Index")" class="btn btn-link">Back to List</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

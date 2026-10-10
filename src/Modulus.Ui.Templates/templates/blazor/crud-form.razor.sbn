@@ -1,0 +1,109 @@
+@using Modulus.Samples.Shared
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<PageTitle>@(Item?.Id == Guid.Empty ? "Create" : "Edit") {{ entity_name }}</PageTitle>
+
+<div class="page-wrapper">
+    <div class="container-xl">
+        <div class="page-header d-mb-4">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h2 class="page-title">{{ entity_name_plural }}</h2>
+                    <nav aria-label="breadcrumb" class="ms-2">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/{{ entity_name_plural | downcase }}">{{ entity_name_plural }}</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">@(Item?.Id == Guid.Empty ? "Create" : "Edit")</li>
+                        </ol>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="page-body">
+        <div class="container-xl">
+            <div class="row">
+                <div class="col-md-8 col-lg-6">
+                    <div class="card">
+                        <div class="card-body">
+                            @if (Item == null)
+                            {
+                                <p><em>Loading...</em></p>
+                            }
+                            else
+                            {
+                                <EditForm Model="Item" OnValidSubmit="HandleSubmit">
+                                    <DataAnnotationsValidator />
+
+                                    @if (Item.Id != Guid.Empty)
+                                    {
+                                        <input type="hidden" value="@Item.Id" />
+                                    }
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Name <span class="badge badge-pill badge-danger">Required</span></label>
+                                        <InputText @bind-Value="Item.Name" class="form-control" placeholder="Enter name" />
+                                        <ValidationMessage For="() => Item.Name" class="form-text text-danger" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Description</label>
+                                        <InputTextArea @bind-Value="Item.Description" class="form-control" rows="4" placeholder="Enter description" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Status</label>
+                                        <select class="form-select">
+                                            <option selected>Choose status</option>
+                                            <option value="active">Active</option>
+                                            <option value="inactive">Inactive</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-footer">
+                                        <button type="submit" class="btn btn-primary">
+                                            @if (Item.Id != Guid.Empty)
+                                            {
+                                                <span>Update</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Create</span>
+                                            }
+                                        </button>
+                                        <a href="/{{ entity_name_plural | downcase }}" class="btn btn-link">Cancel</a>
+                                    </div>
+                                </EditForm>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Guid? Id { get; set; }
+
+    private {{ entity_name }}Dto? Item { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Id.HasValue && Id.Value != Guid.Empty)
+        {
+            Item = await Http.GetFromJsonAsync<{{ entity_name }}Dto>($"/api/{{ entity_name_plural | downcase }}/{Id}");
+        }
+        else
+        {
+            Item = new {{ entity_name }}Dto();
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        // TODO: Implement save logic
+        Navigation.NavigateTo($"/{{ entity_name_plural | downcase }}");
+    }
+}
