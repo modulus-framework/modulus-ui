@@ -1,0 +1,105 @@
+@page "/audit-logs"
+@inject HttpClient Http
+
+<PageTitle>Audit Logs</PageTitle>
+
+<div class="page-wrapper">
+    <div class="container-xl">
+        <div class="page-header d-mb-4">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h2 class="page-title">Audit Logs</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="page-body">
+        <div class="container-xl">
+            <div class="row row-deck row-cards">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="row align-items-center">
+                                <div class="col">
+                                    <h3 class="card-title">Activity Timeline</h3>
+                                </div>
+                                <div class="col-auto">
+                                    <input type="text" class="form-control" placeholder="Search logs..." @oninput="OnSearch" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-vcenter card-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>User</th>
+                                        <th>Action</th>
+                                        <th>Resource</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Logs != null)
+                                    {
+                                        @foreach (var log in Logs)
+                                        {
+                                            <tr>
+                                                <td>@log.Timestamp</td>
+                                                <td>@log.User</td>
+                                                <td><span class="badge @GetActionBadgeClass(log.Action)">@log.Action</span></td>
+                                                <td>@log.Resource</td>
+                                                <td><span class="badge badge-success">@log.Status</span></td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<AuditLog>? Logs;
+    private string SearchTerm = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Logs = await Http.GetFromJsonAsync<List<AuditLog>>("/api/admin/audit-logs");
+            Logs ??= new List<AuditLog>();
+        }
+        catch
+        {
+            Logs = new List<AuditLog>();
+        }
+    }
+
+    private async Task OnSearch(ChangeEventArgs args)
+    {
+        SearchTerm = args.Value?.ToString() ?? "";
+        // Implement search logic
+    }
+
+    private string GetActionBadgeClass(string action) => action?.ToUpper() switch
+    {
+        "CREATE" => "badge-success",
+        "UPDATE" => "badge-info",
+        "DELETE" => "badge-danger",
+        _ => "badge-secondary"
+    };
+
+    public class AuditLog
+    {
+        public string Timestamp { get; set; } = "";
+        public string User { get; set; } = "";
+        public string Action { get; set; } = "";
+        public string Resource { get; set; } = "";
+        public string Status { get; set; } = "Success";
+    }
+}

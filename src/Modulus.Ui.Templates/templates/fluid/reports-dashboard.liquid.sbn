@@ -1,0 +1,84 @@
+{# Reports & Analytics Dashboard for Fluid #}
+
+<div class="page-wrapper">
+    <div class="container-xl">
+        <div class="page-header d-mb-4">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h2 class="page-title">Reports & Analytics</h2>
+                </div>
+                <div class="col-auto">
+                    <a href="/reports/new" class="btn btn-primary">New Report</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="page-body">
+        <div class="container-xl">
+            <div class="row row-deck row-cards mb-4">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-secondary">Total Reports</div>
+                            <div class="display-6">{{ total_reports | default: 0 }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-secondary">Scheduled</div>
+                            <div class="display-6">{{ scheduled_reports | default: 0 }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-secondary">This Month</div>
+                            <div class="display-6">{{ monthly_reports | default: 0 }}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-secondary">Avg. Gen. Time</div>
+                            <div class="display-6">{{ avg_gen_time | default: '0s' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row row-deck row-cards">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Available Reports</h3>
+                        </div>
+                        <table class="table table-vcenter card-table">
+                            <thead>
+                                <tr>
+                                    <th>Report Name</th>
+                                    <th>Category</th>
+                                    <th>Last Run</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for report in reports %}
+                                <tr>
+                                    <td><strong>{{ report.name }}</strong></td>
+                                    <td><span class="badge badge-blue">{{ report.category }}</span></td>
+                                    <td>{{ report.last_run }}</td>
+                                    <td><span class="badge badge-success">{{ report.status }}</span></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

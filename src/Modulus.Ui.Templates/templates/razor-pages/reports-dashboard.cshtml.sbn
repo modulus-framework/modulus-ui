@@ -1,0 +1,91 @@
+@page "/reports"
+@{
+    ViewData["Title"] = "Reports & Analytics";
+}
+
+<div class="page-wrapper">
+    <div class="container-xl">
+        <div class="page-header d-mb-4">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h2 class="page-title">Reports & Analytics</h2>
+                </div>
+                <div class="col-auto">
+                    <a href="/reports/new" class="btn btn-primary">New Report</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="page-body">
+        <div class="container-xl">
+            <div class="row row-deck row-cards mb-4">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-secondary">Total Reports</div>
+                            <div class="display-6">@(ViewBag.TotalReports ?? 0)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-secondary">Scheduled</div>
+                            <div class="display-6">@(ViewBag.ScheduledReports ?? 0)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-secondary">This Month</div>
+                            <div class="display-6">@(ViewBag.MonthlyReports ?? 0)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-secondary">Avg. Gen. Time</div>
+                            <div class="display-6">@(ViewBag.AvgGenTime ?? "0s")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row row-deck row-cards">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Available Reports</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-vcenter card-table">
+                                <thead>
+                                    <tr>
+                                        <th>Report Name</th>
+                                        <th>Category</th>
+                                        <th>Last Run</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Sales Summary</strong></td>
+                                        <td><span class="badge badge-blue">Sales</span></td>
+                                        <td>2024-10-10 14:30</td>
+                                        <td><span class="badge badge-success">Ready</span></td>
+                                        <td>
+                                            <a href="#" class="btn btn-sm btn-ghost-primary">View</a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
