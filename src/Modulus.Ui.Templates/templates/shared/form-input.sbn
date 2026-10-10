@@ -1,0 +1,22 @@
+{# Shared form input component #}
+{# Usage for MVC: {% include 'shared/form-input.sbn' name='fieldname' label='Field Label' required=true %} #}
+{# Usage for Blazor: <FormInput Name="@name" Label="@label" @bind-Value="@model.PropertyName" Required="@required" /> #}
+
+<div class="mb-3">
+    <label class="form-label">
+        {{ label }}
+        {% if required %}
+        <span class="badge badge-pill badge-danger">Required</span>
+        {% endif %}
+    </label>
+    <input
+        type="text"
+        name="{{ name }}"
+        class="form-control"
+        placeholder="Enter {{ label | downcase }}"
+        {% if required %}required{% endif %}
+        {% if value %}value="{{ value }}"{% endif %} />
+    {% if help_text %}
+    <small class="form-hint">{{ help_text }}</small>
+    {% endif %}
+</div>

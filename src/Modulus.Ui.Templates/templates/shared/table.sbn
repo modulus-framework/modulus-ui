@@ -1,0 +1,38 @@
+{# Shared table component for MVC/Razor Pages #}
+{# Usage: {% include 'shared/table.sbn' items=model.items columns=columns %} #}
+<table class="table table-vcenter card-table">
+    <thead>
+        <tr>
+            {% for column in columns %}
+            <th>{{ column.title }}</th>
+            {% endfor %}
+            <th class="w-1">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if items && items.size > 0 %}
+            {% for item in items %}
+            <tr>
+                {% for column in columns %}
+                <td>
+                    {% if column.format == 'badge' %}
+                        <span class="badge badge-{{ item[column.key] | downcase }}">{{ item[column.key] }}</span>
+                    {% else %}
+                        {{ item[column.key] }}
+                    {% endif %}
+                </td>
+                {% endfor %}
+                <td>
+                    <a href="#" class="btn btn-sm btn-ghost-primary">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td colspan="{{ columns.size | plus: 1 }}" class="text-center text-muted py-4">
+                    No records found.
+                </td>
+            </tr>
+        {% endif %}
+    </tbody>
+</table>

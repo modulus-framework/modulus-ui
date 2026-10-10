@@ -1,0 +1,39 @@
+@using System.Linq.Expressions
+@typeparam TValue
+@inherits InputBase<TValue>
+
+<div class="mb-3">
+    <label class="form-label" for="@FieldIdentifier.FieldName">
+        @Label
+        @if (Required)
+        {
+            <span class="badge badge-pill badge-danger">Required</span>
+        }
+    </label>
+    <input
+        id="@FieldIdentifier.FieldName"
+        type="text"
+        class="form-control @CssClass"
+        placeholder="@Placeholder"
+        @attributes="AdditionalAttributes"
+        @bind="CurrentValue" />
+    @if (!string.IsNullOrEmpty(HelpText))
+    {
+        <small class="form-hint">@HelpText</small>
+    }
+    <ValidationMessage For="() => Value" class="form-text text-danger" />
+</div>
+
+@code {
+    [Parameter]
+    public string? Label { get; set; }
+
+    [Parameter]
+    public string? Placeholder { get; set; }
+
+    [Parameter]
+    public bool Required { get; set; }
+
+    [Parameter]
+    public string? HelpText { get; set; }
+}

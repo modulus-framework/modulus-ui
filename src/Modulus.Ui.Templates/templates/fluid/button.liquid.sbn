@@ -1,0 +1,24 @@
+{# Reusable button component for Fluid #}
+{# Usage: {% include 'button.liquid' label='Click Me' variant='primary' href='/path' %} #}
+
+{% assign button_class = 'btn' %}
+
+{% if variant %}
+  {% assign button_class = button_class | append: ' btn-' | append: variant %}
+{% else %}
+  {% assign button_class = button_class | append: ' btn-primary' %}
+{% endif %}
+
+{% if size %}
+  {% assign button_class = button_class | append: ' btn-' | append: size %}
+{% endif %}
+
+{% if href %}
+  <a href="{{ href }}" class="{{ button_class }}">
+    {{ label }}
+  </a>
+{% else %}
+  <button type="{{ type | default: 'button' }}" class="{{ button_class }}">
+    {{ label }}
+  </button>
+{% endif %}

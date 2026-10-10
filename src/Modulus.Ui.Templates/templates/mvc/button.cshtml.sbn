@@ -1,0 +1,31 @@
+@* Reusable button component for MVC *@
+@{
+    var buttonClass = "btn";
+
+    if (!string.IsNullOrEmpty(ViewBag.Variant))
+    {
+        buttonClass += $" btn-{ViewBag.Variant}";
+    }
+    else
+    {
+        buttonClass += " btn-primary";
+    }
+
+    if (!string.IsNullOrEmpty(ViewBag.Size))
+    {
+        buttonClass += $" btn-{ViewBag.Size}";
+    }
+}
+
+@if (!string.IsNullOrEmpty(ViewBag.Href))
+{
+    <a href="@ViewBag.Href" class="@buttonClass">
+        @ViewBag.Label
+    </a>
+}
+else
+{
+    <button type="@(ViewBag.Type ?? "button")" class="@buttonClass">
+        @ViewBag.Label
+    </button>
+}

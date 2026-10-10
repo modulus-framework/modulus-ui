@@ -1,0 +1,91 @@
+@typeparam TItem
+
+<div class="table-responsive">
+    <table class="table table-vcenter card-table">
+        <thead>
+            <tr>
+                @foreach (var column in Columns)
+                {
+                    <th style="@GetColumnStyle(column)">@column.Title</th>
+                }
+                <th class="w-1">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Items?.Any() == true)
+            {
+                @foreach (var item in Items)
+                {
+                    <tr>
+                        @foreach (var column in Columns)
+                        {
+                            <td>
+                                @if (column.Template != null)
+                                {
+                                    @column.Template(item)
+                                }
+                                else
+                                {
+                                    @GetPropertyValue(item, column.PropertyName)
+                                }
+                            </td>
+                        }
+                        <td>
+                            @if (RowTemplate != null)
+                            {
+                                @RowTemplate(item)
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="@(Columns?.Count + 1)" class="text-center text-muted py-4">
+                        @EmptyMessage
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter]
+    public IEnumerable<TItem>? Items { get; set; }
+
+    [Parameter]
+    public List<DataColumn<TItem>>? Columns { get; set; }
+
+    [Parameter]
+    public RenderFragment<TItem>? RowTemplate { get; set; }
+
+    [Parameter]
+    public string EmptyMessage { get; set; } = "No records found.";
+
+    private string GetColumnStyle(DataColumn<TItem> column)
+    {
+        var style = "";
+        if (column.Width.HasValue)
+            style += $"width: {column.Width}px;";
+        if (!string.IsNullOrEmpty(column.Align))
+            style += $"text-align: {column.Align};";
+        return style;
+    }
+
+    private object? GetPropertyValue(TItem item, string propertyName)
+    {
+        var property = typeof(TItem).GetProperty(propertyName);
+        return property?.GetValue(item);
+    }
+
+    public class DataColumn<T>
+    {
+        public string Title { get; set; } = "";
+        public string PropertyName { get; set; } = "";
+        public int? Width { get; set; }
+        public string? Align { get; set; }
+        public RenderFragment<T>? Template { get; set; }
+    }
+}

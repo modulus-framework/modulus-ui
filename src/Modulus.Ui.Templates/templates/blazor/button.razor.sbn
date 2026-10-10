@@ -1,0 +1,64 @@
+@* Reusable button component for Blazor *@
+
+@if (IsLink)
+{
+    <a href="@Href" class="@GetButtonClass()">
+        @ChildContent
+    </a>
+}
+else
+{
+    <button type="@Type" class="@GetButtonClass()" @onclick="OnClick" disabled="@IsDisabled">
+        @ChildContent
+    </button>
+}
+
+@code {
+    [Parameter]
+    public string Variant { get; set; } = "primary";
+
+    [Parameter]
+    public string Size { get; set; } = "md";
+
+    [Parameter]
+    public string Type { get; set; } = "button";
+
+    [Parameter]
+    public string? Href { get; set; }
+
+    [Parameter]
+    public bool IsDisabled { get; set; }
+
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool IsLink => !string.IsNullOrEmpty(Href);
+
+    private string GetButtonClass()
+    {
+        var classes = "btn";
+
+        classes += Size switch
+        {
+            "sm" => " btn-sm",
+            "lg" => " btn-lg",
+            _ => ""
+        };
+
+        classes += Variant switch
+        {
+            "primary" => " btn-primary",
+            "secondary" => " btn-secondary",
+            "danger" => " btn-danger",
+            "success" => " btn-success",
+            "warning" => " btn-warning",
+            "ghost" => " btn-ghost-primary",
+            _ => " btn-primary"
+        };
+
+        return classes;
+    }
+}

@@ -1,0 +1,19 @@
+@* Badge component for status display *@
+@{
+    var badgeClass = "badge badge-pill";
+
+    var status = ViewBag.Status?.ToString()?.ToLower() ?? "default";
+
+    badgeClass += status switch
+    {
+        "active" => " badge-success",
+        "inactive" => " badge-secondary",
+        "pending" => " badge-warning",
+        "error" => " badge-danger",
+        _ => " badge-primary"
+    };
+}
+
+<span class="@badgeClass">
+    @(ViewBag.Label ?? status)
+</span>
