@@ -35,19 +35,19 @@
                                 }
 
                                 <div class="mb-3">
-                                    <label class="form-label">Name <span class="badge badge-pill badge-danger">Required</span></label>
+                                    <label class="form-label" asp-for="Name">Name <span class="badge badge-pill badge-danger">Required</span></label>
                                     <input type="text" asp-for="Name" class="form-control" placeholder="Enter name" required />
                                     <span asp-validation-for="Name" class="form-text text-danger"></span>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">Description</label>
-                                    <textarea class="form-control" rows="4" placeholder="Enter description"></textarea>
+                                    <label class="form-label" for="description">Description</label>
+                                    <textarea id="description" class="form-control" rows="4" placeholder="Enter description"></textarea>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label class="form-label">Status</label>
-                                    <select class="form-select">
+                                    <label class="form-label" for="status">Status</label>
+                                    <select id="status" class="form-select">
                                         <option selected>Choose status</option>
                                         <option value="active">Active</option>
                                         <option value="inactive">Inactive</option>

@@ -1,0 +1,82 @@
+@* Permission matrix for {{ entity_name }}: roles down, permissions across. Reads and changes grants through the Modulus.Authorization.Management endpoints ({{ api_prefix }}/grants). *@
+@page "/permissions/{{ entity_route }}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@{
+    ViewData["Title"] = "{{ entity_name }} permissions";
+}
+
+<div class="page-body">
+    <div class="container-xl">
+<div class="card">
+    <div class="card-header"><h3 class="card-title">{{ entity_name }} permissions</h3></div>
+    <div class="card-body">
+        <div id="result" class="alert" role="alert" hidden></div>
+        <p class="text-secondary">Tick a box to grant the permission to the role; clear it to revoke. A role that is denied a permission shows a locked box.</p>
+        <div class="table-responsive">
+            <table class="table table-vcenter card-table">
+                <thead>
+                    <tr>
+                        <th scope="col">Role</th>
+{{~ for p in permissions ~}}
+                        <th scope="col" title="{{ p.key }}">{{ p.label }}</th>
+{{~ end ~}}
+                    </tr>
+                </thead>
+                <tbody>
+{{~ for r in roles ~}}
+                    <tr>
+                        <th scope="row">{{ r }}</th>
+{{~ for p in permissions ~}}
+                        <td><input type="checkbox" class="form-check-input" data-role="{{ r }}" data-permission="{{ p.key }}" aria-label="{{ r }}: {{ p.label }}" disabled /></td>
+{{~ end ~}}
+                    </tr>
+{{~ end ~}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+    </div>
+</div>
+
+<script>
+    const api = '{{ api_prefix }}';
+    const roles = [{{ for r in roles }}'{{ r }}'{{ if !for.last }}, {{ end }}{{ end }}];
+
+    function show(message, ok) {
+        const el = document.getElementById('result');
+        el.textContent = message;
+        el.className = 'alert ' + (ok ? 'alert-success' : 'alert-danger');
+        el.hidden = false;
+    }
+    function box(role, permission) {
+        return document.querySelector('input[data-role="' + role + '"][data-permission="' + permission + '"]');
+    }
+    async function load() {
+        for (const role of roles) {
+            const res = await fetch(api + '/grants/Role/' + encodeURIComponent(role), { credentials: 'same-origin' });
+            if (!res.ok) { show('Could not read the grants (' + res.status + '). You need the authorization management permission.', false); return; }
+            for (const g of await res.json()) {
+                const b = box(role, g.permission);
+                if (!b) continue;
+                if (g.type === 'Allow') b.checked = true;
+                if (g.type === 'Deny') { b.checked = false; b.title = 'Denied'; b.dataset.denied = 'true'; }
+            }
+        }
+        document.querySelectorAll('input[data-role]').forEach(function (b) { b.disabled = b.dataset.denied === 'true'; });
+    }
+    document.addEventListener('change', async function (e) {
+        const b = e.target;
+        if (!b.matches || !b.matches('input[data-role]')) return;
+        const role = b.dataset.role, permission = b.dataset.permission;
+        b.disabled = true;
+        const res = b.checked
+            ? await fetch(api + '/grants', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ holderType: 'Role', holder: role, permissions: [permission], type: 'Allow' }) })
+            : await fetch(api + '/grants/Role/' + encodeURIComponent(role) + '/' + encodeURIComponent(permission), { method: 'DELETE', credentials: 'same-origin' });
+        if (!res.ok) { b.checked = !b.checked; show('The change was refused (' + res.status + ').', false); }
+        else { show(role + ': ' + permission + (b.checked ? ' granted.' : ' revoked.'), true); }
+        b.disabled = false;
+    });
+    load();
+</script>

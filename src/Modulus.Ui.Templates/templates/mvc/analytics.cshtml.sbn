@@ -11,7 +11,7 @@
                     <h2 class="page-title">Analytics & Insights</h2>
                 </div>
                 <div class="col-auto">
-                    <select class="form-select" style="width: 150px;">
+                    <select class="form-select" style="width: 150px;" aria-label="Date range">
                         <option selected>Last 30 days</option>
                         <option>Last 7 days</option>
                         <option>Last 90 days</option>

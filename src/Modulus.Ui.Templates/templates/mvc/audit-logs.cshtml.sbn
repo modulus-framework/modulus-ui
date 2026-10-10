@@ -25,7 +25,7 @@
                                 </div>
                                 <div class="col-auto">
                                     <div class="input-icon">
-                                        <input type="text" class="form-control" placeholder="Search logs..." />
+                                        <input type="text" class="form-control" placeholder="Search logs..." aria-label="Search logs" />
                                     </div>
                                 </div>
                             </div>

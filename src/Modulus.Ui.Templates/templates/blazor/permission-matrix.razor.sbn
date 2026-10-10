@@ -1,0 +1,115 @@
+@* Permission matrix for {{ entity_name }}: roles down, permissions across. Reads and changes grants through the Modulus.Authorization.Management endpoints ({{ api_prefix }}/grants). *@
+@page "/permissions/{{ entity_route }}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject HttpClient Http
+
+<PageTitle>{{ entity_name }} permissions</PageTitle>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">{{ entity_name }} permissions</h3></div>
+            <div class="card-body">
+                @if (_message is not null)
+                {
+                    <div class="alert @(_ok ? "alert-success" : "alert-danger")" role="alert">@_message</div>
+                }
+                <p class="text-secondary">Tick a box to grant the permission to the role; clear it to revoke. A role that is denied a permission shows a locked box.</p>
+                <div class="table-responsive">
+                    <table class="table table-vcenter card-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Role</th>
+                                @foreach (var p in Permissions)
+                                {
+                                    <th scope="col" title="@p.Key">@p.Label</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var role in Roles)
+                            {
+                                <tr>
+                                    <th scope="row">@role</th>
+                                    @foreach (var p in Permissions)
+                                    {
+                                        var cell = (role, p.Key);
+                                        <td>
+                                            <input type="checkbox" class="form-check-input" aria-label="@role: @p.Label"
+                                                   checked="@_allowed.Contains(cell)" disabled="@(_denied.Contains(cell) || _busy)"
+                                                   title="@(_denied.Contains(cell) ? "Denied" : null)"
+                                                   @onchange="e => ToggleAsync(role, p.Key, (bool)(e.Value ?? false))" />
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private const string Api = "{{ api_prefix }}";
+
+    private sealed record Permission(string Key, string Label);
+    private sealed record Grant(string Permission, string Type);
+
+    private static readonly string[] Roles = [{{ for r in roles }}"{{ r }}"{{ if !for.last }}, {{ end }}{{ end }}];
+    private static readonly Permission[] Permissions =
+    [
+{{~ for p in permissions ~}}
+        new("{{ p.key }}", "{{ p.label }}"),
+{{~ end ~}}
+    ];
+
+    private readonly HashSet<(string Role, string Permission)> _allowed = [];
+    private readonly HashSet<(string Role, string Permission)> _denied = [];
+    private string? _message;
+    private bool _ok;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        foreach (var role in Roles)
+        {
+            var response = await Http.GetAsync($"{Api}/grants/Role/{Uri.EscapeDataString(role)}");
+            if (!response.IsSuccessStatusCode)
+            {
+                Report($"Could not read the grants ({(int)response.StatusCode}). You need the authorization management permission.", false);
+                return;
+            }
+            foreach (var g in await response.Content.ReadFromJsonAsync<List<Grant>>() ?? [])
+            {
+                if (g.Type == "Allow") _allowed.Add((role, g.Permission));
+                if (g.Type == "Deny") _denied.Add((role, g.Permission));
+            }
+        }
+    }
+
+    private async Task ToggleAsync(string role, string permission, bool grant)
+    {
+        _busy = true;
+        var response = grant
+            ? await Http.PostAsJsonAsync($"{Api}/grants", new { holderType = "Role", holder = role, permissions = new[] { permission }, type = "Allow" })
+            : await Http.DeleteAsync($"{Api}/grants/Role/{Uri.EscapeDataString(role)}/{Uri.EscapeDataString(permission)}");
+        if (response.IsSuccessStatusCode)
+        {
+            if (grant) _allowed.Add((role, permission)); else _allowed.Remove((role, permission));
+            Report($"{role}: {permission} {(grant ? "granted" : "revoked")}.", true);
+        }
+        else
+        {
+            Report($"The change was refused ({(int)response.StatusCode}).", false);
+        }
+        _busy = false;
+    }
+
+    private void Report(string message, bool ok)
+    {
+        _ok = ok;
+        _message = message;
+    }
+}

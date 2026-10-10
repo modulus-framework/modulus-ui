@@ -16,7 +16,7 @@
         </div>
         @if (Dismissible)
         {
-            <button type="button" class="btn-close" @onclick="OnDismiss"></button>
+            <button type="button" class="btn-close" aria-label="Close" @onclick="OnDismiss"></button>
         }
     </div>
 </div>

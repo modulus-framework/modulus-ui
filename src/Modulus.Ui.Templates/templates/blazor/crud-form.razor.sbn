@@ -52,8 +52,8 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label class="form-label">Status</label>
-                                        <select class="form-select">
+                                        <label class="form-label" for="status">Status</label>
+                                        <select id="status" class="form-select">
                                             <option selected>Choose status</option>
                                             <option value="active">Active</option>
                                             <option value="inactive">Inactive</option>

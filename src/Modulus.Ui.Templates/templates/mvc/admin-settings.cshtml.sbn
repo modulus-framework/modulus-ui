@@ -39,33 +39,17 @@
                         </div>
                         <form method="post" class="card-body">
                             <div class="mb-3">
-                                <label class="form-label">Application Name</label>
-                                <input type="text" class="form-control" value="Modulus App" />
+                                <label class="form-label" for="app-name">Application Name</label>
+                                <input type="text" id="app-name" class="form-control" value="Modulus App" />
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Application Version</label>
-                                <input type="text" class="form-control" value="1.0.0" />
+                                <label class="form-label" for="app-version">Application Version</label>
+                                <input type="text" id="app-version" class="form-control" value="1.0.0" />
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Support Email</label>
-                                <input type="email" class="form-control" value="support@example.com" />
+                                <label class="form-label" for="support-email">Support Email</label>
+                                <input type="email" id="support-email" class="form-control" value="support@example.com" />
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Time Zone</label>
-                                <select class="form-select">
-                                    <option selected>UTC</option>
-                                    <option>America/New_York</option>
-                                    <option>Europe/London</option>
-                                    <option>Asia/Tokyo</option>
-                                </select>
-                            </div>
-                            <div class="form-footer">
-                                <button type="submit" class="btn btn-primary">Save Changes</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+                                <label class="form-label" for="time-zone">Time Zone</label>
+                                <select class="form-select" id="time-zone">

@@ -27,8 +27,8 @@
                     <p><code>@_setup.SharedKey</code></p>
                     <p><a href="@_setup.AuthenticatorUri">Open in authenticator app</a></p>
                     <div class="mb-3">
-                        <label class="form-label">Code from the app</label>
-                        <input @bind="_code" class="form-control" inputmode="numeric" autocomplete="one-time-code" />
+                        <label class="form-label" for="code">Code from the app</label>
+                        <input id="code" @bind="_code" class="form-control" inputmode="numeric" autocomplete="one-time-code" />
                     </div>
                     <button type="button" class="btn btn-primary w-100" @onclick="EnableAsync">Turn on</button>
                 }
@@ -40,8 +40,8 @@
 
                 <hr />
                 <div class="mb-3">
-                    <label class="form-label">Password (to turn it off)</label>
-                    <input @bind="_password" type="password" class="form-control" autocomplete="current-password" />
+                    <label class="form-label" for="password">Password (to turn it off)</label>
+                    <input id="password" @bind="_password" type="password" class="form-control" autocomplete="current-password" />
                 </div>
                 <button type="button" class="btn btn-outline-danger w-100" @onclick="DisableAsync">Turn off two-factor authentication</button>
             </div>

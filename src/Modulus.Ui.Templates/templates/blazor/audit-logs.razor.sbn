@@ -24,7 +24,7 @@
                                     <h3 class="card-title">Activity Timeline</h3>
                                 </div>
                                 <div class="col-auto">
-                                    <input type="text" class="form-control" placeholder="Search logs..." @oninput="OnSearch" />
+                                    <input type="text" class="form-control" placeholder="Search logs..." aria-label="Search logs" @oninput="OnSearch" />
                                 </div>
                             </div>
                         </div>
