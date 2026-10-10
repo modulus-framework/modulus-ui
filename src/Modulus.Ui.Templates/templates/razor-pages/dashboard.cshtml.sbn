@@ -1,0 +1,102 @@
+@* Admin Dashboard for Razor Pages *}
+@page "/dashboard"
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="page-wrapper">
+    <div class="container-xl">
+        <div class="page-header d-mb-4">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h2 class="page-title">Dashboard</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="page-body">
+        <div class="container-xl">
+            <div class="row row-deck row-cards">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-secondary">Total Users</div>
+                            <div class="display-6">@(ViewBag.TotalUsers ?? 0)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-secondary">Active Sessions</div>
+                            <div class="display-6">@(ViewBag.ActiveSessions ?? 0)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-secondary">Modules</div>
+                            <div class="display-6">@(ViewBag.TotalModules ?? 0)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-secondary">System Health</div>
+                            <div class="display-6"><span class="badge badge-success">100%</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row row-deck row-cards mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Recent Users</h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-vcenter card-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Sample User</strong></td>
+                                        <td>user@example.com</td>
+                                        <td><span class="badge badge-success">Active</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">System Status</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="space-y">
+                                <div class="d-flex align-items-center">
+                                    <div class="subheader">API Gateway</div>
+                                    <div class="ms-auto"><span class="badge badge-success">Running</span></div>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <div class="subheader">Database</div>
+                                    <div class="ms-auto"><span class="badge badge-success">Connected</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
