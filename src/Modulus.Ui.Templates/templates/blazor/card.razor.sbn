@@ -1,0 +1,42 @@
+@* Card component for Blazor *}
+
+<div class="card @CssClass">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <div class="card-header">
+            <h3 class="card-title">@Title</h3>
+            @if (HeaderAction != null)
+            {
+                <div class="card-options">
+                    @HeaderAction
+                </div>
+            }
+        </div>
+    }
+    <div class="card-body">
+        @ChildContent
+    </div>
+    @if (Footer != null)
+    {
+        <div class="card-footer">
+            @Footer
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    [Parameter]
+    public RenderFragment? HeaderAction { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? Footer { get; set; }
+}

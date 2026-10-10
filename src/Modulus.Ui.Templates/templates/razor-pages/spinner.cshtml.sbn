@@ -1,0 +1,19 @@
+@* Spinner component for Razor Pages *}
+@{
+    var spinnerClass = "spinner-border";
+    if (!string.IsNullOrEmpty(ViewBag.Size))
+    {
+        spinnerClass += ViewBag.Size == "sm" ? " spinner-border-sm" : "";
+    }
+    if (!string.IsNullOrEmpty(ViewBag.Color))
+    {
+        spinnerClass += $" text-{ViewBag.Color}";
+    }
+}
+
+<div class="@spinnerClass" role="status">
+    @if (!string.IsNullOrEmpty(ViewBag.Label))
+    {
+        <span class="visually-hidden">@ViewBag.Label</span>
+    }
+</div>

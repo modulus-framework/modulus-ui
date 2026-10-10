@@ -1,0 +1,58 @@
+@* Modal component for Blazor *}
+
+<div class="modal fade @(IsOpen ? "show" : "")" style="display: @(IsOpen ? "block" : "none")" tabindex="-1" role="dialog">
+    <div class="modal-dialog @GetModalSize()" role="document">
+        <div class="modal-content">
+            @if (!string.IsNullOrEmpty(Title))
+            {
+                <div class="modal-header">
+                    <h5 class="modal-title">@Title</h5>
+                    <button type="button" class="btn-close" @onclick="OnClose"></button>
+                </div>
+            }
+            <div class="modal-body">
+                @ChildContent
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="OnClose">Close</button>
+                @if (Footer != null)
+                {
+                    @Footer
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (IsOpen)
+{
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; } = false;
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public string Size { get; set; } = "md";
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? Footer { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private string GetModalSize() => Size switch
+    {
+        "sm" => "modal-sm",
+        "lg" => "modal-lg",
+        "xl" => "modal-xl",
+        _ => ""
+    };
+}

@@ -1,0 +1,23 @@
+@* Progress bar component for Blazor *}
+
+<div class="progress">
+    <div class="@GetProgressClass()" role="progressbar" style="width: @Percentage%" aria-valuenow="@Percentage" aria-valuemin="0" aria-valuemax="100">
+        @if (ShowLabel)
+        {
+            <span>@Percentage%</span>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Percentage { get; set; } = 0;
+
+    [Parameter]
+    public string Color { get; set; } = "primary";
+
+    [Parameter]
+    public bool ShowLabel { get; set; } = false;
+
+    private string GetProgressClass() => $"progress-bar bg-{Color}";
+}

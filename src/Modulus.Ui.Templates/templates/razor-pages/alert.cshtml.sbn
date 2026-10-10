@@ -1,0 +1,40 @@
+@* Alert component for Razor Pages *}
+@{
+    var alertClass = "alert";
+    var type = ViewBag.Type?.ToString()?.ToLower() ?? "info";
+
+    alertClass += type switch
+    {
+        "success" => " alert-success",
+        "warning" => " alert-warning",
+        "danger" => " alert-danger",
+        "info" => " alert-info",
+        _ => " alert-info"
+    };
+
+    if (ViewBag.Dismissible == true)
+    {
+        alertClass += " alert-dismissible";
+    }
+}
+
+<div class="@alertClass" role="alert">
+    <div class="d-flex">
+        <div>
+            @if (!string.IsNullOrEmpty(ViewBag.Title))
+            {
+                <h4 class="alert-title">@ViewBag.Title</h4>
+            }
+            @if (!string.IsNullOrEmpty(ViewBag.Message))
+            {
+                <div class="text-secondary">
+                    @ViewBag.Message
+                </div>
+            }
+        </div>
+        @if (ViewBag.Dismissible == true)
+        {
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        }
+    </div>
+</div>

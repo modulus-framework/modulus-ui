@@ -1,0 +1,30 @@
+@* Breadcrumb component for Blazor *}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        @foreach (var (item, index) in Items.Select((x, i) => (x, i)))
+        {
+            @if (index == Items.Count - 1)
+            {
+                <li class="breadcrumb-item active" aria-current="page">@item.Label</li>
+            }
+            else
+            {
+                <li class="breadcrumb-item">
+                    <a href="@item.Url">@item.Label</a>
+                </li>
+            }
+        }
+    </ol>
+</nav>
+
+@code {
+    [Parameter]
+    public List<BreadcrumbItem> Items { get; set; } = new();
+
+    public class BreadcrumbItem
+    {
+        public string Label { get; set; } = "";
+        public string? Url { get; set; }
+    }
+}

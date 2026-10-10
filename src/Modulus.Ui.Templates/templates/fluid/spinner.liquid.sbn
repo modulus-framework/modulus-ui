@@ -1,0 +1,16 @@
+{# Spinner/Loading indicator for Fluid #}
+{% assign spinner_class = 'spinner-border' %}
+
+{% if size == 'sm' %}
+  {% assign spinner_class = spinner_class | append: ' spinner-border-sm' %}
+{% endif %}
+
+{% if color %}
+  {% assign spinner_class = spinner_class | append: ' text-' | append: color %}
+{% endif %}
+
+<div class="{{ spinner_class }}" role="status">
+    {% if label %}
+    <span class="visually-hidden">{{ label }}</span>
+    {% endif %}
+</div>

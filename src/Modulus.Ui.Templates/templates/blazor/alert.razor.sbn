@@ -1,0 +1,58 @@
+@* Alert component for Blazor *}
+
+<div class="@GetAlertClass()" role="alert">
+    <div class="d-flex">
+        <div>
+            @if (!string.IsNullOrEmpty(Title))
+            {
+                <h4 class="alert-title">@Title</h4>
+            }
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                <div class="text-secondary">
+                    @Message
+                </div>
+            }
+        </div>
+        @if (Dismissible)
+        {
+            <button type="button" class="btn-close" @onclick="OnDismiss"></button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string? Type { get; set; } = "info";
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public bool Dismissible { get; set; } = false;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public EventCallback OnDismiss { get; set; }
+
+    private string GetAlertClass()
+    {
+        var baseClass = "alert";
+        baseClass += Type?.ToLower() switch
+        {
+            "success" => " alert-success",
+            "warning" => " alert-warning",
+            "danger" => " alert-danger",
+            "info" => " alert-info",
+            _ => " alert-info"
+        };
+        if (Dismissible)
+            baseClass += " alert-dismissible";
+        return baseClass;
+    }
+}

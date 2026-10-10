@@ -1,0 +1,24 @@
+@* Card component - versatile container #}
+<div class="card @ViewBag.CssClass">
+    @if (!string.IsNullOrEmpty(ViewBag.Title))
+    {
+        <div class="card-header">
+            <h3 class="card-title">@ViewBag.Title</h3>
+            @if (!string.IsNullOrEmpty(ViewBag.HeaderAction))
+            {
+                <div class="card-options">
+                    @Html.Raw(ViewBag.HeaderAction)
+                </div>
+            }
+        </div>
+    }
+    <div class="card-body">
+        @RenderBody()
+    </div>
+    @if (!string.IsNullOrEmpty(ViewBag.Footer))
+    {
+        <div class="card-footer">
+            @Html.Raw(ViewBag.Footer)
+        </div>
+    }
+</div>

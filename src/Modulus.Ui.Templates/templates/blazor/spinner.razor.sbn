@@ -1,0 +1,29 @@
+@* Spinner/Loading indicator for Blazor *}
+
+<div class="@GetSpinnerClass()" role="status">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <span class="visually-hidden">@Label</span>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string? Size { get; set; }
+
+    [Parameter]
+    public string? Color { get; set; } = "primary";
+
+    [Parameter]
+    public string? Label { get; set; } = "Loading...";
+
+    private string GetSpinnerClass()
+    {
+        var classes = "spinner-border";
+        if (Size == "sm")
+            classes += " spinner-border-sm";
+        if (!string.IsNullOrEmpty(Color))
+            classes += $" text-{Color}";
+        return classes;
+    }
+}

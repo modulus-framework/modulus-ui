@@ -1,0 +1,21 @@
+{# Card component for Fluid #}
+<div class="card {{ css_class }}">
+    {% if title %}
+    <div class="card-header">
+        <h3 class="card-title">{{ title }}</h3>
+        {% if header_action %}
+        <div class="card-options">
+            {{ header_action }}
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+    <div class="card-body">
+        {{ content }}
+    </div>
+    {% if footer %}
+    <div class="card-footer">
+        {{ footer }}
+    </div>
+    {% endif %}
+</div>

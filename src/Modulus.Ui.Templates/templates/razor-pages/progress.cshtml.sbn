@@ -1,0 +1,15 @@
+@* Progress bar component for Razor Pages *}
+@{
+    var percentage = ViewBag.Percentage ?? 0;
+    var color = ViewBag.Color ?? "primary";
+    var progressClass = $"progress-bar bg-{color}";
+}
+
+<div class="progress">
+    <div class="@progressClass" role="progressbar" style="width: @percentage%" aria-valuenow="@percentage" aria-valuemin="0" aria-valuemax="100">
+        @if (ViewBag.ShowLabel == true)
+        {
+            <span>@percentage%</span>
+        }
+    </div>
+</div>
