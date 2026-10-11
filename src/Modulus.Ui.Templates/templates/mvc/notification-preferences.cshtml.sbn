@@ -1,0 +1,105 @@
+@* Notification preferences - configure notification channels and types *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    ViewData["Title"] = "Notification preferences";
+}
+
+<app-page-header pretitle="Account" title="Notification preferences"></app-page-header>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">Email notifications</h2></div>
+    <div class="m-card-body">
+        <form method="post" asp-antiforgery="true" class="ant-form ant-form-vertical" novalidate>
+            <div class="ant-form-item">
+                <div class="ant-form-item-label"><label>Email preferences</label></div>
+                <div class="ant-form-item-control">
+                    <div class="m-checkbox-group">
+                        <label class="ant-checkbox-wrapper">
+                            <input type="checkbox" class="ant-checkbox-input" name="EmailActivitySummary" value="true" checked />
+                            <span>Weekly activity summary</span>
+                        </label>
+                        <label class="ant-checkbox-wrapper">
+                            <input type="checkbox" class="ant-checkbox-input" name="EmailSecurityAlerts" value="true" checked />
+                            <span>Security alerts and login attempts</span>
+                        </label>
+                        <label class="ant-checkbox-wrapper">
+                            <input type="checkbox" class="ant-checkbox-input" name="EmailProductUpdates" value="true" />
+                            <span>Product updates and announcements</span>
+                        </label>
+                        <label class="ant-checkbox-wrapper">
+                            <input type="checkbox" class="ant-checkbox-input" name="EmailMarketingEmails" value="true" />
+                            <span>Marketing emails and promotions</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="m-card m-mt-24">
+    <div class="m-card-header"><h2 class="m-card-title">In-app notifications</h2></div>
+    <div class="m-card-body">
+        <form method="post" asp-antiforgery="true" class="ant-form ant-form-vertical" novalidate>
+            <div class="ant-form-item">
+                <div class="ant-form-item-label"><label>Notification types</label></div>
+                <div class="ant-form-item-control">
+                    <div class="m-checkbox-group">
+                        <label class="ant-checkbox-wrapper">
+                            <input type="checkbox" class="ant-checkbox-input" name="NotifySystemUpdates" value="true" checked />
+                            <span>System updates and maintenance</span>
+                        </label>
+                        <label class="ant-checkbox-wrapper">
+                            <input type="checkbox" class="ant-checkbox-input" name="NotifyReports" value="true" checked />
+                            <span>Report generation and completion</span>
+                        </label>
+                        <label class="ant-checkbox-wrapper">
+                            <input type="checkbox" class="ant-checkbox-input" name="NotifyCollaboration" value="true" checked />
+                            <span>Collaboration and mentions</span>
+                        </label>
+                        <label class="ant-checkbox-wrapper">
+                            <input type="checkbox" class="ant-checkbox-input" name="NotifyScheduled" value="true" />
+                            <span>Scheduled task reminders</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="m-card m-mt-24">
+    <div class="m-card-header"><h2 class="m-card-title">Notification delivery</h2></div>
+    <div class="m-card-body">
+        <form method="post" asp-antiforgery="true" class="ant-form ant-form-vertical" novalidate>
+            <div class="m-form-grid">
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="digest-frequency">Digest frequency</label></div>
+                    <div class="ant-form-item-control">
+                        <select id="digest-frequency" name="DigestFrequency" class="ant-input">
+                            <option>Real-time</option>
+                            <option>Daily digest</option>
+                            <option>Weekly digest</option>
+                            <option>Never</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="quiet-hours">Quiet hours</label></div>
+                    <div class="ant-form-item-control">
+                        <input id="quiet-hours" name="QuietHours" class="ant-input" type="time" />
+                    </div>
+                </div>
+            </div>
+            <div class="m-form-actions">
+                <app-button type="primary" html-type="submit">Save preferences</app-button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .m-checkbox-group { display: flex; flex-direction: column; gap: 12px; }
+    .ant-checkbox-wrapper { display: flex; align-items: center; margin: 0; }
+    .m-mt-24 { margin-top: 24px; }
+</style>

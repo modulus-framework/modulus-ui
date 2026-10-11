@@ -1,0 +1,109 @@
+@page "/account/profile"
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@* User profile - manage personal profile and account settings *@
+@{
+    ViewData["Title"] = "User profile";
+}
+
+<app-page-header pretitle="Account" title="Profile"></app-page-header>
+
+<div class="m-grid m-profile-grid">
+    <div class="m-card">
+        <div class="m-card-header"><h2 class="m-card-title">Profile information</h2></div>
+        <div class="m-card-body">
+            <form method="post" class="ant-form ant-form-vertical" novalidate>
+                <div class="m-profile-avatar">
+                    <div class="m-avatar m-avatar-lg">JD</div>
+                    <div>
+                        <p class="m-profile-name">Jane Doe</p>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm">Change avatar</button>
+                    </div>
+                </div>
+
+                <div class="m-divider"></div>
+
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="first-name">First name</label></div>
+                    <div class="ant-form-item-control"><input id="first-name" name="FirstName" class="ant-input" value="Jane" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="last-name">Last name</label></div>
+                    <div class="ant-form-item-control"><input id="last-name" name="LastName" class="ant-input" value="Doe" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="email">Email</label></div>
+                    <div class="ant-form-item-control"><input id="email" name="Email" type="email" class="ant-input" value="jane.doe@example.com" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="phone">Phone</label></div>
+                    <div class="ant-form-item-control"><input id="phone" name="Phone" type="tel" class="ant-input" placeholder="+1 (555) 000-0000" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="job-title">Job title</label></div>
+                    <div class="ant-form-item-control"><input id="job-title" name="JobTitle" class="ant-input" value="Senior Manager" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="bio">Bio</label></div>
+                    <div class="ant-form-item-control"><textarea id="bio" name="Bio" class="ant-input" rows="4">Passionate about business operations and process improvement.</textarea></div>
+                </div>
+
+                <div class="m-form-actions">
+                    <app-button type="primary" html-type="submit">Save profile</app-button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><h2 class="m-card-title">Account information</h2></div>
+        <div class="m-card-body">
+            <div class="m-info-group">
+                <div class="m-info-item">
+                    <p class="m-info-label">Member since</p>
+                    <p class="m-info-value">January 15, 2024</p>
+                </div>
+                <div class="m-info-item">
+                    <p class="m-info-label">Account type</p>
+                    <p class="m-info-value">Administrator</p>
+                </div>
+                <div class="m-info-item">
+                    <p class="m-info-label">Last login</p>
+                    <p class="m-info-value">Today at 2:30 PM</p>
+                </div>
+                <div class="m-info-item">
+                    <p class="m-info-label">Account status</p>
+                    <p class="m-info-value"><span class="m-badge m-badge-success-lt">Active</span></p>
+                </div>
+            </div>
+
+            <div class="m-divider"></div>
+
+            <h3 class="m-card-title-secondary">Danger zone</h3>
+            <p class="m-muted m-mb-16">These actions cannot be undone. Please proceed with caution.</p>
+            <app-button type="danger">Delete account</app-button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .m-profile-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+    @media (max-width: 768px) { .m-profile-grid { grid-template-columns: 1fr; } }
+
+    .m-profile-avatar { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+    .m-avatar { display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #1677ff; color: white; font-weight: 600; }
+    .m-avatar-lg { width: 80px; height: 80px; font-size: 24px; }
+
+    .m-profile-name { margin: 0; font-weight: 600; }
+    .m-divider { border: none; border-top: 1px solid rgba(0, 0, 0, 0.06); margin: 16px 0; }
+
+    .m-info-group { display: flex; flex-direction: column; gap: 12px; }
+    .m-info-item { display: flex; justify-content: space-between; }
+    .m-info-label { margin: 0; font-size: 12px; color: rgba(0, 0, 0, 0.45); }
+    .m-info-value { margin: 0; font-weight: 500; }
+
+    .m-card-title-secondary { margin: 0; font-size: 14px; font-weight: 600; }
+    .m-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+    .m-badge-success-lt { background: rgba(52, 211, 153, 0.1); color: #34d399; }
+    .m-muted { color: rgba(0, 0, 0, 0.45); }
+    .m-mb-16 { margin-bottom: 16px; }
+</style>

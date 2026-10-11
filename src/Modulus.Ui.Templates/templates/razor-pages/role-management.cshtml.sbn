@@ -1,0 +1,119 @@
+@page "/admin/roles"
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@* Role management - create and manage roles with permissions *@
+@{
+    ViewData["Title"] = "Role management";
+}
+
+<app-page-header pretitle="Administration" title="Role management">
+    <app-button type="primary" href="#">Create role</app-button>
+</app-page-header>
+
+<div class="m-card">
+    <div class="m-card-header">
+        <h2 class="m-card-title">Roles</h2>
+        <div class="m-card-actions">
+            <app-input type="search" name="q" placeholder="Search roles..." aria-label="Search roles" prefix-icon="search" />
+        </div>
+    </div>
+    <div class="m-card-body m-card-body-flush">
+        <div class="ant-table-wrapper m-table-flush"><div class="ant-table"><div class="ant-table-container"><div class="ant-table-content"><table style="table-layout:auto"><thead class="ant-table-thead"><tr><th class="ant-table-cell">Name</th><th class="ant-table-cell">Description</th><th class="ant-table-cell">Members</th><th class="ant-table-cell">Permissions</th><th class="ant-table-cell">Actions</th></tr></thead><tbody class="ant-table-tbody">
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Administrator</strong></td><td class="ant-table-cell m-muted">Full system access</td><td class="ant-table-cell">3 users</td><td class="ant-table-cell"><span class="m-badge m-badge-danger-lt">All</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Edit</a></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Manager</strong></td><td class="ant-table-cell m-muted">Team and report management</td><td class="ant-table-cell">5 users</td><td class="ant-table-cell"><span class="m-badge m-badge-blue-lt">15 permissions</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Edit</a></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>User</strong></td><td class="ant-table-cell m-muted">Read-only access to assigned resources</td><td class="ant-table-cell">12 users</td><td class="ant-table-cell"><span class="m-badge m-badge-cyan-lt">5 permissions</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Edit</a></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Guest</strong></td><td class="ant-table-cell m-muted">Limited temporary access</td><td class="ant-table-cell">0 users</td><td class="ant-table-cell"><span class="m-badge m-badge-purple-lt">2 permissions</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Edit</a></td></tr>
+        </tbody></table></div></div></div></div>
+    </div>
+</div>
+
+<div class="m-card m-mt-24">
+    <div class="m-card-header"><h2 class="m-card-title">Role edit: Manager</h2></div>
+    <div class="m-card-body">
+        <form method="post" class="ant-form ant-form-vertical" novalidate>
+            <div class="ant-form-item">
+                <div class="ant-form-item-label"><label for="role-name">Role name</label></div>
+                <div class="ant-form-item-control"><input id="role-name" name="RoleName" class="ant-input" value="Manager" /></div>
+            </div>
+            <div class="ant-form-item">
+                <div class="ant-form-item-label"><label for="role-description">Description</label></div>
+                <div class="ant-form-item-control"><textarea id="role-description" name="RoleDescription" class="ant-input" rows="3">Team and report management with limited system access</textarea></div>
+            </div>
+
+            <div class="m-divider"></div>
+
+            <h3 class="m-section-title">Permissions</h3>
+            <div class="m-permissions-list">
+                <div class="m-permission-group">
+                    <h4>Users</h4>
+                    <label class="ant-checkbox-wrapper">
+                        <input type="checkbox" class="ant-checkbox-input" name="Perm_ViewUsers" checked />
+                        <span>View users</span>
+                    </label>
+                    <label class="ant-checkbox-wrapper">
+                        <input type="checkbox" class="ant-checkbox-input" name="Perm_EditUsers" checked />
+                        <span>Edit users</span>
+                    </label>
+                    <label class="ant-checkbox-wrapper">
+                        <input type="checkbox" class="ant-checkbox-input" name="Perm_DeleteUsers" />
+                        <span>Delete users</span>
+                    </label>
+                </div>
+
+                <div class="m-permission-group">
+                    <h4>Reports</h4>
+                    <label class="ant-checkbox-wrapper">
+                        <input type="checkbox" class="ant-checkbox-input" name="Perm_ViewReports" checked />
+                        <span>View reports</span>
+                    </label>
+                    <label class="ant-checkbox-wrapper">
+                        <input type="checkbox" class="ant-checkbox-input" name="Perm_CreateReports" checked />
+                        <span>Create reports</span>
+                    </label>
+                    <label class="ant-checkbox-wrapper">
+                        <input type="checkbox" class="ant-checkbox-input" name="Perm_ExportReports" />
+                        <span>Export reports</span>
+                    </label>
+                </div>
+
+                <div class="m-permission-group">
+                    <h4>Settings</h4>
+                    <label class="ant-checkbox-wrapper">
+                        <input type="checkbox" class="ant-checkbox-input" name="Perm_ViewSettings" checked />
+                        <span>View settings</span>
+                    </label>
+                    <label class="ant-checkbox-wrapper">
+                        <input type="checkbox" class="ant-checkbox-input" name="Perm_EditSettings" />
+                        <span>Edit settings</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="m-form-actions m-mt-24">
+                <app-button type="primary" html-type="submit">Save role</app-button>
+                <app-button type="default" href="#">Cancel</app-button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .m-mt-24 { margin-top: 24px; }
+    .m-divider { border: none; border-top: 1px solid rgba(0, 0, 0, 0.06); margin: 16px 0; }
+    .m-section-title { margin: 0 0 16px 0; font-size: 14px; font-weight: 600; }
+
+    .m-permissions-list { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 768px) { .m-permissions-list { grid-template-columns: 1fr; } }
+
+    .m-permission-group { }
+    .m-permission-group h4 { margin: 0 0 12px 0; font-size: 13px; font-weight: 600; color: rgba(0, 0, 0, 0.85); }
+
+    .ant-checkbox-wrapper { display: flex; align-items: center; margin: 0; margin-bottom: 8px; }
+    .ant-checkbox-input { margin-right: 8px; }
+
+    .m-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+    .m-badge-danger-lt { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+    .m-badge-blue-lt { background: rgba(22, 119, 255, 0.1); color: #1677ff; }
+    .m-badge-cyan-lt { background: rgba(13, 148, 136, 0.1); color: #0d9488; }
+    .m-badge-purple-lt { background: rgba(147, 51, 234, 0.1); color: #9333ea; }
+    .m-muted { color: rgba(0, 0, 0, 0.45); }
+</style>

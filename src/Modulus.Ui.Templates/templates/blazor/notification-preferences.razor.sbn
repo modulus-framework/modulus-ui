@@ -1,0 +1,132 @@
+@page "/account/notification-preferences"
+@inject HttpClient Http
+
+<PageTitle>Notification Preferences</PageTitle>
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Account</div><h1 class="m-page-title">Notification preferences</h1></div>
+</div>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">Email notifications</h2></div>
+    <div class="m-card-body">
+        <div class="m-checkbox-group">
+            <label class="ant-checkbox-wrapper">
+                <input type="checkbox" class="ant-checkbox-input" @bind="preferences.EmailActivitySummary" />
+                <span>Weekly activity summary</span>
+            </label>
+            <label class="ant-checkbox-wrapper">
+                <input type="checkbox" class="ant-checkbox-input" @bind="preferences.EmailSecurityAlerts" />
+                <span>Security alerts and login attempts</span>
+            </label>
+            <label class="ant-checkbox-wrapper">
+                <input type="checkbox" class="ant-checkbox-input" @bind="preferences.EmailProductUpdates" />
+                <span>Product updates and announcements</span>
+            </label>
+            <label class="ant-checkbox-wrapper">
+                <input type="checkbox" class="ant-checkbox-input" @bind="preferences.EmailMarketingEmails" />
+                <span>Marketing emails and promotions</span>
+            </label>
+        </div>
+    </div>
+</div>
+
+<div class="m-card m-mt-24">
+    <div class="m-card-header"><h2 class="m-card-title">In-app notifications</h2></div>
+    <div class="m-card-body">
+        <div class="m-checkbox-group">
+            <label class="ant-checkbox-wrapper">
+                <input type="checkbox" class="ant-checkbox-input" @bind="preferences.NotifySystemUpdates" />
+                <span>System updates and maintenance</span>
+            </label>
+            <label class="ant-checkbox-wrapper">
+                <input type="checkbox" class="ant-checkbox-input" @bind="preferences.NotifyReports" />
+                <span>Report generation and completion</span>
+            </label>
+            <label class="ant-checkbox-wrapper">
+                <input type="checkbox" class="ant-checkbox-input" @bind="preferences.NotifyCollaboration" />
+                <span>Collaboration and mentions</span>
+            </label>
+            <label class="ant-checkbox-wrapper">
+                <input type="checkbox" class="ant-checkbox-input" @bind="preferences.NotifyScheduled" />
+                <span>Scheduled task reminders</span>
+            </label>
+        </div>
+    </div>
+</div>
+
+<div class="m-card m-mt-24">
+    <div class="m-card-header"><h2 class="m-card-title">Notification delivery</h2></div>
+    <div class="m-card-body">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="ant-form-item">
+                <div class="ant-form-item-label"><label for="digest-frequency">Digest frequency</label></div>
+                <div class="ant-form-item-control">
+                    <select id="digest-frequency" @bind="preferences.DigestFrequency" class="ant-input">
+                        <option>Real-time</option>
+                        <option>Daily digest</option>
+                        <option>Weekly digest</option>
+                        <option>Never</option>
+                    </select>
+                </div>
+            </div>
+            <div class="ant-form-item">
+                <div class="ant-form-item-label"><label for="quiet-hours">Quiet hours</label></div>
+                <div class="ant-form-item-control">
+                    <input id="quiet-hours" @bind="preferences.QuietHours" class="ant-input" type="time" />
+                </div>
+            </div>
+        </div>
+        <div style="margin-top: 16px;">
+            <button class="ant-btn ant-btn-primary" @onclick="SavePreferences">Save preferences</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private NotificationPreferences preferences = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            preferences = await Http.GetFromJsonAsync<NotificationPreferences>("/api/notifications/preferences") ?? new();
+        }
+        catch
+        {
+            preferences = new NotificationPreferences();
+        }
+    }
+
+    private async Task SavePreferences()
+    {
+        try
+        {
+            await Http.PostAsJsonAsync("/api/notifications/preferences", preferences);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving preferences: {ex.Message}");
+        }
+    }
+
+    public class NotificationPreferences
+    {
+        public bool EmailActivitySummary { get; set; } = true;
+        public bool EmailSecurityAlerts { get; set; } = true;
+        public bool EmailProductUpdates { get; set; }
+        public bool EmailMarketingEmails { get; set; }
+        public bool NotifySystemUpdates { get; set; } = true;
+        public bool NotifyReports { get; set; } = true;
+        public bool NotifyCollaboration { get; set; } = true;
+        public bool NotifyScheduled { get; set; }
+        public string DigestFrequency { get; set; } = "Real-time";
+        public string QuietHours { get; set; } = "";
+    }
+}
+
+<style>
+    .m-checkbox-group { display: flex; flex-direction: column; gap: 12px; }
+    .ant-checkbox-wrapper { display: flex; align-items: center; margin: 0; }
+    .m-mt-24 { margin-top: 24px; }
+</style>

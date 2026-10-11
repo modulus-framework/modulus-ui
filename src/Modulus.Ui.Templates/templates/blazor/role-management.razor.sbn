@@ -1,0 +1,104 @@
+@page "/admin/roles"
+@inject HttpClient Http
+
+<PageTitle>Role Management</PageTitle>
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Administration</div><h1 class="m-page-title">Role management</h1></div>
+    <button class="ant-btn ant-btn-primary" @onclick="@(() => { /* create */ })">Create role</button>
+</div>
+
+<div class="m-card">
+    <div class="m-card-header">
+        <h2 class="m-card-title">Roles</h2>
+        <div class="m-card-actions">
+            <input type="search" class="ant-input" placeholder="Search roles..." @oninput="OnSearch" />
+        </div>
+    </div>
+    <div class="m-card-body m-card-body-flush">
+        @if (Roles == null)
+        {
+            <p class="m-muted">Loading roles...</p>
+        }
+        else if (Roles.Count == 0)
+        {
+            <div class="m-empty-state"><p>No roles found</p></div>
+        }
+        else
+        {
+            <div class="ant-table-wrapper m-table-flush">
+                <div class="ant-table">
+                    <div class="ant-table-container">
+                        <div class="ant-table-content">
+                            <table style="table-layout:auto">
+                                <thead class="ant-table-thead">
+                                    <tr>
+                                        <th class="ant-table-cell">Name</th>
+                                        <th class="ant-table-cell">Description</th>
+                                        <th class="ant-table-cell">Members</th>
+                                        <th class="ant-table-cell">Permissions</th>
+                                        <th class="ant-table-cell">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="ant-table-tbody">
+                                    @foreach (var role in FilteredRoles)
+                                    {
+                                        <tr class="ant-table-row">
+                                            <td class="ant-table-cell"><strong>@role.Name</strong></td>
+                                            <td class="ant-table-cell m-muted">@role.Description</td>
+                                            <td class="ant-table-cell">@role.MemberCount users</td>
+                                            <td class="ant-table-cell"><span class="m-badge m-badge-blue-lt">@role.PermissionCount permissions</span></td>
+                                            <td class="ant-table-cell"><a href="#" class="ant-btn ant-btn-text ant-btn-sm">Edit</a></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<RoleItem>? Roles;
+    private string SearchTerm = "";
+
+    private List<RoleItem> FilteredRoles =>
+        Roles?.Where(r => string.IsNullOrEmpty(SearchTerm) ||
+                         r.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)).ToList() ?? new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Roles = await Http.GetFromJsonAsync<List<RoleItem>>("/api/admin/roles");
+            Roles ??= new List<RoleItem>();
+        }
+        catch
+        {
+            Roles = new List<RoleItem>();
+        }
+    }
+
+    private void OnSearch(ChangeEventArgs args)
+    {
+        SearchTerm = args.Value?.ToString() ?? "";
+    }
+
+    public class RoleItem
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Description { get; set; } = "";
+        public int MemberCount { get; set; }
+        public int PermissionCount { get; set; }
+    }
+}
+
+<style>
+    .m-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+    .m-badge-blue-lt { background: rgba(22, 119, 255, 0.1); color: #1677ff; }
+    .m-muted { color: rgba(0, 0, 0, 0.45); }
+</style>

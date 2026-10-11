@@ -121,6 +121,75 @@
         "blazor": ["Modulus.Ui.Abstractions"],
         "fluid": []
       }
+    },
+    "notifications": {
+      "description": "Notification management: notification center and preferences. Required for ERP systems.",
+      "files": {
+        "mvc": [
+          "Views/Notifications/Center.cshtml",
+          "Views/Account/NotificationPreferences.cshtml"
+        ],
+        "razor-pages": [
+          "Pages/Notifications/Center.cshtml",
+          "Pages/Account/NotificationPreferences.cshtml"
+        ],
+        "blazor": [
+          "Components/Pages/NotificationCenter.razor",
+          "Components/Pages/NotificationPreferences.razor"
+        ]
+      },
+      "packages": {
+        "mvc": ["Modulus.Ui.Abstractions"],
+        "razor-pages": ["Modulus.Ui.Abstractions"],
+        "blazor": ["Modulus.Ui.Abstractions"]
+      }
+    },
+    "tenant-management": {
+      "description": "Tenant management: list, settings, and members. Required for multi-tenant ERP systems.",
+      "files": {
+        "mvc": [
+          "Views/Admin/Tenants/List.cshtml",
+          "Views/Admin/Tenants/Settings.cshtml",
+          "Views/Admin/Tenants/Members.cshtml"
+        ],
+        "razor-pages": [
+          "Pages/Admin/Tenants/List.cshtml",
+          "Pages/Admin/Tenants/Settings.cshtml",
+          "Pages/Admin/Tenants/Members.cshtml"
+        ],
+        "blazor": [
+          "Components/Pages/Admin/TenantList.razor",
+          "Components/Pages/Admin/TenantSettings.razor",
+          "Components/Pages/Admin/TenantMembers.razor"
+        ]
+      },
+      "packages": {
+        "mvc": ["Modulus.Ui.Abstractions"],
+        "razor-pages": ["Modulus.Ui.Abstractions"],
+        "blazor": ["Modulus.Ui.Abstractions"]
+      }
+    },
+    "user-management": {
+      "description": "User profile and role management. Required for identity and access control.",
+      "files": {
+        "mvc": [
+          "Views/Account/Profile.cshtml",
+          "Views/Admin/Roles/Manage.cshtml"
+        ],
+        "razor-pages": [
+          "Pages/Account/Profile.cshtml",
+          "Pages/Admin/Roles/Manage.cshtml"
+        ],
+        "blazor": [
+          "Components/Pages/Account/UserProfile.razor",
+          "Components/Pages/Admin/RoleManagement.razor"
+        ]
+      },
+      "packages": {
+        "mvc": ["Modulus.Ui.Abstractions"],
+        "razor-pages": ["Modulus.Ui.Abstractions"],
+        "blazor": ["Modulus.Ui.Abstractions"]
+      }
     }
   },
   "templates": {

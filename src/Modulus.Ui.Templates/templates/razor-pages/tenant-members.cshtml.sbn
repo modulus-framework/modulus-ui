@@ -1,0 +1,50 @@
+@page "/admin/tenants/{id}/members"
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@* Tenant members - manage members and their roles within the tenant *@
+@{
+    ViewData["Title"] = "Tenant members";
+}
+
+<app-page-header pretitle="Administration" title="Tenant members">
+    <app-button type="primary" href="#">Invite member</app-button>
+</app-page-header>
+
+<div class="m-card">
+    <div class="m-card-header">
+        <h2 class="m-card-title">Members (12)</h2>
+        <div class="m-card-actions">
+            <app-input type="search" name="q" placeholder="Search members..." aria-label="Search members" prefix-icon="search" />
+        </div>
+    </div>
+    <div class="m-card-body m-card-body-flush">
+        <div class="ant-table-wrapper m-table-flush"><div class="ant-table"><div class="ant-table-container"><div class="ant-table-content"><table style="table-layout:auto"><thead class="ant-table-thead"><tr><th class="ant-table-cell">Name</th><th class="ant-table-cell">Email</th><th class="ant-table-cell">Role</th><th class="ant-table-cell">Joined</th><th class="ant-table-cell">Status</th><th class="ant-table-cell">Actions</th></tr></thead><tbody class="ant-table-tbody">
+        <tr class="ant-table-row"><td class="ant-table-cell"><span class="m-flex"><span class="m-avatar m-avatar-sm">JD</span><strong>Jane Doe</strong></span></td><td class="ant-table-cell m-muted">jane@acme.com</td><td class="ant-table-cell"><span class="m-badge m-badge-blue-lt">Admin</span></td><td class="ant-table-cell m-muted">2024-01-15</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Active</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Edit</a></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><span class="m-flex"><span class="m-avatar m-avatar-sm">SM</span><strong>Sarah Martin</strong></span></td><td class="ant-table-cell m-muted">sarah@acme.com</td><td class="ant-table-cell"><span class="m-badge m-badge-cyan-lt">Manager</span></td><td class="ant-table-cell m-muted">2024-02-10</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Active</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Edit</a></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><span class="m-flex"><span class="m-avatar m-avatar-sm">RC</span><strong>Robert Chen</strong></span></td><td class="ant-table-cell m-muted">robert@acme.com</td><td class="ant-table-cell"><span class="m-badge m-badge-purple-lt">Member</span></td><td class="ant-table-cell m-muted">2024-02-20</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Active</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Edit</a></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><span class="m-flex"><span class="m-avatar m-avatar-sm">AK</span><strong>Amanda King</strong></span></td><td class="ant-table-cell m-muted">amanda@acme.com</td><td class="ant-table-cell"><span class="m-badge m-badge-purple-lt">Member</span></td><td class="ant-table-cell m-muted">2024-03-05</td><td class="ant-table-cell"><span class="m-badge m-badge-warning-lt">Pending</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Edit</a></td></tr>
+        </tbody></table></div></div></div></div>
+    </div>
+</div>
+
+<div class="m-card m-mt-24">
+    <div class="m-card-header"><h2 class="m-card-title">Pending invitations</h2></div>
+    <div class="m-card-body m-card-body-flush">
+        <div class="ant-table-wrapper m-table-flush"><div class="ant-table"><div class="ant-table-container"><div class="ant-table-content"><table style="table-layout:auto"><thead class="ant-table-thead"><tr><th class="ant-table-cell">Email</th><th class="ant-table-cell">Role</th><th class="ant-table-cell">Invited on</th><th class="ant-table-cell">Expires in</th><th class="ant-table-cell">Actions</th></tr></thead><tbody class="ant-table-tbody">
+        <tr class="ant-table-row"><td class="ant-table-cell m-muted">newuser@acme.com</td><td class="ant-table-cell"><span class="m-badge m-badge-purple-lt">Member</span></td><td class="ant-table-cell m-muted">2024-10-05</td><td class="ant-table-cell m-muted">6 days</td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Resend</a></td></tr>
+        </tbody></table></div></div></div></div>
+    </div>
+</div>
+
+<style>
+    .m-flex { display: flex; align-items: center; gap: 8px; }
+    .m-avatar { display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #1677ff; color: white; width: 32px; height: 32px; font-weight: 600; }
+    .m-avatar-sm { width: 24px; height: 24px; font-size: 12px; }
+    .m-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; }
+    .m-badge-blue-lt { background: rgba(22, 119, 255, 0.1); color: #1677ff; }
+    .m-badge-cyan-lt { background: rgba(13, 148, 136, 0.1); color: #0d9488; }
+    .m-badge-purple-lt { background: rgba(147, 51, 234, 0.1); color: #9333ea; }
+    .m-badge-success-lt { background: rgba(52, 211, 153, 0.1); color: #34d399; }
+    .m-badge-warning-lt { background: rgba(251, 146, 60, 0.1); color: #fb923c; }
+    .m-muted { color: rgba(0, 0, 0, 0.45); }
+    .m-mt-24 { margin-top: 24px; }
+</style>

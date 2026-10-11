@@ -1,0 +1,162 @@
+@page "/account/profile"
+@inject HttpClient Http
+
+<PageTitle>User Profile</PageTitle>
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Account</div><h1 class="m-page-title">Profile</h1></div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+    <div class="m-card">
+        <div class="m-card-header"><h2 class="m-card-title">Profile information</h2></div>
+        <div class="m-card-body">
+            @if (profile != null)
+            {
+                <div class="m-profile-avatar">
+                    <div class="m-avatar m-avatar-lg">@GetInitials(profile.FirstName, profile.LastName)</div>
+                    <div>
+                        <p class="m-profile-name">@profile.FirstName @profile.LastName</p>
+                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm">Change avatar</button>
+                    </div>
+                </div>
+
+                <div class="m-divider"></div>
+
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="first-name">First name</label></div>
+                    <div class="ant-form-item-control"><input id="first-name" @bind="profile.FirstName" class="ant-input" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="last-name">Last name</label></div>
+                    <div class="ant-form-item-control"><input id="last-name" @bind="profile.LastName" class="ant-input" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="email">Email</label></div>
+                    <div class="ant-form-item-control"><input id="email" @bind="profile.Email" type="email" class="ant-input" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="phone">Phone</label></div>
+                    <div class="ant-form-item-control"><input id="phone" @bind="profile.Phone" type="tel" class="ant-input" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="job-title">Job title</label></div>
+                    <div class="ant-form-item-control"><input id="job-title" @bind="profile.JobTitle" class="ant-input" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="bio">Bio</label></div>
+                    <div class="ant-form-item-control"><textarea id="bio" @bind="profile.Bio" class="ant-input" rows="4"></textarea></div>
+                </div>
+
+                <div style="margin-top: 16px;">
+                    <button class="ant-btn ant-btn-primary" @onclick="SaveProfile">Save profile</button>
+                </div>
+            }
+            else
+            {
+                <p class="m-muted">Loading...</p>
+            }
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><h2 class="m-card-title">Account information</h2></div>
+        <div class="m-card-body">
+            @if (profile != null)
+            {
+                <div class="m-info-group">
+                    <div class="m-info-item">
+                        <p class="m-info-label">Member since</p>
+                        <p class="m-info-value">@profile.MemberSince.ToString("MMMM dd, yyyy")</p>
+                    </div>
+                    <div class="m-info-item">
+                        <p class="m-info-label">Account type</p>
+                        <p class="m-info-value">@profile.AccountType</p>
+                    </div>
+                    <div class="m-info-item">
+                        <p class="m-info-label">Last login</p>
+                        <p class="m-info-value">@(profile.LastLogin?.ToString("g") ?? "Never")</p>
+                    </div>
+                    <div class="m-info-item">
+                        <p class="m-info-label">Account status</p>
+                        <p class="m-info-value"><span class="m-badge m-badge-success-lt">@(profile.IsActive ? "Active" : "Inactive")</span></p>
+                    </div>
+                </div>
+
+                <div class="m-divider"></div>
+
+                <h3 class="m-card-title-secondary">Danger zone</h3>
+                <p class="m-muted" style="margin-bottom: 16px;">These actions cannot be undone. Please proceed with caution.</p>
+                <button class="ant-btn ant-btn-danger">Delete account</button>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private UserProfile? profile;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            profile = await Http.GetFromJsonAsync<UserProfile>("/api/account/profile");
+        }
+        catch
+        {
+            profile = null;
+        }
+    }
+
+    private async Task SaveProfile()
+    {
+        if (profile != null)
+        {
+            try
+            {
+                await Http.PutAsJsonAsync("/api/account/profile", profile);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error saving profile: {ex.Message}");
+            }
+        }
+    }
+
+    private static string GetInitials(string firstName, string lastName) =>
+        $"{char.ToUpperInvariant(firstName[0])}{char.ToUpperInvariant(lastName[0])}";
+
+    public class UserProfile
+    {
+        public string Id { get; set; } = "";
+        public string FirstName { get; set; } = "";
+        public string LastName { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Phone { get; set; } = "";
+        public string JobTitle { get; set; } = "";
+        public string Bio { get; set; } = "";
+        public string AccountType { get; set; } = "";
+        public bool IsActive { get; set; } = true;
+        public DateTime MemberSince { get; set; }
+        public DateTime? LastLogin { get; set; }
+    }
+}
+
+<style>
+    .m-profile-avatar { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+    .m-avatar { display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #1677ff; color: white; font-weight: 600; }
+    .m-avatar-lg { width: 80px; height: 80px; font-size: 24px; }
+
+    .m-profile-name { margin: 0; font-weight: 600; }
+    .m-divider { border: none; border-top: 1px solid rgba(0, 0, 0, 0.06); margin: 16px 0; }
+
+    .m-info-group { display: flex; flex-direction: column; gap: 12px; }
+    .m-info-item { display: flex; justify-content: space-between; }
+    .m-info-label { margin: 0; font-size: 12px; color: rgba(0, 0, 0, 0.45); }
+    .m-info-value { margin: 0; font-weight: 500; }
+
+    .m-card-title-secondary { margin: 0; font-size: 14px; font-weight: 600; }
+    .m-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+    .m-badge-success-lt { background: rgba(52, 211, 153, 0.1); color: #34d399; }
+    .m-muted { color: rgba(0, 0, 0, 0.45); }
+</style>

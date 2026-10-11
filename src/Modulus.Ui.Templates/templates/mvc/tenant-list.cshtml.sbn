@@ -1,0 +1,29 @@
+@* Tenant management - list all tenants with manage actions *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    ViewData["Title"] = "Tenant management";
+}
+
+<app-page-header pretitle="Administration" title="Tenant management">
+    <app-button type="primary" href="#">Create tenant</app-button>
+</app-page-header>
+
+<div class="m-card">
+    <div class="m-card-header">
+        <h2 class="m-card-title">Tenants</h2>
+        <div class="m-card-actions">
+            <app-input type="search" name="q" placeholder="Search tenants..." aria-label="Search tenants" prefix-icon="search" />
+        </div>
+    </div>
+    <div class="m-card-body m-card-body-flush">
+        <div class="ant-table-wrapper m-table-flush"><div class="ant-table"><div class="ant-table-container"><div class="ant-table-content"><table style="table-layout:auto"><thead class="ant-table-thead"><tr><th class="ant-table-cell">Name</th><th class="ant-table-cell">Domain</th><th class="ant-table-cell">Members</th><th class="ant-table-cell">Status</th><th class="ant-table-cell">Created</th><th class="ant-table-cell">Actions</th></tr></thead><tbody class="ant-table-tbody">
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Acme Corporation</strong></td><td class="ant-table-cell m-muted">acme-corp</td><td class="ant-table-cell">12 users</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Active</span></td><td class="ant-table-cell m-muted">2024-01-15</td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Manage</a></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>TechStart Inc</strong></td><td class="ant-table-cell m-muted">techstart</td><td class="ant-table-cell">8 users</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Active</span></td><td class="ant-table-cell m-muted">2024-02-20</td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Manage</a></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Global Solutions</strong></td><td class="ant-table-cell m-muted">global-sol</td><td class="ant-table-cell">25 users</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Active</span></td><td class="ant-table-cell m-muted">2024-03-10</td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Manage</a></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Startup Lab</strong></td><td class="ant-table-cell m-muted">startup-lab</td><td class="ant-table-cell">3 users</td><td class="ant-table-cell"><span class="m-badge m-badge-warning-lt">Trial</span></td><td class="ant-table-cell m-muted">2024-09-01</td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Manage</a></td></tr>
+        </tbody></table></div></div></div></div>
+    </div>
+    <div class="m-card-footer">
+        <app-pagination total="45" current="1" page-size="10" url="/admin/tenants" />
+    </div>
+</div>

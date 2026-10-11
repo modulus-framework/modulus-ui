@@ -1,0 +1,121 @@
+@page "/admin/tenants/{id}/members"
+@inject HttpClient Http
+
+<PageTitle>Tenant Members</PageTitle>
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Administration</div><h1 class="m-page-title">Tenant members</h1></div>
+    <button class="ant-btn ant-btn-primary" @onclick="@(() => { /* invite */ })">Invite member</button>
+</div>
+
+<div class="m-card">
+    <div class="m-card-header">
+        <h2 class="m-card-title">Members (@(Members?.Count ?? 0))</h2>
+        <div class="m-card-actions">
+            <input type="search" class="ant-input" placeholder="Search members..." @oninput="OnSearch" />
+        </div>
+    </div>
+    <div class="m-card-body m-card-body-flush">
+        @if (Members == null)
+        {
+            <p class="m-muted">Loading members...</p>
+        }
+        else if (Members.Count == 0)
+        {
+            <div class="m-empty-state"><p>No members found</p></div>
+        }
+        else
+        {
+            <div class="ant-table-wrapper m-table-flush">
+                <div class="ant-table">
+                    <div class="ant-table-container">
+                        <div class="ant-table-content">
+                            <table style="table-layout:auto">
+                                <thead class="ant-table-thead">
+                                    <tr>
+                                        <th class="ant-table-cell">Name</th>
+                                        <th class="ant-table-cell">Email</th>
+                                        <th class="ant-table-cell">Role</th>
+                                        <th class="ant-table-cell">Joined</th>
+                                        <th class="ant-table-cell">Status</th>
+                                        <th class="ant-table-cell">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="ant-table-tbody">
+                                    @foreach (var member in FilteredMembers)
+                                    {
+                                        <tr class="ant-table-row">
+                                            <td class="ant-table-cell"><span class="m-flex"><span class="m-avatar m-avatar-sm">@GetInitials(member.Name)</span><strong>@member.Name</strong></span></td>
+                                            <td class="ant-table-cell m-muted">@member.Email</td>
+                                            <td class="ant-table-cell"><span class="m-badge m-badge-@member.Role.ToLower()-lt">@member.Role</span></td>
+                                            <td class="ant-table-cell m-muted">@member.JoinedAt.ToString("yyyy-MM-dd")</td>
+                                            <td class="ant-table-cell"><span class="m-badge m-badge-@(member.IsActive ? "success" : "warning")-lt">@(member.IsActive ? "Active" : "Pending")</span></td>
+                                            <td class="ant-table-cell"><a href="#" class="ant-btn ant-btn-text ant-btn-sm">Edit</a></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string Id { get; set; } = "";
+
+    private List<TenantMember>? Members;
+    private string SearchTerm = "";
+
+    private List<TenantMember> FilteredMembers =>
+        Members?.Where(m => string.IsNullOrEmpty(SearchTerm) ||
+                           m.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                           m.Email.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)).ToList() ?? new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Members = await Http.GetFromJsonAsync<List<TenantMember>>($"/api/admin/tenants/{Id}/members");
+            Members ??= new List<TenantMember>();
+        }
+        catch
+        {
+            Members = new List<TenantMember>();
+        }
+    }
+
+    private void OnSearch(ChangeEventArgs args)
+    {
+        SearchTerm = args.Value?.ToString() ?? "";
+    }
+
+    private static string GetInitials(string name) =>
+        string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
+
+    public class TenantMember
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Role { get; set; } = "";
+        public bool IsActive { get; set; } = true;
+        public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+    }
+}
+
+<style>
+    .m-flex { display: flex; align-items: center; gap: 8px; }
+    .m-avatar { display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #1677ff; color: white; width: 32px; height: 32px; font-weight: 600; }
+    .m-avatar-sm { width: 24px; height: 24px; font-size: 12px; }
+    .m-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; white-space: nowrap; }
+    .m-badge-admin-lt { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+    .m-badge-manager-lt { background: rgba(13, 148, 136, 0.1); color: #0d9488; }
+    .m-badge-member-lt { background: rgba(147, 51, 234, 0.1); color: #9333ea; }
+    .m-badge-success-lt { background: rgba(52, 211, 153, 0.1); color: #34d399; }
+    .m-badge-warning-lt { background: rgba(251, 146, 60, 0.1); color: #fb923c; }
+    .m-muted { color: rgba(0, 0, 0, 0.45); }
+</style>

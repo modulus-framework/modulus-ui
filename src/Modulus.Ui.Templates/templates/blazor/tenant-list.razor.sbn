@@ -1,0 +1,111 @@
+@page "/admin/tenants"
+@inject HttpClient Http
+
+<PageTitle>Tenant Management</PageTitle>
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Administration</div><h1 class="m-page-title">Tenant management</h1></div>
+    <a href="#" class="ant-btn ant-btn-primary">Create tenant</a>
+</div>
+
+<div class="m-card">
+    <div class="m-card-header">
+        <h2 class="m-card-title">Tenants</h2>
+        <div class="m-card-actions">
+            <input type="search" class="ant-input" placeholder="Search tenants..." @oninput="OnSearch" />
+        </div>
+    </div>
+    <div class="m-card-body m-card-body-flush">
+        @if (Tenants == null)
+        {
+            <p class="m-muted">Loading tenants...</p>
+        }
+        else if (Tenants.Count == 0)
+        {
+            <div class="m-empty-state">
+                <p>No tenants found</p>
+            </div>
+        }
+        else
+        {
+            <div class="ant-table-wrapper m-table-flush">
+                <div class="ant-table">
+                    <div class="ant-table-container">
+                        <div class="ant-table-content">
+                            <table style="table-layout:auto">
+                                <thead class="ant-table-thead">
+                                    <tr>
+                                        <th class="ant-table-cell">Name</th>
+                                        <th class="ant-table-cell">Domain</th>
+                                        <th class="ant-table-cell">Members</th>
+                                        <th class="ant-table-cell">Status</th>
+                                        <th class="ant-table-cell">Created</th>
+                                        <th class="ant-table-cell">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="ant-table-tbody">
+                                    @foreach (var tenant in FilteredTenants)
+                                    {
+                                        <tr class="ant-table-row">
+                                            <td class="ant-table-cell"><strong>@tenant.Name</strong></td>
+                                            <td class="ant-table-cell m-muted">@tenant.Domain</td>
+                                            <td class="ant-table-cell">@tenant.MemberCount users</td>
+                                            <td class="ant-table-cell"><span class="m-badge m-badge-@(tenant.IsActive ? "success" : "warning")-lt">@(tenant.IsActive ? "Active" : "Inactive")</span></td>
+                                            <td class="ant-table-cell m-muted">@tenant.CreatedAt.ToString("yyyy-MM-dd")</td>
+                                            <td class="ant-table-cell"><a href="#" class="ant-btn ant-btn-text ant-btn-sm">Manage</a></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<TenantItem>? Tenants;
+    private string SearchTerm = "";
+
+    private List<TenantItem> FilteredTenants =>
+        Tenants?.Where(t => string.IsNullOrEmpty(SearchTerm) ||
+                           t.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
+                           t.Domain.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)).ToList() ?? new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Tenants = await Http.GetFromJsonAsync<List<TenantItem>>("/api/admin/tenants");
+            Tenants ??= new List<TenantItem>();
+        }
+        catch
+        {
+            Tenants = new List<TenantItem>();
+        }
+    }
+
+    private void OnSearch(ChangeEventArgs args)
+    {
+        SearchTerm = args.Value?.ToString() ?? "";
+    }
+
+    public class TenantItem
+    {
+        public string Id { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string Domain { get; set; } = "";
+        public int MemberCount { get; set; }
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+}
+
+<style>
+    .m-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+    .m-badge-success-lt { background: rgba(52, 211, 153, 0.1); color: #34d399; }
+    .m-badge-warning-lt { background: rgba(251, 146, 60, 0.1); color: #fb923c; }
+    .m-muted { color: rgba(0, 0, 0, 0.45); }
+</style>
