@@ -1,6 +1,6 @@
 @* Badge component for status display *@
 
-<span class="badge badge-pill @StatusClass">@(ChildContent ?? (RenderFragment)(b => b.AddContent(0, Label ?? Status)))</span>
+<span class="m-badge m-badge-@StatusClass">@(ChildContent ?? (RenderFragment)(b => b.AddContent(0, Label ?? Status)))</span>
 
 @code {
     /// <summary>active, inactive, pending or error; anything else is neutral.</summary>
@@ -10,10 +10,10 @@
 
     private string StatusClass => Status.ToLowerInvariant() switch
     {
-        "active" => "badge-success",
-        "inactive" => "badge-secondary",
-        "pending" => "badge-warning",
-        "error" => "badge-danger",
-        _ => "badge-primary"
+        "active" => "success-lt",
+        "inactive" => "gray-lt",
+        "pending" => "warning-lt",
+        "error" => "danger-lt",
+        _ => "primary-lt"
     };
 }

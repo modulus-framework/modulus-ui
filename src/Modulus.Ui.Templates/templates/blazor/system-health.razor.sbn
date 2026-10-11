@@ -1,0 +1,59 @@
+@* System health: replace the sample figures with your own *@
+@page "/system/health"
+
+<PageTitle>System health</PageTitle>
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">System</div><h1 class="m-page-title">System health</h1></div>
+</div>
+
+<div class="m-row-cards">
+    <div class="m-grid m-cols-4">
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Uptime</span></div>
+            <div class="m-stat-card-value">99.98%</div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Requests / min</span></div>
+            <div class="m-stat-card-value">1,240</div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Error rate</span></div>
+            <div class="m-stat-card-value">0.2%</div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Avg. response</span></div>
+            <div class="m-stat-card-value">82 ms</div>
+          </div>
+        </div>
+    </div>
+
+    <div class="m-grid m-cols-main">
+        <div class="m-card">
+          <div class="m-card-header"><h2 class="m-card-title">Services</h2></div>
+          <div class="m-card-body m-card-body-flush">
+        <div class="ant-table-wrapper m-table-flush"><div class="ant-table"><div class="ant-table-container"><div class="ant-table-content"><table style="table-layout:auto"><thead class="ant-table-thead"><tr><th class="ant-table-cell">Service</th><th class="ant-table-cell">Status</th><th class="ant-table-cell">Response time</th></tr></thead><tbody class="ant-table-tbody">
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>API gateway</strong></td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Running</span></td><td class="ant-table-cell m-muted">45 ms</td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Database</strong></td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Connected</span></td><td class="ant-table-cell m-muted">12 ms</td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Cache</strong></td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Active</span></td><td class="ant-table-cell m-muted">3 ms</td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Message bus</strong></td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Running</span></td><td class="ant-table-cell m-muted">18 ms</td></tr>
+        </tbody></table></div></div></div></div>
+          </div>
+        </div>
+        <div class="m-card">
+          <div class="m-card-header"><h2 class="m-card-title">Resource usage</h2></div>
+          <div class="m-card-body">
+        <div class="m-meter"><div class="m-meter-head"><span>CPU</span><span class="m-muted">42%</span></div><div class="m-progress" role="progressbar" aria-valuenow="42" aria-valuemin="0" aria-valuemax="100"><div class="m-progress-bar" style="width: 42%"></div></div></div>
+        <div class="m-meter"><div class="m-meter-head"><span>Memory</span><span class="m-muted">68%</span></div><div class="m-progress" role="progressbar" aria-valuenow="68" aria-valuemin="0" aria-valuemax="100"><div class="m-progress-bar" style="width: 68%"></div></div></div>
+        <div class="m-meter"><div class="m-meter-head"><span>Disk</span><span class="m-muted">31%</span></div><div class="m-progress" role="progressbar" aria-valuenow="31" aria-valuemin="0" aria-valuemax="100"><div class="m-progress-bar" style="width: 31%"></div></div></div>
+          </div>
+        </div>
+    </div>
+</div>

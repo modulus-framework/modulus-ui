@@ -1,59 +1,38 @@
-@page "/{moduleName}"
+@page "/{{ module_name | string.downcase }}"
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@* {{ module_name }} module (static sample data and ViewBag values: replace them with your own). *@
 @{
-    ViewData["Title"] = $"{Model?.ModuleName ?? ""} Module";
+    ViewData["Title"] = "{{ module_name }} module";
 }
 
-<div class="page-wrapper">
-    <div class="container-xl">
-        <div class="page-header d-mb-4">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h2 class="page-title">@(ViewBag.ModuleName ?? "Module") Module</h2>
-                </div>
-            </div>
+<app-page-header pretitle="Modules" title="{{ module_name }} module"></app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-grid m-cols-3">
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Entities</span></div>
+            <div class="m-stat-card-value">@(ViewBag.EntityCount ?? 0)</div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>APIs</span></div>
+            <div class="m-stat-card-value">@(ViewBag.ApiCount ?? 0)</div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Permissions</span></div>
+            <div class="m-stat-card-value">@(ViewBag.PermissionCount ?? 0)</div>
+          </div>
         </div>
     </div>
-    <div class="page-body">
-        <div class="container-xl">
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="list-group">
-                        <a href="/" class="list-group-item list-group-item-action">📊 Overview</a>
-                        <a href="?tab=entities" class="list-group-item list-group-item-action">📋 Entities</a>
-                        <a href="?tab=settings" class="list-group-item list-group-item-action">⚙️ Settings</a>
-                        <a href="?tab=permissions" class="list-group-item list-group-item-action">🔐 Permissions</a>
-                    </div>
-                </div>
-                <div class="col-md-9">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Module Overview</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="stat-item">
-                                        <h4>Entities</h4>
-                                        <div class="display-5">@(ViewBag.EntityCount ?? 0)</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="stat-item">
-                                        <h4>APIs</h4>
-                                        <div class="display-5">@(ViewBag.ApiCount ?? 0)</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="stat-item">
-                                        <h4>Permissions</h4>
-                                        <div class="display-5">@(ViewBag.PermissionCount ?? 0)</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+
+    <div class="m-card">
+      <div class="m-card-header"><h2 class="m-card-title">Module overview</h2></div>
+      <div class="m-card-body">
+    <p class="m-mb-0">{{ module_description }}</p>
+      </div>
     </div>
 </div>

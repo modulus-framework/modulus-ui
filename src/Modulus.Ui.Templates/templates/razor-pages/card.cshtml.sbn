@@ -1,24 +1,24 @@
-@* Card component for Razor Pages *@
-<div class="card @ViewBag.CssClass">
-    @if (!string.IsNullOrEmpty(ViewBag.Title))
+@* Card: ViewBag.Title, HeaderAction (markup), Footer (markup); the body is the partial's content *@
+@{
+    string? title = ViewBag.Title;
+}
+
+<div class="m-card @ViewBag.CssClass">
+    @if (!string.IsNullOrEmpty(title))
     {
-        <div class="card-header">
-            <h3 class="card-title">@ViewBag.Title</h3>
-            @if (!string.IsNullOrEmpty(ViewBag.HeaderAction))
+        <div class="m-card-header">
+            <h3 class="m-card-title">@title</h3>
+            @if (!string.IsNullOrEmpty((string?)ViewBag.HeaderAction))
             {
-                <div class="card-options">
-                    @Html.Raw(ViewBag.HeaderAction)
-                </div>
+                <div class="m-card-actions">@Html.Raw(ViewBag.HeaderAction)</div>
             }
         </div>
     }
-    <div class="card-body">
+    <div class="m-card-body">
         @RenderBody()
     </div>
-    @if (!string.IsNullOrEmpty(ViewBag.Footer))
+    @if (!string.IsNullOrEmpty((string?)ViewBag.Footer))
     {
-        <div class="card-footer">
-            @Html.Raw(ViewBag.Footer)
-        </div>
+        <div class="m-card-footer">@Html.Raw(ViewBag.Footer)</div>
     }
 </div>

@@ -1,54 +1,56 @@
+@* Data table: Columns (title, property or a template), Items, an optional RowTemplate (actions column) and EmptyMessage *@
 @typeparam TItem
 
-<div class="table-responsive">
-    <table class="table table-vcenter card-table">
-        <thead>
-            <tr>
-                @foreach (var column in Columns)
+<div class="ant-table-wrapper">
+    <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+        <table style="table-layout:auto">
+            <thead class="ant-table-thead">
+                <tr>
+                    @foreach (var column in Columns ?? [])
+                    {
+                        <th class="ant-table-cell" style="@GetColumnStyle(column)">@column.Title</th>
+                    }
+                    @if (RowTemplate != null)
+                    {
+                        <th class="ant-table-cell">Actions</th>
+                    }
+                </tr>
+            </thead>
+            <tbody class="ant-table-tbody">
+                @if (Items?.Any() == true)
                 {
-                    <th style="@GetColumnStyle(column)">@column.Title</th>
-                }
-                <th class="w-1">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Items?.Any() == true)
-            {
-                @foreach (var item in Items)
-                {
-                    <tr>
-                        @foreach (var column in Columns)
-                        {
-                            <td>
-                                @if (column.Template != null)
-                                {
-                                    @column.Template(item)
-                                }
-                                else
-                                {
-                                    @GetPropertyValue(item, column.PropertyName)
-                                }
-                            </td>
-                        }
-                        <td>
+                    @foreach (var item in Items)
+                    {
+                        <tr class="ant-table-row">
+                            @foreach (var column in Columns ?? [])
+                            {
+                                <td class="ant-table-cell">
+                                    @if (column.Template != null)
+                                    {
+                                        @column.Template(item)
+                                    }
+                                    else
+                                    {
+                                        @GetPropertyValue(item, column.PropertyName)
+                                    }
+                                </td>
+                            }
                             @if (RowTemplate != null)
                             {
-                                @RowTemplate(item)
+                                <td class="ant-table-cell">@RowTemplate(item)</td>
                             }
-                        </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr class="ant-table-placeholder">
+                        <td colspan="@((Columns?.Count ?? 0) + (RowTemplate != null ? 1 : 0))" class="ant-table-cell m-muted">@EmptyMessage</td>
                     </tr>
                 }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="@(Columns?.Count + 1)" class="text-center text-muted py-4">
-                        @EmptyMessage
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div></div></div>
 </div>
 
 @code {

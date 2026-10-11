@@ -1,0 +1,78 @@
+@* Create and edit page for {{ entity_name }}: posts to the {{ module_name }} API through {{ entity_name }}ApiClient *@
+@page "/{{ route }}/edit"
+@using System.ComponentModel.DataAnnotations
+@using {{ ui_namespace }}.ApiClients
+@inject {{ entity_name }}ApiClient Api
+@inject NavigationManager Navigation
+
+<PageTitle>@(IsNew ? "New" : "Edit") {{ entity_name | string.downcase }}</PageTitle>
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">{{ entity_name_plural }}</div><h1 class="m-page-title">@(IsNew ? "New" : "Edit") {{ entity_name | string.downcase }}</h1></div>
+</div>
+
+<div class="m-grid m-cols-main">
+    <div class="m-card">
+        <div class="m-card-body">
+            @if (_error is not null)
+            {
+                <div class="ant-alert m-mb-16 ant-alert-error" role="alert"><div class="ant-alert-content"><div class="ant-alert-message">@_error</div></div></div>
+            }
+            <EditForm Model="_input" OnValidSubmit="SaveAsync" class="ant-form ant-form-vertical">
+                <DataAnnotationsValidator />
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label class="ant-form-item-required" for="name">Name</label></div>
+                    <div class="ant-form-item-control">
+                        <InputText id="name" @bind-Value="_input.Name" class="ant-input" />
+                        <ValidationMessage For="() => _input.Name" class="ant-form-item-explain-error" />
+                    </div>
+                </div>
+                <div class="m-form-actions">
+                    <button type="submit" class="ant-btn ant-btn-primary" disabled="@_busy"><span>@(IsNew ? "Create" : "Save")</span></button>
+                    <a href="/{{ route }}" class="ant-btn ant-btn-default"><span>Cancel</span></a>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery] public Guid? Id { get; set; }
+
+    private sealed class Input
+    {
+        [Required, StringLength(200)] public string Name { get; set; } = "";
+    }
+
+    private Input _input = new();
+    private string? _error;
+    private bool _busy;
+
+    private bool IsNew => Id is null || Id == Guid.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (IsNew) return;
+        var existing = await Api.GetByIdAsync(Id!.Value);
+        if (existing is null) { Navigation.NavigateTo("/{{ route }}"); return; }
+        _input = new Input { Name = existing.Name };
+    }
+
+    private async Task SaveAsync()
+    {
+        _busy = true;
+        try
+        {
+            var ok = IsNew
+                ? await Api.CreateAsync(new Create{{ entity_name }}Dto { Name = _input.Name }) != Guid.Empty
+                : await Api.UpdateAsync(Id!.Value, new Update{{ entity_name }}Dto { Name = _input.Name });
+            if (ok) Navigation.NavigateTo("/{{ route }}");
+            else _error = "The API refused the change.";
+        }
+        catch (HttpRequestException)
+        {
+            _error = "The API could not be reached.";
+        }
+        finally { _busy = false; }
+    }
+}

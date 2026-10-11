@@ -1,55 +1,39 @@
-@* Admin Settings page for MVC *@
+@* System settings (static sample data and ViewBag values: replace them with your own). *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
 @{
-    ViewData["Title"] = "System Settings";
+    ViewData["Title"] = "System settings";
 }
 
-<div class="page-wrapper">
-    <div class="container-xl">
-        <div class="page-header d-mb-4">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h2 class="page-title">System Settings</h2>
+<app-page-header pretitle="Administration" title="System settings"></app-page-header>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">General settings</h2></div>
+    <div class="m-card-body">
+        <form method="post" asp-antiforgery="true" class="ant-form ant-form-vertical" novalidate>
+            <div class="m-form-grid">
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="app-name">Application name</label></div>
+                    <div class="ant-form-item-control"><input id="app-name" name="AppName" class="ant-input" value="Modulus app" /></div>
                 </div>
-            </div>
-        </div>
-    </div>
-    <div class="page-body">
-        <div class="container-xl">
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="list-group">
-                        <a href="?tab=general" class="list-group-item list-group-item-action active">
-                            ⚙️ General
-                        </a>
-                        <a href="?tab=security" class="list-group-item list-group-item-action">
-                            🔒 Security
-                        </a>
-                        <a href="?tab=email" class="list-group-item list-group-item-action">
-                            📧 Email
-                        </a>
-                        <a href="?tab=logging" class="list-group-item list-group-item-action">
-                            📝 Logging
-                        </a>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="support-email">Support email</label></div>
+                    <div class="ant-form-item-control"><input id="support-email" name="SupportEmail" type="email" class="ant-input" value="support@example.com" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="time-zone">Time zone</label></div>
+                    <div class="ant-form-item-control">
+                        <select id="time-zone" name="TimeZone" class="ant-input">
+                            <option>UTC</option>
+                            <option>America/New_York</option>
+                            <option>Europe/London</option>
+                            <option>Asia/Dhaka</option>
+                        </select>
                     </div>
                 </div>
-                <div class="col-md-9">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">General Settings</h3>
-                        </div>
-                        <form method="post" class="card-body">
-                            <div class="mb-3">
-                                <label class="form-label" for="app-name">Application Name</label>
-                                <input type="text" id="app-name" class="form-control" value="Modulus App" />
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label" for="app-version">Application Version</label>
-                                <input type="text" id="app-version" class="form-control" value="1.0.0" />
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label" for="support-email">Support Email</label>
-                                <input type="email" id="support-email" class="form-control" value="support@example.com" />
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label" for="time-zone">Time Zone</label>
-                                <select class="form-select" id="time-zone">
+            </div>
+            <div class="m-form-actions">
+                <app-button type="primary" html-type="submit">Save changes</app-button>
+            </div>
+        </form>
+    </div>
+</div>

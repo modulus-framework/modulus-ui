@@ -1,13 +1,12 @@
-@* Progress bar component for Blazor *@
+@* Progress bar: Percentage (0-100), Color (primary, success, danger, warning) and ShowLabel *@
 
-<div class="progress">
-    <div class="@GetProgressClass()" role="progressbar" style="width: @Percentage%" aria-valuenow="@Percentage" aria-valuemin="0" aria-valuemax="100">
-        @if (ShowLabel)
-        {
-            <span>@Percentage%</span>
-        }
-    </div>
+<div class="m-progress" role="progressbar" aria-valuenow="@Percentage" aria-valuemin="0" aria-valuemax="100">
+    <div class="@GetProgressClass()" style="width: @Percentage%"></div>
 </div>
+@if (ShowLabel)
+{
+    <div class="m-progress-legend">@Percentage%</div>
+}
 
 @code {
     [Parameter]
@@ -19,5 +18,5 @@
     [Parameter]
     public bool ShowLabel { get; set; } = false;
 
-    private string GetProgressClass() => $"progress-bar bg-{Color}";
+    private string GetProgressClass() => Color switch { "success" => "m-progress-bar m-bg-success", "danger" => "m-progress-bar m-bg-danger", "warning" => "m-progress-bar m-bg-warning", _ => "m-progress-bar" };
 }

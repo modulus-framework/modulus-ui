@@ -1,127 +1,94 @@
 @page "/analytics"
+@using Modulus.Blazor.Components.Charts
+@using Modulus.Ui.Abstractions.Charts
 @inject HttpClient Http
 
 <PageTitle>Analytics</PageTitle>
 
-<div class="page-wrapper">
-    <div class="container-xl">
-        <div class="page-header d-mb-4">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h2 class="page-title">Analytics & Insights</h2>
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Reports</div><h1 class="m-page-title">Analytics &amp; insights</h1></div>
+</div>
+
+@if (Data == null)
+{
+    <p class="m-muted">Loading analytics...</p>
+}
+else
+{
+    <div class="m-row-cards">
+        <div class="m-grid m-cols-4">
+            <div class="m-card m-stat-card">
+                <div class="m-card-body">
+                    <div class="m-stat-card-head"><span>Page views</span></div>
+                    <div class="m-stat-card-value">@(Data.PageViews ?? "0")</div>
+                        <div class="m-stat-sub"><span class="m-text-success">+12%</span></div>
                 </div>
-                <div class="col-auto">
-                    <select class="form-select" style="width: 150px;" aria-label="Date range">
-                        <option selected>Last 30 days</option>
-                        <option>Last 7 days</option>
-                        <option>Last 90 days</option>
-                        <option>This year</option>
-                    </select>
+            </div>
+            <div class="m-card m-stat-card">
+                <div class="m-card-body">
+                    <div class="m-stat-card-head"><span>Unique users</span></div>
+                    <div class="m-stat-card-value">@(Data.UniqueUsers ?? "0")</div>
+                        <div class="m-stat-sub"><span class="m-text-success">+8%</span></div>
+                </div>
+            </div>
+            <div class="m-card m-stat-card">
+                <div class="m-card-body">
+                    <div class="m-stat-card-head"><span>Avg. session duration</span></div>
+                    <div class="m-stat-card-value">@(Data.AvgSessionDuration ?? "0s")</div>
+                        <div class="m-stat-sub"><span class="m-text-danger">-2%</span></div>
+                </div>
+            </div>
+            <div class="m-card m-stat-card">
+                <div class="m-card-body">
+                    <div class="m-stat-card-head"><span>Conversion rate</span></div>
+                    <div class="m-stat-card-value">@(Data.ConversionRate ?? "0%")</div>
+                        <div class="m-stat-sub"><span class="m-text-success">+5%</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="m-grid m-cols-main">
+            <div class="m-card">
+                <div class="m-card-header"><h2 class="m-card-title">Traffic over time</h2></div>
+                <div class="m-card-body">
+                    <LineChart Labels="_days" Series="_traffic" Area />
+                </div>
+            </div>
+            <div class="m-card">
+                <div class="m-card-header"><h2 class="m-card-title">Top pages</h2></div>
+                <div class="m-card-body">
+                    <ul class="m-list m-list-plain">
+                        @foreach (var entry in Data.TopPages ?? new List<PageStat>())
+                        {
+                            <li class="m-flex m-between m-mb-12"><span>@entry.Path</span><span class="m-muted">@entry.Views views</span></li>
+                        }
+                    </ul>
+                    @if (Data.TopPages is null || Data.TopPages.Count == 0)
+                    {
+                        <p class="m-muted m-mb-0">No page views recorded yet.</p>
+                    }
                 </div>
             </div>
         </div>
     </div>
-    <div class="page-body">
-        <div class="container-xl">
-            @if (Analytics == null)
-            {
-                <p><em>Loading analytics...</em></p>
-            }
-            else
-            {
-                <div class="row row-deck row-cards mb-4">
-                    <div class="col-sm-6 col-lg-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-flex align-items-baseline">
-                                    <div class="h2 mb-0">@(Analytics.PageViews ?? "0")</div>
-                                    <div class="ms-auto"><span class="badge badge-success">+12%</span></div>
-                                </div>
-                                <div class="text-secondary">Page Views</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-lg-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-flex align-items-baseline">
-                                    <div class="h2 mb-0">@(Analytics.UniqueUsers ?? "0")</div>
-                                    <div class="ms-auto"><span class="badge badge-success">+8%</span></div>
-                                </div>
-                                <div class="text-secondary">Unique Users</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-lg-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-flex align-items-baseline">
-                                    <div class="h2 mb-0">@(Analytics.AvgSessionDuration ?? "0s")</div>
-                                    <div class="ms-auto"><span class="badge badge-danger">-2%</span></div>
-                                </div>
-                                <div class="text-secondary">Avg. Session Duration</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-sm-6 col-lg-3">
-                        <div class="card">
-                            <div class="card-body">
-                                <div class="d-flex align-items-baseline">
-                                    <div class="h2 mb-0">@(Analytics.ConversionRate ?? "0%")</div>
-                                    <div class="ms-auto"><span class="badge badge-success">+5%</span></div>
-                                </div>
-                                <div class="text-secondary">Conversion Rate</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row row-deck row-cards">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">Traffic Over Time</h3>
-                            </div>
-                            <div class="card-body" style="height: 300px;">
-                                <p class="text-muted">Chart placeholder - integrate Chart.js</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">Top Pages</h3>
-                            </div>
-                            <div class="card-body">
-                                <ul class="list-unstyled divide-y">
-                                    @foreach (var page in Analytics.TopPages ?? new List<PageStat>())
-                                    {
-                                        <li class="py-3">
-                                            <div class="d-flex justify-content-between">
-                                                <span>@page.Path</span>
-                                                <span class="text-muted">@page.Views views</span>
-                                            </div>
-                                        </li>
-                                    }
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            }
-        </div>
-    </div>
-</div>
+}
 
 @code {
-    private AnalyticsData? Analytics;
+    private readonly string[] _days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    private readonly ChartSeries[] _traffic =
+    [
+        new("Page views", [820, 932, 901, 934, 1290, 1330, 1320]),
+        new("Unique users", [320, 402, 391, 434, 590, 630, 610]),
+    ];
+
+    private AnalyticsData? Data;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            Analytics = await Http.GetFromJsonAsync<AnalyticsData>("/api/admin/analytics");
-            Analytics ??= new AnalyticsData
+            Data = await Http.GetFromJsonAsync<AnalyticsData>("/api/admin/analytics");
+            Data ??= new AnalyticsData
             {
                 PageViews = "1,234",
                 UniqueUsers = "456",
@@ -132,7 +99,7 @@
         }
         catch
         {
-            Analytics = new AnalyticsData();
+            Data = new AnalyticsData();
         }
     }
 

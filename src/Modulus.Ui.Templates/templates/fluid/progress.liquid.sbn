@@ -1,12 +1,10 @@
-{# Progress bar component for Fluid #}
+{# Progress bar component for Fluid: percentage (0-100), color (primary, success, danger, warning), show_label #}
 {% assign percentage = percentage | default: 0 %}
 {% assign color = color | default: 'primary' %}
-{% assign progress_class = 'progress-bar bg-' | append: color %}
 
-<div class="progress">
-    <div class="{{ progress_class }}" role="progressbar" style="width: {{ percentage }}%" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">
-        {% if show_label %}
-        <span>{{ percentage }}%</span>
-        {% endif %}
-    </div>
+<div class="m-progress" role="progressbar" aria-valuenow="{{ percentage }}" aria-valuemin="0" aria-valuemax="100">
+    <div class="m-progress-bar{% if color != 'primary' %} m-bg-{{ color }}{% endif %}" style="width: {{ percentage }}%"></div>
 </div>
+{% if show_label %}
+<div class="m-progress-legend">{{ percentage }}%</div>
+{% endif %}

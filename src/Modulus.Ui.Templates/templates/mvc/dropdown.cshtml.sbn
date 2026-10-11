@@ -1,33 +1,22 @@
-@* Dropdown menu component *@
-<div class="dropdown">
-    <button
-        class="btn @(ViewBag.Variant ?? "btn-primary") dropdown-toggle"
-        type="button"
-        data-bs-toggle="dropdown">
-        @(ViewBag.Label ?? "Actions")
-    </button>
-    <ul class="dropdown-menu">
-        @{
-            var items = ViewBag.Items as System.Collections.Generic.List<dynamic> ?? new System.Collections.Generic.List<dynamic>();
-        }
+@* Dropdown: ViewBag.Label and Items, a list of (label, url, icon) or (divider = true) *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    var items = ViewBag.Items as System.Collections.Generic.List<dynamic> ?? new System.Collections.Generic.List<dynamic>();
+}
+
+<app-dropdown>
+    <app-button type="primary">@((string?)ViewBag.Label ?? "Actions")</app-button>
+    <dropdown-menu>
         @foreach (var item in items)
         {
-            @if (item.divider == true)
+            if (item.divider == true)
             {
-                <li><hr class="dropdown-divider"></li>
+                <app-dropdown-divider />
             }
             else
             {
-                <li>
-                    <a class="dropdown-item" href="@item.url">
-                        @if (!string.IsNullOrEmpty(item.icon))
-                        {
-                            <span class="@item.icon me-2"></span>
-                        }
-                        @item.label
-                    </a>
-                </li>
+                <app-dropdown-item href="@item.url">@item.label</app-dropdown-item>
             }
         }
-    </ul>
-</div>
+    </dropdown-menu>
+</app-dropdown>

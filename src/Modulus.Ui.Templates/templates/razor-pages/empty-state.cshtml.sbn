@@ -1,4 +1,5 @@
-@* Empty state: shown when a list or search has no results *@
+@* Empty state: shown when a list or search has no results. ViewBag.Title, Message, ActionText, ActionUrl *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
 @{
     string title = ViewBag.Title ?? "Nothing here yet";
     string? message = ViewBag.Message;
@@ -6,16 +7,14 @@
     string actionUrl = ViewBag.ActionUrl ?? "#";
 }
 
-<div class="empty text-center py-5">
-    <p class="empty-title h3">@title</p>
+<div class="m-empty">
+    <h3 class="m-empty-title">@title</h3>
     @if (!string.IsNullOrEmpty(message))
     {
-        <p class="empty-subtitle text-secondary">@message</p>
+        <p class="m-empty-subtitle">@message</p>
     }
     @if (!string.IsNullOrEmpty(actionText))
     {
-        <div class="empty-action">
-            <a href="@actionUrl" class="btn btn-primary">@actionText</a>
-        </div>
+        <app-button type="primary" href="@actionUrl">@actionText</app-button>
     }
 </div>

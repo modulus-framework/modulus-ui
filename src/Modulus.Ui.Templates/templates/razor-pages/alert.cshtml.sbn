@@ -1,40 +1,11 @@
-@* Alert component for Razor Pages *@
+@* Alert: ViewBag.Type (success, info, warning, error), Title, Message, Dismissible *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
 @{
-    var alertClass = "alert";
-    var type = ViewBag.Type?.ToString()?.ToLower() ?? "info";
-
-    alertClass += type switch
-    {
-        "success" => " alert-success",
-        "warning" => " alert-warning",
-        "danger" => " alert-danger",
-        "info" => " alert-info",
-        _ => " alert-info"
-    };
-
-    if (ViewBag.Dismissible == true)
-    {
-        alertClass += " alert-dismissible";
-    }
+    string type = ((string?)ViewBag.Type ?? "info").ToLowerInvariant();
+    if (type == "danger") { type = "error"; }
+    string? title = ViewBag.Title;
+    string? message = ViewBag.Message;
+    bool dismissible = ViewBag.Dismissible == true;
 }
 
-<div class="@alertClass" role="alert">
-    <div class="d-flex">
-        <div>
-            @if (!string.IsNullOrEmpty(ViewBag.Title))
-            {
-                <h4 class="alert-title">@ViewBag.Title</h4>
-            }
-            @if (!string.IsNullOrEmpty(ViewBag.Message))
-            {
-                <div class="text-secondary">
-                    @ViewBag.Message
-                </div>
-            }
-        </div>
-        @if (ViewBag.Dismissible == true)
-        {
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        }
-    </div>
-</div>
+<app-alert type="@type" message="@(title ?? message)" description="@(title is null ? null : message)" closable="dismissible" show-icon="true" />

@@ -1,70 +1,25 @@
-@* Admin Users Management page for MVC *@
+@* User management (static sample data and ViewBag values: replace them with your own). *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
 @{
-    ViewData["Title"] = "User Management";
+    ViewData["Title"] = "User management";
 }
 
-<div class="page-wrapper">
-    <div class="container-xl">
-        <div class="page-header d-mb-4">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h2 class="page-title">User Management</h2>
-                </div>
-                <div class="col-auto">
-                    <a href="#" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-                            <path d="M12 5v14m-7-7h14"></path>
-                        </svg>
-                        Add User
-                    </a>
-                </div>
-            </div>
+<app-page-header pretitle="Administration" title="User management">
+    <app-button type="primary" href="#">Invite user</app-button>
+</app-page-header>
+
+<div class="m-card">
+    <div class="m-card-header">
+        <h2 class="m-card-title">Users</h2>
+        <div class="m-card-actions">
+            <app-input type="search" name="q" placeholder="Search users..." aria-label="Search users" prefix-icon="search" />
         </div>
     </div>
-    <div class="page-body">
-        <div class="container-xl">
-            <div class="row row-deck row-cards">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="input-icon">
-                                <input type="text" class="form-control" placeholder="Search users..." aria-label="Search users">
-                            </div>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-vcenter card-table">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Email</th>
-                                        <th>Role</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex py-1 align-items-center">
-                                                <div class="avatar avatar-sm me-3" style="background-color: #00d4ff">A</div>
-                                                <div class="flex-grow-1">
-                                                    <div class="text-secondary">Admin User</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>admin@example.com</td>
-                                        <td><span class="badge badge-primary">Administrator</span></td>
-                                        <td><span class="badge badge-success">Active</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-ghost-primary">Edit</button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="m-card-body m-card-body-flush">
+        <div class="ant-table-wrapper m-table-flush"><div class="ant-table"><div class="ant-table-container"><div class="ant-table-content"><table style="table-layout:auto"><thead class="ant-table-thead"><tr><th class="ant-table-cell">Name</th><th class="ant-table-cell">Email</th><th class="ant-table-cell">Role</th><th class="ant-table-cell">Status</th><th class="ant-table-cell">Actions</th></tr></thead><tbody class="ant-table-tbody">
+        <tr class="ant-table-row"><td class="ant-table-cell"><span class="m-flex"><span class="m-avatar m-avatar-sm">JC</span><strong>Jane Cooper</strong></span></td><td class="ant-table-cell m-muted">jane@example.com</td><td class="ant-table-cell">Administrator</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Active</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Edit</a></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><span class="m-flex"><span class="m-avatar m-avatar-sm">RF</span><strong>Robert Fox</strong></span></td><td class="ant-table-cell m-muted">robert@example.com</td><td class="ant-table-cell">Manager</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Active</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Edit</a></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><span class="m-flex"><span class="m-avatar m-avatar-sm">EH</span><strong>Esther Howard</strong></span></td><td class="ant-table-cell m-muted">esther@example.com</td><td class="ant-table-cell">User</td><td class="ant-table-cell"><span class="m-badge m-badge-warning-lt">Pending</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Edit</a></td></tr>
+        </tbody></table></div></div></div></div>
     </div>
 </div>

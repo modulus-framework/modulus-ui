@@ -11,13 +11,11 @@
     };
 }
 
-<div class="page-body">
-    <div class="container-xl">
-        <div class="card">
-            <div class="card-header"><h3 class="card-title">Column chart</h3></div>
-            <div class="card-body">
-                <app-column-chart labels="quarters" series="series" />
-            </div>
-        </div>
+<app-page-header pretitle="Charts" title="Column chart"></app-page-header>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">Column chart</h2></div>
+    <div class="m-card-body">
+        <app-column-chart labels="quarters" series="series" />
     </div>
 </div>

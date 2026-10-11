@@ -1,26 +1,22 @@
-@* Card component for Blazor *@
+@* Card: Title, HeaderAction, the body as child content, and Footer *@
 
-<div class="card @CssClass">
+<div class="m-card @CssClass">
     @if (!string.IsNullOrEmpty(Title))
     {
-        <div class="card-header">
-            <h3 class="card-title">@Title</h3>
+        <div class="m-card-header">
+            <h3 class="m-card-title">@Title</h3>
             @if (HeaderAction != null)
             {
-                <div class="card-options">
-                    @HeaderAction
-                </div>
+                <div class="m-card-actions">@HeaderAction</div>
             }
         </div>
     }
-    <div class="card-body">
+    <div class="m-card-body">
         @ChildContent
     </div>
     @if (Footer != null)
     {
-        <div class="card-footer">
-            @Footer
-        </div>
+        <div class="m-card-footer">@Footer</div>
     }
 </div>
 

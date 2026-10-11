@@ -13,13 +13,11 @@
     };
 }
 
-<div class="page-body">
-    <div class="container-xl">
-        <div class="card">
-            <div class="card-header"><h3 class="card-title">Donut chart</h3></div>
-            <div class="card-body">
-                <app-donut-chart slices="channels" center-label="Visits" />
-            </div>
-        </div>
+<app-page-header pretitle="Charts" title="Donut chart"></app-page-header>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">Donut chart</h2></div>
+    <div class="m-card-body">
+        <app-donut-chart slices="channels" center-label="Visits" />
     </div>
 </div>

@@ -1,0 +1,68 @@
+@page "/analytics"
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@* Analytics (static sample data and ViewBag values: replace them with your own). *@
+@using Modulus.Ui.Abstractions.Charts
+@{
+    ViewData["Title"] = "Analytics";
+    var days = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+    var traffic = new[]
+    {
+        new ChartSeries("Page views", new double[] { 820, 932, 901, 934, 1290, 1330, 1320 }),
+        new ChartSeries("Unique users", new double[] { 320, 402, 391, 434, 590, 630, 610 }),
+    };
+}
+
+<app-page-header pretitle="Reports" title="Analytics & insights"></app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-grid m-cols-4">
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Page views</span></div>
+            <div class="m-stat-card-value">@(ViewBag.PageViews ?? "0")</div>
+            <div class="m-stat-sub"><span class="m-text-success">+12%</span></div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Unique users</span></div>
+            <div class="m-stat-card-value">@(ViewBag.UniqueUsers ?? "0")</div>
+            <div class="m-stat-sub"><span class="m-text-success">+8%</span></div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Avg. session duration</span></div>
+            <div class="m-stat-card-value">@(ViewBag.AvgSessionDuration ?? "0s")</div>
+            <div class="m-stat-sub"><span class="m-text-danger">-2%</span></div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Conversion rate</span></div>
+            <div class="m-stat-card-value">@(ViewBag.ConversionRate ?? "0%")</div>
+            <div class="m-stat-sub"><span class="m-text-success">+5%</span></div>
+          </div>
+        </div>
+    </div>
+
+    <div class="m-grid m-cols-main">
+        <div class="m-card">
+            <div class="m-card-header"><h2 class="m-card-title">Traffic over time</h2></div>
+            <div class="m-card-body">
+                <app-line-chart labels="days" series="traffic" area />
+            </div>
+        </div>
+        <div class="m-card">
+          <div class="m-card-header"><h2 class="m-card-title">Top pages</h2></div>
+          <div class="m-card-body">
+        <ul class="m-list m-list-plain">
+          <li class="m-flex m-between m-mb-12"><span>/dashboard</span><span class="m-muted">1,234 views</span></li>
+          <li class="m-flex m-between m-mb-12"><span>/reports</span><span class="m-muted">856 views</span></li>
+          <li class="m-flex m-between m-mb-12"><span>/settings</span><span class="m-muted">432 views</span></li>
+          <li class="m-flex m-between"><span>/users</span><span class="m-muted">298 views</span></li>
+        </ul>
+          </div>
+        </div>
+    </div>
+</div>

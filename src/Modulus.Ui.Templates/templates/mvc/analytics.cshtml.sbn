@@ -1,137 +1,67 @@
-@* Analytics & Insights page for MVC *@
+@* Analytics (static sample data and ViewBag values: replace them with your own). *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Charts
 @{
     ViewData["Title"] = "Analytics";
+    var days = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+    var traffic = new[]
+    {
+        new ChartSeries("Page views", new double[] { 820, 932, 901, 934, 1290, 1330, 1320 }),
+        new ChartSeries("Unique users", new double[] { 320, 402, 391, 434, 590, 630, 610 }),
+    };
 }
 
-<div class="page-wrapper">
-    <div class="container-xl">
-        <div class="page-header d-mb-4">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h2 class="page-title">Analytics & Insights</h2>
-                </div>
-                <div class="col-auto">
-                    <select class="form-select" style="width: 150px;" aria-label="Date range">
-                        <option selected>Last 30 days</option>
-                        <option>Last 7 days</option>
-                        <option>Last 90 days</option>
-                        <option>This year</option>
-                    </select>
-                </div>
-            </div>
+<app-page-header pretitle="Reports" title="Analytics & insights"></app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-grid m-cols-4">
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Page views</span></div>
+            <div class="m-stat-card-value">@(ViewBag.PageViews ?? "0")</div>
+            <div class="m-stat-sub"><span class="m-text-success">+12%</span></div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Unique users</span></div>
+            <div class="m-stat-card-value">@(ViewBag.UniqueUsers ?? "0")</div>
+            <div class="m-stat-sub"><span class="m-text-success">+8%</span></div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Avg. session duration</span></div>
+            <div class="m-stat-card-value">@(ViewBag.AvgSessionDuration ?? "0s")</div>
+            <div class="m-stat-sub"><span class="m-text-danger">-2%</span></div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Conversion rate</span></div>
+            <div class="m-stat-card-value">@(ViewBag.ConversionRate ?? "0%")</div>
+            <div class="m-stat-sub"><span class="m-text-success">+5%</span></div>
+          </div>
         </div>
     </div>
-    <div class="page-body">
-        <div class="container-xl">
-            <!-- Key Metrics -->
-            <div class="row row-deck row-cards mb-4">
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-baseline">
-                                <div class="h2 mb-0">@(ViewBag.PageViews ?? "0")</div>
-                                <div class="ms-auto">
-                                    <span class="badge badge-success">+12%</span>
-                                </div>
-                            </div>
-                            <div class="text-secondary">Page Views</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-baseline">
-                                <div class="h2 mb-0">@(ViewBag.UniqueUsers ?? "0")</div>
-                                <div class="ms-auto">
-                                    <span class="badge badge-success">+8%</span>
-                                </div>
-                            </div>
-                            <div class="text-secondary">Unique Users</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-baseline">
-                                <div class="h2 mb-0">@(ViewBag.AvgSessionDuration ?? "0s")</div>
-                                <div class="ms-auto">
-                                    <span class="badge badge-danger">-2%</span>
-                                </div>
-                            </div>
-                            <div class="text-secondary">Avg. Session Duration</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-baseline">
-                                <div class="h2 mb-0">@(ViewBag.ConversionRate ?? "0%")</div>
-                                <div class="ms-auto">
-                                    <span class="badge badge-success">+5%</span>
-                                </div>
-                            </div>
-                            <div class="text-secondary">Conversion Rate</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Charts -->
-            <div class="row row-deck row-cards">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Traffic Over Time</h3>
-                        </div>
-                        <div class="card-body" style="height: 300px;">
-                            <canvas id="trafficChart" width="400" height="300"></canvas>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Top Pages</h3>
-                        </div>
-                        <div class="card-body">
-                            <ul class="list-unstyled divide-y">
-                                <li class="py-3">
-                                    <div class="d-flex justify-content-between">
-                                        <span>/dashboard</span>
-                                        <span class="text-muted">1,234 views</span>
-                                    </div>
-                                </li>
-                                <li class="py-3">
-                                    <div class="d-flex justify-content-between">
-                                        <span>/reports</span>
-                                        <span class="text-muted">856 views</span>
-                                    </div>
-                                </li>
-                                <li class="py-3">
-                                    <div class="d-flex justify-content-between">
-                                        <span>/settings</span>
-                                        <span class="text-muted">432 views</span>
-                                    </div>
-                                </li>
-                                <li class="py-3">
-                                    <div class="d-flex justify-content-between">
-                                        <span>/users</span>
-                                        <span class="text-muted">298 views</span>
-                                    </div>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+    <div class="m-grid m-cols-main">
+        <div class="m-card">
+            <div class="m-card-header"><h2 class="m-card-title">Traffic over time</h2></div>
+            <div class="m-card-body">
+                <app-line-chart labels="days" series="traffic" area />
             </div>
+        </div>
+        <div class="m-card">
+          <div class="m-card-header"><h2 class="m-card-title">Top pages</h2></div>
+          <div class="m-card-body">
+        <ul class="m-list m-list-plain">
+          <li class="m-flex m-between m-mb-12"><span>/dashboard</span><span class="m-muted">1,234 views</span></li>
+          <li class="m-flex m-between m-mb-12"><span>/reports</span><span class="m-muted">856 views</span></li>
+          <li class="m-flex m-between m-mb-12"><span>/settings</span><span class="m-muted">432 views</span></li>
+          <li class="m-flex m-between"><span>/users</span><span class="m-muted">298 views</span></li>
+        </ul>
+          </div>
         </div>
     </div>
 </div>
-
-<script>
-    // Chart.js would be included for actual charts
-    // This is a placeholder for integration
-</script>

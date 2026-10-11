@@ -2,75 +2,24 @@
 
 <PageTitle>@ModuleName Module</PageTitle>
 
-<div class="page-wrapper">
-    <div class="container-xl">
-        <div class="page-header d-mb-4">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h2 class="page-title">@ModuleName Module</h2>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="page-body">
-        <div class="container-xl">
-            <div class="row">
-                <div class="col-md-3">
-                    <div class="list-group">
-                        <a href="/modules" class="list-group-item list-group-item-action">
-                            📊 Overview
-                        </a>
-                        <a href="/modules/@ModuleName/entities" class="list-group-item list-group-item-action">
-                            📋 Entities
-                        </a>
-                        <a href="/modules/@ModuleName/settings" class="list-group-item list-group-item-action">
-                            ⚙️ Settings
-                        </a>
-                        <a href="/modules/@ModuleName/permissions" class="list-group-item list-group-item-action">
-                            🔐 Permissions
-                        </a>
-                    </div>
-                </div>
-                <div class="col-md-9">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Module Overview</h3>
-                        </div>
-                        <div class="card-body">
-                            @if (Stats == null)
-                            {
-                                <p><em>Loading module data...</em></p>
-                            }
-                            else
-                            {
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <div class="stat-item">
-                                            <h4>Entities</h4>
-                                            <div class="display-5">@(Stats.EntityCount ?? 0)</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="stat-item">
-                                            <h4>APIs</h4>
-                                            <div class="display-5">@(Stats.ApiCount ?? 0)</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="stat-item">
-                                            <h4>Permissions</h4>
-                                            <div class="display-5">@(Stats.PermissionCount ?? 0)</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Modules</div><h1 class="m-page-title">@ModuleName module</h1></div>
 </div>
+
+@if (Stats != null)
+{
+    <div class="m-row-cards">
+        <div class="m-grid m-cols-3">
+            <div class="m-card m-stat-card"><div class="m-card-body"><div class="m-stat-card-head"><span>Entities</span></div><div class="m-stat-card-value">@(Stats.EntityCount ?? 0)</div></div></div>
+            <div class="m-card m-stat-card"><div class="m-card-body"><div class="m-stat-card-head"><span>APIs</span></div><div class="m-stat-card-value">@(Stats.ApiCount ?? 0)</div></div></div>
+            <div class="m-card m-stat-card"><div class="m-card-body"><div class="m-stat-card-head"><span>Permissions</span></div><div class="m-stat-card-value">@(Stats.PermissionCount ?? 0)</div></div></div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h2 class="m-card-title">Module overview</h2></div>
+            <div class="m-card-body"><p class="m-mb-0">Everything the @ModuleName module offers lives here.</p></div>
+        </div>
+    </div>
+}
 
 @code {
     [Parameter]

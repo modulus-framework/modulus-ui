@@ -1,31 +1,13 @@
-@* Tabs component *@
-<ul class="nav nav-tabs" role="tablist">
-    @{
-        var tabs = ViewBag.Tabs as System.Collections.Generic.List<dynamic> ?? new System.Collections.Generic.List<dynamic>();
-    }
-    @foreach (var (tab, index) in tabs.Select((t, i) => (t, i)))
+@* Tabs: ViewBag.Tabs is a list of (id, label, content), the first one is open. content is markup. *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    var tabs = ViewBag.Tabs as System.Collections.Generic.List<dynamic> ?? new System.Collections.Generic.List<dynamic>();
+    string? first = tabs.Count > 0 ? (string?)tabs[0].id : null;
+}
+
+<app-tabs active="@first">
+    @foreach (var tab in tabs)
     {
-        <li class="nav-item" role="presentation">
-            <button
-                class="nav-link @(index == 0 ? "active" : "")"
-                id="tab-@tab.id-tab"
-                data-bs-toggle="tab"
-                data-bs-target="#tab-@tab.id"
-                type="button"
-                role="tab">
-                @tab.label
-            </button>
-        </li>
+        <app-tab key="@tab.id" title="@tab.label">@Html.Raw(tab.content)</app-tab>
     }
-</ul>
-<div class="tab-content">
-    @foreach (var (tab, index) in tabs.Select((t, i) => (t, i)))
-    {
-        <div
-            class="tab-pane @(index == 0 ? "show active" : "")"
-            id="tab-@tab.id"
-            role="tabpanel">
-            @Html.Raw(tab.content)
-        </div>
-    }
-</div>
+</app-tabs>

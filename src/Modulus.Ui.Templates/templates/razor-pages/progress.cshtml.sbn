@@ -1,15 +1,9 @@
-@* Progress bar component for Razor Pages *@
+@* Progress bar: ViewBag.Percentage (0-100), Color (success, exception, active) and ShowLabel *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
 @{
-    var percentage = ViewBag.Percentage ?? 0;
-    var color = ViewBag.Color ?? "primary";
-    var progressClass = $"progress-bar bg-{color}";
+    double percentage = ViewBag.Percentage ?? 0;
+    string? status = ViewBag.Color switch { "danger" => "exception", "success" => "success", _ => null };
+    bool showLabel = ViewBag.ShowLabel == true;
 }
 
-<div class="progress">
-    <div class="@progressClass" role="progressbar" style="width: @percentage%" aria-valuenow="@percentage" aria-valuemin="0" aria-valuemax="100">
-        @if (ViewBag.ShowLabel == true)
-        {
-            <span>@percentage%</span>
-        }
-    </div>
-</div>
+<app-progress percent="percentage" status="@status" show-info="showLabel" />

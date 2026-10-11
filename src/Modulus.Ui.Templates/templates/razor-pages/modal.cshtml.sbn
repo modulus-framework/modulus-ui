@@ -1,24 +1,10 @@
-@* Modal component for Razor Pages *@
-<div class="modal fade" id="@ViewBag.ModalId" tabindex="-1" role="dialog">
-    <div class="modal-dialog @(ViewBag.Size == "lg" ? "modal-lg" : ViewBag.Size == "sm" ? "modal-sm" : "")" role="document">
-        <div class="modal-content">
-            @if (!string.IsNullOrEmpty(ViewBag.Title))
-            {
-                <div class="modal-header">
-                    <h5 class="modal-title">@ViewBag.Title</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-            }
-            <div class="modal-body">
-                @RenderBody()
-            </div>
-            @if (!string.IsNullOrEmpty(ViewBag.Footer))
-            {
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    @Html.Raw(ViewBag.Footer)
-                </div>
-            }
-        </div>
-    </div>
-</div>
+@* Modal: opened with $dispatch('modulus:modal-open', '<ModalId>') or modulusModal.open('<ModalId>'). *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.ModalId ?? "modal";
+    int width = ViewBag.Size == "lg" ? 800 : ViewBag.Size == "sm" ? 400 : 520;
+}
+
+<app-modal name="@name" title="@((string?)ViewBag.Title)" width="width">
+    @RenderBody()
+</app-modal>

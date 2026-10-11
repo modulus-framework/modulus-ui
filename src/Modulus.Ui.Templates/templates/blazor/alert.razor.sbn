@@ -1,58 +1,47 @@
-@* Alert component for Blazor *@
+@* Alert: Type (success, info, warning, danger), Title, Message and Dismissible *@
 
-<div class="@GetAlertClass()" role="alert">
-    <div class="d-flex">
-        <div>
+@if (!_closed)
+{
+    <div class="ant-alert ant-alert-@AlertKind ant-alert-with-description" role="alert">
+        <div class="ant-alert-content">
             @if (!string.IsNullOrEmpty(Title))
             {
-                <h4 class="alert-title">@Title</h4>
+                <div class="ant-alert-message">@Title</div>
             }
             @if (!string.IsNullOrEmpty(Message))
             {
-                <div class="text-secondary">
-                    @Message
-                </div>
+                <div class="@(string.IsNullOrEmpty(Title) ? "ant-alert-message" : "ant-alert-description")">@Message</div>
             }
+            @ChildContent
         </div>
         @if (Dismissible)
         {
-            <button type="button" class="btn-close" aria-label="Close" @onclick="OnDismiss"></button>
+            <button type="button" class="ant-alert-close-icon" aria-label="Close" @onclick="CloseAsync">&times;</button>
         }
     </div>
-</div>
+}
 
 @code {
-    [Parameter]
-    public string? Type { get; set; } = "info";
+    [Parameter] public string? Type { get; set; } = "info";
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public bool Dismissible { get; set; } = false;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnDismiss { get; set; }
 
-    [Parameter]
-    public string? Title { get; set; }
+    private bool _closed;
 
-    [Parameter]
-    public string? Message { get; set; }
-
-    [Parameter]
-    public bool Dismissible { get; set; } = false;
-
-    [Parameter]
-    public RenderFragment? ChildContent { get; set; }
-
-    [Parameter]
-    public EventCallback OnDismiss { get; set; }
-
-    private string GetAlertClass()
+    private string AlertKind => Type?.ToLowerInvariant() switch
     {
-        var baseClass = "alert";
-        baseClass += Type?.ToLower() switch
-        {
-            "success" => " alert-success",
-            "warning" => " alert-warning",
-            "danger" => " alert-danger",
-            "info" => " alert-info",
-            _ => " alert-info"
-        };
-        if (Dismissible)
-            baseClass += " alert-dismissible";
-        return baseClass;
+        "success" => "success",
+        "warning" => "warning",
+        "danger" or "error" => "error",
+        _ => "info"
+    };
+
+    private async Task CloseAsync()
+    {
+        _closed = true;
+        await OnDismiss.InvokeAsync();
     }
 }

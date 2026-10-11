@@ -1,35 +1,18 @@
-{# Alert component for Fluid #}
+{# Alert component for Fluid: type (success, info, warning, danger), title, message, dismissible #}
 {% assign type = type | default: 'info' | downcase %}
-{% assign alert_class = 'alert' %}
+{% assign kind = 'info' %}
+{% if type == 'success' %}{% assign kind = 'success' %}{% elsif type == 'warning' %}{% assign kind = 'warning' %}{% elsif type == 'danger' or type == 'error' %}{% assign kind = 'error' %}{% endif %}
 
-{% if type == 'success' %}
-  {% assign alert_class = alert_class | append: ' alert-success' %}
-{% elsif type == 'warning' %}
-  {% assign alert_class = alert_class | append: ' alert-warning' %}
-{% elsif type == 'danger' %}
-  {% assign alert_class = alert_class | append: ' alert-danger' %}
-{% else %}
-  {% assign alert_class = alert_class | append: ' alert-info' %}
-{% endif %}
-
-{% if dismissible %}
-  {% assign alert_class = alert_class | append: ' alert-dismissible' %}
-{% endif %}
-
-<div class="{{ alert_class }}" role="alert">
-    <div class="d-flex">
-        <div>
-            {% if title %}
-            <h4 class="alert-title">{{ title }}</h4>
-            {% endif %}
-            {% if message %}
-            <div class="text-secondary">
-                {{ message }}
-            </div>
-            {% endif %}
-        </div>
-        {% if dismissible %}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<div class="ant-alert ant-alert-{{ kind }} ant-alert-with-description" role="alert">
+    <div class="ant-alert-content">
+        {% if title %}
+        <div class="ant-alert-message">{{ title }}</div>
+        {% endif %}
+        {% if message %}
+        <div class="{% if title %}ant-alert-description{% else %}ant-alert-message{% endif %}">{{ message }}</div>
         {% endif %}
     </div>
+    {% if dismissible %}
+    <button type="button" class="ant-alert-close-icon" aria-label="Close">&times;</button>
+    {% endif %}
 </div>

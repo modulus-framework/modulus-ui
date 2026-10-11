@@ -1,135 +1,58 @@
-@* System Health Monitoring page for MVC *@
+@* System health (static sample data and ViewBag values: replace them with your own). *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
 @{
-    ViewData["Title"] = "System Health";
+    ViewData["Title"] = "System health";
 }
 
-<div class="page-wrapper">
-    <div class="container-xl">
-        <div class="page-header d-mb-4">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h2 class="page-title">System Health</h2>
-                </div>
-                <div class="col-auto">
-                    <span class="badge badge-success">All Systems Operational</span>
-                </div>
-            </div>
+<app-page-header pretitle="System" title="System health"></app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-grid m-cols-4">
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Uptime</span></div>
+            <div class="m-stat-card-value">99.98%</div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Requests / min</span></div>
+            <div class="m-stat-card-value">1,240</div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Error rate</span></div>
+            <div class="m-stat-card-value">0.2%</div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Avg. response</span></div>
+            <div class="m-stat-card-value">82 ms</div>
+          </div>
         </div>
     </div>
-    <div class="page-body">
-        <div class="container-xl">
-            <!-- Overall Status -->
-            <div class="row row-deck row-cards mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="row align-items-center">
-                                <div class="col-auto">
-                                    <div class="text-secondary">System Status</div>
-                                    <div class="display-6">99.9%</div>
-                                </div>
-                                <div class="col-auto ms-auto">
-                                    <div class="progress" style="width: 200px; height: 10px;">
-                                        <div class="progress-bar bg-success" style="width: 99.9%"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Components Health -->
-            <div class="row row-deck row-cards">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Services</h3>
-                        </div>
-                        <table class="table table-vcenter card-table">
-                            <thead>
-                                <tr>
-                                    <th>Service</th>
-                                    <th>Status</th>
-                                    <th>Response Time</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><strong>API Gateway</strong></td>
-                                    <td><span class="badge badge-success">UP</span></td>
-                                    <td>45ms</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Database</strong></td>
-                                    <td><span class="badge badge-success">UP</span></td>
-                                    <td>120ms</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Cache Service</strong></td>
-                                    <td><span class="badge badge-success">UP</span></td>
-                                    <td>5ms</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Email Service</strong></td>
-                                    <td><span class="badge badge-success">UP</span></td>
-                                    <td>200ms</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>File Storage</strong></td>
-                                    <td><span class="badge badge-success">UP</span></td>
-                                    <td>150ms</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Resource Usage</h3>
-                        </div>
-                        <div class="card-body space-y">
-                            <div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>CPU Usage</span>
-                                    <span>35%</span>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar" style="width: 35%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Memory Usage</span>
-                                    <span>62%</span>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar bg-info" style="width: 62%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Disk Usage</span>
-                                    <span>48%</span>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar bg-warning" style="width: 48%"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Database Size</span>
-                                    <span>2.4 GB</span>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar bg-success" style="width: 24%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <div class="m-grid m-cols-main">
+        <div class="m-card">
+          <div class="m-card-header"><h2 class="m-card-title">Services</h2></div>
+          <div class="m-card-body m-card-body-flush">
+        <div class="ant-table-wrapper m-table-flush"><div class="ant-table"><div class="ant-table-container"><div class="ant-table-content"><table style="table-layout:auto"><thead class="ant-table-thead"><tr><th class="ant-table-cell">Service</th><th class="ant-table-cell">Status</th><th class="ant-table-cell">Response time</th></tr></thead><tbody class="ant-table-tbody">
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>API gateway</strong></td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Running</span></td><td class="ant-table-cell m-muted">45 ms</td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Database</strong></td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Connected</span></td><td class="ant-table-cell m-muted">12 ms</td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Cache</strong></td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Active</span></td><td class="ant-table-cell m-muted">3 ms</td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Message bus</strong></td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Running</span></td><td class="ant-table-cell m-muted">18 ms</td></tr>
+        </tbody></table></div></div></div></div>
+          </div>
+        </div>
+        <div class="m-card">
+          <div class="m-card-header"><h2 class="m-card-title">Resource usage</h2></div>
+          <div class="m-card-body">
+        <div class="m-meter"><div class="m-meter-head"><span>CPU</span><span class="m-muted">42%</span></div><app-progress percent="42" show-info="false" /></div>
+        <div class="m-meter"><div class="m-meter-head"><span>Memory</span><span class="m-muted">68%</span></div><app-progress percent="68" show-info="false" /></div>
+        <div class="m-meter"><div class="m-meter-head"><span>Disk</span><span class="m-muted">31%</span></div><app-progress percent="31" show-info="false" /></div>
+          </div>
         </div>
     </div>
 </div>

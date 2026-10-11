@@ -1,4 +1,4 @@
-@* Stat card: one headline number with a label and an optional change *@
+@* Stat card: one headline number with a label and an optional change. ViewBag.Label, Value, Change ("+12%" / "-3%") *@
 @{
     string label = ViewBag.Label ?? "";
     string value = ViewBag.Value?.ToString() ?? "0";
@@ -6,17 +6,13 @@
     var negative = change?.StartsWith('-') == true;
 }
 
-<div class="card">
-    <div class="card-body">
-        <div class="d-flex align-items-baseline">
-            <div class="h1 mb-0 me-2">@value</div>
-            @if (!string.IsNullOrEmpty(change))
-            {
-                <div class="ms-auto">
-                    <span class="badge @(negative ? "bg-danger" : "bg-success")">@change</span>
-                </div>
-            }
-        </div>
-        <div class="text-secondary">@label</div>
+<div class="m-card m-stat-card">
+    <div class="m-card-body">
+        <div class="m-stat-card-head"><span>@label</span></div>
+        <div class="m-stat-card-value">@value</div>
+        @if (!string.IsNullOrEmpty(change))
+        {
+            <div class="m-stat-sub"><span class="m-text-@(negative ? "danger" : "success")">@change</span></div>
+        }
     </div>
 </div>

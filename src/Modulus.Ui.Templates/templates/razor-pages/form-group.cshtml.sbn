@@ -1,38 +1,20 @@
-@* Form group wrapper: label, a control passed as ViewBag.Content (markup), hint and error *@
-@{
-    var size = ViewBag.Size ?? "md";
-    var gridClass = size switch
+@* Form group: ViewBag.Label, Required, Help, Error, and the control as ViewBag.Content (markup) *@
+<div class="ant-form-item">
+    @if (!string.IsNullOrEmpty((string?)ViewBag.Label))
     {
-        "lg" => "col-lg-8",
-        "md" => "col-md-6",
-        "sm" => "col-md-4",
-        _ => "col-md-6"
-    };
-}
-
-<div class="@gridClass">
-    <div class="mb-3">
-        @if (!string.IsNullOrEmpty(ViewBag.Label))
-        {
-            <label class="form-label">
-                @ViewBag.Label
-                @if (ViewBag.Required == true)
-                {
-                    <span class="text-danger">*</span>
-                }
-            </label>
-        }
-
+        <div class="ant-form-item-label">
+            <label class="@(ViewBag.Required == true ? "ant-form-item-required" : "")">@ViewBag.Label</label>
+        </div>
+    }
+    <div class="ant-form-item-control">
         @ViewBag.Content
-
-        @if (!string.IsNullOrEmpty(ViewBag.Help))
+        @if (!string.IsNullOrEmpty((string?)ViewBag.Help))
         {
-            <small class="form-hint d-block mt-2">@ViewBag.Help</small>
+            <div class="m-muted m-mt-4">@ViewBag.Help</div>
         }
-
-        @if (!string.IsNullOrEmpty(ViewBag.Error))
+        @if (!string.IsNullOrEmpty((string?)ViewBag.Error))
         {
-            <div class="text-danger small mt-2">@ViewBag.Error</div>
+            <div class="ant-form-item-explain-error">@ViewBag.Error</div>
         }
     </div>
 </div>

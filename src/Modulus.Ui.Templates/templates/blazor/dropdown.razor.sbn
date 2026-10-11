@@ -1,26 +1,36 @@
-@* Dropdown menu component *@
+@* Dropdown: Label and Items (label, url or a divider) *@
 
-<div class="dropdown">
-    <button class="btn @Variant dropdown-toggle" type="button" data-bs-toggle="dropdown">@Label</button>
-    <ul class="dropdown-menu">
-        @foreach (var item in Items)
-        {
-            @if (item.Divider)
-            {
-                <li><hr class="dropdown-divider" /></li>
-            }
-            else
-            {
-                <li><a class="dropdown-item" href="@item.Url">@item.Label</a></li>
-            }
-        }
-    </ul>
+<div class="m-dropdown @(_open ? "m-dropdown-open" : "")">
+    <div class="m-dropdown-trigger">
+        <button type="button" class="ant-btn ant-btn-primary" aria-haspopup="menu" aria-expanded="@_open" @onclick="Toggle"><span>@Label</span></button>
+    </div>
+    @if (_open)
+    {
+        <div class="ant-dropdown m-dropdown-panel m-dropdown-left">
+            <ul class="ant-dropdown-menu ant-dropdown-menu-root ant-dropdown-menu-vertical ant-dropdown-menu-light" role="menu">
+                @foreach (var item in Items)
+                {
+                    if (item.Divider)
+                    {
+                        <li class="ant-dropdown-menu-item-divider" role="separator"></li>
+                    }
+                    else
+                    {
+                        <li class="ant-dropdown-menu-item" role="none"><a role="menuitem" href="@item.Url" @onclick="Toggle"><span class="ant-dropdown-menu-title-content">@item.Label</span></a></li>
+                    }
+                }
+            </ul>
+        </div>
+    }
 </div>
 
 @code {
     [Parameter] public string Label { get; set; } = "Actions";
-    [Parameter] public string Variant { get; set; } = "btn-primary";
     [Parameter] public IEnumerable<DropdownItem> Items { get; set; } = [];
 
     public sealed record DropdownItem(string Label = "", string Url = "#", bool Divider = false);
+
+    private bool _open;
+
+    private void Toggle() => _open = !_open;
 }

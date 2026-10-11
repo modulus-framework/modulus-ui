@@ -5,46 +5,51 @@
 
 <PageTitle>Two-factor authentication</PageTitle>
 
-<div class="page page-center">
-    <div class="container container-tight py-4">
-        <div class="card card-md">
-            <div class="card-body">
-                <h2 class="h2 text-center mb-4">Two-factor authentication</h2>
-                @if (_message is not null)
-                {
-                    <div class="alert @(_ok ? "alert-success" : "alert-danger")" role="alert">@_message</div>
-                }
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Account</div><h1 class="m-page-title">Two-factor authentication</h1></div>
+</div>
 
-                @if (_recoveryCodes is not null)
-                {
-                    <p class="text-success fw-bold">Two-factor authentication is on.</p>
-                    <p>Save these recovery codes. Each works once, and they are not shown again:</p>
-                    <pre>@string.Join("\n", _recoveryCodes)</pre>
-                }
-                else if (_setup is not null)
-                {
-                    <p>Add this key to your authenticator app, or open the link on your phone:</p>
-                    <p><code>@_setup.SharedKey</code></p>
-                    <p><a href="@_setup.AuthenticatorUri">Open in authenticator app</a></p>
-                    <div class="mb-3">
-                        <label class="form-label" for="code">Code from the app</label>
-                        <input id="code" @bind="_code" class="form-control" inputmode="numeric" autocomplete="one-time-code" />
+<div class="m-grid m-cols-main">
+    <div class="m-card">
+        <div class="m-card-body">
+            @if (_message is not null)
+            {
+                <div class="ant-alert m-mb-16 ant-alert-@(_ok ? "success" : "error")" role="alert"><div class="ant-alert-content"><div class="ant-alert-message">@_message</div></div></div>
+            }
+
+            @if (_recoveryCodes is not null)
+            {
+                <p class="m-text-success"><strong>Two-factor authentication is on.</strong></p>
+                <p>Save these recovery codes. Each works once, and they are not shown again:</p>
+                <pre class="m-font-mono">@string.Join("\n", _recoveryCodes)</pre>
+            }
+            else if (_setup is not null)
+            {
+                <p>Add this key to your authenticator app, or open the link on your phone:</p>
+                <p><code>@_setup.SharedKey</code></p>
+                <p><a href="@_setup.AuthenticatorUri">Open in authenticator app</a></p>
+                <div class="ant-form ant-form-vertical">
+                    <div class="ant-form-item">
+                        <div class="ant-form-item-label"><label for="code">Code from the app</label></div>
+                        <div class="ant-form-item-control"><input id="code" @bind="_code" class="ant-input" inputmode="numeric" autocomplete="one-time-code" /></div>
                     </div>
-                    <button type="button" class="btn btn-primary w-100" @onclick="EnableAsync">Turn on</button>
-                }
-                else
-                {
-                    <p class="text-secondary">Protect your account with an authenticator app (Microsoft Authenticator, Google Authenticator, 1Password ...).</p>
-                    <button type="button" class="btn btn-primary w-100" @onclick="StartAsync">Set up two-factor authentication</button>
-                }
-
-                <hr />
-                <div class="mb-3">
-                    <label class="form-label" for="password">Password (to turn it off)</label>
-                    <input id="password" @bind="_password" type="password" class="form-control" autocomplete="current-password" />
                 </div>
-                <button type="button" class="btn btn-outline-danger w-100" @onclick="DisableAsync">Turn off two-factor authentication</button>
+                <button type="button" class="ant-btn ant-btn-primary" @onclick="EnableAsync"><span>Turn on</span></button>
+            }
+            else
+            {
+                <p class="m-muted">Protect your account with an authenticator app (Microsoft Authenticator, Google Authenticator, 1Password ...).</p>
+                <button type="button" class="ant-btn ant-btn-primary" @onclick="StartAsync"><span>Set up two-factor authentication</span></button>
+            }
+
+            <div class="ant-divider ant-divider-horizontal" role="separator"></div>
+            <div class="ant-form ant-form-vertical">
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="password">Password (to turn it off)</label></div>
+                    <div class="ant-form-item-control"><input id="password" @bind="_password" type="password" class="ant-input" autocomplete="current-password" /></div>
+                </div>
             </div>
+            <button type="button" class="ant-btn ant-btn-default ant-btn-dangerous" @onclick="DisableAsync"><span>Turn off two-factor authentication</span></button>
         </div>
     </div>
 </div>

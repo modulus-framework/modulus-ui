@@ -1,0 +1,31 @@
+@page "/audit"
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@* Audit logs (static sample data and ViewBag values: replace them with your own). *@
+@{
+    ViewData["Title"] = "Audit logs";
+}
+
+<app-page-header pretitle="Security" title="Audit logs"></app-page-header>
+
+<div class="m-card" x-data>
+    <div class="m-card-header">
+        <h2 class="m-card-title">Activity timeline</h2>
+        <div class="m-card-actions">
+            <app-input type="search" name="q" placeholder="Search logs..." aria-label="Search logs" prefix-icon="search" />
+        </div>
+    </div>
+    <div class="m-card-body m-card-body-flush">
+        <div class="ant-table-wrapper m-table-flush"><div class="ant-table"><div class="ant-table-container"><div class="ant-table-content"><table style="table-layout:auto"><thead class="ant-table-thead"><tr><th class="ant-table-cell">Timestamp</th><th class="ant-table-cell">User</th><th class="ant-table-cell">Action</th><th class="ant-table-cell">Resource</th><th class="ant-table-cell">Status</th><th class="ant-table-cell">Details</th></tr></thead><tbody class="ant-table-tbody">
+        <tr class="ant-table-row"><td class="ant-table-cell m-muted">2024-10-10 15:30:45</td><td class="ant-table-cell"><span class="m-flex"><span class="m-avatar m-avatar-sm">JD</span>John Doe</span></td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">CREATE</span></td><td class="ant-table-cell m-muted">User: admin@example.com</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Success</span></td><td class="ant-table-cell"><button type="button" class="ant-btn ant-btn-text ant-btn-sm" x-on:click="$dispatch('modulus:modal-open', 'details')">View</button></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell m-muted">2024-10-10 14:15:20</td><td class="ant-table-cell"><span class="m-flex"><span class="m-avatar m-avatar-sm">AU</span>Admin User</span></td><td class="ant-table-cell"><span class="m-badge m-badge-info-lt">UPDATE</span></td><td class="ant-table-cell m-muted">Settings: App Config</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Success</span></td><td class="ant-table-cell"><button type="button" class="ant-btn ant-btn-text ant-btn-sm" x-on:click="$dispatch('modulus:modal-open', 'details')">View</button></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell m-muted">2024-10-10 13:45:10</td><td class="ant-table-cell"><span class="m-flex"><span class="m-avatar m-avatar-sm">SU</span>System User</span></td><td class="ant-table-cell"><span class="m-badge m-badge-danger-lt">DELETE</span></td><td class="ant-table-cell m-muted">User: olduser@example.com</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Success</span></td><td class="ant-table-cell"><button type="button" class="ant-btn ant-btn-text ant-btn-sm" x-on:click="$dispatch('modulus:modal-open', 'details')">View</button></td></tr>
+        </tbody></table></div></div></div></div>
+    </div>
+    <div class="m-card-footer">
+        <app-pagination total="40" current="1" page-size="10" url="/audit" />
+    </div>
+</div>
+
+<app-modal name="details" title="Event details" footer="false">
+    <p class="m-muted">Replace this with the selected event's details (who, what, before and after).</p>
+</app-modal>

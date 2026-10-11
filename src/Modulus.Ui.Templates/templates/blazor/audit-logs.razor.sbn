@@ -3,65 +3,48 @@
 
 <PageTitle>Audit Logs</PageTitle>
 
-<div class="page-wrapper">
-    <div class="container-xl">
-        <div class="page-header d-mb-4">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h2 class="page-title">Audit Logs</h2>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="page-body">
-        <div class="container-xl">
-            <div class="row row-deck row-cards">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="row align-items-center">
-                                <div class="col">
-                                    <h3 class="card-title">Activity Timeline</h3>
-                                </div>
-                                <div class="col-auto">
-                                    <input type="text" class="form-control" placeholder="Search logs..." aria-label="Search logs" @oninput="OnSearch" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-vcenter card-table">
-                                <thead>
-                                    <tr>
-                                        <th>Timestamp</th>
-                                        <th>User</th>
-                                        <th>Action</th>
-                                        <th>Resource</th>
-                                        <th>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @if (Logs != null)
-                                    {
-                                        @foreach (var log in Logs)
-                                        {
-                                            <tr>
-                                                <td>@log.Timestamp</td>
-                                                <td>@log.User</td>
-                                                <td><span class="badge @GetActionBadgeClass(log.Action)">@log.Action</span></td>
-                                                <td>@log.Resource</td>
-                                                <td><span class="badge badge-success">@log.Status</span></td>
-                                            </tr>
-                                        }
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Security</div><h1 class="m-page-title">Audit logs</h1></div>
 </div>
+
+@if (Logs == null)
+{
+    <p class="m-muted">Loading audit logs...</p>
+}
+else
+{
+    <div class="m-card">
+        <div class="m-card-header">
+            <h2 class="m-card-title">Activity timeline</h2>
+            <div class="m-card-actions">
+                <input type="search" class="ant-input" placeholder="Search logs..." aria-label="Search logs" @oninput="OnSearch" />
+            </div>
+        </div>
+        <div class="m-card-body m-card-body-flush">
+            <div class="ant-table-wrapper m-table-flush"><div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                <table style="table-layout:auto">
+                    <thead class="ant-table-thead"><tr><th class="ant-table-cell">Timestamp</th><th class="ant-table-cell">User</th><th class="ant-table-cell">Action</th><th class="ant-table-cell">Resource</th><th class="ant-table-cell">Status</th></tr></thead>
+                    <tbody class="ant-table-tbody">
+                        @foreach (var log in Logs.Where(l => string.IsNullOrEmpty(SearchTerm) || l.User.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) || l.Resource.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            <tr class="ant-table-row">
+                                <td class="ant-table-cell m-muted">@log.Timestamp</td>
+                                <td class="ant-table-cell"><span class="m-flex"><span class="m-avatar m-avatar-sm">@Initials(log.User)</span>@log.User</span></td>
+                                <td class="ant-table-cell"><span class="m-badge @GetActionBadgeClass(log.Action)">@log.Action</span></td>
+                                <td class="ant-table-cell m-muted">@log.Resource</td>
+                                <td class="ant-table-cell"><span class="m-badge m-badge-success-lt">@log.Status</span></td>
+                            </tr>
+                        }
+                        @if (Logs.Count == 0)
+                        {
+                            <tr class="ant-table-placeholder"><td colspan="5" class="ant-table-cell m-muted">No audit events yet.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div></div></div></div>
+        </div>
+    </div>
+}
 
 @code {
     private List<AuditLog>? Logs;
@@ -88,11 +71,14 @@
 
     private string GetActionBadgeClass(string action) => action?.ToUpper() switch
     {
-        "CREATE" => "badge-success",
-        "UPDATE" => "badge-info",
-        "DELETE" => "badge-danger",
-        _ => "badge-secondary"
+        "CREATE" => "m-badge-success-lt",
+        "UPDATE" => "m-badge-info-lt",
+        "DELETE" => "m-badge-danger-lt",
+        _ => "m-badge-gray-lt"
     };
+
+    private static string Initials(string name) =>
+        string.Concat(name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => char.ToUpperInvariant(w[0])));
 
     public class AuditLog
     {

@@ -1,19 +1,7 @@
-@* Spinner component for Razor Pages *@
+@* Spinner: ViewBag.Size (sm, lg) and Label *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
 @{
-    var spinnerClass = "spinner-border";
-    if (!string.IsNullOrEmpty(ViewBag.Size))
-    {
-        spinnerClass += ViewBag.Size == "sm" ? " spinner-border-sm" : "";
-    }
-    if (!string.IsNullOrEmpty(ViewBag.Color))
-    {
-        spinnerClass += $" text-{ViewBag.Color}";
-    }
+    string size = ((string?)ViewBag.Size) switch { "sm" => "small", "lg" => "large", _ => "default" };
 }
 
-<div class="@spinnerClass" role="status">
-    @if (!string.IsNullOrEmpty(ViewBag.Label))
-    {
-        <span class="visually-hidden">@ViewBag.Label</span>
-    }
-</div>
+<app-spin size="@size" tip="@((string?)ViewBag.Label)" />

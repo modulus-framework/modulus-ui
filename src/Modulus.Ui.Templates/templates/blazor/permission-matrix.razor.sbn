@@ -5,49 +5,52 @@
 
 <PageTitle>{{ entity_name }} permissions</PageTitle>
 
-<div class="page-body">
-    <div class="container-xl">
-        <div class="card">
-            <div class="card-header"><h3 class="card-title">{{ entity_name }} permissions</h3></div>
-            <div class="card-body">
-                @if (_message is not null)
-                {
-                    <div class="alert @(_ok ? "alert-success" : "alert-danger")" role="alert">@_message</div>
-                }
-                <p class="text-secondary">Tick a box to grant the permission to the role; clear it to revoke. A role that is denied a permission shows a locked box.</p>
-                <div class="table-responsive">
-                    <table class="table table-vcenter card-table">
-                        <thead>
-                            <tr>
-                                <th scope="col">Role</th>
-                                @foreach (var p in Permissions)
-                                {
-                                    <th scope="col" title="@p.Key">@p.Label</th>
-                                }
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var role in Roles)
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Security</div><h1 class="m-page-title">{{ entity_name }} permissions</h1></div>
+</div>
+
+@if (_message is not null)
+{
+    <div class="ant-alert m-mb-16 ant-alert-@(_ok ? "success" : "error")" role="alert"><div class="ant-alert-content"><div class="ant-alert-message">@_message</div></div></div>
+}
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">Roles and permissions</h2></div>
+    <div class="m-card-body">
+        <p class="m-muted">Tick a box to grant the permission to the role; clear it to revoke. A role that is denied a permission shows a locked box.</p>
+    </div>
+    <div class="ant-table-wrapper m-table-flush">
+        <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+            <table style="table-layout:auto">
+                <thead class="ant-table-thead">
+                    <tr>
+                        <th class="ant-table-cell" scope="col">Role</th>
+                        @foreach (var p in Permissions)
+                        {
+                            <th class="ant-table-cell" scope="col" title="@p.Key">@p.Label</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody class="ant-table-tbody">
+                    @foreach (var role in Roles)
+                    {
+                        <tr class="ant-table-row">
+                            <td class="ant-table-cell" role="rowheader"><strong>@role</strong></td>
+                            @foreach (var p in Permissions)
                             {
-                                <tr>
-                                    <th scope="row">@role</th>
-                                    @foreach (var p in Permissions)
-                                    {
-                                        var cell = (role, p.Key);
-                                        <td>
-                                            <input type="checkbox" class="form-check-input" aria-label="@role: @p.Label"
-                                                   checked="@_allowed.Contains(cell)" disabled="@(_denied.Contains(cell) || _busy)"
-                                                   title="@(_denied.Contains(cell) ? "Denied" : null)"
-                                                   @onchange="e => ToggleAsync(role, p.Key, (bool)(e.Value ?? false))" />
-                                        </td>
-                                    }
-                                </tr>
+                                var cell = (role, p.Key);
+                                <td class="ant-table-cell">
+                                    <input type="checkbox" aria-label="@role: @p.Label"
+                                           checked="@_allowed.Contains(cell)" disabled="@(_denied.Contains(cell) || _busy)"
+                                           title="@(_denied.Contains(cell) ? "Denied" : null)"
+                                           @onchange="e => ToggleAsync(role, p.Key, (bool)(e.Value ?? false))" />
+                                </td>
                             }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div></div></div>
     </div>
 </div>
 

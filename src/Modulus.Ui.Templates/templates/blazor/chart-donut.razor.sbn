@@ -5,14 +5,14 @@
 
 <PageTitle>Donut chart</PageTitle>
 
-<div class="page-body">
-    <div class="container-xl">
-        <div class="card">
-            <div class="card-header"><h3 class="card-title">Donut chart</h3></div>
-            <div class="card-body">
-                <DonutChart Slices="_channels" CenterLabel="Visits" />
-            </div>
-        </div>
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Charts</div><h1 class="m-page-title">Donut chart</h1></div>
+</div>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">Donut chart</h2></div>
+    <div class="m-card-body">
+        <DonutChart Slices="_channels" CenterLabel="Visits" />
     </div>
 </div>
 

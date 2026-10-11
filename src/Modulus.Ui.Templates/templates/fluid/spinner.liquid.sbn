@@ -1,16 +1,7 @@
-{# Spinner/Loading indicator for Fluid #}
-{% assign spinner_class = 'spinner-border' %}
-
-{% if size == 'sm' %}
-  {% assign spinner_class = spinner_class | append: ' spinner-border-sm' %}
-{% endif %}
-
-{% if color %}
-  {% assign spinner_class = spinner_class | append: ' text-' | append: color %}
-{% endif %}
-
-<div class="{{ spinner_class }}" role="status">
+{# Spinner/Loading indicator for Fluid: size (sm, lg), label #}
+<div class="ant-spin ant-spin-spinning{% if size == 'sm' %} ant-spin-sm{% elsif size == 'lg' %} ant-spin-lg{% endif %}" role="status" aria-live="polite">
+    <span class="ant-spin-dot ant-spin-dot-spin"><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i></span>
     {% if label %}
-    <span class="visually-hidden">{{ label }}</span>
+    <div class="ant-spin-text">{{ label }}</div>
     {% endif %}
 </div>

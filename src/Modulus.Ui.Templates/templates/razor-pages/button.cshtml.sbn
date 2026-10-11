@@ -1,31 +1,11 @@
-@* Reusable button component for Razor Pages *@
+@* Button: ViewBag.Label, Variant (primary, default, dashed, text, link), Size (sm, lg), Href, Type (button, submit) and Danger *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
 @{
-    var buttonClass = "btn";
-
-    if (!string.IsNullOrEmpty(ViewBag.Variant))
-    {
-        buttonClass += $" btn-{ViewBag.Variant}";
-    }
-    else
-    {
-        buttonClass += " btn-primary";
-    }
-
-    if (!string.IsNullOrEmpty(ViewBag.Size))
-    {
-        buttonClass += $" btn-{ViewBag.Size}";
-    }
+    string variant = (string?)ViewBag.Variant ?? "primary";
+    string size = ((string?)ViewBag.Size) switch { "sm" => "small", "lg" => "large", _ => "middle" };
+    string? href = ViewBag.Href;
+    string htmlType = (string?)ViewBag.Type ?? "button";
+    bool danger = ViewBag.Danger == true;
 }
 
-@if (!string.IsNullOrEmpty(ViewBag.Href))
-{
-    <a href="@ViewBag.Href" class="@buttonClass">
-        @ViewBag.Label
-    </a>
-}
-else
-{
-    <button type="@(ViewBag.Type ?? "button")" class="@buttonClass">
-        @ViewBag.Label
-    </button>
-}
+<app-button type="@variant" size="@size" href="@href" html-type="@htmlType" danger="danger">@ViewBag.Label</app-button>

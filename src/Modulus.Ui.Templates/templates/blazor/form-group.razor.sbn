@@ -1,27 +1,23 @@
-@* Form group wrapper: label, the control as child content, hint and error *@
+@* Form group: Label, Required, Help, Error and the control as child content *@
 
-<div class="mb-3">
+<div class="ant-form-item">
     @if (!string.IsNullOrEmpty(Label))
     {
-        <label class="form-label">
-            @Label
-            @if (Required)
-            {
-                <span class="text-danger">*</span>
-            }
-        </label>
+        <div class="ant-form-item-label">
+            <label class="@(Required ? "ant-form-item-required" : "")">@Label</label>
+        </div>
     }
-
-    @ChildContent
-
-    @if (!string.IsNullOrEmpty(Help))
-    {
-        <small class="form-hint d-block mt-2">@Help</small>
-    }
-    @if (!string.IsNullOrEmpty(Error))
-    {
-        <div class="text-danger small mt-2">@Error</div>
-    }
+    <div class="ant-form-item-control">
+        @ChildContent
+        @if (!string.IsNullOrEmpty(Help))
+        {
+            <div class="m-muted m-mt-4">@Help</div>
+        }
+        @if (!string.IsNullOrEmpty(Error))
+        {
+            <div class="ant-form-item-explain-error">@Error</div>
+        }
+    </div>
 </div>
 
 @code {

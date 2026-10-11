@@ -1,32 +1,26 @@
-@* Modal component for Blazor *@
-
-<div class="modal fade @(IsOpen ? "show" : "")" style="display: @(IsOpen ? "block" : "none")" tabindex="-1" role="dialog">
-    <div class="modal-dialog @GetModalSize()" role="document">
-        <div class="modal-content">
-            @if (!string.IsNullOrEmpty(Title))
-            {
-                <div class="modal-header">
-                    <h5 class="modal-title">@Title</h5>
-                    <button type="button" class="btn-close" aria-label="Close" @onclick="OnClose"></button>
-                </div>
-            }
-            <div class="modal-body">
-                @ChildContent
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" @onclick="OnClose">Close</button>
-                @if (Footer != null)
-                {
-                    @Footer
-                }
-            </div>
-        </div>
-    </div>
-</div>
+@* Modal: IsOpen, Title, Size (sm, md, lg, xl), the body as child content, an optional Footer and OnClose *@
 
 @if (IsOpen)
 {
-    <div class="modal-backdrop fade show"></div>
+    <div class="m-modal">
+        <div class="ant-modal-mask"></div>
+        <div class="ant-modal-wrap" role="dialog" aria-modal="true" @onclick="OnClose">
+            <div class="ant-modal" style="width: @(GetWidth())px" @onclick:stopPropagation>
+                <div class="ant-modal-content">
+                    <button type="button" class="ant-modal-close" aria-label="Close" @onclick="OnClose"><span class="ant-modal-close-x">&times;</span></button>
+                    @if (!string.IsNullOrEmpty(Title))
+                    {
+                        <div class="ant-modal-header"><div class="ant-modal-title">@Title</div></div>
+                    }
+                    <div class="ant-modal-body">@ChildContent</div>
+                    <div class="ant-modal-footer">
+                        <button type="button" class="ant-btn ant-btn-default" @onclick="OnClose"><span>Close</span></button>
+                        @Footer
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
@@ -48,11 +42,11 @@
     [Parameter]
     public EventCallback OnClose { get; set; }
 
-    private string GetModalSize() => Size switch
+    private int GetWidth() => Size switch
     {
-        "sm" => "modal-sm",
-        "lg" => "modal-lg",
-        "xl" => "modal-xl",
-        _ => ""
+        "sm" => 400,
+        "lg" => 800,
+        "xl" => 1100,
+        _ => 520
     };
 }

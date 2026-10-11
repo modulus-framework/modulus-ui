@@ -1,109 +1,48 @@
-@* Reports & Analytics Dashboard for MVC *@
+@* Reports (static sample data and ViewBag values: replace them with your own). *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
 @{
-    ViewData["Title"] = "Reports & Analytics";
+    ViewData["Title"] = "Reports & analytics";
 }
 
-<div class="page-wrapper">
-    <div class="container-xl">
-        <div class="page-header d-mb-4">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h2 class="page-title">Reports & Analytics</h2>
-                </div>
-                <div class="col-auto">
-                    <a href="#" class="btn btn-primary">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon">
-                            <path d="M12 5v14m-7-7h14"></path>
-                        </svg>
-                        New Report
-                    </a>
-                </div>
-            </div>
+<app-page-header pretitle="Reports" title="Reports & analytics">
+    <app-button type="primary" href="#">New report</app-button>
+</app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-grid m-cols-4">
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Total reports</span></div>
+            <div class="m-stat-card-value">@(ViewBag.TotalReports ?? 0)</div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Scheduled</span></div>
+            <div class="m-stat-card-value">@(ViewBag.ScheduledReports ?? 0)</div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>This month</span></div>
+            <div class="m-stat-card-value">@(ViewBag.MonthlyReports ?? 0)</div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Avg. generation time</span></div>
+            <div class="m-stat-card-value">@(ViewBag.AvgGenTime ?? "0s")</div>
+          </div>
         </div>
     </div>
-    <div class="page-body">
-        <div class="container-xl">
-            <!-- KPIs -->
-            <div class="row row-deck row-cards mb-4">
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-secondary">Total Reports</div>
-                            <div class="display-6">@(ViewBag.TotalReports ?? 0)</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-secondary">Scheduled</div>
-                            <div class="display-6">@(ViewBag.ScheduledReports ?? 0)</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-secondary">This Month</div>
-                            <div class="display-6">@(ViewBag.MonthlyReports ?? 0)</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-secondary">Avg. Gen. Time</div>
-                            <div class="display-6">@(ViewBag.AvgGenTime ?? "0s")</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- Reports List -->
-            <div class="row row-deck row-cards">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Available Reports</h3>
-                        </div>
-                        <div class="table-responsive">
-                            <table class="table table-vcenter card-table">
-                                <thead>
-                                    <tr>
-                                        <th>Report Name</th>
-                                        <th>Category</th>
-                                        <th>Last Run</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td><strong>Sales Summary</strong></td>
-                                        <td><span class="badge badge-blue">Sales</span></td>
-                                        <td>2024-10-10 14:30</td>
-                                        <td><span class="badge badge-success">Ready</span></td>
-                                        <td>
-                                            <a href="#" class="btn btn-sm btn-ghost-primary">View</a>
-                                            <a href="#" class="btn btn-sm btn-ghost-secondary">Download</a>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>User Activity</strong></td>
-                                        <td><span class="badge badge-purple">Analytics</span></td>
-                                        <td>2024-10-09 10:15</td>
-                                        <td><span class="badge badge-success">Ready</span></td>
-                                        <td>
-                                            <a href="#" class="btn btn-sm btn-ghost-primary">View</a>
-                                            <a href="#" class="btn btn-sm btn-ghost-secondary">Download</a>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    <div class="m-card">
+      <div class="m-card-header"><h2 class="m-card-title">Available reports</h2></div>
+      <div class="m-card-body m-card-body-flush">
+    <div class="ant-table-wrapper m-table-flush"><div class="ant-table"><div class="ant-table-container"><div class="ant-table-content"><table style="table-layout:auto"><thead class="ant-table-thead"><tr><th class="ant-table-cell">Report</th><th class="ant-table-cell">Category</th><th class="ant-table-cell">Last run</th><th class="ant-table-cell">Status</th><th class="ant-table-cell">Actions</th></tr></thead><tbody class="ant-table-tbody">
+    <tr class="ant-table-row"><td class="ant-table-cell"><strong>Sales summary</strong></td><td class="ant-table-cell"><span class="m-badge m-badge-blue-lt">Sales</span></td><td class="ant-table-cell m-muted">2024-10-10 14:30</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Ready</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">View</a><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Download</a></td></tr>
+    <tr class="ant-table-row"><td class="ant-table-cell"><strong>User activity</strong></td><td class="ant-table-cell"><span class="m-badge m-badge-purple-lt">Analytics</span></td><td class="ant-table-cell m-muted">2024-10-09 10:15</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Ready</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">View</a><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Download</a></td></tr>
+    </tbody></table></div></div></div></div>
+      </div>
     </div>
 </div>

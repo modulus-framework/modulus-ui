@@ -1,28 +1,31 @@
-@* Tabs component for Blazor *@
+@* Tabs: Items (label and content), ActiveTab and OnTabChanged *@
 
-<ul class="nav nav-tabs" role="tablist">
-    @foreach (var (tab, index) in (Items ?? []).Select((t, i) => (t, i)))
-    {
-        <li class="nav-item" role="presentation">
-            <button
-                class="nav-link @(ActiveTab == index ? "active" : "")"
-                @onclick="@((EventArgs) => SelectTab(index))"
-                type="button"
-                role="tab">
-                @tab.Label
-            </button>
-        </li>
-    }
-</ul>
-<div class="tab-content">
-    @foreach (var (tab, index) in (Items ?? []).Select((t, i) => (t, i)))
-    {
-        <div
-            class="tab-pane @(ActiveTab == index ? "show active" : "")"
-            role="tabpanel">
-            @tab.Content
+<div class="ant-tabs ant-tabs-top">
+    <div class="ant-tabs-nav" role="tablist">
+        <div class="ant-tabs-nav-wrap">
+            <div class="ant-tabs-nav-list">
+                @foreach (var (tab, index) in (Items ?? []).Select((t, i) => (t, i)))
+                {
+                    var current = index;
+                    <div class="ant-tabs-tab @(ActiveTab == index ? "ant-tabs-tab-active" : "")">
+                        <div role="tab" aria-selected="@(ActiveTab == index ? "true" : "false")" tabindex="@(ActiveTab == index ? 0 : -1)" class="ant-tabs-tab-btn"
+                             @onclick="@(() => SelectTab(current))">@tab.Label</div>
+                    </div>
+                }
+            </div>
         </div>
-    }
+    </div>
+    <div class="ant-tabs-content-holder">
+        <div class="ant-tabs-content ant-tabs-content-top">
+            @foreach (var (tab, index) in (Items ?? []).Select((t, i) => (t, i)))
+            {
+                @if (ActiveTab == index)
+                {
+                    <div role="tabpanel" class="ant-tabs-tabpane ant-tabs-tabpane-active">@tab.Content</div>
+                }
+            }
+        </div>
+    </div>
 </div>
 
 @code {

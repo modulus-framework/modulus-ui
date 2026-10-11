@@ -1,0 +1,40 @@
+@page "/admin/settings"
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@* System settings (static sample data and ViewBag values: replace them with your own). *@
+@{
+    ViewData["Title"] = "System settings";
+}
+
+<app-page-header pretitle="Administration" title="System settings"></app-page-header>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">General settings</h2></div>
+    <div class="m-card-body">
+        <form method="post" asp-antiforgery="true" class="ant-form ant-form-vertical" novalidate>
+            <div class="m-form-grid">
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="app-name">Application name</label></div>
+                    <div class="ant-form-item-control"><input id="app-name" name="AppName" class="ant-input" value="Modulus app" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="support-email">Support email</label></div>
+                    <div class="ant-form-item-control"><input id="support-email" name="SupportEmail" type="email" class="ant-input" value="support@example.com" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="time-zone">Time zone</label></div>
+                    <div class="ant-form-item-control">
+                        <select id="time-zone" name="TimeZone" class="ant-input">
+                            <option>UTC</option>
+                            <option>America/New_York</option>
+                            <option>Europe/London</option>
+                            <option>Asia/Dhaka</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="m-form-actions">
+                <app-button type="primary" html-type="submit">Save changes</app-button>
+            </div>
+        </form>
+    </div>
+</div>

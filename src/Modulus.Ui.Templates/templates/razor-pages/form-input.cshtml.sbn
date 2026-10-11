@@ -1,4 +1,4 @@
-@* Form input: label, control, hint and validation message for one field *@
+@* Form input: label, control, hint and validation message for one field. ViewBag.Name, Label, Type, Value, Placeholder, Help, Error, Required *@
 @{
     string name = ViewBag.Name ?? "";
     string label = ViewBag.Label ?? name;
@@ -10,22 +10,20 @@
     bool required = ViewBag.Required == true;
 }
 
-<div class="mb-3">
-    <label class="form-label" for="@name">
-        @label
-        @if (required)
+<div class="ant-form-item">
+    <div class="ant-form-item-label">
+        <label for="@name" class="@(required ? "ant-form-item-required" : "")">@label</label>
+    </div>
+    <div class="ant-form-item-control">
+        <input id="@name" name="@name" type="@type" value="@value" placeholder="@placeholder" required="@required"
+               class="ant-input@(string.IsNullOrEmpty(error) ? "" : " ant-input-status-error")" />
+        @if (!string.IsNullOrEmpty(help))
         {
-            <span class="text-danger">*</span>
+            <div class="m-muted m-mt-4">@help</div>
         }
-    </label>
-    <input id="@name" name="@name" type="@type" value="@value" placeholder="@placeholder"
-           class="form-control@(string.IsNullOrEmpty(error) ? "" : " is-invalid")" required="@required" />
-    @if (!string.IsNullOrEmpty(help))
-    {
-        <small class="form-hint">@help</small>
-    }
-    @if (!string.IsNullOrEmpty(error))
-    {
-        <div class="invalid-feedback">@error</div>
-    }
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="ant-form-item-explain-error">@error</div>
+        }
+    </div>
 </div>

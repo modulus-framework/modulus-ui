@@ -1,24 +1,18 @@
 {# Reusable button component for Fluid #}
-{# Usage: {% include 'button.liquid' label='Click Me' variant='primary' href='/path' %} #}
+{# Usage: {% include 'button.liquid' label='Click Me' variant='primary' href='/path' %}; variant: primary, default, dashed, text, link, danger; size: sm, lg #}
 
-{% assign button_class = 'btn' %}
-
-{% if variant %}
-  {% assign button_class = button_class | append: ' btn-' | append: variant %}
-{% else %}
-  {% assign button_class = button_class | append: ' btn-primary' %}
-{% endif %}
-
+{% assign button_class = 'ant-btn' %}
+{% case variant %}
+  {% when 'danger' %}{% assign button_class = button_class | append: ' ant-btn-default ant-btn-dangerous' %}
+  {% when 'default' or 'dashed' or 'text' or 'link' %}{% assign button_class = button_class | append: ' ant-btn-' | append: variant %}
+  {% else %}{% assign button_class = button_class | append: ' ant-btn-primary' %}
+{% endcase %}
 {% if size %}
-  {% assign button_class = button_class | append: ' btn-' | append: size %}
+  {% assign button_class = button_class | append: ' ant-btn-' | append: size %}
 {% endif %}
 
 {% if href %}
-  <a href="{{ href }}" class="{{ button_class }}">
-    {{ label }}
-  </a>
+  <a href="{{ href }}" class="{{ button_class }}"><span>{{ label }}</span></a>
 {% else %}
-  <button type="{{ type | default: 'button' }}" class="{{ button_class }}">
-    {{ label }}
-  </button>
+  <button type="{{ type | default: 'button' }}" class="{{ button_class }}"><span>{{ label }}</span></button>
 {% endif %}

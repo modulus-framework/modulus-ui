@@ -1,29 +1,14 @@
-@* Spinner/Loading indicator for Blazor *@
+@* Spinner: Size (sm, lg) and Label *@
 
-<div class="@GetSpinnerClass()" role="status">
+<div class="ant-spin ant-spin-spinning @(Size == "sm" ? "ant-spin-sm" : Size == "lg" ? "ant-spin-lg" : "")" role="status" aria-live="polite">
+    <span class="ant-spin-dot ant-spin-dot-spin"><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i></span>
     @if (!string.IsNullOrEmpty(Label))
     {
-        <span class="visually-hidden">@Label</span>
+        <div class="ant-spin-text">@Label</div>
     }
 </div>
 
 @code {
-    [Parameter]
-    public string? Size { get; set; }
-
-    [Parameter]
-    public string? Color { get; set; } = "primary";
-
-    [Parameter]
-    public string? Label { get; set; } = "Loading...";
-
-    private string GetSpinnerClass()
-    {
-        var classes = "spinner-border";
-        if (Size == "sm")
-            classes += " spinner-border-sm";
-        if (!string.IsNullOrEmpty(Color))
-            classes += $" text-{Color}";
-        return classes;
-    }
+    [Parameter] public string? Size { get; set; }
+    [Parameter] public string? Label { get; set; } = "Loading...";
 }

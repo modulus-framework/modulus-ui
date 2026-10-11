@@ -1,17 +1,13 @@
-@* Stat card: one headline number with a label and an optional change *@
+@* Stat card: one headline number with a label and an optional change ("+12%" / "-3%") *@
 
-<div class="card">
-    <div class="card-body">
-        <div class="d-flex align-items-baseline">
-            <div class="h1 mb-0 me-2">@Value</div>
-            @if (!string.IsNullOrEmpty(Change))
-            {
-                <div class="ms-auto">
-                    <span class="badge @(Change.StartsWith('-') ? "bg-danger" : "bg-success")">@Change</span>
-                </div>
-            }
-        </div>
-        <div class="text-secondary">@Label</div>
+<div class="m-card m-stat-card">
+    <div class="m-card-body">
+        <div class="m-stat-card-head"><span>@Label</span></div>
+        <div class="m-stat-card-value">@Value</div>
+        @if (!string.IsNullOrEmpty(Change))
+        {
+            <div class="m-stat-sub"><span class="m-text-@(Change.StartsWith('-') ? "danger" : "success")">@Change</span></div>
+        }
     </div>
 </div>
 

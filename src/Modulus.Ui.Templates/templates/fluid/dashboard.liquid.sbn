@@ -3,96 +3,62 @@
 {% assign active_sessions = active_sessions | default: 0 %}
 {% assign total_modules = total_modules | default: 0 %}
 
-<div class="page-wrapper">
-    <div class="container-xl">
-        <div class="page-header d-mb-4">
-            <div class="row align-items-center">
-                <div class="col">
-                    <h2 class="page-title">Dashboard</h2>
-                </div>
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Overview</div><h1 class="m-page-title">Dashboard</h1></div>
+</div>
+
+<div class="m-row-cards">
+    <div class="m-grid m-cols-4">
+        <div class="m-card m-stat-card">
+            <div class="m-card-body">
+                <div class="m-stat-card-head"><span>Total users</span></div>
+                <div class="m-stat-card-value">{{ total_users }}</div>
+            </div>
+        </div>
+        <div class="m-card m-stat-card">
+            <div class="m-card-body">
+                <div class="m-stat-card-head"><span>Active sessions</span></div>
+                <div class="m-stat-card-value">{{ active_sessions }}</div>
+            </div>
+        </div>
+        <div class="m-card m-stat-card">
+            <div class="m-card-body">
+                <div class="m-stat-card-head"><span>Modules</span></div>
+                <div class="m-stat-card-value">{{ total_modules }}</div>
+            </div>
+        </div>
+        <div class="m-card m-stat-card">
+            <div class="m-card-body">
+                <div class="m-stat-card-head"><span>System health</span></div>
+                <div class="m-stat-card-value"><span class="m-text-success">100%</span></div>
             </div>
         </div>
     </div>
-    <div class="page-body">
-        <div class="container-xl">
-            <div class="row row-deck row-cards">
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-secondary">Total Users</div>
-                            <div class="display-6">{{ total_users }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-secondary">Active Sessions</div>
-                            <div class="display-6">{{ active_sessions }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-secondary">Modules</div>
-                            <div class="display-6">{{ total_modules }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm-6 col-lg-3">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="text-secondary">System Health</div>
-                            <div class="display-6"><span class="badge badge-success">100%</span></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="row row-deck row-cards mt-4">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Recent Users</h3>
-                        </div>
-                        <table class="table table-vcenter card-table">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td><strong>Sample User</strong></td>
-                                    <td>user@example.com</td>
-                                    <td><span class="badge badge-success">Active</span></td>
-                                </tr>
+    <div class="m-grid m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><h2 class="m-card-title">Recent users</h2></div>
+            <div class="m-card-body m-card-body-flush">
+                <div class="ant-table-wrapper m-table-flush">
+                    <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                        <table style="table-layout:auto">
+                            <thead class="ant-table-thead"><tr><th class="ant-table-cell">Name</th><th class="ant-table-cell">Email</th><th class="ant-table-cell">Status</th></tr></thead>
+                            <tbody class="ant-table-tbody">
+                                <tr class="ant-table-row"><td class="ant-table-cell"><strong>Sample User</strong></td><td class="ant-table-cell m-muted">user@example.com</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Active</span></td></tr>
                             </tbody>
                         </table>
-                    </div>
+                    </div></div></div>
                 </div>
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">System Status</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="space-y">
-                                <div class="d-flex align-items-center">
-                                    <div class="subheader">API Gateway</div>
-                                    <div class="ms-auto"><span class="badge badge-success">Running</span></div>
-                                </div>
-                                <div class="d-flex align-items-center">
-                                    <div class="subheader">Database</div>
-                                    <div class="ms-auto"><span class="badge badge-success">Connected</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h2 class="m-card-title">System status</h2></div>
+            <div class="m-card-body">
+                <ul class="m-list m-list-plain">
+                    <li class="m-flex m-between m-mb-12"><span>API gateway</span><span class="m-badge m-badge-success-lt">Running</span></li>
+                    <li class="m-flex m-between m-mb-12"><span>Database</span><span class="m-badge m-badge-success-lt">Connected</span></li>
+                    <li class="m-flex m-between"><span>Cache</span><span class="m-badge m-badge-success-lt">Active</span></li>
+                </ul>
             </div>
         </div>
     </div>

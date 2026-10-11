@@ -30,38 +30,26 @@
       }
     },
     "crud": {
-      "description": "CRUD pages: list with TableQuery, form, detail view.",
+      "description": "CRUD pages for an entity of a module: a list with delete and a create/edit form, over the module's API through a typed client. Added by `modulus ui create-crud`.",
       "files": {
-        "mvc": [
-          "Controllers/[Entity]Controller.cs",
-          "Views/[Entity]/Index.cshtml",
-          "Views/[Entity]/Create.cshtml",
-          "Views/[Entity]/Edit.cshtml",
-          "Views/[Entity]/Details.cshtml"
-        ],
         "razor-pages": [
-          "Pages/[Entity]/Index.cshtml.cs",
-          "Pages/[Entity]/Index.cshtml",
-          "Pages/[Entity]/Create.cshtml.cs",
-          "Pages/[Entity]/Create.cshtml",
-          "Pages/[Entity]/Edit.cshtml.cs",
-          "Pages/[Entity]/Edit.cshtml"
+          "Pages/[Entities]/Index.cshtml",
+          "Pages/[Entities]/Index.cshtml.cs",
+          "Pages/[Entities]/Edit.cshtml",
+          "Pages/[Entities]/Edit.cshtml.cs",
+          "ApiClients/[Entity]ApiClient.cs",
+          "Menu/[Entities]MenuContributor.cs"
         ],
         "blazor": [
-          "Pages/[Entity]/Index.razor",
-          "Pages/[Entity]/Create.razor",
-          "Pages/[Entity]/Edit.razor"
-        ],
-        "fluid": [
-          "Templates/[entity]-list.liquid",
-          "Templates/[entity]-detail.liquid"
+          "Components/Pages/[Entities]/Index.razor",
+          "Components/Pages/[Entities]/Edit.razor",
+          "ApiClients/[Entity]ApiClient.cs",
+          "Menu/[Entities]MenuContributor.cs"
         ]
       },
       "packages": {
-        "mvc": ["Modulus.Ui.Abstractions"],
-        "razor-pages": ["Modulus.Ui.Abstractions"],
-        "blazor": ["Modulus.Ui.Abstractions"],
-        "fluid": ["Modulus.Ui.Abstractions"]
+        "razor-pages": ["Modulus.AspNetCore.Mvc", "Modulus.Ui.Abstractions"],
+        "blazor": ["Modulus.Blazor", "Modulus.Ui.Abstractions"]
       }
     },
     "auth": {

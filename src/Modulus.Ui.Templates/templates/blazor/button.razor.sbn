@@ -1,16 +1,12 @@
-@* Reusable button component for Blazor *@
+@* Button: Variant (primary, default, dashed, text, link, danger), Size (sm, lg), Href, Type (button, submit) *@
 
 @if (IsLink)
 {
-    <a href="@Href" class="@GetButtonClass()">
-        @ChildContent
-    </a>
+    <a href="@Href" class="@GetButtonClass()"><span>@ChildContent</span></a>
 }
 else
 {
-    <button type="@Type" class="@GetButtonClass()" @onclick="OnClick" disabled="@IsDisabled">
-        @ChildContent
-    </button>
+    <button type="@Type" class="@GetButtonClass()" disabled="@IsDisabled" @onclick="OnClick"><span>@ChildContent</span></button>
 }
 
 @code {
@@ -39,24 +35,23 @@ else
 
     private string GetButtonClass()
     {
-        var classes = "btn";
-
-        classes += Size switch
-        {
-            "sm" => " btn-sm",
-            "lg" => " btn-lg",
-            _ => ""
-        };
+        var classes = "ant-btn";
 
         classes += Variant switch
         {
-            "primary" => " btn-primary",
-            "secondary" => " btn-secondary",
-            "danger" => " btn-danger",
-            "success" => " btn-success",
-            "warning" => " btn-warning",
-            "ghost" => " btn-ghost-primary",
-            _ => " btn-primary"
+            "primary" => " ant-btn-primary",
+            "danger" => " ant-btn-default ant-btn-dangerous",
+            "dashed" => " ant-btn-dashed",
+            "text" or "ghost" => " ant-btn-text",
+            "link" => " ant-btn-link",
+            _ => " ant-btn-default"
+        };
+
+        classes += Size switch
+        {
+            "sm" => " ant-btn-sm",
+            "lg" => " ant-btn-lg",
+            _ => ""
         };
 
         return classes;

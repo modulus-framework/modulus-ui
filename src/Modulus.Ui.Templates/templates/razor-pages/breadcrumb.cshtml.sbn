@@ -1,28 +1,23 @@
-@* Breadcrumb navigation component *@
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        @{
-            var breadcrumbs = ViewBag.Items as System.Collections.Generic.List<dynamic> ?? new System.Collections.Generic.List<dynamic>();
-            if (breadcrumbs.Count == 0)
-            {
-                breadcrumbs = new System.Collections.Generic.List<dynamic>
-                {
-                    new { label = "Home", url = "/" }
-                };
-            }
-        }
-        @foreach (var (item, index) in breadcrumbs.Select((x, i) => (x, i)))
+@* Breadcrumb: ViewBag.Items is a list of (label, url); the last one is the current page *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    var items = ViewBag.Items as System.Collections.Generic.List<dynamic> ?? new System.Collections.Generic.List<dynamic>();
+    if (items.Count == 0)
+    {
+        items.Add(new { label = "Home", url = "/" });
+    }
+}
+
+<app-breadcrumb>
+    @for (var i = 0; i < items.Count; i++)
+    {
+        if (i == items.Count - 1)
         {
-            @if (index == breadcrumbs.Count - 1)
-            {
-                <li class="breadcrumb-item active" aria-current="page">@item.label</li>
-            }
-            else
-            {
-                <li class="breadcrumb-item">
-                    <a href="@item.url">@item.label</a>
-                </li>
-            }
+            <app-crumb>@items[i].label</app-crumb>
         }
-    </ol>
-</nav>
+        else
+        {
+            <app-crumb href="@items[i].url">@items[i].label</app-crumb>
+        }
+    }
+</app-breadcrumb>

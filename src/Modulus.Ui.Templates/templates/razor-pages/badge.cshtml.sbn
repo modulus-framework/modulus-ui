@@ -1,19 +1,15 @@
-@* Badge component for status display *@
+@* Badge: ViewBag.Status (active, inactive, pending, error, anything else) and an optional Label *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
 @{
-    var badgeClass = "badge badge-pill";
-
-    var status = ViewBag.Status?.ToString()?.ToLower() ?? "default";
-
-    badgeClass += status switch
+    string status = ((string?)ViewBag.Status ?? "default").ToLowerInvariant();
+    string kind = status switch
     {
-        "active" => " badge-success",
-        "inactive" => " badge-secondary",
-        "pending" => " badge-warning",
-        "error" => " badge-danger",
-        _ => " badge-primary"
+        "active" => "success",
+        "inactive" => "default",
+        "pending" => "warning",
+        "error" => "error",
+        _ => "processing"
     };
 }
 
-<span class="@badgeClass">
-    @(ViewBag.Label ?? status)
-</span>
+<app-badge status="@kind" text="@((string?)ViewBag.Label ?? status)" />

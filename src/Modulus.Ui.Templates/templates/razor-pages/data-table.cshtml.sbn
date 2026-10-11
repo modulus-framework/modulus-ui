@@ -1,39 +1,41 @@
-@* Data table: ViewBag.Columns is a list of (Title, Key); ViewBag.Rows a list of dictionaries keyed by Key *@
+@* Data table: ViewBag.Columns is a list of (Title, Key); ViewBag.Rows a list of dictionaries keyed by Key; ViewBag.EmptyMessage is shown with no rows *@
 @{
     var columns = ViewBag.Columns as IEnumerable<(string Title, string Key)> ?? [];
     var rows = ViewBag.Rows as IEnumerable<IDictionary<string, object?>> ?? [];
     string empty = ViewBag.EmptyMessage ?? "No records found.";
 }
 
-<div class="table-responsive">
-    <table class="table table-vcenter card-table">
-        <thead>
-            <tr>
-                @foreach (var column in columns)
+<div class="ant-table-wrapper">
+    <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+        <table style="table-layout:auto">
+            <thead class="ant-table-thead">
+                <tr>
+                    @foreach (var column in columns)
+                    {
+                        <th class="ant-table-cell">@column.Title</th>
+                    }
+                </tr>
+            </thead>
+            <tbody class="ant-table-tbody">
+                @if (rows.Any())
                 {
-                    <th>@column.Title</th>
+                    foreach (var row in rows)
+                    {
+                        <tr class="ant-table-row">
+                            @foreach (var column in columns)
+                            {
+                                <td class="ant-table-cell">@(row.TryGetValue(column.Key, out var cell) ? cell : null)</td>
+                            }
+                        </tr>
+                    }
                 }
-            </tr>
-        </thead>
-        <tbody>
-            @if (rows.Any())
-            {
-                foreach (var row in rows)
+                else
                 {
-                    <tr>
-                        @foreach (var column in columns)
-                        {
-                            <td>@(row.TryGetValue(column.Key, out var cell) ? cell : null)</td>
-                        }
+                    <tr class="ant-table-placeholder">
+                        <td colspan="@Math.Max(1, columns.Count())" class="ant-table-cell m-muted">@empty</td>
                     </tr>
                 }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="@Math.Max(1, columns.Count())" class="text-center text-muted py-4">@empty</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div></div></div>
 </div>

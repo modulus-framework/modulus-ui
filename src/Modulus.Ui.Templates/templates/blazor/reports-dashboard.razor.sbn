@@ -1,0 +1,55 @@
+@* Reports and analytics: replace the sample rows with your own *@
+@page "/reports"
+
+<PageTitle>Reports</PageTitle>
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Reports</div><h1 class="m-page-title">Reports & analytics</h1></div>
+    <div class="m-page-actions"><a class="ant-btn ant-btn-primary" href="#"><span>New report</span></a></div>
+</div>
+
+<div class="m-row-cards">
+    <div class="m-grid m-cols-4">
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Total reports</span></div>
+            <div class="m-stat-card-value">@TotalReports</div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Scheduled</span></div>
+            <div class="m-stat-card-value">@ScheduledReports</div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>This month</span></div>
+            <div class="m-stat-card-value">@MonthlyReports</div>
+          </div>
+        </div>
+        <div class="m-card m-stat-card">
+          <div class="m-card-body">
+            <div class="m-stat-card-head"><span>Avg. generation time</span></div>
+            <div class="m-stat-card-value">@AvgGenTime</div>
+          </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+      <div class="m-card-header"><h2 class="m-card-title">Available reports</h2></div>
+      <div class="m-card-body m-card-body-flush">
+    <div class="ant-table-wrapper m-table-flush"><div class="ant-table"><div class="ant-table-container"><div class="ant-table-content"><table style="table-layout:auto"><thead class="ant-table-thead"><tr><th class="ant-table-cell">Report</th><th class="ant-table-cell">Category</th><th class="ant-table-cell">Last run</th><th class="ant-table-cell">Status</th><th class="ant-table-cell">Actions</th></tr></thead><tbody class="ant-table-tbody">
+    <tr class="ant-table-row"><td class="ant-table-cell"><strong>Sales summary</strong></td><td class="ant-table-cell"><span class="m-badge m-badge-blue-lt">Sales</span></td><td class="ant-table-cell m-muted">2024-10-10 14:30</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Ready</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">View</a><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Download</a></td></tr>
+    <tr class="ant-table-row"><td class="ant-table-cell"><strong>User activity</strong></td><td class="ant-table-cell"><span class="m-badge m-badge-purple-lt">Analytics</span></td><td class="ant-table-cell m-muted">2024-10-09 10:15</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Ready</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">View</a><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Download</a></td></tr>
+    </tbody></table></div></div></div></div>
+      </div>
+    </div>
+</div>
+
+@code {
+    private int TotalReports { get; set; }
+    private int ScheduledReports { get; set; }
+    private int MonthlyReports { get; set; }
+    private string AvgGenTime { get; set; } = "0s";
+}

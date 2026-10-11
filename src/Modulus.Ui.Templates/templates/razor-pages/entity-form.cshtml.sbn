@@ -1,45 +1,37 @@
 @page "/{{ entity_name_plural | string.downcase }}/Edit/{id?}"
+@addTagHelper *, Modulus.AspNetCore.Mvc
 @model {{ entity_name }}Dto
 @{
     ViewData["Title"] = Model?.Id == Guid.Empty ? "Create {{ entity_name }}" : "Edit {{ entity_name }}";
 }
 
-<div class="page-wrapper">
-    <div class="page-body">
-        <div class="container-xl">
-            <div class="row">
-                <div class="col-md-8 col-lg-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <form method="post" class="form-horizontal">
-                                <input type="hidden" asp-for="Id" />
+<app-page-header pretitle="{{ entity_name_plural }}" title="@ViewData["Title"]"></app-page-header>
+
+<div class="m-grid m-cols-main">
+    <div class="m-card">
+        <div class="m-card-body">
+            <form method="post" asp-antiforgery="true" class="ant-form ant-form-vertical" novalidate>
+                <input type="hidden" asp-for="Id" />
 {{ for f in fields ~}}
-                                <div class="mb-3">
 {{ if f.kind == "checkbox" ~}}
-                                    <label class="form-check">
-                                        <input type="checkbox" asp-for="{{ f.name }}" class="form-check-input" />
-                                        <span class="form-check-label">{{ f.label }}</span>
-                                    </label>
+                <app-form-item asp-for="{{ f.name }}">
+                    <app-checkbox asp-for="{{ f.name }}">{{ f.label }}</app-checkbox>
+                </app-form-item>
+{{ else if f.kind == "textarea" ~}}
+                <app-form-item asp-for="{{ f.name }}" label="{{ f.label }}">
+                    <app-textarea asp-for="{{ f.name }}" rows="4" />
+                </app-form-item>
 {{ else ~}}
-                                    <label class="form-label" asp-for="{{ f.name }}">{{ f.label }}{{ if f.required }} <span class="badge badge-pill badge-danger">Required</span>{{ end }}</label>
-{{ if f.kind == "textarea" ~}}
-                                    <textarea asp-for="{{ f.name }}" class="form-control" rows="4"{{ if f.required }} required{{ end }}></textarea>
-{{ else ~}}
-                                    <input type="{{ f.input_type }}" asp-for="{{ f.name }}" class="form-control"{{ if f.required }} required{{ end }} />
+                <app-form-item asp-for="{{ f.name }}" label="{{ f.label }}">
+                    <app-input asp-for="{{ f.name }}" type="{{ f.input_type }}" />
+                </app-form-item>
 {{ end ~}}
 {{ end ~}}
-                                    <span asp-validation-for="{{ f.name }}" class="form-text text-danger"></span>
-                                </div>
-{{ end ~}}
-                                <div class="form-footer">
-                                    <button type="submit" class="btn btn-primary">@(Model?.Id == Guid.Empty ? "Create" : "Update")</button>
-                                    <a href="/{{ entity_name_plural | string.downcase }}" class="btn btn-link">Cancel</a>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+                <div class="m-form-actions">
+                    <app-button type="primary" html-type="submit">@(Model?.Id == Guid.Empty ? "Create" : "Update")</app-button>
+                    <app-button href="/{{ entity_name_plural | string.downcase }}">Cancel</app-button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 </div>

@@ -4,53 +4,50 @@
 
 <PageTitle>@(Item?.Id == Guid.Empty ? "Create" : "Edit") {{ entity_name }}</PageTitle>
 
-<div class="page-wrapper">
-    <div class="page-body">
-        <div class="container-xl">
-            <div class="row">
-                <div class="col-md-8 col-lg-6">
-                    <div class="card">
-                        <div class="card-body">
-                            @if (Item == null)
-                            {
-                                <p><em>Loading...</em></p>
-                            }
-                            else
-                            {
-                                <EditForm Model="Item" OnValidSubmit="HandleSubmit">
-                                    <DataAnnotationsValidator />
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">{{ entity_name_plural }}</div><h1 class="m-page-title">@(Item?.Id == Guid.Empty ? "Create" : "Edit") {{ entity_name }}</h1></div>
+</div>
+
+<div class="m-grid m-cols-main">
+    <div class="m-card">
+        <div class="m-card-body">
+            @if (Item == null)
+            {
+                <p class="m-muted">Loading...</p>
+            }
+            else
+            {
+                <EditForm Model="Item" OnValidSubmit="HandleSubmit" class="ant-form ant-form-vertical">
+                    <DataAnnotationsValidator />
 {{ for f in fields ~}}
-                                    <div class="mb-3">
+                    <div class="ant-form-item">
 {{ if f.kind == "checkbox" ~}}
-                                        <label class="form-check">
-                                            <InputCheckbox @bind-Value="Item.{{ f.name }}" class="form-check-input" />
-                                            <span class="form-check-label">{{ f.label }}</span>
-                                        </label>
-{{ else ~}}
-                                        <label class="form-label">{{ f.label }}{{ if f.required }} <span class="badge badge-pill badge-danger">Required</span>{{ end }}</label>
-{{ if f.kind == "textarea" ~}}
-                                        <InputTextArea @bind-Value="Item.{{ f.name }}" class="form-control" rows="4" />
-{{ else if f.kind == "number" ~}}
-                                        <InputNumber @bind-Value="Item.{{ f.name }}" class="form-control" />
-{{ else if f.kind == "date" || f.kind == "datetime" ~}}
-                                        <InputDate @bind-Value="Item.{{ f.name }}" class="form-control" />
-{{ else ~}}
-                                        <InputText @bind-Value="Item.{{ f.name }}" class="form-control" />
-{{ end ~}}
-{{ end ~}}
-                                        <ValidationMessage For="() => Item.{{ f.name }}" class="form-text text-danger" />
-                                    </div>
-{{ end ~}}
-                                    <div class="form-footer">
-                                        <button type="submit" class="btn btn-primary">@(Item.Id == Guid.Empty ? "Create" : "Update")</button>
-                                        <a href="/{{ entity_name_plural | string.downcase }}" class="btn btn-link">Cancel</a>
-                                    </div>
-                                </EditForm>
-                            }
+                        <div class="ant-form-item-control">
+                            <label><InputCheckbox @bind-Value="Item.{{ f.name }}" /> {{ f.label }}</label>
                         </div>
+{{ else ~}}
+                        <div class="ant-form-item-label"><label class="{{ if f.required }}ant-form-item-required{{ end }}">{{ f.label }}</label></div>
+                        <div class="ant-form-item-control">
+{{ if f.kind == "textarea" ~}}
+                            <InputTextArea @bind-Value="Item.{{ f.name }}" class="ant-input" rows="4" />
+{{ else if f.kind == "number" ~}}
+                            <InputNumber @bind-Value="Item.{{ f.name }}" class="ant-input" />
+{{ else if f.kind == "date" || f.kind == "datetime" ~}}
+                            <InputDate @bind-Value="Item.{{ f.name }}" class="ant-input" />
+{{ else ~}}
+                            <InputText @bind-Value="Item.{{ f.name }}" class="ant-input" />
+{{ end ~}}
+                            <ValidationMessage For="() => Item.{{ f.name }}" class="ant-form-item-explain-error" />
+                        </div>
+{{ end ~}}
                     </div>
-                </div>
-            </div>
+{{ end ~}}
+                    <div class="m-form-actions">
+                        <button type="submit" class="ant-btn ant-btn-primary"><span>@(Item.Id == Guid.Empty ? "Create" : "Update")</span></button>
+                        <a href="/{{ entity_name_plural | string.downcase }}" class="ant-btn ant-btn-default"><span>Cancel</span></a>
+                    </div>
+                </EditForm>
+            }
         </div>
     </div>
 </div>

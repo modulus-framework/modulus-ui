@@ -1,18 +1,16 @@
-@* Breadcrumb component for Blazor *@
+@* Breadcrumb: Items is a list of (Label, Url); the last one is the current page *@
 
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
+<nav class="ant-breadcrumb" aria-label="breadcrumb">
+    <ol>
         @foreach (var (item, index) in Items.Select((x, i) => (x, i)))
         {
             @if (index == Items.Count - 1)
             {
-                <li class="breadcrumb-item active" aria-current="page">@item.Label</li>
+                <li><span aria-current="page">@item.Label</span></li>
             }
             else
             {
-                <li class="breadcrumb-item">
-                    <a href="@item.Url">@item.Label</a>
-                </li>
+                <li><a href="@item.Url">@item.Label</a><span class="ant-breadcrumb-separator">/</span></li>
             }
         }
     </ol>

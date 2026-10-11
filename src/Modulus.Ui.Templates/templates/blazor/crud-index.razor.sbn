@@ -1,0 +1,114 @@
+@* List page for {{ entity_name_plural }}: reads the {{ module_name }} API through {{ entity_name }}ApiClient *@
+@page "/{{ route }}"
+@using {{ module_namespace }}.Application.Dtos
+@using {{ ui_namespace }}.ApiClients
+@inject {{ entity_name }}ApiClient Api
+
+<PageTitle>{{ entity_name_plural }}</PageTitle>
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">{{ module_name }}</div><h1 class="m-page-title">{{ entity_name_plural }}</h1></div>
+    <div class="m-page-actions"><a class="ant-btn ant-btn-primary" href="/{{ route }}/edit"><span>New {{ entity_name }}</span></a></div>
+</div>
+
+@if (_message is not null)
+{
+    <div class="ant-alert m-mb-16 ant-alert-@(_failed ? "error" : "success")" role="alert"><div class="ant-alert-content"><div class="ant-alert-message">@_message</div></div></div>
+}
+
+<div class="m-card">
+    <div class="m-card-body m-card-body-flush">
+        @if (_items is null)
+        {
+            <p class="m-muted m-mt-16">Loading...</p>
+        }
+        else if (_items.Count == 0)
+        {
+            <div class="m-empty">
+                <h3 class="m-empty-title">No {{ entity_name_plural | string.downcase }} yet</h3>
+                <p class="m-empty-subtitle">Create the first one to see it here.</p>
+                <a class="ant-btn ant-btn-primary" href="/{{ route }}/edit"><span>New {{ entity_name }}</span></a>
+            </div>
+        }
+        else
+        {
+            <div class="ant-table-wrapper m-table-flush">
+                <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                    <table style="table-layout:auto">
+                        <thead class="ant-table-thead">
+                            <tr><th class="ant-table-cell">Name</th><th class="ant-table-cell">Actions</th></tr>
+                        </thead>
+                        <tbody class="ant-table-tbody">
+                            @foreach (var item in _items)
+                            {
+                                <tr class="ant-table-row">
+                                    <td class="ant-table-cell"><strong>@item.Name</strong></td>
+                                    <td class="ant-table-cell m-flex">
+                                        <a class="ant-btn ant-btn-text ant-btn-sm" href="/{{ route }}/edit?id=@item.Id"><span>Edit</span></a>
+                                        <button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous" @onclick="() => DeleteAsync(item.Id)"><span>Delete</span></button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div></div></div>
+            </div>
+        }
+    </div>
+    @if (_page > 1 || _hasNext)
+    {
+        <div class="m-card-footer m-flex m-between">
+            <span class="m-muted">Page @_page</span>
+            <span class="m-flex">
+                <button type="button" class="ant-btn ant-btn-default ant-btn-sm" disabled="@(_page <= 1)" @onclick="() => GoToAsync(_page - 1)"><span>Previous</span></button>
+                <button type="button" class="ant-btn ant-btn-default ant-btn-sm" disabled="@(!_hasNext)" @onclick="() => GoToAsync(_page + 1)"><span>Next</span></button>
+            </span>
+        </div>
+    }
+</div>
+
+@code {
+    private const int PageSize = 20;
+
+    private List<{{ entity_name }}Dto>? _items;
+    private int _page = 1;
+    private bool _hasNext;
+    private string? _message;
+    private bool _failed;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            var items = await Api.GetAsync(_page, PageSize);
+            _items = items.ToList();
+            _hasNext = _items.Count == PageSize;
+        }
+        catch (HttpRequestException)
+        {
+            _items = [];
+            _hasNext = false;
+            Report("The API could not be reached.", failed: true);
+        }
+    }
+
+    private Task GoToAsync(int page)
+    {
+        _page = page;
+        return LoadAsync();
+    }
+
+    private async Task DeleteAsync(Guid id)
+    {
+        Report(await Api.DeleteAsync(id) ? "Deleted." : "The {{ entity_name | string.downcase }} could not be deleted.", failed: false);
+        await LoadAsync();
+    }
+
+    private void Report(string message, bool failed)
+    {
+        _message = message;
+        _failed = failed;
+    }
+}

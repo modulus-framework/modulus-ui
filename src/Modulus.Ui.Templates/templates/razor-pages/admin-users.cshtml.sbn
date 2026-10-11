@@ -1,0 +1,26 @@
+@page "/admin/users"
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@* User management (static sample data and ViewBag values: replace them with your own). *@
+@{
+    ViewData["Title"] = "User management";
+}
+
+<app-page-header pretitle="Administration" title="User management">
+    <app-button type="primary" href="#">Invite user</app-button>
+</app-page-header>
+
+<div class="m-card">
+    <div class="m-card-header">
+        <h2 class="m-card-title">Users</h2>
+        <div class="m-card-actions">
+            <app-input type="search" name="q" placeholder="Search users..." aria-label="Search users" prefix-icon="search" />
+        </div>
+    </div>
+    <div class="m-card-body m-card-body-flush">
+        <div class="ant-table-wrapper m-table-flush"><div class="ant-table"><div class="ant-table-container"><div class="ant-table-content"><table style="table-layout:auto"><thead class="ant-table-thead"><tr><th class="ant-table-cell">Name</th><th class="ant-table-cell">Email</th><th class="ant-table-cell">Role</th><th class="ant-table-cell">Status</th><th class="ant-table-cell">Actions</th></tr></thead><tbody class="ant-table-tbody">
+        <tr class="ant-table-row"><td class="ant-table-cell"><span class="m-flex"><span class="m-avatar m-avatar-sm">JC</span><strong>Jane Cooper</strong></span></td><td class="ant-table-cell m-muted">jane@example.com</td><td class="ant-table-cell">Administrator</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Active</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Edit</a></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><span class="m-flex"><span class="m-avatar m-avatar-sm">RF</span><strong>Robert Fox</strong></span></td><td class="ant-table-cell m-muted">robert@example.com</td><td class="ant-table-cell">Manager</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Active</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Edit</a></td></tr>
+        <tr class="ant-table-row"><td class="ant-table-cell"><span class="m-flex"><span class="m-avatar m-avatar-sm">EH</span><strong>Esther Howard</strong></span></td><td class="ant-table-cell m-muted">esther@example.com</td><td class="ant-table-cell">User</td><td class="ant-table-cell"><span class="m-badge m-badge-warning-lt">Pending</span></td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="#">Edit</a></td></tr>
+        </tbody></table></div></div></div></div>
+    </div>
+</div>

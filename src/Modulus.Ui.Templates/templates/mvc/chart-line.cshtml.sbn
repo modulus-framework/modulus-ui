@@ -11,13 +11,11 @@
     };
 }
 
-<div class="page-body">
-    <div class="container-xl">
-        <div class="card">
-            <div class="card-header"><h3 class="card-title">Line chart</h3></div>
-            <div class="card-body">
-                <app-line-chart labels="months" series="series" area />
-            </div>
-        </div>
+<app-page-header pretitle="Charts" title="Line chart"></app-page-header>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">Line chart</h2></div>
+    <div class="m-card-body">
+        <app-line-chart labels="months" series="series" area />
     </div>
 </div>
