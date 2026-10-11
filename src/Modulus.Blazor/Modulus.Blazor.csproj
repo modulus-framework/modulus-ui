@@ -13,8 +13,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" />
+    <!-- HttpContext and IAntiforgery, for the csrf-token meta that ModulusHttp (browser-side fetch) sends back. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AntDesign" />
     <PackageReference Include="AntDesign.ProLayout" />
     <ProjectReference Include="..\Modulus.Ui.Abstractions\Modulus.Ui.Abstractions.csproj" />

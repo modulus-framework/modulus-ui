@@ -9,6 +9,7 @@
  *   [data-m-nav-open]      opens the sidebar drawer (small screens); [data-m-nav-close] closes it
  *   [data-m-search]        filters every navigation link; Ctrl+K or "/" focuses it
  *   [data-m-theme-toggle]  light / dark
+ *   form[data-confirm]     asks window.confirm(message) before the form submits (no inline handler, so it passes the CSP)
  *   [data-m-fullscreen]    the whole app full screen and back (html.m-fullscreen while it is; Escape also leaves).
  *                          A whole page load ends full screen in every browser, and only a click may start it again, so
  *                          after one the next click or key press goes back to full screen
@@ -2493,4 +2494,13 @@
     window.addEventListener('resize', queueBandPins);
     document.addEventListener('htmx:afterSettle', queueBandPins);
     if (window.Blazor && window.Blazor.addEventListener) window.Blazor.addEventListener('enhancedload', queueBandPins);
+})();
+
+// Confirm before a form marked data-confirm submits. Inline onsubmit/onclick handlers are blocked by the CSP.
+(function () {
+    'use strict';
+    document.addEventListener('submit', function (e) {
+        var message = e.target && e.target.getAttribute && e.target.getAttribute('data-confirm');
+        if (message && !window.confirm(message)) e.preventDefault();
+    });
 })();

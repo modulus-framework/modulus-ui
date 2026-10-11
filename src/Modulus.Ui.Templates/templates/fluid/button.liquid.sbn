@@ -1,5 +1,5 @@
 {# Reusable button component for Fluid #}
-{# Usage: {% include 'button.liquid' label='Click Me' variant='primary' href='/path' %}; variant: primary, default, dashed, text, link, danger; size: sm, lg #}
+{# Usage: include 'button.liquid' with label, variant, href and size. variant: primary, default, dashed, text, link, danger; size: sm, lg #}
 
 {% assign button_class = 'ant-btn' %}
 {% case variant %}

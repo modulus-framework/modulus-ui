@@ -122,6 +122,206 @@
         "fluid": []
       }
     },
+    "admin": {
+      "description": "Working admin dashboard starter: users, roles, tenants, notifications, audit, settings, dashboards and account pages over the Modulus.Ui.Abstractions.Admin services (sample data until you register your own). Pair with services.AddModulusAdminUi() for the matching navigation. Pages are yours to edit.",
+      "files": {
+        "mvc": [
+          {
+            "path": "Controllers/AdminController.cs",
+            "template": "admin-controller.cs.sbn"
+          },
+          {
+            "path": "Views/Admin/Users.cshtml",
+            "template": "admin-users.cshtml.sbn"
+          },
+          {
+            "path": "Views/Admin/Profile.cshtml",
+            "template": "user-profile.cshtml.sbn"
+          },
+          {
+            "path": "Views/Admin/Roles.cshtml",
+            "template": "role-management.cshtml.sbn"
+          },
+          {
+            "path": "Views/Admin/Tenants.cshtml",
+            "template": "tenant-list.cshtml.sbn"
+          },
+          {
+            "path": "Views/Admin/TenantSettings.cshtml",
+            "template": "tenant-settings.cshtml.sbn"
+          },
+          {
+            "path": "Views/Admin/TenantMembers.cshtml",
+            "template": "tenant-members.cshtml.sbn"
+          },
+          {
+            "path": "Views/Admin/Notifications.cshtml",
+            "template": "notification-center.cshtml.sbn"
+          },
+          {
+            "path": "Views/Admin/NotificationPreferences.cshtml",
+            "template": "notification-preferences.cshtml.sbn"
+          },
+          {
+            "path": "Views/Admin/Audit.cshtml",
+            "template": "audit-logs.cshtml.sbn"
+          },
+          {
+            "path": "Views/Admin/Settings.cshtml",
+            "template": "admin-settings.cshtml.sbn"
+          },
+          {
+            "path": "Views/Admin/Dashboard.cshtml",
+            "template": "dashboard.cshtml.sbn"
+          },
+          {
+            "path": "Views/Admin/Analytics.cshtml",
+            "template": "analytics.cshtml.sbn"
+          },
+          {
+            "path": "Views/Admin/Reports.cshtml",
+            "template": "reports-dashboard.cshtml.sbn"
+          },
+          {
+            "path": "Views/Admin/Health.cshtml",
+            "template": "system-health.cshtml.sbn"
+          }
+        ],
+        "razor-pages": [
+          {
+            "path": "Pages/Admin/Users.cshtml",
+            "template": "admin-users.cshtml.sbn"
+          },
+          {
+            "path": "Pages/Admin/Profile.cshtml",
+            "template": "user-profile.cshtml.sbn"
+          },
+          {
+            "path": "Pages/Admin/Roles.cshtml",
+            "template": "role-management.cshtml.sbn"
+          },
+          {
+            "path": "Pages/Admin/Tenants.cshtml",
+            "template": "tenant-list.cshtml.sbn"
+          },
+          {
+            "path": "Pages/Admin/TenantSettings.cshtml",
+            "template": "tenant-settings.cshtml.sbn"
+          },
+          {
+            "path": "Pages/Admin/TenantMembers.cshtml",
+            "template": "tenant-members.cshtml.sbn"
+          },
+          {
+            "path": "Pages/Admin/Notifications.cshtml",
+            "template": "notification-center.cshtml.sbn"
+          },
+          {
+            "path": "Pages/Admin/NotificationPreferences.cshtml",
+            "template": "notification-preferences.cshtml.sbn"
+          },
+          {
+            "path": "Pages/Admin/Audit.cshtml",
+            "template": "audit-logs.cshtml.sbn"
+          },
+          {
+            "path": "Pages/Admin/Settings.cshtml",
+            "template": "admin-settings.cshtml.sbn"
+          },
+          {
+            "path": "Pages/Admin/Dashboard.cshtml",
+            "template": "dashboard.cshtml.sbn"
+          },
+          {
+            "path": "Pages/Admin/Analytics.cshtml",
+            "template": "analytics.cshtml.sbn"
+          },
+          {
+            "path": "Pages/Admin/Reports.cshtml",
+            "template": "reports-dashboard.cshtml.sbn"
+          },
+          {
+            "path": "Pages/Admin/Health.cshtml",
+            "template": "system-health.cshtml.sbn"
+          }
+        ],
+        "blazor": [
+          {
+            "path": "Components/Pages/Admin/Users.razor",
+            "template": "admin-users.razor.sbn"
+          },
+          {
+            "path": "Components/Pages/Admin/Profile.razor",
+            "template": "user-profile.razor.sbn"
+          },
+          {
+            "path": "Components/Pages/Admin/Roles.razor",
+            "template": "role-management.razor.sbn"
+          },
+          {
+            "path": "Components/Pages/Admin/Tenants.razor",
+            "template": "tenant-list.razor.sbn"
+          },
+          {
+            "path": "Components/Pages/Admin/TenantSettings.razor",
+            "template": "tenant-settings.razor.sbn"
+          },
+          {
+            "path": "Components/Pages/Admin/TenantMembers.razor",
+            "template": "tenant-members.razor.sbn"
+          },
+          {
+            "path": "Components/Pages/Admin/Notifications.razor",
+            "template": "notification-center.razor.sbn"
+          },
+          {
+            "path": "Components/Pages/Admin/NotificationPreferences.razor",
+            "template": "notification-preferences.razor.sbn"
+          },
+          {
+            "path": "Components/Pages/Admin/Audit.razor",
+            "template": "audit-logs.razor.sbn"
+          },
+          {
+            "path": "Components/Pages/Admin/Settings.razor",
+            "template": "admin-settings.razor.sbn"
+          },
+          {
+            "path": "Components/Pages/Admin/Dashboard.razor",
+            "template": "dashboard.razor.sbn"
+          },
+          {
+            "path": "Components/Pages/Admin/Analytics.razor",
+            "template": "analytics.razor.sbn"
+          },
+          {
+            "path": "Components/Pages/Admin/Reports.razor",
+            "template": "reports-dashboard.razor.sbn"
+          },
+          {
+            "path": "Components/Pages/Admin/Health.razor",
+            "template": "system-health.razor.sbn"
+          }
+        ]
+      },
+      "packages": {
+        "mvc": [
+          "Modulus.AspNetCore.Mvc",
+          "Modulus.Ui.Abstractions"
+        ],
+        "razor-pages": [
+          "Modulus.AspNetCore.Mvc",
+          "Modulus.Ui.Abstractions"
+        ],
+        "blazor": [
+          "Modulus.Blazor",
+          "Modulus.Ui.Abstractions"
+        ]
+      },
+      "setup": [
+        "builder.Services.AddModulusAdminUi();  // navigation; options.Pages limits it to the pages you scaffolded"
+      ]
+    },
     "notifications": {
       "description": "Notification management: notification center and preferences. Required for ERP systems.",
       "files": {

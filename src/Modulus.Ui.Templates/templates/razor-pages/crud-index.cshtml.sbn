@@ -71,7 +71,7 @@
     }
 </div>
 
-<script nonce="@Modulus.AspNetCore.Hosting.CspNonce.Of(Context)">
+<script nonce="@Modulus.AspNetCore.Hosting.CspNonce.Of(HttpContext)">
     // Asks before any form marked data-confirm is submitted. Inline onclick handlers are blocked by the Content-Security-Policy.
     document.addEventListener('submit', function (e) {
         var message = e.target.getAttribute('data-confirm');

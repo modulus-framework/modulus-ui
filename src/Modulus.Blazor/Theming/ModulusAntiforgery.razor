@@ -1,0 +1,23 @@
+@*
+    Renders <meta name="csrf-token"> with the request's antiforgery token, for ModulusHttp (browser-side fetch).
+    Included by <ModulusHead />; it renders nothing when there is no HttpContext or no antiforgery service.
+*@
+@using Microsoft.AspNetCore.Antiforgery
+@using Microsoft.AspNetCore.Http
+@inject IServiceProvider Services
+
+@if (_token is not null)
+{
+    <meta name="csrf-token" content="@_token" />
+}
+
+@code {
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    private string? _token;
+
+    protected override void OnParametersSet() =>
+        _token = HttpContext is not null && Services.GetService(typeof(IAntiforgery)) is IAntiforgery antiforgery
+            ? antiforgery.GetAndStoreTokens(HttpContext).RequestToken
+            : null;
+}

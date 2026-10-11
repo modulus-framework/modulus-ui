@@ -1,7 +1,7 @@
 @* Session manager: lists the caller's sessions and sign-in history from the Modulus.Identity account endpoints (/account/sessions, /account/login-history) *@
 @page "/auth/sessions"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
-@inject HttpClient Http
+@inject Modulus.Blazor.ModulusHttp Http
 @inject NavigationManager Navigation
 
 <PageTitle>Sessions</PageTitle>
@@ -75,32 +75,38 @@
     private string? _message;
     private bool _ok;
 
-    protected override Task OnInitializedAsync() => LoadAsync();
+    // The requests run in the browser (cookies + antiforgery), which needs JS interop: load after the first render.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await LoadAsync();
+        StateHasChanged();
+    }
 
     private async Task LoadAsync()
     {
         var sessions = await Http.GetAsync("/account/sessions");
-        if (!sessions.IsSuccessStatusCode)
+        if (!sessions.Ok)
         {
             Fail("Sign in to see your sessions.");
             return;
         }
-        _sessions = await sessions.Content.ReadFromJsonAsync<List<SessionRow>>() ?? [];
-        _history = await Http.GetFromJsonAsync<List<LoginRow>>("/account/login-history?take=25") ?? [];
+        _sessions = sessions.Read<List<SessionRow>>() ?? [];
+        _history = (await Http.GetAsync("/account/login-history?take=25")).Read<List<LoginRow>>() ?? [];
     }
 
     private async Task RevokeAsync(string id)
     {
         var response = await Http.DeleteAsync($"/account/sessions/{Uri.EscapeDataString(id)}");
-        _ok = response.IsSuccessStatusCode;
+        _ok = response.Ok;
         _message = _ok ? "Session ended." : "Could not end the session.";
         await LoadAsync();
     }
 
     private async Task RevokeAllAsync()
     {
-        var response = await Http.PostAsync("/account/sessions/revoke-all", null);
-        if (response.IsSuccessStatusCode)
+        var response = await Http.PostAsync("/account/sessions/revoke-all");
+        if (response.Ok)
             Navigation.NavigateTo("/", forceLoad: true);
         else
             Fail("Could not sign out everywhere.");

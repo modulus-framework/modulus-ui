@@ -1,4 +1,4 @@
-@page "/{{ entity_name_plural | string.downcase }}/Edit/{id?}"
+@* Form partial for {{ entity_name }}: render it from a page that has its own PageModel and [Authorize]. It is not a page itself, so it has no @page. *@
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @model {{ entity_name }}Dto
 @{

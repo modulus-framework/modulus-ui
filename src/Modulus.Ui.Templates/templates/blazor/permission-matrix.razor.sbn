@@ -1,7 +1,7 @@
 @* Permission matrix for {{ entity_name }}: roles down, permissions across. Reads and changes grants through the Modulus.Authorization.Management endpoints ({{ api_prefix }}/grants). *@
 @page "/permissions/{{ entity_route }}"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
-@inject HttpClient Http
+@inject Modulus.Blazor.ModulusHttp Http
 
 <PageTitle>{{ entity_name }} permissions</PageTitle>
 
@@ -74,17 +74,25 @@
     private bool _ok;
     private bool _busy;
 
-    protected override async Task OnInitializedAsync()
+    // The requests run in the browser (cookies + antiforgery), which needs JS interop: load after the first render.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await LoadAsync();
+        StateHasChanged();
+    }
+
+    private async Task LoadAsync()
     {
         foreach (var role in Roles)
         {
             var response = await Http.GetAsync($"{Api}/grants/Role/{Uri.EscapeDataString(role)}");
-            if (!response.IsSuccessStatusCode)
+            if (!response.Ok)
             {
-                Report($"Could not read the grants ({(int)response.StatusCode}). You need the authorization management permission.", false);
+                Report($"Could not read the grants ({response.Status}). You need the authorization management permission.", false);
                 return;
             }
-            foreach (var g in await response.Content.ReadFromJsonAsync<List<Grant>>() ?? [])
+            foreach (var g in response.Read<List<Grant>>() ?? [])
             {
                 if (g.Type == "Allow") _allowed.Add((role, g.Permission));
                 if (g.Type == "Deny") _denied.Add((role, g.Permission));
@@ -96,16 +104,16 @@
     {
         _busy = true;
         var response = grant
-            ? await Http.PostAsJsonAsync($"{Api}/grants", new { holderType = "Role", holder = role, permissions = new[] { permission }, type = "Allow" })
+            ? await Http.PostAsync($"{Api}/grants", new { holderType = "Role", holder = role, permissions = new[] { permission }, type = "Allow" })
             : await Http.DeleteAsync($"{Api}/grants/Role/{Uri.EscapeDataString(role)}/{Uri.EscapeDataString(permission)}");
-        if (response.IsSuccessStatusCode)
+        if (response.Ok)
         {
             if (grant) _allowed.Add((role, permission)); else _allowed.Remove((role, permission));
             Report($"{role}: {permission} {(grant ? "granted" : "revoked")}.", true);
         }
         else
         {
-            Report($"The change was refused ({(int)response.StatusCode}).", false);
+            Report($"The change was refused ({response.Status}).", false);
         }
         _busy = false;
     }

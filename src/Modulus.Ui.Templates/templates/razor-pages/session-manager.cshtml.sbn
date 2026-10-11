@@ -5,7 +5,7 @@
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     ViewData["Title"] = "Sessions";
-    var csrf = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    var csrf = Antiforgery.GetAndStoreTokens(HttpContext).RequestToken;
 }
 
 <input type="hidden" id="csrf" value="@csrf" />
@@ -41,7 +41,7 @@
     </div>
 </div>
 
-<script nonce="@Modulus.AspNetCore.Hosting.CspNonce.Of(Context)">
+<script nonce="@Modulus.AspNetCore.Hosting.CspNonce.Of(HttpContext)">
     (function () {
         const csrf = document.getElementById('csrf').value;
 

@@ -1,5 +1,5 @@
-@* Two-factor authentication page: talks to the Modulus.Identity account endpoints on this host (/account/2fa/...).
-   The controller that renders this view should carry [Authorize]. *@
+@* Two-factor authentication page: talks to the Modulus.Identity account endpoints on this host (/account/2fa/...). *@
+@* The controller that renders this view should carry [Authorize]. *@
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{

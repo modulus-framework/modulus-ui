@@ -1,7 +1,7 @@
 @* Two-factor authentication page: talks to the Modulus.Identity account endpoints on this host (/account/2fa/...) *@
 @page "/auth/two-factor"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
-@inject HttpClient Http
+@inject Modulus.Blazor.ModulusHttp Http
 
 <PageTitle>Two-factor authentication</PageTitle>
 
@@ -57,7 +57,6 @@
 @code {
     private sealed record Setup(string SharedKey, string AuthenticatorUri);
     private sealed record Codes(string[] RecoveryCodes);
-    private sealed record ErrorBody(string? Error);
 
     private Setup? _setup;
     private string[]? _recoveryCodes;
@@ -68,28 +67,28 @@
 
     private async Task StartAsync()
     {
-        var response = await Http.PostAsync("/account/2fa/setup", null);
-        if (!response.IsSuccessStatusCode) { Fail("Sign in first, then set up two-factor authentication."); return; }
-        _setup = await response.Content.ReadFromJsonAsync<Setup>();
+        var response = await Http.PostAsync("/account/2fa/setup");
+        if (!response.Ok) { Fail("Sign in first, then set up two-factor authentication."); return; }
+        _setup = response.Read<Setup>();
         _message = null;
     }
 
     private async Task EnableAsync()
     {
-        var response = await Http.PostAsJsonAsync("/account/2fa/enable", new { code = _code });
-        if (!response.IsSuccessStatusCode)
+        var response = await Http.PostAsync("/account/2fa/enable", new { code = _code });
+        if (!response.Ok)
         {
-            Fail((await response.Content.ReadFromJsonAsync<ErrorBody>())?.Error ?? "The code is not valid.");
+            Fail(response.Error ?? "The code is not valid.");
             return;
         }
-        _recoveryCodes = (await response.Content.ReadFromJsonAsync<Codes>())?.RecoveryCodes ?? [];
+        _recoveryCodes = response.Read<Codes>()?.RecoveryCodes ?? [];
         _message = null;
     }
 
     private async Task DisableAsync()
     {
-        var response = await Http.PostAsJsonAsync("/account/2fa/disable", new { password = _password });
-        if (response.IsSuccessStatusCode)
+        var response = await Http.PostAsync("/account/2fa/disable", new { password = _password });
+        if (response.Ok)
         {
             _ok = true;
             _message = "Two-factor authentication is off.";
@@ -98,7 +97,7 @@
         }
         else
         {
-            Fail((await response.Content.ReadFromJsonAsync<ErrorBody>())?.Error ?? "Could not turn it off.");
+            Fail(response.Error ?? "Could not turn it off.");
         }
     }
 

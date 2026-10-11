@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
+using Modulus.Ui.Abstractions.Admin;
 using Modulus.Ui.Abstractions.Navigation;
 using Modulus.Ui.Abstractions.Shell;
 using Modulus.Ui.Abstractions.State;
@@ -33,6 +34,17 @@ public static class ModulusMvcModule
         // Per-user UI state (saved views); an app registers its own IUiStateStore to keep it across restarts.
         services.TryAddSingleton<IUiStateStore, MemoryUiStateStore>();
         services.TryAddScoped<SavedViews>();
+
+        // Sample data behind the scaffolded admin pages (users, roles, tenants, notifications, audit, settings, metrics). Replace any
+        // of them by registering your own implementation of the interface; the page then stops saying "Sample data".
+        services.TryAddSingleton<SampleAdminData>();
+        services.TryAddSingleton<IUserDirectory>(sp => sp.GetRequiredService<SampleAdminData>());
+        services.TryAddSingleton<IRoleDirectory>(sp => sp.GetRequiredService<SampleAdminData>());
+        services.TryAddSingleton<ITenantDirectory>(sp => sp.GetRequiredService<SampleAdminData>());
+        services.TryAddSingleton<INotificationCenter>(sp => sp.GetRequiredService<SampleAdminData>());
+        services.TryAddSingleton<IAuditTrail>(sp => sp.GetRequiredService<SampleAdminData>());
+        services.TryAddSingleton<IAdminSettingsStore>(sp => sp.GetRequiredService<SampleAdminData>());
+        services.TryAddSingleton<IMetricsSource>(sp => sp.GetRequiredService<SampleAdminData>());
 
         // htmx requests carry the token in this header (see _ModulusLayout: hx-headers on <body>).
         services.AddAntiforgery(o => o.HeaderName = Htmx.HtmxExtensions.AntiforgeryHeader);
@@ -77,5 +89,23 @@ public static class ModulusMvcModule
         options.RequestCultureProviders.Remove(cookie);
         options.RequestCultureProviders.Insert(0, cookie);
         return options;
+    }
+
+    /// <summary>
+    /// Adds the premade admin module navigation (Overview, Settings, System, My account), in this framework's own menu style.
+    /// Pass the pages you scaffolded so the menu only links to pages that exist.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// builder.Services.AddModulusAdminUi(o => o.AdministrationPolicy = "admin");
+    /// </code>
+    /// </example>
+    public static IServiceCollection AddModulusAdminUi(this IServiceCollection services, Action<AdminModuleOptions>? configure = null)
+    {
+        var options = new AdminModuleOptions();
+        configure?.Invoke(options);
+        services.AddSingleton(options);
+        services.AddTransient<IMenuContributor, AdminMenuContributor>();
+        return services;
     }
 }

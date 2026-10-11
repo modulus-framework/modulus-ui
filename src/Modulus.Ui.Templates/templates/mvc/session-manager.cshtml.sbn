@@ -1,5 +1,5 @@
-@* Session manager: lists the caller's sessions and sign-in history from the Modulus.Identity account endpoints (/account/sessions, /account/login-history).
-   The account endpoints must be authenticated; the controller that renders this view should carry [Authorize]. *@
+@* Session manager: lists the caller's sessions and sign-in history from the Modulus.Identity account endpoints (/account/sessions, /account/login-history). *@
+@* The account endpoints must be authenticated; the controller that renders this view should carry [Authorize]. *@
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{

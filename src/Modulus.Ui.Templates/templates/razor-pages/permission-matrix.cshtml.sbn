@@ -5,7 +5,7 @@
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @{
     ViewData["Title"] = "{{ entity_name }} permissions";
-    var csrf = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    var csrf = Antiforgery.GetAndStoreTokens(HttpContext).RequestToken;
 }
 
 <app-page-header pretitle="Security" title="{{ entity_name }} permissions"></app-page-header>
@@ -44,7 +44,7 @@
         </div></div></div>
     </div>
 </div>
-<script nonce="@Modulus.AspNetCore.Hosting.CspNonce.Of(Context)">
+<script nonce="@Modulus.AspNetCore.Hosting.CspNonce.Of(HttpContext)">
     (function () {
         const csrf = document.getElementById('csrf').value;
         const api = '{{ api_prefix }}';

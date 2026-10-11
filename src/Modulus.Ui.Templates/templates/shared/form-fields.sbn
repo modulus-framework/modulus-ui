@@ -1,6 +1,4 @@
-{{~# Shared form fields for CRUD templates
-  Use this in create/edit forms: {{ include 'shared/form-fields' }}
-~}}
+{{~# Shared form fields for CRUD templates. Use this in create/edit forms by including 'shared/form-fields'. ~}}
 
 @{
     var model = ViewBag.{{ entity_name }};
