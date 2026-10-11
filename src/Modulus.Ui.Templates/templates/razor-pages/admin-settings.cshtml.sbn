@@ -1,4 +1,5 @@
 @page "/admin/settings"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @* System settings (static sample data and ViewBag values: replace them with your own). *@
 @{

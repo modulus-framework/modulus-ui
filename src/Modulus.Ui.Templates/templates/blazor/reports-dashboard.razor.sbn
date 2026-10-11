@@ -1,5 +1,6 @@
 @* Reports and analytics: replace the sample rows with your own *@
 @page "/reports"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
 <PageTitle>Reports</PageTitle>
 

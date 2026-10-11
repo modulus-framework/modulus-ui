@@ -1,4 +1,5 @@
 @page "/account/profile"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject HttpClient Http
 
 <PageTitle>User Profile</PageTitle>

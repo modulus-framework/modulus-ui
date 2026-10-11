@@ -1,5 +1,6 @@
 @* Create and edit page for {{ entity_name }}: posts to the {{ module_name }} API through {{ entity_name }}ApiClient *@
 @page "/{{ route }}/edit"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using System.ComponentModel.DataAnnotations
 @using {{ ui_namespace }}.ApiClients
 @inject {{ entity_name }}ApiClient Api

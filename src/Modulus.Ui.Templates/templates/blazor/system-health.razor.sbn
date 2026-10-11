@@ -1,5 +1,6 @@
 @* System health: replace the sample figures with your own *@
 @page "/system/health"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
 <PageTitle>System health</PageTitle>
 

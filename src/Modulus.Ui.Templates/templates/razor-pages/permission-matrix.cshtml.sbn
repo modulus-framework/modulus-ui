@@ -1,12 +1,16 @@
 @* Permission matrix for {{ entity_name }}: roles down, permissions across. Reads and changes grants through the Modulus.Authorization.Management endpoints ({{ api_prefix }}/grants). *@
 @page "/permissions/{{ entity_route }}"
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @{
     ViewData["Title"] = "{{ entity_name }} permissions";
+    var csrf = Antiforgery.GetAndStoreTokens(Context).RequestToken;
 }
 
 <app-page-header pretitle="Security" title="{{ entity_name }} permissions"></app-page-header>
+
+<input type="hidden" id="csrf" value="@csrf" />
 
 <div id="result" class="ant-alert m-mb-16" role="alert" hidden><div class="ant-alert-content"><div id="result-text" class="ant-alert-message"></div></div></div>
 
@@ -40,45 +44,52 @@
         </div></div></div>
     </div>
 </div>
+<script nonce="@Modulus.AspNetCore.Hosting.CspNonce.Of(Context)">
+    (function () {
+        const csrf = document.getElementById('csrf').value;
+        const api = '{{ api_prefix }}';
+        const roles = [{{ for r in roles }}'{{ r }}'{{ if !for.last }}, {{ end }}{{ end }}];
 
-<script>
-    const api = '{{ api_prefix }}';
-    const roles = [{{ for r in roles }}'{{ r }}'{{ if !for.last }}, {{ end }}{{ end }}];
-
-    function show(message, ok) {
-        const el = document.getElementById('result');
-        document.getElementById('result-text').textContent = message;
-        el.className = 'ant-alert m-mb-16 ant-alert-' + (ok ? 'success' : 'error');
-        el.hidden = false;
-    }
-    function box(role, permission) {
-        return document.querySelector('input[data-role="' + role + '"][data-permission="' + permission + '"]');
-    }
-    async function load() {
-        for (const role of roles) {
-            const res = await fetch(api + '/grants/Role/' + encodeURIComponent(role), { credentials: 'same-origin' });
-            if (!res.ok) { show('Could not read the grants (' + res.status + '). You need the authorization management permission.', false); return; }
-            for (const g of await res.json()) {
-                const b = box(role, g.permission);
-                if (!b) continue;
-                if (g.type === 'Allow') b.checked = true;
-                if (g.type === 'Deny') { b.checked = false; b.title = 'Denied'; b.dataset.denied = 'true'; }
-            }
+        function show(message, ok) {
+            const el = document.getElementById('result');
+            document.getElementById('result-text').textContent = message;
+            el.className = 'ant-alert m-mb-16 ant-alert-' + (ok ? 'success' : 'error');
+            el.hidden = false;
         }
-        document.querySelectorAll('input[data-role]').forEach(function (b) { b.disabled = b.dataset.denied === 'true'; });
-    }
-    document.addEventListener('change', async function (e) {
-        const b = e.target;
-        if (!b.matches || !b.matches('input[data-role]')) return;
-        const role = b.dataset.role, permission = b.dataset.permission;
-        b.disabled = true;
-        const res = b.checked
-            ? await fetch(api + '/grants', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ holderType: 'Role', holder: role, permissions: [permission], type: 'Allow' }) })
-            : await fetch(api + '/grants/Role/' + encodeURIComponent(role) + '/' + encodeURIComponent(permission), { method: 'DELETE', credentials: 'same-origin' });
-        if (!res.ok) { b.checked = !b.checked; show('The change was refused (' + res.status + ').', false); }
-        else { show(role + ': ' + permission + (b.checked ? ' granted.' : ' revoked.'), true); }
-        b.disabled = false;
-    });
-    load();
+        function box(role, permission) {
+            return document.querySelector('input[data-role="' + role + '"][data-permission="' + permission + '"]');
+        }
+        async function load() {
+            for (const role of roles) {
+                const res = await fetch(api + '/grants/Role/' + encodeURIComponent(role), { credentials: 'same-origin', headers: { 'Accept': 'application/json' } });
+                if (!res.ok) { show('Could not read the grants (' + res.status + '). You need the authorization management permission.', false); return; }
+                for (const g of await res.json()) {
+                    const b = box(role, g.permission);
+                    if (!b) continue;
+                    if (g.type === 'Allow') b.checked = true;
+                    if (g.type === 'Deny') { b.checked = false; b.title = 'Denied'; b.dataset.denied = 'true'; }
+                }
+            }
+            document.querySelectorAll('input[data-role]').forEach(function (b) { b.disabled = b.dataset.denied === 'true'; });
+        }
+        document.addEventListener('change', async function (e) {
+            const b = e.target;
+            if (!b.matches || !b.matches('input[data-role]')) return;
+            const role = b.dataset.role, permission = b.dataset.permission;
+            b.disabled = true;
+            const res = b.checked
+                ? await fetch(api + '/grants', {
+                    method: 'POST', credentials: 'same-origin',
+                    headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': csrf },
+                    body: JSON.stringify({ holderType: 'Role', holder: role, permissions: [permission], type: 'Allow' })
+                })
+                : await fetch(api + '/grants/Role/' + encodeURIComponent(role) + '/' + encodeURIComponent(permission), {
+                    method: 'DELETE', credentials: 'same-origin', headers: { 'RequestVerificationToken': csrf }
+                });
+            if (!res.ok) { b.checked = !b.checked; show('The change was refused (' + res.status + ').', false); }
+            else { show(role + ': ' + permission + (b.checked ? ' granted.' : ' revoked.'), true); }
+            b.disabled = false;
+        });
+        load();
+    })();
 </script>

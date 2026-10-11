@@ -1,8 +1,13 @@
-@* Two-factor authentication page: talks to the Modulus.Identity account endpoints on this host (/account/...) *@
+@* Two-factor authentication page: talks to the Modulus.Identity account endpoints on this host (/account/2fa/...).
+   The controller that renders this view should carry [Authorize]. *@
 @addTagHelper *, Modulus.AspNetCore.Mvc
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     ViewData["Title"] = "Two-factor authentication";
+    var csrf = Antiforgery.GetAndStoreTokens(Context).RequestToken;
 }
+
+<input type="hidden" id="csrf" value="@csrf" />
 
 <app-page-header pretitle="Account" title="Two-factor authentication"></app-page-header>
 
@@ -18,13 +23,13 @@
                 <p>Add this key to your authenticator app, or open the link on your phone:</p>
                 <p><code id="key"></code></p>
                 <p><a id="uri" href="#">Open in authenticator app</a></p>
-                <form class="ant-form ant-form-vertical" onsubmit="return false" novalidate>
+                <form id="enable-form" class="ant-form ant-form-vertical" novalidate>
                     <div class="ant-form-item">
-                <div class="ant-form-item-label"><label for="code">Code from the app</label></div>
-                <div class="ant-form-item-control"><input id="code" class="ant-input" inputmode="numeric" autocomplete="one-time-code" /></div>
-            </div>
+                        <div class="ant-form-item-label"><label for="code">Code from the app</label></div>
+                        <div class="ant-form-item-control"><input id="code" class="ant-input" inputmode="numeric" autocomplete="one-time-code" /></div>
+                    </div>
+                    <app-button type="primary" html-type="submit" id="enable">Turn on</app-button>
                 </form>
-                <app-button type="primary" id="enable">Turn on</app-button>
             </div>
             <div id="step-codes" hidden>
                 <p class="m-text-success"><strong>Two-factor authentication is on.</strong></p>
@@ -33,54 +38,66 @@
             </div>
             <app-divider></app-divider>
             <div id="step-disable">
-                <form class="ant-form ant-form-vertical" onsubmit="return false" novalidate>
+                <form id="disable-form" class="ant-form ant-form-vertical" novalidate>
                     <div class="ant-form-item">
-                <div class="ant-form-item-label"><label for="password">Password (to turn it off)</label></div>
-                <div class="ant-form-item-control"><input id="password" class="ant-input" type="password" autocomplete="current-password" /></div>
-            </div>
+                        <div class="ant-form-item-label"><label for="password">Password (to turn it off)</label></div>
+                        <div class="ant-form-item-control"><input id="password" class="ant-input" type="password" autocomplete="current-password" /></div>
+                    </div>
+                    <app-button id="disable" html-type="submit" danger="true">Turn off two-factor authentication</app-button>
                 </form>
-                <app-button id="disable" danger="true">Turn off two-factor authentication</app-button>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-    async function post(url, body) {
-        const res = await fetch(url, {
-            method: 'POST',
-            credentials: 'same-origin',
-            headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
-            body: body === undefined ? undefined : JSON.stringify(body)
+<script nonce="@Modulus.AspNetCore.Hosting.CspNonce.Of(Context)">
+    (function () {
+        const csrf = document.getElementById('csrf').value;
+
+        async function post(url, body) {
+            const headers = { 'RequestVerificationToken': csrf };
+            if (body !== undefined) headers['Content-Type'] = 'application/json';
+            const res = await fetch(url, {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: headers,
+                body: body === undefined ? undefined : JSON.stringify(body)
+            });
+            let data = null;
+            try { data = await res.json(); } catch (e) { }
+            return { ok: res.ok, data: data };
+        }
+        function show(id, message, ok) {
+            const el = document.getElementById(id);
+            document.getElementById(id + '-text').textContent = message;
+            el.className = 'ant-alert m-mb-16 ant-alert-' + (ok ? 'success' : 'error');
+            el.hidden = false;
+        }
+        function reveal(id) { document.getElementById(id).hidden = false; }
+
+        // Keep the forms from navigating; the handlers below do the work.
+        ['enable-form', 'disable-form'].forEach(function (id) {
+            document.getElementById(id).addEventListener('submit', function (e) { e.preventDefault(); });
         });
-        let data = null;
-        try { data = await res.json(); } catch (e) { }
-        return { ok: res.ok, data: data };
-    }
-    function show(id, message, ok) {
-        const el = document.getElementById(id);
-        document.getElementById(id + '-text').textContent = message;
-        el.className = 'ant-alert m-mb-16 ant-alert-' + (ok ? 'success' : 'error');
-        el.hidden = false;
-    }
-    function reveal(id) { document.getElementById(id).hidden = false; }
-    document.getElementById('start').addEventListener('click', async function () {
-        const r = await post('/account/2fa/setup');
-        if (!r.ok) { show('result', 'Sign in first, then set up two-factor authentication.', false); return; }
-        document.getElementById('key').textContent = r.data.sharedKey;
-        document.getElementById('uri').href = r.data.authenticatorUri;
-        document.getElementById('step-start').hidden = true;
-        reveal('step-confirm');
-    });
-    document.getElementById('enable').addEventListener('click', async function () {
-        const r = await post('/account/2fa/enable', { code: document.getElementById('code').value });
-        if (!r.ok) { show('result', (r.data && r.data.error) || 'The code is not valid.', false); return; }
-        document.getElementById('codes').textContent = r.data.recoveryCodes.join('\n');
-        document.getElementById('step-confirm').hidden = true;
-        reveal('step-codes');
-    });
-    document.getElementById('disable').addEventListener('click', async function () {
-        const r = await post('/account/2fa/disable', { password: document.getElementById('password').value });
-        show('result', r.ok ? 'Two-factor authentication is off.' : (r.data && r.data.error) || 'Could not turn it off.', r.ok);
-    });
+
+        document.getElementById('start').addEventListener('click', async function () {
+            const r = await post('/account/2fa/setup');
+            if (!r.ok) { show('result', 'Sign in first, then set up two-factor authentication.', false); return; }
+            document.getElementById('key').textContent = r.data.sharedKey;
+            document.getElementById('uri').href = r.data.authenticatorUri;
+            document.getElementById('step-start').hidden = true;
+            reveal('step-confirm');
+        });
+        document.getElementById('enable').addEventListener('click', async function () {
+            const r = await post('/account/2fa/enable', { code: document.getElementById('code').value });
+            if (!r.ok) { show('result', (r.data && r.data.error) || 'The code is not valid.', false); return; }
+            document.getElementById('codes').textContent = r.data.recoveryCodes.join('\n');
+            document.getElementById('step-confirm').hidden = true;
+            reveal('step-codes');
+        });
+        document.getElementById('disable').addEventListener('click', async function () {
+            const r = await post('/account/2fa/disable', { password: document.getElementById('password').value });
+            show('result', r.ok ? 'Two-factor authentication is off.' : (r.data && r.data.error) || 'Could not turn it off.', r.ok);
+        });
+    })();
 </script>

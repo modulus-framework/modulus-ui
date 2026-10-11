@@ -1,4 +1,5 @@
 @page "/{{ module_name | string.downcase }}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @* {{ module_name }} module (static sample data and ViewBag values: replace them with your own). *@
 @{

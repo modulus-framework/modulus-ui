@@ -1,5 +1,6 @@
 @* Column chart: sample data below, replace it with your own (a query, an API call). *@
 @page "/charts/column"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using Modulus.Blazor.Components.Charts
 @using Modulus.Ui.Abstractions.Charts
 

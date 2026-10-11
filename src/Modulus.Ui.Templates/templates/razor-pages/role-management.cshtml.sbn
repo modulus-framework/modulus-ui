@@ -1,4 +1,5 @@
 @page "/admin/roles"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @* Role management - create and manage roles with permissions *@
 @{

@@ -1,4 +1,5 @@
 @page "/account/profile"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @* User profile - manage personal profile and account settings *@
 @{

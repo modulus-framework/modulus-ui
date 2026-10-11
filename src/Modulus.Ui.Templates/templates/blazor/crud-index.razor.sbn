@@ -1,5 +1,6 @@
 @* List page for {{ entity_name_plural }}: reads the {{ module_name }} API through {{ entity_name }}ApiClient *@
 @page "/{{ route }}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @using {{ module_namespace }}.Application.Dtos
 @using {{ ui_namespace }}.ApiClients
 @inject {{ entity_name }}ApiClient Api

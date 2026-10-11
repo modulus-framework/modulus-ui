@@ -1,5 +1,6 @@
 @* List page for {{ entity_name_plural }}: reads the {{ module_name }} API through {{ entity_name }}ApiClient. Page model: Index.cshtml.cs *@
 @page "/{{ route }}"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @model {{ ui_namespace }}.Pages.{{ entity_name_plural }}.IndexModel
 @{
@@ -39,9 +40,9 @@
                                 <tr class="ant-table-row">
                                     <td class="ant-table-cell"><strong>@item.Name</strong></td>
                                     <td class="ant-table-cell">
-                                        <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id" asp-antiforgery="true" class="m-flex">
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id" asp-antiforgery="true" class="m-flex" data-confirm="Delete this {{ entity_name | string.downcase }}?">
                                             <a class="ant-btn ant-btn-text ant-btn-sm" href="/{{ route }}/edit?id=@item.Id"><span>Edit</span></a>
-                                            <button type="submit" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous" onclick="return confirm('Delete this {{ entity_name | string.downcase }}?')"><span>Delete</span></button>
+                                            <button type="submit" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous"><span>Delete</span></button>
                                         </form>
                                     </td>
                                 </tr>
@@ -69,3 +70,11 @@
         </div>
     }
 </div>
+
+<script nonce="@Modulus.AspNetCore.Hosting.CspNonce.Of(Context)">
+    // Asks before any form marked data-confirm is submitted. Inline onclick handlers are blocked by the Content-Security-Policy.
+    document.addEventListener('submit', function (e) {
+        var message = e.target.getAttribute('data-confirm');
+        if (message && !window.confirm(message)) e.preventDefault();
+    });
+</script>

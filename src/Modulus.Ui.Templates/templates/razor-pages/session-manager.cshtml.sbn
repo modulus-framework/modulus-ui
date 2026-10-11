@@ -1,10 +1,14 @@
 @page "/auth/sessions"
-@addTagHelper *, Modulus.AspNetCore.Mvc
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
-@* Session manager: lists the caller's sessions and sign-in history from the Modulus.Identity account endpoints (/account/sessions, /account/login-history) *@
+@* Session manager: lists the caller's sessions and sign-in history from the Modulus.Identity account endpoints (/account/sessions, /account/login-history). *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @{
     ViewData["Title"] = "Sessions";
+    var csrf = Antiforgery.GetAndStoreTokens(Context).RequestToken;
 }
+
+<input type="hidden" id="csrf" value="@csrf" />
 
 <app-page-header pretitle="Account" title="Sessions">
     <button id="revoke-all" type="button" class="ant-btn ant-btn-default ant-btn-dangerous"><span>Sign out everywhere</span></button>
@@ -37,49 +41,59 @@
     </div>
 </div>
 
-<script>
-    function cell(row, text) { const td = document.createElement('td'); td.className = 'ant-table-cell'; td.textContent = text || ''; row.appendChild(td); return td; }
-    function newRow() { const r = newRow(); r.className = 'ant-table-row'; return r; }
-    function when(value) { return value ? new Date(value).toLocaleString() : ''; }
-    function show(message, ok) {
-        const el = document.getElementById('result');
-        document.getElementById('result-text').textContent = message;
-        el.className = 'ant-alert m-mb-16 ant-alert-' + (ok ? 'success' : 'error');
-        el.hidden = false;
-    }
-    async function load() {
-        const s = await fetch('/account/sessions', { credentials: 'same-origin' });
-        const body = document.getElementById('sessions');
-        body.replaceChildren();
-        if (!s.ok) { show('Sign in to see your sessions.', false); return; }
-        const sessions = await s.json();
-        if (sessions.length === 0) { const r = newRow(); cell(r, 'No active sessions.').colSpan = 5; body.appendChild(r); }
-        sessions.forEach(function (x) {
-            const r = newRow();
-            cell(r, x.type); cell(r, x.clientId); cell(r, when(x.createdAt)); cell(r, when(x.expiresAt));
-            const btn = document.createElement('button');
-            btn.type = 'button'; btn.className = 'ant-btn ant-btn-default ant-btn-sm ant-btn-dangerous'; btn.textContent = 'Revoke';
-            btn.addEventListener('click', async function () {
-                const res = await fetch('/account/sessions/' + encodeURIComponent(x.id), { method: 'DELETE', credentials: 'same-origin' });
-                show(res.ok ? 'Session ended.' : 'Could not end the session.', res.ok);
-                load();
+<script nonce="@Modulus.AspNetCore.Hosting.CspNonce.Of(Context)">
+    (function () {
+        const csrf = document.getElementById('csrf').value;
+
+        function cell(row, text) { const td = document.createElement('td'); td.className = 'ant-table-cell'; td.textContent = text || ''; row.appendChild(td); return td; }
+        function newRow() { const r = document.createElement('tr'); r.className = 'ant-table-row'; return r; }
+        function when(value) { return value ? new Date(value).toLocaleString() : ''; }
+        function show(message, ok) {
+            const el = document.getElementById('result');
+            document.getElementById('result-text').textContent = message;
+            el.className = 'ant-alert m-mb-16 ant-alert-' + (ok ? 'success' : 'error');
+            el.hidden = false;
+        }
+        async function load() {
+            const s = await fetch('/account/sessions', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } });
+            const body = document.getElementById('sessions');
+            body.replaceChildren();
+            if (!s.ok) { show('Sign in to see your sessions.', false); return; }
+            const sessions = await s.json();
+            if (sessions.length === 0) { const r = newRow(); cell(r, 'No active sessions.').colSpan = 5; body.appendChild(r); }
+            sessions.forEach(function (x) {
+                const r = newRow();
+                cell(r, x.type); cell(r, x.clientId); cell(r, when(x.createdAt)); cell(r, when(x.expiresAt));
+                const btn = document.createElement('button');
+                btn.type = 'button'; btn.className = 'ant-btn ant-btn-default ant-btn-sm ant-btn-dangerous'; btn.textContent = 'Revoke';
+                btn.addEventListener('click', async function () {
+                    const res = await fetch('/account/sessions/' + encodeURIComponent(x.id), {
+                        method: 'DELETE', credentials: 'same-origin', headers: { 'RequestVerificationToken': csrf }
+                    });
+                    show(res.ok ? 'Session ended.' : 'Could not end the session.', res.ok);
+                    load();
+                });
+                cell(r, '').appendChild(btn);
+                body.appendChild(r);
             });
-            cell(r, '').appendChild(btn);
-            body.appendChild(r);
+            const h = await fetch('/account/login-history?take=25', { credentials: 'same-origin', headers: { 'Accept': 'application/json' } });
+            const hb = document.getElementById('history');
+            hb.replaceChildren();
+            (h.ok ? await h.json() : []).forEach(function (e) {
+                const r = newRow();
+                cell(r, when(e.occurredAt)); cell(r, e.action);
+                cell(r, e.succeeded ? 'OK' : 'Refused' + (e.reason ? ' (' + e.reason + ')' : ''));
+                cell(r, e.clientId);
+                hb.appendChild(r);
+            });
+        }
+        document.getElementById('revoke-all').addEventListener('click', async function () {
+            if (!confirm('Sign out of every device, including this one?')) return;
+            const res = await fetch('/account/sessions/revoke-all', {
+                method: 'POST', credentials: 'same-origin', headers: { 'RequestVerificationToken': csrf }
+            });
+            if (res.ok) { window.location.href = '/'; } else { show('Could not sign out everywhere.', false); }
         });
-        const h = await fetch('/account/login-history?take=25', { credentials: 'same-origin' });
-        const hb = document.getElementById('history');
-        hb.replaceChildren();
-        (h.ok ? await h.json() : []).forEach(function (e) {
-            const r = newRow();
-            cell(r, when(e.occurredAt)); cell(r, e.action); cell(r, e.succeeded ? 'OK' : 'Refused' + (e.reason ? ' (' + e.reason + ')' : '')); cell(r, e.clientId);
-            hb.appendChild(r);
-        });
-    }
-    document.getElementById('revoke-all').addEventListener('click', async function () {
-        if (!confirm('Sign out of every device, including this one?')) return;
-        const res = await fetch('/account/sessions/revoke-all', { method: 'POST', credentials: 'same-origin' });
-        if (res.ok) { window.location.href = '/'; } else { show('Could not sign out everywhere.', false); }
-    });
-    load();
+        load();
+    })();
 </script>

@@ -1,4 +1,5 @@
 @page "/admin/tenants"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @inject HttpClient Http
 
 <PageTitle>Tenant Management</PageTitle>

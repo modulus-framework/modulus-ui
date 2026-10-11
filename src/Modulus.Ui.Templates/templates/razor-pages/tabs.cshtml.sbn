@@ -1,4 +1,4 @@
-@* Tabs: ViewBag.Tabs is a list of (id, label, content), the first one is open. content is markup. *@
+@* Tabs: ViewBag.Tabs is a list of (id, label, content), the first one is open. content is encoded as text when it is a string; pass an IHtmlContent to insert markup. *@
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @{
     var tabs = ViewBag.Tabs as System.Collections.Generic.List<dynamic> ?? new System.Collections.Generic.List<dynamic>();
@@ -8,6 +8,6 @@
 <app-tabs active="@first">
     @foreach (var tab in tabs)
     {
-        <app-tab key="@tab.id" title="@tab.label">@Html.Raw(tab.content)</app-tab>
+        <app-tab key="@tab.id" title="@tab.label">@tab.content</app-tab>
     }
 </app-tabs>

@@ -1,4 +1,5 @@
 @page "/reports"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @* Reports (static sample data and ViewBag values: replace them with your own). *@
 @{

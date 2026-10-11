@@ -1,4 +1,5 @@
 @page "/admin/users"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @* User management (static sample data and ViewBag values: replace them with your own). *@
 @{
