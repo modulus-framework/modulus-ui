@@ -11,11 +11,11 @@ metadata:
 
 # Modulus UI CLI Implementation Roadmap
 
-> **Status (2026-10-10).** Built in `modulus/cli`: `ui theme create|set|list|export`, `ui add-component`, `ui create-dashboard`,
-> `ui create-form-from-entity`, `ui add-auth`, `ui add-2fa`, `ui add-session-manager`, `ui add-chart`, `ui add-i18n`, `ui audit`, `ui create-permission-matrix`, the template package
+> **Status (2026-10-11).** Built in `modulus/cli`: `ui theme create|set|list|export`, `ui add-component`, `ui create-dashboard`,
+> `ui create-form-from-entity`, `ui add-auth`, `ui add-2fa`, `ui add-session-manager`, `ui add-chart`, `ui add-i18n`, `ui audit`, `ui create-permission-matrix`, `ui create-crud`, `ui add-assistant`, the restyled templates for mvc, razor-pages and blazor, the template package
 > (`Modulus.Ui.Templates`) with a cache/local-feed/nuget.org resolver, and UI package references in new apps.
 > The commands use Spectre.Console.Cli (the code samples below are pseudocode). See [../CLI.md](../CLI.md) for the reference
-> and for what is still open (chat and others; the templates also need restyling for the Ant Design based CSS, see CLI.md).
+> and for what is still open (chat and others, plus a few known issues, see CLI.md).
 
 
 ## Part 1: Architecture Overview
