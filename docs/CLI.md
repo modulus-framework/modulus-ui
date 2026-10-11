@@ -10,10 +10,11 @@ Templates come from the `Modulus.Ui.Templates` package, the UI libraries from `M
 ## Which UI a new app gets
 
 `modulus app --kind webapp+api --ui-engine mvc|razor-pages` builds the **Web project on the Modulus UI framework**:
-`AddModulusMvc`, the `_ModulusLayout` shell, `MapStaticAssets`, an auth frame for the sign-in pages, and no older
-`Cobytelabs.Modulus.UI.*` modules or Tabler theme. `--ui-modules` cannot be combined with it. Other combinations keep the older UI:
-single-project `webapp` apps (their sign-in page is the Identity UI module), `--ui-engine none`, and `blazor` / `fluid`
-(a Blazor host is not generated yet).
+`AddModulusMvc`, the `_ModulusLayout` shell, `MapStaticAssets`, an auth frame for the sign-in pages and a sign-in
+convention (every page needs a signed-in user except `/Account`). The CLI no longer carries any other UI: the older
+`Cobytelabs.Modulus.UI.*` modules, the Tabler theme, `ui add/remove/update/eject/diff`, `--ui-modules` and the single-project
+`webapp` kind were removed. `blazor`, `fluid` and `none` have page templates but no app host yet, so `modulus app` refuses
+them for a web app. `generate-crud` scaffolds the API side only; add pages with the `ui` commands below.
 
 ## Packages and feeds
 
