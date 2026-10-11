@@ -42,6 +42,8 @@ feed exists, adds it to `NuGet.config` with source mapping. Delete `~/.modulus/f
 | `ui add-i18n --languages en,es,fr` | Sets `Modulus:Theme:Cultures` (the first is the default) and adds `app.UseModulusLocalization()` before `UseRouting`. With two or more languages the theme settings show a language picker. |
 | `ui audit [--level A\|AA\|AAA] [--format json\|markdown\|html] [--out-file f] [--fail-on-issues]` | A static accessibility scan of every `.cshtml`, `.razor` and `.html` file under `src`. Seven rules (image alt, form labels, button/link names, keyboard access, page language, table headers, positive tabindex), all WCAG level A. A markup lint: it does not check colour contrast, focus order or content in the running page. |
 | `ui create-permission-matrix <Entity> [--module] [--roles Admin,Sales] [--permissions a:b:c,...]` | A role × permission matrix (`/permissions/<entity>`). It reads grants with `GET /authorization/grants/Role/{role}` and grants or revokes with `POST` / `DELETE`, so the host needs `MapModulusAuthorizationManagement` and the caller the management permission. The API cannot list all roles or permissions, so rows and columns come from the options (default: `Admin,Manager,User` and the entity's `<module>:<route>:manage`). A denied permission shows as a locked box. |
+| `ui create-crud <Entity> [--module] [--engine razor-pages\|blazor]` | List, create/edit and delete pages (`/<entities>`) over the entity's API (`generate-crud`) through a typed `<Entity>ApiClient`, plus a menu entry. Needs a `webapp+api` app; set `Api:BaseUrl` in the Web project. |
+| `ui add-assistant` | Hosts the AI platform's embedded assistant: `POST /ai/session` (mints the session token with the server-side `Ai:Host:ApiKey`), a `_AiAssistant` layout partial rendering `<ai-assistant>`, the `ai:use` permission and `Ai:Host` settings (disabled by default). Razor Pages and MVC; supply the SDK script under `wwwroot/lib/ai-sdk/`. |
 | `ui theme create <name> [--base tabler\|minimal] [--colors]` | `Themes/<name>/theme.json` and `variables.css`. |
 | `ui theme set <name>` | Writes the theme to `Modulus:Theme` in `appsettings.json`. |
 | `ui theme list` | The app's themes; the active one is marked. |
@@ -58,8 +60,7 @@ backend endpoints that do not exist yet. Self-service registration is not offere
 
 ## Known issues
 
-- **Templates are styled with Bootstrap/Tabler class names; the Modulus UI framework's CSS is Ant Design based.** The framework's stylesheets
-  define no `btn`, `card-body`, `form-control`, `table` or `row` rules (they define `ant-*` and `m-*`). Pages scaffolded from the templates
-  therefore render with the shell but with unstyled cards, buttons, tables and forms. They are correct and accessible markup, not yet
-  restyled. The framework's own pages use `ant-*` classes, `m-*` utilities and the `app-*` tag helpers.
+- The identity-backed pages (`add-auth`, `add-2fa`, `add-session-manager`, permission matrix) call same-origin `/account/*` and `/authorization/*`; in a `webapp+api` app the Web host forwards the recovery routes only.
+- The `mvc` engine is partly wired (no `AddControllersWithViews` in a fresh Web host, no `_ViewStart`/`_ViewImports`); prefer `razor-pages` or `blazor`.
+- `admin-users`, `admin-settings`, `module-home` and `system-health` templates exist but no command scaffolds them yet.
 - The `_content` assets of the UI packages are served by `dotnet run` only in the Development environment; a published app carries them in `wwwroot`.
