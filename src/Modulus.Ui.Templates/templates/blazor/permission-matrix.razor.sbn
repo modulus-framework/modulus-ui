@@ -1,6 +1,7 @@
 @* Permission matrix for {{ entity_name }}: roles down, permissions across. Reads and changes grants through the Modulus.Authorization.Management endpoints ({{ api_prefix }}/grants). *@
 @page "/permissions/{{ entity_route }}"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ end }}
 @inject Modulus.Blazor.ModulusHttp Http
 
 <PageTitle>{{ entity_name }} permissions</PageTitle>

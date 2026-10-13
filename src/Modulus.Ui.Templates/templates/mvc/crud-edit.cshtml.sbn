@@ -1,0 +1,26 @@
+@* Create and edit page for {{ entity_name }}: posts to the {{ module_name }} API through {{ entity_name }}ApiClient. Controller: {{ entity_name_plural }}Controller *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@model {{ ui_namespace }}.Controllers.{{ entity_name_plural }}Controller.EditViewModel
+@{
+    ViewData["Title"] = Model.IsNew ? "New {{ entity_name | string.downcase }}" : "Edit {{ entity_name | string.downcase }}";
+}
+
+<app-page-header pretitle="{{ entity_name_plural }}" title="@ViewData["Title"]"></app-page-header>
+
+<div class="m-grid m-cols-main">
+    <div class="m-card">
+        <div class="m-card-body">
+            <form method="post" action="/{{ route }}/edit" asp-antiforgery="true" class="ant-form ant-form-vertical" novalidate>
+                <input type="hidden" asp-for="Input.Id" />
+                <div asp-validation-summary="ModelOnly" class="m-text-danger m-mb-16"></div>
+                <app-form-item asp-for="Input.Name" label="Name">
+                    <app-input asp-for="Input.Name" />
+                </app-form-item>
+                <div class="m-form-actions">
+                    <app-button type="primary" html-type="submit">@(Model.IsNew ? "Create" : "Save")</app-button>
+                    <app-button href="/{{ route }}">Cancel</app-button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

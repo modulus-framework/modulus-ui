@@ -2,10 +2,10 @@ using System.Globalization;
 
 namespace Modulus.Samples.Shared;
 
-/// <summary>Display formatting shared by every sample flavor (invariant culture, US-style money).</summary>
+/// <summary>Display formatting shared by every sample flavor (invariant culture, so it runs in globalization-invariant containers; the output is US-style).</summary>
 public static class Fmt
 {
-    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("en-US");
+    private static readonly CultureInfo Culture = CultureInfo.InvariantCulture;
 
     public static string Money(decimal value) => value.ToString("$#,0.00;-$#,0.00", Culture);
 

@@ -1,6 +1,7 @@
 using AntDesign;
 using Bunit;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -169,23 +170,30 @@ public class MultiSortTests : BunitContext
             .Add(t => t.MultiSort, multiSort)
             .Add(t => t.Columns, r => b =>
             {
-                var seq = 0;
-                foreach (var key in new[] { "Dept", "Salary" })
-                {
-                    b.OpenComponent<PropertyColumn<GridRecord, string>>(seq++);
-                    b.AddAttribute(seq++, "Property", (System.Linq.Expressions.Expression<Func<GridRecord, string>>)(x => x.Id));
-                    b.AddAttribute(seq++, "TitleTemplate", (RenderFragment)(t =>
-                    {
-                        t.OpenComponent<ColumnHeader>(0);
-                        t.AddAttribute(1, "Key", key);
-                        t.AddAttribute(2, "Title", key);
-                        t.AddAttribute(3, "Searchable", false);
-                        t.CloseComponent();
-                    }));
-                    b.CloseComponent();
-                }
+                // Each column sits in its own region, so the literal sequence numbers inside it never collide.
+                b.OpenRegion(0);
+                Column(b, "Dept");
+                b.CloseRegion();
+                b.OpenRegion(1);
+                Column(b, "Salary");
+                b.CloseRegion();
             }));
         return (cut, requests);
+    }
+
+    private static void Column(RenderTreeBuilder b, string key)
+    {
+        b.OpenComponent<PropertyColumn<GridRecord, string>>(0);
+        b.AddAttribute(1, "Property", (System.Linq.Expressions.Expression<Func<GridRecord, string>>)(x => x.Id));
+        b.AddAttribute(2, "TitleTemplate", (RenderFragment)(t =>
+        {
+            t.OpenComponent<ColumnHeader>(0);
+            t.AddAttribute(1, "Key", key);
+            t.AddAttribute(2, "Title", key);
+            t.AddAttribute(3, "Searchable", false);
+            t.CloseComponent();
+        }));
+        b.CloseComponent();
     }
 
     [Fact]

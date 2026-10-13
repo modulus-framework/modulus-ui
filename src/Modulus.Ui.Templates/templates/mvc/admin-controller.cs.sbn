@@ -10,8 +10,8 @@ namespace {{ namespace }};
 /// reads or writes through a service from Modulus.Ui.Abstractions.Admin; until you register your own implementation the
 /// built-in sample data answers and the view says so. Antiforgery is validated on every POST by AddModulusMvc.
 /// </summary>
-[Authorize]
-public sealed class AdminController(
+{{ if use_auth }}[Authorize]
+{{ end }}public sealed class AdminController(
     IUserDirectory users,
     IRoleDirectory roles,
     ITenantDirectory tenants,

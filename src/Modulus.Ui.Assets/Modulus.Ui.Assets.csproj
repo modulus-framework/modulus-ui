@@ -5,6 +5,9 @@
     <Nullable>enable</Nullable>
     <Description>Static assets of Modulus UI: the Ant Design based stylesheets and the shell, widget and plugin scripts shared by Blazor, MVC and Razor Pages.</Description>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- The URL prefix of these assets stays _content/Modulus.Ui.Assets whether the package is referenced as a project or as a NuGet
+         package (Synvro.Modulus.Ui.Assets); the tag helpers and the Blazor head write that prefix into their markup. -->
+    <StaticWebAssetBasePath>_content/Modulus.Ui.Assets</StaticWebAssetBasePath>
   </PropertyGroup>
 
 

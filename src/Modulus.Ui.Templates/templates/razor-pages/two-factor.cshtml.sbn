@@ -1,5 +1,6 @@
 @page "/auth/two-factor"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ end }}
 @* Two-factor authentication page: talks to the Modulus.Identity account endpoints on this host (/account/2fa/...). *@
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery

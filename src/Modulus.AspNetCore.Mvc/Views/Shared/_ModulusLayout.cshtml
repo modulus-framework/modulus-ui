@@ -59,7 +59,7 @@
     return;
 }
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@(string.IsNullOrEmpty(System.Globalization.CultureInfo.CurrentUICulture.Name) ? "en" : System.Globalization.CultureInfo.CurrentUICulture.Name)">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

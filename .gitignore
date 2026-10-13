@@ -21,3 +21,6 @@ App_Data/
 
 # Tool output
 drift-reports/
+
+# Packed NuGet output (dotnet pack -o nupkg)
+nupkg/

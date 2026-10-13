@@ -651,6 +651,8 @@ html[data-nav='dark'] .m-nav-app :is(.m-hnav-item.active > .m-hnav-link, .m-hnav
 .m-crumb-panel { position: absolute; top: calc(100% + 8px); left: -6px; z-index: 70; width: max-content; min-width: 240px; max-width: min(320px, calc(100vw - 24px)); padding: 6px; border: 1px solid var(--m-border, #e5e7eb); border-radius: 10px; background: var(--m-bg-elevated, #fff); color: var(--m-text, #1f2937); box-shadow: 0 12px 32px rgba(16, 24, 40, 0.14); }
 /* A panel near the right edge opens to the left of its caret, so it stays on screen. */
 .m-crumb-switch.m-crumb-flip > .m-crumb-panel, .m-crumb-more > .m-crumb-menu-wrap > .m-crumb-panel { left: auto; right: -6px; }
+/* A closed panel takes no space: it would otherwise lay out past the phone edge and scroll the page sideways. */
+.m-crumb-switch:not([open]) > .m-crumb-panel { display: none; }
 .m-crumb-panel-head { padding: 6px 10px 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: var(--m-text-tertiary, #6b7280); white-space: nowrap; }
 .m-crumb-menu { margin: 0; padding: 0; list-style: none; max-height: min(60vh, 420px); overflow: auto; }
 .m-crumb-menu li a, .m-crumb-menu-static { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; font-size: 13px; color: var(--m-text, #1f2937); text-decoration: none; white-space: nowrap; }

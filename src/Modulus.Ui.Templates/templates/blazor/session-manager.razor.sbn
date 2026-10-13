@@ -1,6 +1,7 @@
 @* Session manager: lists the caller's sessions and sign-in history from the Modulus.Identity account endpoints (/account/sessions, /account/login-history) *@
 @page "/auth/sessions"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ end }}
 @inject Modulus.Blazor.ModulusHttp Http
 @inject NavigationManager Navigation
 

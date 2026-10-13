@@ -1,50 +1,58 @@
-@page "/{{ entity_name_plural | string.downcase }}/edit/{Id:guid?}"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize]
-@inject HttpClient Http
+@page "/{{ entity_name_plural | string.downcase }}/form/{Id:guid?}"
+{{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ end }}
+@using System.ComponentModel.DataAnnotations
+@using {{ ui_namespace }}.ApiClients
+@using {{ module_namespace }}.Application.Dtos
+@inject {{ entity_name }}ApiClient Api
 @inject NavigationManager Navigation
 
-<PageTitle>@(Item?.Id == Guid.Empty ? "Create" : "Edit") {{ entity_name }}</PageTitle>
+<PageTitle>@(IsNew ? "Create" : "Edit") {{ entity_name }}</PageTitle>
 
 <div class="m-page-header">
-    <div class="m-page-header-text"><div class="m-pretitle">{{ entity_name_plural }}</div><h1 class="m-page-title">@(Item?.Id == Guid.Empty ? "Create" : "Edit") {{ entity_name }}</h1></div>
+    <div class="m-page-header-text"><div class="m-pretitle">{{ entity_name_plural }}</div><h1 class="m-page-title">@(IsNew ? "Create" : "Edit") {{ entity_name }}</h1></div>
 </div>
 
 <div class="m-grid m-cols-main">
     <div class="m-card">
         <div class="m-card-body">
-            @if (Item == null)
+            @if (form is null)
             {
                 <p class="m-muted">Loading...</p>
             }
             else
             {
-                <EditForm Model="Item" OnValidSubmit="HandleSubmit" class="ant-form ant-form-vertical">
+                <EditForm Model="form" OnValidSubmit="HandleSubmit" class="ant-form ant-form-vertical">
                     <DataAnnotationsValidator />
+                    @if (error is not null)
+                    {
+                        <p class="m-text-danger m-mb-16">@error</p>
+                    }
 {{ for f in fields ~}}
                     <div class="ant-form-item">
 {{ if f.kind == "checkbox" ~}}
                         <div class="ant-form-item-control">
-                            <label><InputCheckbox @bind-Value="Item.{{ f.name }}" /> {{ f.label }}</label>
+                            <label><InputCheckbox @bind-Value="form.{{ f.name }}" /> {{ f.label }}</label>
                         </div>
 {{ else ~}}
                         <div class="ant-form-item-label"><label class="{{ if f.required }}ant-form-item-required{{ end }}">{{ f.label }}</label></div>
                         <div class="ant-form-item-control">
 {{ if f.kind == "textarea" ~}}
-                            <InputTextArea @bind-Value="Item.{{ f.name }}" class="ant-input" rows="4" />
+                            <InputTextArea @bind-Value="form.{{ f.name }}" class="ant-input" rows="4" />
 {{ else if f.kind == "number" ~}}
-                            <InputNumber @bind-Value="Item.{{ f.name }}" class="ant-input" />
+                            <InputNumber @bind-Value="form.{{ f.name }}" class="ant-input" />
 {{ else if f.kind == "date" || f.kind == "datetime" ~}}
-                            <InputDate @bind-Value="Item.{{ f.name }}" class="ant-input" />
+                            <InputDate @bind-Value="form.{{ f.name }}" class="ant-input" />
 {{ else ~}}
-                            <InputText @bind-Value="Item.{{ f.name }}" class="ant-input" />
+                            <InputText @bind-Value="form.{{ f.name }}" class="ant-input" />
 {{ end ~}}
-                            <ValidationMessage For="() => Item.{{ f.name }}" class="ant-form-item-explain-error" />
+                            <ValidationMessage For="() => form.{{ f.name }}" class="ant-form-item-explain-error" />
                         </div>
 {{ end ~}}
                     </div>
 {{ end ~}}
                     <div class="m-form-actions">
-                        <button type="submit" class="ant-btn ant-btn-primary"><span>@(Item.Id == Guid.Empty ? "Create" : "Update")</span></button>
+                        <button type="submit" class="ant-btn ant-btn-primary"><span>@(IsNew ? "Create" : "Save")</span></button>
                         <a href="/{{ entity_name_plural | string.downcase }}" class="ant-btn ant-btn-default"><span>Cancel</span></a>
                     </div>
                 </EditForm>
@@ -57,19 +65,53 @@
     [Parameter]
     public Guid? Id { get; set; }
 
-    private {{ entity_name }}Dto? Item { get; set; }
+    private FormModel? form;
+    private string? error;
+
+    private bool IsNew => form is null || form.Id == Guid.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        Item = Id.HasValue && Id.Value != Guid.Empty
-            ? await Http.GetFromJsonAsync<{{ entity_name }}Dto>($"/api/{{ entity_name_plural | string.downcase }}/{Id}")
-            : new {{ entity_name }}Dto();
+        if (Id is null || Id == Guid.Empty)
+        {
+            form = new FormModel();
+            return;
+        }
+
+        var existing = await Api.GetByIdAsync(Id.Value);
+        form = existing is null
+            ? new FormModel()
+            : new FormModel { Id = existing.Id{{ for f in fields }}, {{ f.name }} = existing.{{ f.name }}{{ end }} };
     }
 
     private async Task HandleSubmit()
     {
-        // TODO: save through the API
+        error = null;
+        try
+        {
+            var saved = IsNew
+                ? await Api.CreateAsync(new Create{{ entity_name }}Dto { {{ for f in fields }}{{ f.name }} = form!.{{ f.name }}{{ if !for.last }}, {{ end }}{{ end }} }) != Guid.Empty
+                : await Api.UpdateAsync(form!.Id, new Update{{ entity_name }}Dto { {{ for f in fields }}{{ f.name }} = form!.{{ f.name }}{{ if !for.last }}, {{ end }}{{ end }} });
+            if (!saved)
+            {
+                error = "The API refused the change.";
+                return;
+            }
+        }
+        catch (HttpRequestException)
+        {
+            error = "The API could not be reached.";
+            return;
+        }
+
         Navigation.NavigateTo("/{{ entity_name_plural | string.downcase }}");
-        await Task.CompletedTask;
     }
+
+    private sealed class FormModel
+    {
+        public Guid Id { get; set; }
+{{ for f in fields }}
+{{ if f.required }}        [Required]
+{{ end }}        public {{ f.type }} {{ f.name }} { get; set; }{{ if f.type == "string" }} = string.Empty;{{ end }}
+{{ end }}    }
 }

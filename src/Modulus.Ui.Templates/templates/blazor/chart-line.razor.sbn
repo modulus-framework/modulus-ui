@@ -1,6 +1,7 @@
 @* Line chart: sample data below, replace it with your own (a query, an API call). *@
 @page "/charts/line"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ end }}
 @using Modulus.Blazor.Components.Charts
 @using Modulus.Ui.Abstractions.Charts
 

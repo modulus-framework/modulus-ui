@@ -1,6 +1,7 @@
 @* Heatmap: sample data below, replace it with your own (a query, an API call). *@
 @page "/charts/heatmap"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ end }}
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @using Modulus.Ui.Abstractions.Charts
 @{

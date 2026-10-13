@@ -2,7 +2,8 @@
 @page "/permissions/{{ entity_route }}"
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
 @addTagHelper *, Modulus.AspNetCore.Mvc
-@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ end }}
 @{
     ViewData["Title"] = "{{ entity_name }} permissions";
     var csrf = Antiforgery.GetAndStoreTokens(HttpContext).RequestToken;

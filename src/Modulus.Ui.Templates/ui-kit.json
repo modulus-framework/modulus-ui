@@ -23,15 +23,22 @@
         ]
       },
       "packages": {
-        "mvc": ["Modulus.AspNetCore.Mvc", "Modulus.Ui.Assets", "Modulus.Ui.Abstractions", "Modulus.AspNetCore.Hosting"],
-        "razor-pages": ["Modulus.AspNetCore.Mvc", "Modulus.Ui.Assets", "Modulus.Ui.Abstractions", "Modulus.AspNetCore.Hosting"],
-        "blazor": ["Modulus.Blazor", "Modulus.Ui.Assets", "Modulus.Ui.Abstractions", "Modulus.AspNetCore.Hosting"],
-        "fluid": ["Modulus.AspNetCore.Fluid", "Modulus.Ui.Assets", "Modulus.AspNetCore.Hosting"]
+        "mvc": ["Synvro.Modulus.AspNetCore.Mvc", "Synvro.Modulus.Ui.Assets", "Synvro.Modulus.Ui.Abstractions", "Synvro.Modulus.AspNetCore.Hosting"],
+        "razor-pages": ["Synvro.Modulus.AspNetCore.Mvc", "Synvro.Modulus.Ui.Assets", "Synvro.Modulus.Ui.Abstractions", "Synvro.Modulus.AspNetCore.Hosting"],
+        "blazor": ["Synvro.Modulus.Blazor", "Synvro.Modulus.Ui.Assets", "Synvro.Modulus.Ui.Abstractions", "Synvro.Modulus.AspNetCore.Hosting"],
+        "fluid": ["Synvro.Modulus.AspNetCore.Fluid", "Synvro.Modulus.Ui.Assets", "Synvro.Modulus.AspNetCore.Hosting"]
       }
     },
     "crud": {
       "description": "CRUD pages for an entity of a module: a list with delete and a create/edit form, over the module's API through a typed client. Added by `modulus ui create-crud`.",
       "files": {
+        "mvc": [
+          "Controllers/[Entities]Controller.cs",
+          "Views/[Entities]/Index.cshtml",
+          "Views/[Entities]/Edit.cshtml",
+          "ApiClients/[Entity]ApiClient.cs",
+          "Menu/[Entities]MenuContributor.cs"
+        ],
         "razor-pages": [
           "Pages/[Entities]/Index.cshtml",
           "Pages/[Entities]/Index.cshtml.cs",
@@ -48,8 +55,9 @@
         ]
       },
       "packages": {
-        "razor-pages": ["Modulus.AspNetCore.Mvc", "Modulus.Ui.Abstractions"],
-        "blazor": ["Modulus.Blazor", "Modulus.Ui.Abstractions"]
+        "mvc": ["Synvro.Modulus.AspNetCore.Mvc", "Synvro.Modulus.Ui.Abstractions"],
+        "razor-pages": ["Synvro.Modulus.AspNetCore.Mvc", "Synvro.Modulus.Ui.Abstractions"],
+        "blazor": ["Synvro.Modulus.Blazor", "Synvro.Modulus.Ui.Abstractions"]
       }
     },
     "auth": {
@@ -76,9 +84,9 @@
         ]
       },
       "packages": {
-        "mvc": ["Modulus.Ui.Abstractions"],
-        "razor-pages": ["Modulus.Ui.Abstractions"],
-        "blazor": ["Modulus.Ui.Abstractions"],
+        "mvc": ["Synvro.Modulus.Ui.Abstractions"],
+        "razor-pages": ["Synvro.Modulus.Ui.Abstractions"],
+        "blazor": ["Synvro.Modulus.Ui.Abstractions"],
         "fluid": []
       }
     },
@@ -116,9 +124,9 @@
         "fluid": []
       },
       "packages": {
-        "mvc": ["Modulus.Ui.Abstractions"],
-        "razor-pages": ["Modulus.Ui.Abstractions"],
-        "blazor": ["Modulus.Ui.Abstractions"],
+        "mvc": ["Synvro.Modulus.Ui.Abstractions"],
+        "razor-pages": ["Synvro.Modulus.Ui.Abstractions"],
+        "blazor": ["Synvro.Modulus.Ui.Abstractions"],
         "fluid": []
       }
     },
@@ -306,16 +314,16 @@
       },
       "packages": {
         "mvc": [
-          "Modulus.AspNetCore.Mvc",
-          "Modulus.Ui.Abstractions"
+          "Synvro.Modulus.AspNetCore.Mvc",
+          "Synvro.Modulus.Ui.Abstractions"
         ],
         "razor-pages": [
-          "Modulus.AspNetCore.Mvc",
-          "Modulus.Ui.Abstractions"
+          "Synvro.Modulus.AspNetCore.Mvc",
+          "Synvro.Modulus.Ui.Abstractions"
         ],
         "blazor": [
-          "Modulus.Blazor",
-          "Modulus.Ui.Abstractions"
+          "Synvro.Modulus.Blazor",
+          "Synvro.Modulus.Ui.Abstractions"
         ]
       },
       "setup": [
@@ -339,9 +347,9 @@
         ]
       },
       "packages": {
-        "mvc": ["Modulus.Ui.Abstractions"],
-        "razor-pages": ["Modulus.Ui.Abstractions"],
-        "blazor": ["Modulus.Ui.Abstractions"]
+        "mvc": ["Synvro.Modulus.Ui.Abstractions"],
+        "razor-pages": ["Synvro.Modulus.Ui.Abstractions"],
+        "blazor": ["Synvro.Modulus.Ui.Abstractions"]
       }
     },
     "tenant-management": {
@@ -364,9 +372,9 @@
         ]
       },
       "packages": {
-        "mvc": ["Modulus.Ui.Abstractions"],
-        "razor-pages": ["Modulus.Ui.Abstractions"],
-        "blazor": ["Modulus.Ui.Abstractions"]
+        "mvc": ["Synvro.Modulus.Ui.Abstractions"],
+        "razor-pages": ["Synvro.Modulus.Ui.Abstractions"],
+        "blazor": ["Synvro.Modulus.Ui.Abstractions"]
       }
     },
     "user-management": {
@@ -386,9 +394,9 @@
         ]
       },
       "packages": {
-        "mvc": ["Modulus.Ui.Abstractions"],
-        "razor-pages": ["Modulus.Ui.Abstractions"],
-        "blazor": ["Modulus.Ui.Abstractions"]
+        "mvc": ["Synvro.Modulus.Ui.Abstractions"],
+        "razor-pages": ["Synvro.Modulus.Ui.Abstractions"],
+        "blazor": ["Synvro.Modulus.Ui.Abstractions"]
       }
     }
   },

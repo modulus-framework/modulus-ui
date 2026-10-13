@@ -1,5 +1,6 @@
 @page "/modules/{moduleName}"
-@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ end }}
 
 <PageTitle>@ModuleName Module</PageTitle>
 

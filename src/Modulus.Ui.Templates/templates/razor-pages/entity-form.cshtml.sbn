@@ -1,5 +1,6 @@
 @* Form partial for {{ entity_name }}: render it from a page that has its own PageModel and [Authorize]. It is not a page itself, so it has no @page. *@
 @addTagHelper *, Modulus.AspNetCore.Mvc
+@using {{ module_namespace }}.Application.Dtos
 @model {{ entity_name }}Dto
 @{
     ViewData["Title"] = Model?.Id == Guid.Empty ? "Create {{ entity_name }}" : "Edit {{ entity_name }}";

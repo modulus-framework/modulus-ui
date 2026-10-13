@@ -1,4 +1,5 @@
 @addTagHelper *, Modulus.AspNetCore.Mvc
+@using {{ module_namespace }}.Application.Dtos
 @model {{ entity_name }}Dto
 @{
     ViewData["Title"] = Model?.Id == Guid.Empty ? "Create {{ entity_name }}" : "Edit {{ entity_name }}";
