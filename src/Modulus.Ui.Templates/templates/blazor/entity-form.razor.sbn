@@ -2,7 +2,7 @@
 {{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 {{ end }}
 @using System.ComponentModel.DataAnnotations
-@using {{ ui_namespace }}.ApiClients
+@using {{ ui_namespace }}.Services.ApiClients
 @using {{ module_namespace }}.Application.Dtos
 @inject {{ entity_name }}ApiClient Api
 @inject NavigationManager Navigation
@@ -38,13 +38,13 @@
                         <div class="ant-form-item-label"><label class="{{ if f.required }}ant-form-item-required{{ end }}">{{ f.label }}</label></div>
                         <div class="ant-form-item-control">
 {{ if f.kind == "textarea" ~}}
-                            <InputTextArea @bind-Value="form.{{ f.name }}" class="ant-input" rows="4" />
+                            <InputTextArea @bind-Value="form.{{ f.name }}" placeholder="Enter {{ f.label | string.downcase }}" class="ant-input" rows="4" />
 {{ else if f.kind == "number" ~}}
-                            <InputNumber @bind-Value="form.{{ f.name }}" class="ant-input" />
+                            <InputNumber @bind-Value="form.{{ f.name }}" placeholder="Enter {{ f.label | string.downcase }}" class="ant-input" />
 {{ else if f.kind == "date" || f.kind == "datetime" ~}}
-                            <InputDate @bind-Value="form.{{ f.name }}" class="ant-input" />
+                            <InputDate @bind-Value="form.{{ f.name }}" placeholder="Enter {{ f.label | string.downcase }}" class="ant-input" />
 {{ else ~}}
-                            <InputText @bind-Value="form.{{ f.name }}" class="ant-input" />
+                            <InputText @bind-Value="form.{{ f.name }}" placeholder="Enter {{ f.label | string.downcase }}" class="ant-input" />
 {{ end ~}}
                             <ValidationMessage For="() => form.{{ f.name }}" class="ant-form-item-explain-error" />
                         </div>

@@ -1,0 +1,15 @@
+@model DashboardStats
+
+<app-page-header pretitle="Overview" title="Dashboard" subtitle="Customers and revenue at a glance."></app-page-header>
+
+<app-row gutter="16">
+    <app-col xs="24" md="8">
+        <app-statistic-card title="Customers" value="@Model.Total.ToString("N0")"></app-statistic-card>
+    </app-col>
+    <app-col xs="24" md="8">
+        <app-statistic-card title="Active" value="@Model.Active.ToString("N0")"></app-statistic-card>
+    </app-col>
+    <app-col xs="24" md="8">
+        <app-statistic-card title="Revenue" value="@Model.Revenue.ToString("C0")"></app-statistic-card>
+    </app-col>
+</app-row>

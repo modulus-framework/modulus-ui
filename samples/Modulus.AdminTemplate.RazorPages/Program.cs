@@ -26,7 +26,7 @@ builder.Services.AddRazorPages(o =>
 // Saved views in a SQLite file (App_Data/ui-state.db), so they outlive a restart; without it they stay in memory.
 builder.Services.AddSampleUiState(builder.Environment.ContentRootPath);
 builder.Services.AddModulusMvc(theme => builder.Configuration.GetSection("Modulus:Theme").Bind(theme));
-// Compression, security headers, the CSP (enforced: the pages report no violations, see docs/UPGRADING.md), and /health.
+// Compression, security headers, the CSP (enforced: the pages report no violations, see docs/DOCUMENTATION.md#upgrading-ant-design-blazor-htmx-alpinejs-and-the-plugin-libraries), and /health.
 builder.Services.AddModulusHardening(o => o.CspEnforce = true);
 builder.Services.AddModulusObservability();
 builder.Services.AddTransient<IMenuContributor, AdminMenuContributor>();

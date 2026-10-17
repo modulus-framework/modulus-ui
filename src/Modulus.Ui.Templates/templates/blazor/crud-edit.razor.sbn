@@ -1,39 +1,33 @@
-@* Create and edit page for {{ entity_name }}: posts to the {{ module_name }} API through {{ entity_name }}ApiClient *@
+@* Edit page for {{ entity_name }}: loads and saves the {{ entity_name | string.downcase }} through {{ entity_name }}ApiClient *@
 @page "/{{ route }}/edit"
 {{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 {{ end }}
-@using System.ComponentModel.DataAnnotations
-@using {{ ui_namespace }}.ApiClients
+@using {{ module_namespace }}.Application.Dtos
+@using {{ ui_namespace }}.Services.ApiClients
 @inject {{ entity_name }}ApiClient Api
 @inject NavigationManager Navigation
 
-<PageTitle>@(IsNew ? "New" : "Edit") {{ entity_name | string.downcase }}</PageTitle>
+<PageTitle>Edit {{ entity_name | string.downcase }}</PageTitle>
 
 <div class="m-page-header">
-    <div class="m-page-header-text"><div class="m-pretitle">{{ entity_name_plural }}</div><h1 class="m-page-title">@(IsNew ? "New" : "Edit") {{ entity_name | string.downcase }}</h1></div>
+    <div class="m-page-header-text"><div class="m-pretitle">{{ entity_name_plural }}</div><h1 class="m-page-title">Edit {{ entity_name | string.downcase }}</h1></div>
 </div>
 
 <div class="m-grid m-cols-main">
     <div class="m-card">
         <div class="m-card-body">
-            @if (_error is not null)
+            @if (_input is null)
             {
-                <div class="ant-alert m-mb-16 ant-alert-error" role="alert"><div class="ant-alert-content"><div class="ant-alert-message">@_error</div></div></div>
+                <p class="m-muted">Loading...</p>
             }
-            <EditForm Model="_input" OnValidSubmit="SaveAsync" class="ant-form ant-form-vertical">
-                <DataAnnotationsValidator />
-                <div class="ant-form-item">
-                    <div class="ant-form-item-label"><label class="ant-form-item-required" for="name">Name</label></div>
-                    <div class="ant-form-item-control">
-                        <InputText id="name" @bind-Value="_input.Name" class="ant-input" />
-                        <ValidationMessage For="() => _input.Name" class="ant-form-item-explain-error" />
-                    </div>
-                </div>
-                <div class="m-form-actions">
-                    <button type="submit" class="ant-btn ant-btn-primary" disabled="@_busy"><span>@(IsNew ? "Create" : "Save")</span></button>
-                    <a href="/{{ route }}" class="ant-btn ant-btn-default"><span>Cancel</span></a>
-                </div>
-            </EditForm>
+            else
+            {
+                @if (_error is not null)
+                {
+                    <div class="ant-alert m-mb-16 ant-alert-error" role="alert"><div class="ant-alert-content"><div class="ant-alert-message">@_error</div></div></div>
+                }
+                <{{ entity_name }}Editor Input="_input" IsNew="false" Busy="_busy" OnSave="SaveAsync" />
+            }
         </div>
     </div>
 </div>
@@ -41,34 +35,36 @@
 @code {
     [SupplyParameterFromQuery] public Guid? Id { get; set; }
 
-    private sealed class Input
-    {
-        [Required, StringLength(200)] public string Name { get; set; } = "";
-    }
-
-    private Input _input = new();
+    private {{ entity_name }}Editor.FormInput? _input;
     private string? _error;
     private bool _busy;
 
-    private bool IsNew => Id is null || Id == Guid.Empty;
-
     protected override async Task OnInitializedAsync()
     {
-        if (IsNew) return;
-        var existing = await Api.GetByIdAsync(Id!.Value);
-        if (existing is null) { Navigation.NavigateTo("/{{ route }}"); return; }
-        _input = new Input { Name = existing.Name };
+        if (Id is null || Id == Guid.Empty)
+        {
+            Navigation.NavigateTo("/{{ route }}/new", replace: true);
+            return;
+        }
+
+        var existing = await Api.GetByIdAsync(Id.Value);
+        if (existing is null)
+        {
+            Navigation.NavigateTo("/{{ route }}");
+            return;
+        }
+
+        _input = new {{ entity_name }}Editor.FormInput { Name = existing.Name };
     }
 
-    private async Task SaveAsync()
+    private async Task SaveAsync({{ entity_name }}Editor.FormInput input)
     {
         _busy = true;
+        _error = null;
         try
         {
-            var ok = IsNew
-                ? await Api.CreateAsync(new Create{{ entity_name }}Dto { Name = _input.Name }) != Guid.Empty
-                : await Api.UpdateAsync(Id!.Value, new Update{{ entity_name }}Dto { Name = _input.Name });
-            if (ok) Navigation.NavigateTo("/{{ route }}");
+            var updated = await Api.UpdateAsync(Id!.Value, new Update{{ entity_name }}Dto { Name = input.Name });
+            if (updated) Navigation.NavigateTo("/{{ route }}");
             else _error = "The API refused the change.";
         }
         catch (HttpRequestException)

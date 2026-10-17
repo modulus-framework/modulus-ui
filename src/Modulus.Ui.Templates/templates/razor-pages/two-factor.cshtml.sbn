@@ -28,7 +28,7 @@
                 <form id="enable-form" class="ant-form ant-form-vertical" novalidate>
                     <div class="ant-form-item">
                         <div class="ant-form-item-label"><label for="code">Code from the app</label></div>
-                        <div class="ant-form-item-control"><input id="code" class="ant-input" inputmode="numeric" autocomplete="one-time-code" /></div>
+                        <div class="ant-form-item-control"><input id="code" placeholder="Enter the 6-digit code" class="ant-input" inputmode="numeric" autocomplete="one-time-code" /></div>
                     </div>
                     <app-button type="primary" html-type="submit" id="enable">Turn on</app-button>
                 </form>
@@ -43,7 +43,7 @@
                 <form id="disable-form" class="ant-form ant-form-vertical" novalidate>
                     <div class="ant-form-item">
                         <div class="ant-form-item-label"><label for="password">Password (to turn it off)</label></div>
-                        <div class="ant-form-item-control"><input id="password" class="ant-input" type="password" autocomplete="current-password" /></div>
+                        <div class="ant-form-item-control"><input id="password" placeholder="Enter your password" class="ant-input" type="password" autocomplete="current-password" /></div>
                     </div>
                     <app-button id="disable" html-type="submit" danger="true">Turn off two-factor authentication</app-button>
                 </form>

@@ -1,0 +1,23 @@
+@model IReadOnlyList<Customer>
+@{
+    var keyword = ViewData["Keyword"] as string;
+}
+
+<app-page-header pretitle="Sales" title="Customers" subtitle="Everyone who buys from us.">
+    <app-button type="primary" icon="plus" @@click="$store.drawer.load('/customers/form', 'Add customer')">Add customer</app-button>
+</app-page-header>
+
+<app-card title="All customers">
+    <form method="get" action="/customers" style="display: flex; gap: 8px; margin-bottom: 16px;">
+        <app-input name="keyword" value="@keyword" placeholder="Search name or company" style="max-width: 320px;"></app-input>
+        <app-button html-type="submit">Search</app-button>
+    </form>
+
+    @* The table reloads itself whenever a save or delete sends the customers:refresh event. *@
+    <div id="customer-table"
+         hx-get="/customers/table?keyword=@Uri.EscapeDataString(keyword ?? "")"
+         hx-trigger="customers:refresh from:body"
+         hx-swap="innerHTML">
+        @await Html.PartialAsync("_Table", Model)
+    </div>
+</app-card>

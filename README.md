@@ -115,7 +115,7 @@ pixel-for-pixel where the controls allow it.
   through htmx `hx-boost`. The server answers with only the page body, the sidebar and the header, so scripts and
   Alpine state stay loaded. It aborts stale navigations, shows a progress bar, prefetches on hover (`SpaPrefetch`),
   restores scroll positions and moves focus to the page. Page code runs through `Modulus.page(fn)` or
-  `Modulus.onPage(fn)`. See [UPGRADING](docs/UPGRADING.md#spa-navigation-and-ishtmx) before turning it on.
+  `Modulus.onPage(fn)`. See [UPGRADING](docs/DOCUMENTATION.md#spa-navigation-and-ishtmx) before turning it on.
 - **Liquid templates** (`Modulus.AspNetCore.Fluid`, Fluid 2.40.0): pages and documents written as `.liquid` files, with a layout
   (`{{ content }}` is the page body) and the same markup as the components. Every printed value is HTML-escaped; only a
   `LiquidHtml` is printed as it is. `{% modulus_head %}` links the Modulus stylesheets and scripts, `{% icon "name" %}` draws
@@ -126,7 +126,7 @@ pixel-for-pixel where the controls allow it.
   text, the security headers (no MIME sniffing, a referrer policy, same-site framing, no camera, microphone or location), and a
   Content-Security-Policy with a per-request nonce (`CspNonce.Of(Context)`). MVC and Razor Pages enforce it; Blazor reports
   it, because its import map is an inline script with no nonce. The `MapModulusHealth()` endpoint answers `/health`. `AddModulusObservability()` adds OpenTelemetry traces, metrics and logs, sent over OTLP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. The
-  versioned asset URLs the MVC head writes (`?v=`) are cached for a year. See [UPGRADING](docs/UPGRADING.md#hardening).
+  versioned asset URLs the MVC head writes (`?v=`) are cached for a year. See [UPGRADING](docs/DOCUMENTATION.md#hardening).
 - **Charts with no JS dependency**: `LineChart` (line/area, crosshair tooltip), `ColumnChart` (grouped/stacked),
   `BarChart`, `DonutChart`, `HeatmapChart`, `Sparkline`, `MiniBar`, plus business charts (treemap, pareto, waterfall,
   variance, bullet, gauge, funnel, combo and more). The geometry is shared by Blazor and MVC, hover tooltips are
@@ -364,7 +364,7 @@ the first paint.
 | `samples/Modulus.Samples.Web` | Page bodies (`Views/Shared/Ui/**`) shared by MVC and Razor Pages: controllers and page models only bind input and pick the view |
 | `tests/*` | bUnit component tests, palette/menu/table/chart unit tests, tag helper and icon tests, the Liquid and hosting tests |
 | `tests/browser` | The quality gates (CI's `browser` job, run against the samples on 5100 to 5103): `smoke.py` (pages, console, CSP, compression, health, SPA), `parity.py` (the pivot markup across the flavours) and `budgets.py` (gzipped asset sizes, in the build job) |
-| `tools/antd-drift` | Checks the manifest and aliases against the pinned AntDesign package (see [UPGRADING](docs/UPGRADING.md)) |
+| `tools/antd-drift` | Checks the manifest and aliases against the pinned AntDesign package (see [UPGRADING](docs/DOCUMENTATION.md#upgrading-ant-design-blazor-htmx-alpinejs-and-the-plugin-libraries)) |
 
 ## Build, test, run
 
@@ -400,7 +400,7 @@ CI packs `-ci.<run>` prereleases as the `packages` artifact; a local `dotnet pac
   v5 menu and table styling) over it. The result looks like modern Ant Design Pro, but it is not pixel-identical to antd v5.
 - **Brand colour in dark mode is generated.** AntDesign's dark stylesheet hard-codes antd blue, so
   `antd-dark-brand.css` repeats the declarations that use it with the brand's dark palette. It is generated from the
-  pinned AntDesign version; `tools/antd-drift` fails when it no longer matches (see [UPGRADING](docs/UPGRADING.md)).
+  pinned AntDesign version; `tools/antd-drift` fails when it no longer matches (see [UPGRADING](docs/DOCUMENTATION.md#upgrading-ant-design-blazor-htmx-alpinejs-and-the-plugin-libraries)).
 - **Icons in MVC** reuse Ant Design Blazor's icon store through reflection, because the API is internal. A unit test fails
   if an AntDesign upgrade moves it.
 - **Interactive MVC widgets need Alpine.** Cascader, TreeSelect, Transfer, Tree, Calendar, Carousel, Anchor, Mentions,
@@ -424,11 +424,11 @@ CI packs `-ci.<run>` prereleases as the `packages` artifact; a local `dotnet pac
 
 ## Documentation
 
-- [docs/DESIGN.md](docs/DESIGN.md): design decisions and the analysis of other Ant Design-based libraries they come from
-- [docs/UPGRADING.md](docs/UPGRADING.md): upgrading AntDesign, htmx, Alpine.js and the plugin libraries safely, and
-  turning on SPA navigation
-- [DEPENDENCIES.md](DEPENDENCIES.md): every NuGet package, vendored script, font and icon set, with its version and
-  licence
-- [docs/PLAN.md](docs/PLAN.md): the plan, page inventory, verification results and change log
-- Roadmap: what is planned next — [docs/PLAN.md](docs/PLAN.md) §7 (Modulus 2.0) and §7.3 (ERP UI roadmap)
+All the framework's documentation (the CLI commands, upgrading, design notes, templates status, the plan and the roadmaps) is in one file, [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md). Its contents list links to each part:
+
+- [Design notes](docs/DOCUMENTATION.md#modulus-ui--design-notes): design decisions and the analysis of other Ant Design-based libraries they come from
+- [Upgrading](docs/DOCUMENTATION.md#upgrading-ant-design-blazor-htmx-alpinejs-and-the-plugin-libraries): upgrading AntDesign, htmx, Alpine.js and the plugin libraries safely, and turning on SPA navigation
+- [DEPENDENCIES.md](DEPENDENCIES.md): every NuGet package, vendored script, font and icon set, with its version and licence
+- [Plan and progress](docs/DOCUMENTATION.md#plan-and-progress): the plan, page inventory, verification results and change log
+- Roadmap: what is planned next, in [Plan and progress](docs/DOCUMENTATION.md#plan-and-progress) §7 (Modulus 2.0) and §7.3 (ERP UI roadmap)
 - `manifest/antd-coverage.json`: component-by-component coverage, verified in CI

@@ -1,0 +1,49 @@
+@* Create page for {{ entity_name }}: posts to the {{ module_name }} API through {{ entity_name }}ApiClient *@
+@page "/{{ route }}/new"
+{{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ end }}
+@using {{ module_namespace }}.Application.Dtos
+@using {{ ui_namespace }}.Services.ApiClients
+@inject {{ entity_name }}ApiClient Api
+@inject NavigationManager Navigation
+
+<PageTitle>New {{ entity_name | string.downcase }}</PageTitle>
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">{{ entity_name_plural }}</div><h1 class="m-page-title">New {{ entity_name | string.downcase }}</h1></div>
+</div>
+
+<div class="m-grid m-cols-main">
+    <div class="m-card">
+        <div class="m-card-body">
+            @if (_error is not null)
+            {
+                <div class="ant-alert m-mb-16 ant-alert-error" role="alert"><div class="ant-alert-content"><div class="ant-alert-message">@_error</div></div></div>
+            }
+            <{{ entity_name }}Editor Input="_input" IsNew="true" Busy="_busy" OnSave="SaveAsync" />
+        </div>
+    </div>
+</div>
+
+@code {
+    private {{ entity_name }}Editor.FormInput _input = new();
+    private string? _error;
+    private bool _busy;
+
+    private async Task SaveAsync({{ entity_name }}Editor.FormInput input)
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            var created = await Api.CreateAsync(new Create{{ entity_name }}Dto { Name = input.Name }) != Guid.Empty;
+            if (created) Navigation.NavigateTo("/{{ route }}");
+            else _error = "The API refused the change.";
+        }
+        catch (HttpRequestException)
+        {
+            _error = "The API could not be reached.";
+        }
+        finally { _busy = false; }
+    }
+}

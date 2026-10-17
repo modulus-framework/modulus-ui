@@ -42,7 +42,7 @@ else
                 <div class="m-form-grid">
                     <div class="ant-form-item">
                         <div class="ant-form-item-label"><label for="tenant-name">Tenant name</label></div>
-                        <div class="ant-form-item-control"><input id="tenant-name" class="ant-input" @bind="_details.Name" /></div>
+                        <div class="ant-form-item-control"><input id="tenant-name" placeholder="Company name" class="ant-input" @bind="_details.Name" /></div>
                     </div>
                     <div class="ant-form-item">
                         <div class="ant-form-item-label"><label for="tenant-domain">Domain</label></div>
@@ -50,7 +50,7 @@ else
                     </div>
                     <div class="ant-form-item m-span-2">
                         <div class="ant-form-item-label"><label for="tenant-description">Description</label></div>
-                        <div class="ant-form-item-control"><textarea id="tenant-description" class="ant-input" rows="4" @bind="_details.Description"></textarea></div>
+                        <div class="ant-form-item-control"><textarea id="tenant-description" placeholder="Describe the company" class="ant-input" rows="4" @bind="_details.Description"></textarea></div>
                     </div>
                 </div>
                 <div class="m-form-actions">

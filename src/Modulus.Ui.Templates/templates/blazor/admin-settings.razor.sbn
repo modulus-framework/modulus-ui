@@ -35,11 +35,11 @@
             <div class="m-form-grid">
                 <div class="ant-form-item">
                     <div class="ant-form-item-label"><label for="app-name">Application name</label></div>
-                    <div class="ant-form-item-control"><input id="app-name" class="ant-input" @bind="_settings.AppName" /></div>
+                    <div class="ant-form-item-control"><input id="app-name" placeholder="Application name" class="ant-input" @bind="_settings.AppName" /></div>
                 </div>
                 <div class="ant-form-item">
                     <div class="ant-form-item-label"><label for="support-email">Support email</label></div>
-                    <div class="ant-form-item-control"><input id="support-email" type="email" class="ant-input" @bind="_settings.SupportEmail" /></div>
+                    <div class="ant-form-item-control"><input id="support-email" placeholder="name@example.com" type="email" class="ant-input" @bind="_settings.SupportEmail" /></div>
                 </div>
                 <div class="ant-form-item">
                     <div class="ant-form-item-label"><label for="time-zone">Time zone</label></div>

@@ -6,7 +6,7 @@ Browser smoke gate for the three admin templates (and the Liquid sample). Run it
 
 It fails (exit 1) when a page does not answer 200, logs a console error, or the Content-Security-Policy reports a violation.
 Blazor sends its policy report-only and its import map is an inline script with no nonce, so its only allowed violation is that
-one (see docs/UPGRADING.md). The Liquid sample is checked for status, health and headers only.
+one (see docs/DOCUMENTATION.md#upgrading-ant-design-blazor-htmx-alpinejs-and-the-plugin-libraries). The Liquid sample is checked for status, health and headers only.
 
 Set MODULUS_CHROMIUM to a browser executable to use one other than Playwright's own.
 """

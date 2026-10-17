@@ -33,25 +33,34 @@
       "description": "CRUD pages for an entity of a module: a list with delete and a create/edit form, over the module's API through a typed client. Added by `modulus ui create-crud`.",
       "files": {
         "mvc": [
-          "Controllers/[Entities]Controller.cs",
+          "Controllers/[Module]/[Entities]Controller.cs",
           "Views/[Entities]/Index.cshtml",
+          { "path": "Views/[Entities]/Create.cshtml", "template": "crud-create.cshtml.sbn" },
           "Views/[Entities]/Edit.cshtml",
-          "ApiClients/[Entity]ApiClient.cs",
-          "Menu/[Entities]MenuContributor.cs"
+          { "path": "Views/[Entities]/_Form.cshtml", "template": "crud-form.cshtml.sbn" },
+          "Services/ApiClients/[Entity]ApiClient.cs",
+          "Components/Navigation/Menu/[Entities]MenuContributor.cs"
         ],
         "razor-pages": [
-          "Pages/[Entities]/Index.cshtml",
-          "Pages/[Entities]/Index.cshtml.cs",
-          "Pages/[Entities]/Edit.cshtml",
-          "Pages/[Entities]/Edit.cshtml.cs",
-          "ApiClients/[Entity]ApiClient.cs",
-          "Menu/[Entities]MenuContributor.cs"
+          "Pages/[Module]/[Entities]/Index.cshtml",
+          "Pages/[Module]/[Entities]/Index.cshtml.cs",
+          { "path": "Pages/[Module]/[Entities]/_List.cshtml", "template": "crud-list.cshtml.sbn" },
+          { "path": "Pages/[Module]/[Entities]/Create.cshtml", "template": "crud-create.cshtml.sbn" },
+          "Pages/[Module]/[Entities]/Create.cshtml.cs",
+          "Pages/[Module]/[Entities]/Edit.cshtml",
+          "Pages/[Module]/[Entities]/Edit.cshtml.cs",
+          { "path": "Pages/[Module]/[Entities]/_Form.cshtml", "template": "crud-form.cshtml.sbn" },
+          { "path": "Pages/[Module]/[Entities]/[Entity]ViewModels.cs", "template": null },
+          "Services/ApiClients/[Entity]ApiClient.cs",
+          "Components/Navigation/Menu/[Entities]MenuContributor.cs"
         ],
         "blazor": [
-          "Components/Pages/[Entities]/Index.razor",
-          "Components/Pages/[Entities]/Edit.razor",
-          "ApiClients/[Entity]ApiClient.cs",
-          "Menu/[Entities]MenuContributor.cs"
+          "Components/Pages/[Module]/[Entities]/Index.razor",
+          { "path": "Components/Pages/[Module]/[Entities]/Create.razor", "template": "crud-create.razor.sbn" },
+          "Components/Pages/[Module]/[Entities]/Edit.razor",
+          { "path": "Components/Pages/[Module]/[Entities]/[Entity]Editor.razor", "template": "crud-form.razor.sbn" },
+          "Services/ApiClients/[Entity]ApiClient.cs",
+          "Components/Navigation/Menu/[Entities]MenuContributor.cs"
         ]
       },
       "packages": {

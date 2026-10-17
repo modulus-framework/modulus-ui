@@ -1,12 +1,12 @@
 @* List page for {{ entity_name_plural }}: reads the {{ module_name }} API through {{ entity_name }}ApiClient. Controller: {{ entity_name_plural }}Controller *@
 @addTagHelper *, Modulus.AspNetCore.Mvc
-@model {{ ui_namespace }}.Controllers.{{ entity_name_plural }}Controller.IndexViewModel
+@model {{ ui_namespace }}.Controllers.{{ module_name }}.{{ entity_name_plural }}Controller.IndexViewModel
 @{
     ViewData["Title"] = "{{ entity_name_plural }}";
 }
 
 <app-page-header pretitle="{{ module_name }}" title="{{ entity_name_plural }}">
-    <app-button type="primary" href="/{{ route }}/edit">New {{ entity_name }}</app-button>
+    <app-button type="primary" href="/{{ route }}/new">New {{ entity_name }}</app-button>
 </app-page-header>
 
 @if (Model.Message is not null)
@@ -21,7 +21,7 @@
             <div class="m-empty">
                 <h3 class="m-empty-title">No {{ entity_name_plural | string.downcase }} yet</h3>
                 <p class="m-empty-subtitle">Create the first one to see it here.</p>
-                <app-button type="primary" href="/{{ route }}/edit">New {{ entity_name }}</app-button>
+                <app-button type="primary" href="/{{ route }}/new">New {{ entity_name }}</app-button>
             </div>
         }
         else

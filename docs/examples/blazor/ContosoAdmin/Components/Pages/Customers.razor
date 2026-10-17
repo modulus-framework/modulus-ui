@@ -1,0 +1,108 @@
+@page "/customers"
+@inject CustomerStore Store
+@inject IMessageService Message
+
+<PageTitle>Customers · Contoso Admin</PageTitle>
+
+<PageHeading Pretitle="Sales" Title="Customers" Subtitle="Everyone who buys from us.">
+    <Actions>
+        <Button Type="@ButtonType.Primary" Icon="plus" OnClick="OpenCreate">Add customer</Button>
+    </Actions>
+</PageHeading>
+
+<ProTable TItem="Customer" @ref="_table" HeaderTitle="All customers" RowKey="c => c.Id" Request="LoadAsync"
+          Selectable FiltersActive="!string.IsNullOrWhiteSpace(_keyword)" OnClearFilters="ClearSearch">
+    <ToolBar>
+        <Input @bind-Value="_keyword" Placeholder="Search name or company" AllowClear Style="width: 260px"
+               OnPressEnter="SearchAsync" OnClear="SearchAsync" />
+    </ToolBar>
+
+    <BatchActions Context="rows">
+        <Popconfirm Title="@($"Delete {rows.Count} customers?")" OkText="Delete" OnConfirm="() => DeleteAsync(rows.Select(r => r.Id))">
+            <Button Danger Size="@ButtonSize.Small">Delete selected</Button>
+        </Popconfirm>
+    </BatchActions>
+
+    <Columns Context="row">
+        <PropertyColumn Property="c => c.Name" Title="Name" Sortable />
+        <PropertyColumn Property="c => c.Company" Title="Company" Sortable />
+        <PropertyColumn Property="c => c.City" Title="City" />
+        <PropertyColumn Property="c => c.Revenue" Title="Revenue" Sortable Align="ColumnAlign.Right">
+            <span>@row.Revenue.ToString("C0")</span>
+        </PropertyColumn>
+        <ActionColumn Title="Actions" Width="140">
+            <Button Type="@ButtonType.Link" OnClick="() => OpenEdit(row)">Edit</Button>
+            <Popconfirm Title="@($"Delete {row.Name}?")" OkText="Delete" OnConfirm="() => DeleteAsync([row.Id])">
+                <Button Type="@ButtonType.Link" Danger>Delete</Button>
+            </Popconfirm>
+        </ActionColumn>
+    </Columns>
+</ProTable>
+
+<DrawerForm TModel="CustomerInput" Title="@(_editingId is null ? "Add customer" : "Edit customer")"
+            @bind-Visible="_drawerOpen" Model="_input" OnFinish="SaveAsync"
+            SubmitText="@(_editingId is null ? "Add customer" : "Save changes")">
+    <FormItem Label="Contact name"><Input @bind-Value="context.Name" Placeholder="Olivia Bennett" /></FormItem>
+    <FormItem Label="Company"><Input @bind-Value="context.Company" Placeholder="Northwind" /></FormItem>
+    <FormItem Label="Email"><Input @bind-Value="context.Email" Placeholder="olivia@northwind.com" /></FormItem>
+    <FormItem Label="City"><Input @bind-Value="context.City" Placeholder="London" /></FormItem>
+    <FormItem Label="Revenue"><InputNumber @bind-Value="context.Revenue" Min="0" Style="width: 100%" /></FormItem>
+    <FormItem Label="Active"><Switch @bind-Value="context.Active" /></FormItem>
+</DrawerForm>
+
+@code {
+    private ProTable<Customer>? _table;
+    private string? _keyword;
+    private bool _drawerOpen;
+    private int? _editingId;
+    private CustomerInput _input = new();
+
+    // ProTable calls this for every page, sort and search. Return the rows for the requested page.
+    private Task<ProTableResponse<Customer>> LoadAsync(ProTableRequest request) =>
+        Task.FromResult(Store.Query(request, _keyword));
+
+    private Task SearchAsync() => _table!.ReloadAsync(resetPage: true);
+
+    private Task ClearSearch()
+    {
+        _keyword = null;
+        return _table!.ReloadAsync(resetPage: true);
+    }
+
+    private void OpenCreate()
+    {
+        _editingId = null;
+        _input = new CustomerInput();
+        _drawerOpen = true;
+    }
+
+    private void OpenEdit(Customer customer)
+    {
+        _editingId = customer.Id;
+        _input = new CustomerInput
+        {
+            Name = customer.Name, Company = customer.Company, Email = customer.Email,
+            City = customer.City, Revenue = customer.Revenue, Active = customer.Active,
+        };
+        _drawerOpen = true;
+    }
+
+    // Returning true closes the drawer; the submit button shows a spinner while this runs.
+    private async Task<bool> SaveAsync(CustomerInput input)
+    {
+        if (_editingId is int id) Store.Update(id, input);
+        else Store.Add(input);
+
+        await Message.SuccessAsync(_editingId is null ? $"Added {input.Name}" : $"Saved {input.Name}");
+        await _table!.ReloadAsync();
+        return true;
+    }
+
+    private async Task DeleteAsync(IEnumerable<int> ids)
+    {
+        var list = ids.ToList();
+        Store.Delete(list);
+        await Message.SuccessAsync(list.Count == 1 ? "Customer deleted" : $"{list.Count} customers deleted");
+        await _table!.ReloadAsync();
+    }
+}

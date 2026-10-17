@@ -3,14 +3,14 @@
 {{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 {{ end }}
 @using {{ module_namespace }}.Application.Dtos
-@using {{ ui_namespace }}.ApiClients
+@using {{ ui_namespace }}.Services.ApiClients
 @inject {{ entity_name }}ApiClient Api
 
 <PageTitle>{{ entity_name_plural }}</PageTitle>
 
 <div class="m-page-header">
     <div class="m-page-header-text"><div class="m-pretitle">{{ module_name }}</div><h1 class="m-page-title">{{ entity_name_plural }}</h1></div>
-    <div class="m-page-actions"><a class="ant-btn ant-btn-primary" href="/{{ route }}/edit"><span>New {{ entity_name }}</span></a></div>
+    <div class="m-page-actions"><a class="ant-btn ant-btn-primary" href="/{{ route }}/new"><span>New {{ entity_name }}</span></a></div>
 </div>
 
 @if (_message is not null)
@@ -29,7 +29,7 @@
             <div class="m-empty">
                 <h3 class="m-empty-title">No {{ entity_name_plural | string.downcase }} yet</h3>
                 <p class="m-empty-subtitle">Create the first one to see it here.</p>
-                <a class="ant-btn ant-btn-primary" href="/{{ route }}/edit"><span>New {{ entity_name }}</span></a>
+                <a class="ant-btn ant-btn-primary" href="/{{ route }}/new"><span>New {{ entity_name }}</span></a>
             </div>
         }
         else

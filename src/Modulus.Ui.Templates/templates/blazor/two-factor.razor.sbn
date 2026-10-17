@@ -32,7 +32,7 @@
                 <div class="ant-form ant-form-vertical">
                     <div class="ant-form-item">
                         <div class="ant-form-item-label"><label for="code">Code from the app</label></div>
-                        <div class="ant-form-item-control"><input id="code" @bind="_code" class="ant-input" inputmode="numeric" autocomplete="one-time-code" /></div>
+                        <div class="ant-form-item-control"><input id="code" @bind="_code" placeholder="Enter the 6-digit code" class="ant-input" inputmode="numeric" autocomplete="one-time-code" /></div>
                     </div>
                 </div>
                 <button type="button" class="ant-btn ant-btn-primary" @onclick="EnableAsync"><span>Turn on</span></button>
@@ -47,7 +47,7 @@
             <div class="ant-form ant-form-vertical">
                 <div class="ant-form-item">
                     <div class="ant-form-item-label"><label for="password">Password (to turn it off)</label></div>
-                    <div class="ant-form-item-control"><input id="password" @bind="_password" type="password" class="ant-input" autocomplete="current-password" /></div>
+                    <div class="ant-form-item-control"><input id="password" @bind="_password" placeholder="Enter your password" type="password" class="ant-input" autocomplete="current-password" /></div>
                 </div>
             </div>
             <button type="button" class="ant-btn ant-btn-default ant-btn-dangerous" @onclick="DisableAsync"><span>Turn off two-factor authentication</span></button>

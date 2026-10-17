@@ -3,7 +3,7 @@
 Every third-party piece Modulus ships or calls, with its version, its licence and why it is there. All of them are
 open source except QuestPDF, which is free under its Community licence only (see its row); a commercial licence is needed
 for a public-sector body, a publicly traded company, or a business at USD 1,000,000 or more in annual gross revenue. Versions are pinned in one place each (see
-[docs/UPGRADING.md](docs/UPGRADING.md) for how to upgrade them).
+[docs/DOCUMENTATION.md#upgrading-ant-design-blazor-htmx-alpinejs-and-the-plugin-libraries](docs/DOCUMENTATION.md#upgrading-ant-design-blazor-htmx-alpinejs-and-the-plugin-libraries) for how to upgrade them).
 
 ## NuGet packages
 

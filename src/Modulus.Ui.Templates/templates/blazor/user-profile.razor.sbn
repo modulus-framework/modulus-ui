@@ -44,27 +44,27 @@
 
                 <div class="ant-form-item">
                     <div class="ant-form-item-label"><label for="first-name">First name</label></div>
-                    <div class="ant-form-item-control"><input id="first-name" class="ant-input" @bind="_profile.FirstName" /></div>
+                    <div class="ant-form-item-control"><input id="first-name" placeholder="First name" class="ant-input" @bind="_profile.FirstName" /></div>
                 </div>
                 <div class="ant-form-item">
                     <div class="ant-form-item-label"><label for="last-name">Last name</label></div>
-                    <div class="ant-form-item-control"><input id="last-name" class="ant-input" @bind="_profile.LastName" /></div>
+                    <div class="ant-form-item-control"><input id="last-name" placeholder="Last name" class="ant-input" @bind="_profile.LastName" /></div>
                 </div>
                 <div class="ant-form-item">
                     <div class="ant-form-item-label"><label for="email">Email</label></div>
-                    <div class="ant-form-item-control"><input id="email" type="email" class="ant-input" @bind="_profile.Email" /></div>
+                    <div class="ant-form-item-control"><input id="email" placeholder="name@example.com" type="email" class="ant-input" @bind="_profile.Email" /></div>
                 </div>
                 <div class="ant-form-item">
                     <div class="ant-form-item-label"><label for="phone">Phone</label></div>
-                    <div class="ant-form-item-control"><input id="phone" type="tel" class="ant-input" @bind="_profile.Phone" /></div>
+                    <div class="ant-form-item-control"><input id="phone" placeholder="e.g. +1 555 010 0100" type="tel" class="ant-input" @bind="_profile.Phone" /></div>
                 </div>
                 <div class="ant-form-item">
                     <div class="ant-form-item-label"><label for="job-title">Job title</label></div>
-                    <div class="ant-form-item-control"><input id="job-title" class="ant-input" @bind="_profile.JobTitle" /></div>
+                    <div class="ant-form-item-control"><input id="job-title" placeholder="e.g. Operations manager" class="ant-input" @bind="_profile.JobTitle" /></div>
                 </div>
                 <div class="ant-form-item">
                     <div class="ant-form-item-label"><label for="bio">Bio</label></div>
-                    <div class="ant-form-item-control"><textarea id="bio" class="ant-input" rows="4" @bind="_profile.Bio"></textarea></div>
+                    <div class="ant-form-item-control"><textarea id="bio" placeholder="Tell us about yourself" class="ant-input" rows="4" @bind="_profile.Bio"></textarea></div>
                 </div>
 
                 <div class="m-form-actions">

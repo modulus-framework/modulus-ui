@@ -30,7 +30,7 @@ builder.Services.AddRazorComponents()
 // Saved views in a SQLite file (App_Data/ui-state.db), so they outlive a restart; without it they stay in memory.
 builder.Services.AddSampleUiState(builder.Environment.ContentRootPath);
 builder.Services.AddModulusBlazor(theme => builder.Configuration.GetSection("Modulus:Theme").Bind(theme));
-// Compression, security headers and the CSP (report-only: Blazor's import map is an inline script with no nonce, see docs/UPGRADING.md), and /health.
+// Compression, security headers and the CSP (report-only: Blazor's import map is an inline script with no nonce, see docs/DOCUMENTATION.md#upgrading-ant-design-blazor-htmx-alpinejs-and-the-plugin-libraries), and /health.
 builder.Services.AddModulusHardening();
 builder.Services.AddModulusObservability();
 builder.Services.AddTransient<IMenuContributor, AdminMenuContributor>();

@@ -19,11 +19,11 @@
                 </app-form-item>
 {{ else if f.kind == "textarea" ~}}
                 <app-form-item asp-for="{{ f.name }}" label="{{ f.label }}">
-                    <app-textarea asp-for="{{ f.name }}" rows="4" />
+                    <app-textarea asp-for="{{ f.name }}" placeholder="Enter {{ f.label | string.downcase }}" rows="4" />
                 </app-form-item>
 {{ else ~}}
                 <app-form-item asp-for="{{ f.name }}" label="{{ f.label }}">
-                    <app-input asp-for="{{ f.name }}" type="{{ f.input_type }}" />
+                    <app-input asp-for="{{ f.name }}" type="{{ f.input_type }}" placeholder="Enter {{ f.label | string.downcase }}" />
                 </app-form-item>
 {{ end ~}}
 {{ end ~}}

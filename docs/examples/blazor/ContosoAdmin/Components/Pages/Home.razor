@@ -1,0 +1,18 @@
+﻿@page "/"
+@inject CustomerStore Store
+
+<PageTitle>Dashboard · Contoso Admin</PageTitle>
+
+<PageHeading Pretitle="Overview" Title="Dashboard" Subtitle="Customers and revenue at a glance." />
+
+<Row Gutter="16">
+    <AntDesign.Col Xs="24" Md="8">
+        <StatisticCard Title="Customers" Value="@Store.All.Count.ToString("N0")" />
+    </AntDesign.Col>
+    <AntDesign.Col Xs="24" Md="8">
+        <StatisticCard Title="Active" Value="@Store.All.Count(c => c.Active).ToString("N0")" />
+    </AntDesign.Col>
+    <AntDesign.Col Xs="24" Md="8">
+        <StatisticCard Title="Revenue" Value="@Store.All.Sum(c => c.Revenue).ToString("C0")" />
+    </AntDesign.Col>
+</Row>

@@ -62,7 +62,7 @@
             <div class="m-form-grid">
                 <div class="ant-form-item">
                     <div class="ant-form-item-label"><label for="tenant-name">Tenant name</label></div>
-                    <div class="ant-form-item-control"><input id="tenant-name" name="Details.Name" value="@Details.Name" class="ant-input" required /></div>
+                    <div class="ant-form-item-control"><input id="tenant-name" placeholder="Company name" name="Details.Name" value="@Details.Name" class="ant-input" required /></div>
                 </div>
                 <div class="ant-form-item">
                     <div class="ant-form-item-label"><label for="tenant-domain">Domain</label></div>
@@ -70,7 +70,7 @@
                 </div>
                 <div class="ant-form-item m-span-2">
                     <div class="ant-form-item-label"><label for="tenant-description">Description</label></div>
-                    <div class="ant-form-item-control"><textarea id="tenant-description" name="Details.Description" class="ant-input" rows="4">@Details.Description</textarea></div>
+                    <div class="ant-form-item-control"><textarea id="tenant-description" placeholder="Describe the company" name="Details.Description" class="ant-input" rows="4">@Details.Description</textarea></div>
                 </div>
             </div>
             <div class="m-form-actions">
