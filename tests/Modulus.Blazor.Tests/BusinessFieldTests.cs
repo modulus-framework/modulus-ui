@@ -50,7 +50,7 @@ public class BusinessFieldTests : BunitContext
     }
 
     [Fact]
-    public void Money_RoundsToTheCurrencyClampsAndPutsBackText_ThatIsNotANumber()
+    public async Task Money_RoundsToTheCurrencyClampsAndPutsBackText_ThatIsNotANumber()
     {
         decimal? value = 5m;
         var cut = Bound<AppMoneyInput>(h => [("Value", value), ("ValueChanged", h.Set<decimal?>(v => value = v)), ("Currency", "JPY"), ("Min", 0m)]);
@@ -65,8 +65,10 @@ public class BusinessFieldTests : BunitContext
 
         cut.Find("input").Change("abc");
         Assert.Equal(0m, value);
-        // The field restores its text after the handler yields, so the rendered value arrives a little later.
-        cut.WaitForAssertion(() => Assert.Equal("0", cut.Find("input").GetAttribute("value")));
+        // The field restores its text after the handler yields. Wait for that continuation to run (a render-queued call runs after
+        // it); checking the attribute alone passes before the restore, and the next change then races with it.
+        await cut.InvokeAsync(() => { });
+        Assert.Equal("0", cut.Find("input").GetAttribute("value"));
 
         cut.Find("input").Change("");
         Assert.Null(value);

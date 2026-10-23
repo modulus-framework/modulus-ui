@@ -298,7 +298,7 @@ public class GridSchemaTests
     }
 }
 
-public class EditableGridTests : BunitContext
+public class EditableGridTests : BunitContext, IAsyncLifetime
 {
     // Cells format with the current culture; CI runs under the invariant culture, which renders ¤1,200 instead of $1,200.
     private readonly CultureInfo culture = CultureInfo.CurrentCulture;
@@ -315,11 +315,15 @@ public class EditableGridTests : BunitContext
         Services.AddAntDesign();
     }
 
-    protected override void Dispose(bool disposing)
+    // xUnit awaits IAsyncLifetime.DisposeAsync before the synchronous Dispose. bUnit's async path awaits component teardown, so the
+    // components finish before AntDesign's shared DOM listener store is disposed.
+    Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
+
+    async Task IAsyncLifetime.DisposeAsync()
     {
         CultureInfo.CurrentCulture = culture;
         CultureInfo.CurrentUICulture = uiCulture;
-        base.Dispose(disposing);
+        await ((IAsyncDisposable)this).DisposeAsync();
     }
 
     private static List<GridColumn> Columns() =>
@@ -505,7 +509,7 @@ public class EditableGridTests : BunitContext
         IElement Save() => cut.FindAll("button").First(b => b.TextContent.Trim() == "Save");
         IElement Row(string name) => cut.FindAll("tbody tr.ant-table-row").Single(tr => tr.TextContent.Contains(name));
 
-        await cut.InvokeAsync(() => Save().ClickAsync(new()));
+        await cut.InvokeAsync(() => Save().Click());
         Assert.Equal(0, saved);
         Assert.Contains("1 row needs attention", cut.Find(".ant-alert").TextContent);
         Assert.Contains("m-grid-row-error", Row("Mobile").ClassList);
@@ -515,13 +519,15 @@ public class EditableGridTests : BunitContext
         await cut.InvokeAsync(() => Row("Mobile").QuerySelector("[aria-label^='Edit Budget:']")!.ClickAsync(new()));
         await cut.InvokeAsync(() => Row("Mobile").QuerySelector("input[type=number]")!.InputAsync(new ChangeEventArgs { Value = "800" }));
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".m-grid-row-error")));
+        // Let the grid finish its pending render before the next click looks up the Save handler.
+        await cut.InvokeAsync(() => { });
 
-        await cut.InvokeAsync(() => Save().ClickAsync(new()));
+        await cut.InvokeAsync(() => Save().Click());
         Assert.Equal(1, saved);
         cut.WaitForAssertion(() => Assert.Equal("Portal is checked out by Ann.", Row("Portal").QuerySelector(".m-grid-row-message")!.TextContent));
         Assert.NotEmpty(cut.FindAll(".m-grid-dirty"));
 
-        await cut.InvokeAsync(() => Save().ClickAsync(new()));
+        await cut.InvokeAsync(() => Save().Click());
         Assert.Equal(2, saved);
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".m-grid-row-error, .m-grid-dirty")));
     }
