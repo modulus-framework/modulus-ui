@@ -1,0 +1,16 @@
+@* Create page for {{ entity_name }}: posts to the {{ module_name }} API through {{ entity_name }}ApiClient. Controller: {{ entity_name_plural }}Controller *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@model {{ ui_namespace }}.Controllers.{{ module_name }}.{{ entity_name_plural }}Controller.EditViewModel
+@{
+    ViewData["Title"] = "New {{ entity_name | string.downcase }}";
+}
+
+<app-page-header pretitle="{{ entity_name_plural }}" title="@ViewData["Title"]"></app-page-header>
+
+<div class="m-grid m-cols-main">
+    <div class="m-card">
+        <div class="m-card-body">
+            <partial name="_Form" model="Model" />
+        </div>
+    </div>
+</div>

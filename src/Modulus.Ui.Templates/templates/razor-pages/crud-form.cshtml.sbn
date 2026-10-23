@@ -1,0 +1,9 @@
+@* Fields of the {{ entity_name }} form, shared by Create.cshtml and Edit.cshtml. Model: {{ entity_name }}ViewModels.cs *@
+@model {{ ui_namespace }}.Pages.{{ module_name }}.{{ entity_name_plural }}.{{ entity_name }}FormModel
+@addTagHelper *, Modulus.AspNetCore.Mvc
+
+<div asp-validation-summary="ModelOnly" class="m-text-danger m-mb-16"></div>
+<input type="hidden" asp-for="Input.Id" />
+<app-form-item asp-for="Input.Name" label="Name">
+    <app-input asp-for="Input.Name" placeholder="Enter a name" />
+</app-form-item>

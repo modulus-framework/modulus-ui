@@ -65,7 +65,8 @@ public class BusinessFieldTests : BunitContext
 
         cut.Find("input").Change("abc");
         Assert.Equal(0m, value);
-        Assert.Equal("0", cut.Find("input").GetAttribute("value"));
+        // The field restores its text after the handler yields, so the rendered value arrives a little later.
+        cut.WaitForAssertion(() => Assert.Equal("0", cut.Find("input").GetAttribute("value")));
 
         cut.Find("input").Change("");
         Assert.Null(value);

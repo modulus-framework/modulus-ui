@@ -1,0 +1,38 @@
+@* Rows of the {{ entity_name_plural }} list, rendered by Index.cshtml. Model: Index.cshtml.cs *@
+@model {{ ui_namespace }}.Pages.{{ module_name }}.{{ entity_name_plural }}.IndexModel
+@addTagHelper *, Modulus.AspNetCore.Mvc
+
+@if (Model.Items.Count == 0)
+{
+    <div class="m-empty">
+        <h3 class="m-empty-title">No {{ entity_name_plural | string.downcase }} yet</h3>
+        <p class="m-empty-subtitle">Create the first one to see it here.</p>
+        <app-button type="primary" href="/{{ route }}/new">New {{ entity_name }}</app-button>
+    </div>
+}
+else
+{
+    <div class="ant-table-wrapper m-table-flush">
+        <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+            <table style="table-layout:auto">
+                <thead class="ant-table-thead">
+                    <tr><th class="ant-table-cell">Name</th><th class="ant-table-cell">Actions</th></tr>
+                </thead>
+                <tbody class="ant-table-tbody">
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr class="ant-table-row">
+                            <td class="ant-table-cell"><strong>@item.Name</strong></td>
+                            <td class="ant-table-cell">
+                                <form method="post" asp-page-handler="Delete" asp-route-id="@item.Id" asp-antiforgery="true" class="m-flex" data-confirm="Delete this {{ entity_name | string.downcase }}?">
+                                    <a class="ant-btn ant-btn-text ant-btn-sm" href="/{{ route }}/edit?id=@item.Id"><span>Edit</span></a>
+                                    <button type="submit" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous"><span>Delete</span></button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div></div></div>
+    </div>
+}

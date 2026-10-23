@@ -6,9 +6,9 @@
     One version for every library. CI stamps prereleases with -p:VersionSuffix=ci.<run>; a release tag vX.Y.Z packs X.Y.Z.
   -->
   <PropertyGroup>
-    <VersionPrefix>0.9.0</VersionPrefix>
+    <VersionPrefix>1.6.0</VersionPrefix>
     <IsPackable>true</IsPackable>
-    <PackageId>$(MSBuildProjectName)</PackageId>
+    <PackageId>Synvro.$(MSBuildProjectName)</PackageId>
     <Authors>Azim Mahmud</Authors>
     <Company>Modulus</Company>
     <Copyright>Copyright © $([System.DateTime]::UtcNow.Year) Modulus</Copyright>

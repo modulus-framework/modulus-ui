@@ -1,0 +1,80 @@
+@* List page for {{ entity_name_plural }}: reads the {{ module_name }} API through {{ entity_name }}ApiClient. Controller: {{ entity_name_plural }}Controller *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@model {{ ui_namespace }}.Controllers.{{ module_name }}.{{ entity_name_plural }}Controller.IndexViewModel
+@{
+    ViewData["Title"] = "{{ entity_name_plural }}";
+}
+
+<app-page-header pretitle="{{ module_name }}" title="{{ entity_name_plural }}">
+    <app-button type="primary" href="/{{ route }}/new">New {{ entity_name }}</app-button>
+</app-page-header>
+
+@if (Model.Message is not null)
+{
+    <app-alert type="@(Model.Failed ? "error" : "success")" message="@Model.Message" show-icon="true" closable="true" />
+}
+
+<div class="m-card">
+    <div class="m-card-body m-card-body-flush">
+        @if (Model.Items.Count == 0)
+        {
+            <div class="m-empty">
+                <h3 class="m-empty-title">No {{ entity_name_plural | string.downcase }} yet</h3>
+                <p class="m-empty-subtitle">Create the first one to see it here.</p>
+                <app-button type="primary" href="/{{ route }}/new">New {{ entity_name }}</app-button>
+            </div>
+        }
+        else
+        {
+            <div class="ant-table-wrapper m-table-flush">
+                <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                    <table style="table-layout:auto">
+                        <thead class="ant-table-thead">
+                            <tr><th class="ant-table-cell">Name</th><th class="ant-table-cell">Actions</th></tr>
+                        </thead>
+                        <tbody class="ant-table-tbody">
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr class="ant-table-row">
+                                    <td class="ant-table-cell"><strong>@item.Name</strong></td>
+                                    <td class="ant-table-cell">
+                                        <form method="post" action="/{{ route }}/delete" asp-antiforgery="true" class="m-flex" data-confirm="Delete this {{ entity_name | string.downcase }}?">
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <input type="hidden" name="p" value="@Model.PageNumber" />
+                                            <a class="ant-btn ant-btn-text ant-btn-sm" href="/{{ route }}/edit?id=@item.Id"><span>Edit</span></a>
+                                            <button type="submit" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous"><span>Delete</span></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div></div></div>
+            </div>
+        }
+    </div>
+    @if (Model.PageNumber > 1 || Model.HasNext)
+    {
+        <div class="m-card-footer m-flex m-between">
+            <span class="m-muted">Page @Model.PageNumber</span>
+            <span class="m-flex">
+                @if (Model.PageNumber > 1)
+                {
+                    <a class="ant-btn ant-btn-default ant-btn-sm" href="/{{ route }}?p=@(Model.PageNumber - 1)"><span>Previous</span></a>
+                }
+                @if (Model.HasNext)
+                {
+                    <a class="ant-btn ant-btn-default ant-btn-sm" href="/{{ route }}?p=@(Model.PageNumber + 1)"><span>Next</span></a>
+                }
+            </span>
+        </div>
+    }
+</div>
+
+<script nonce="@Modulus.AspNetCore.Hosting.CspNonce.Of(Context)">
+    // Asks before any form marked data-confirm is submitted. Inline onclick handlers are blocked by the Content-Security-Policy.
+    document.addEventListener('submit', function (e) {
+        var message = e.target.getAttribute('data-confirm');
+        if (message && !window.confirm(message)) e.preventDefault();
+    });
+</script>

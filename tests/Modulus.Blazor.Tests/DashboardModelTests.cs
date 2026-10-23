@@ -136,11 +136,11 @@ public class DashboardModelTests
         var store = new MemoryUiStateStore();
         var moved = DashboardModel.Apply(Default, "later", "revenue");
 
-        Assert.True(await DashboardModel.SaveAsync(store, "u1", "home", moved, cancellationToken: Xunit.TestContext.Current.CancellationToken));
+        Assert.True(await DashboardModel.SaveAsync(store, "u1", "home", moved, cancellationToken: CancellationToken.None));
 
-        var back = await DashboardModel.LoadAsync(store, "u1", "home", Specs, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        var back = await DashboardModel.LoadAsync(store, "u1", "home", Specs, cancellationToken: CancellationToken.None);
         Assert.Equal(["orders", "revenue", "activity"], back.Select(p => p.Id));
-        Assert.Equal(Default.Select(p => p.Id), (await DashboardModel.LoadAsync(store, "u2", "home", Specs, cancellationToken: Xunit.TestContext.Current.CancellationToken)).Select(p => p.Id));
+        Assert.Equal(Default.Select(p => p.Id), (await DashboardModel.LoadAsync(store, "u2", "home", Specs, cancellationToken: CancellationToken.None)).Select(p => p.Id));
     }
 
     [Fact]
@@ -148,18 +148,18 @@ public class DashboardModelTests
     {
         var store = new MemoryUiStateStore();
 
-        Assert.False(await DashboardModel.SaveAsync(store, "", "home", DashboardModel.Apply(Default, "later", "revenue"), cancellationToken: Xunit.TestContext.Current.CancellationToken));
-        Assert.Equal(Default, await DashboardModel.LoadAsync(store, "", "home", Specs, cancellationToken: Xunit.TestContext.Current.CancellationToken));
+        Assert.False(await DashboardModel.SaveAsync(store, "", "home", DashboardModel.Apply(Default, "later", "revenue"), cancellationToken: CancellationToken.None));
+        Assert.Equal(Default, await DashboardModel.LoadAsync(store, "", "home", Specs, cancellationToken: CancellationToken.None));
     }
 
     [Fact]
     public async Task Clear_ForgetsTheSavedLayout()
     {
         var store = new MemoryUiStateStore();
-        await DashboardModel.SaveAsync(store, "u1", "home", DashboardModel.Apply(Default, "later", "revenue"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        await DashboardModel.SaveAsync(store, "u1", "home", DashboardModel.Apply(Default, "later", "revenue"), cancellationToken: CancellationToken.None);
 
-        await DashboardModel.ClearAsync(store, "u1", "home", cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        await DashboardModel.ClearAsync(store, "u1", "home", cancellationToken: CancellationToken.None);
 
-        Assert.Equal(["revenue", "orders", "activity"], (await DashboardModel.LoadAsync(store, "u1", "home", Specs, cancellationToken: Xunit.TestContext.Current.CancellationToken)).Select(p => p.Id));
+        Assert.Equal(["revenue", "orders", "activity"], (await DashboardModel.LoadAsync(store, "u1", "home", Specs, cancellationToken: CancellationToken.None)).Select(p => p.Id));
     }
 }

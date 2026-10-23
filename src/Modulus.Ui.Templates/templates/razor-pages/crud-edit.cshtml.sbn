@@ -2,7 +2,7 @@
 @page "/{{ route }}/edit"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @addTagHelper *, Modulus.AspNetCore.Mvc
-@model {{ ui_namespace }}.Pages.{{ entity_name_plural }}.EditModel
+@model {{ ui_namespace }}.Pages.{{ module_name }}.{{ entity_name_plural }}.EditModel
 @{
     ViewData["Title"] = Model.IsNew ? "New {{ entity_name | string.downcase }}" : "Edit {{ entity_name | string.downcase }}";
 }

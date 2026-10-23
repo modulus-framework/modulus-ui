@@ -2,7 +2,7 @@
 @page "/{{ route }}"
 @attribute [Microsoft.AspNetCore.Authorization.Authorize]
 @addTagHelper *, Modulus.AspNetCore.Mvc
-@model {{ ui_namespace }}.Pages.{{ entity_name_plural }}.IndexModel
+@model {{ ui_namespace }}.Pages.{{ module_name }}.{{ entity_name_plural }}.IndexModel
 @{
     ViewData["Title"] = "{{ entity_name_plural }}";
 }

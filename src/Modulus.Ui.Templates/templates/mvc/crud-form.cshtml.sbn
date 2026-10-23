@@ -1,0 +1,15 @@
+@* Shared form of the {{ entity_name }} create and edit pages. It posts back to the page it is on, so the id in the query string is kept. *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@model {{ ui_namespace }}.Controllers.{{ module_name }}.{{ entity_name_plural }}Controller.EditViewModel
+
+<form method="post" asp-antiforgery="true" class="ant-form ant-form-vertical" novalidate>
+    <input type="hidden" asp-for="Input.Id" />
+    <div asp-validation-summary="ModelOnly" class="m-text-danger m-mb-16"></div>
+    <app-form-item asp-for="Input.Name" label="Name">
+        <app-input asp-for="Input.Name" placeholder="Enter a name" />
+    </app-form-item>
+    <div class="m-form-actions">
+        <app-button type="primary" html-type="submit">@(Model.IsNew ? "Create" : "Save")</app-button>
+        <app-button href="/{{ route }}">Cancel</app-button>
+    </div>
+</form>

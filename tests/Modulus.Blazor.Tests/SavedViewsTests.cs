@@ -36,17 +36,17 @@ public class SavedViewsTests
     public async Task MemoryStore_KeepsStatePerUser_NothingForAnonymous_AndRefusesHugeValues()
     {
         var store = new MemoryUiStateStore();
-        await store.SetAsync("ana", "k", "1", cancellationToken: Xunit.TestContext.Current.CancellationToken);
-        await store.SetAsync("bo", "k", "2", cancellationToken: Xunit.TestContext.Current.CancellationToken);
-        await store.SetAsync("", "k", "3", cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        await store.SetAsync("ana", "k", "1", cancellationToken: CancellationToken.None);
+        await store.SetAsync("bo", "k", "2", cancellationToken: CancellationToken.None);
+        await store.SetAsync("", "k", "3", cancellationToken: CancellationToken.None);
 
-        Assert.Equal("1", await store.GetAsync("ana", "k", cancellationToken: Xunit.TestContext.Current.CancellationToken));
-        Assert.Equal("2", await store.GetAsync("bo", "k", cancellationToken: Xunit.TestContext.Current.CancellationToken));
-        Assert.Null(await store.GetAsync("", "k", cancellationToken: Xunit.TestContext.Current.CancellationToken));
+        Assert.Equal("1", await store.GetAsync("ana", "k", cancellationToken: CancellationToken.None));
+        Assert.Equal("2", await store.GetAsync("bo", "k", cancellationToken: CancellationToken.None));
+        Assert.Null(await store.GetAsync("", "k", cancellationToken: CancellationToken.None));
 
-        await store.SetAsync("ana", "k", null, cancellationToken: Xunit.TestContext.Current.CancellationToken);
-        Assert.Null(await store.GetAsync("ana", "k", cancellationToken: Xunit.TestContext.Current.CancellationToken));
-        await Assert.ThrowsAsync<ArgumentException>(async () => await store.SetAsync("ana", "k", new string('x', MemoryUiStateStore.MaxValueLength + 1), cancellationToken: Xunit.TestContext.Current.CancellationToken));
+        await store.SetAsync("ana", "k", null, cancellationToken: CancellationToken.None);
+        Assert.Null(await store.GetAsync("ana", "k", cancellationToken: CancellationToken.None));
+        await Assert.ThrowsAsync<ArgumentException>(async () => await store.SetAsync("ana", "k", new string('x', MemoryUiStateStore.MaxValueLength + 1), cancellationToken: CancellationToken.None));
     }
 
     // Saved views -------------------------------------------------------------------------------------------------
@@ -63,59 +63,59 @@ public class SavedViewsTests
     public async Task Save_ReplacesByName_MarksOneDefault_AndListsInOrder()
     {
         var views = new SavedViews(new MemoryUiStateStore());
-        Assert.Null(await views.SaveAsync("ana", "/p", "By city", Q("rows=city"), cancellationToken: Xunit.TestContext.Current.CancellationToken));
-        Assert.Null(await views.SaveAsync("ana", "/p", "By year", Q("cols=date:year"), isDefault: true, cancellationToken: Xunit.TestContext.Current.CancellationToken));
-        Assert.Null(await views.SaveAsync("ana", "/p", " by CITY ", Q("rows=city&page=4"), isDefault: true, cancellationToken: Xunit.TestContext.Current.CancellationToken));
+        Assert.Null(await views.SaveAsync("ana", "/p", "By city", Q("rows=city"), cancellationToken: CancellationToken.None));
+        Assert.Null(await views.SaveAsync("ana", "/p", "By year", Q("cols=date:year"), isDefault: true, cancellationToken: CancellationToken.None));
+        Assert.Null(await views.SaveAsync("ana", "/p", " by CITY ", Q("rows=city&page=4"), isDefault: true, cancellationToken: CancellationToken.None));
 
-        var list = await views.ListAsync("ana", "/p", cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        var list = await views.ListAsync("ana", "/p", cancellationToken: CancellationToken.None);
 
         Assert.Equal(["by CITY", "By year"], list.Select(v => v.Name));
         Assert.Equal("rows=city", list[0].Query);
         Assert.Equal([true, false], list.Select(v => v.IsDefault));
-        Assert.Empty(await views.ListAsync("bo", "/p", cancellationToken: Xunit.TestContext.Current.CancellationToken));
-        Assert.Empty(await views.ListAsync("ana", "/other", cancellationToken: Xunit.TestContext.Current.CancellationToken));
+        Assert.Empty(await views.ListAsync("bo", "/p", cancellationToken: CancellationToken.None));
+        Assert.Empty(await views.ListAsync("ana", "/other", cancellationToken: CancellationToken.None));
     }
 
     [Fact]
     public async Task Save_RefusesAnonymous_NoName_LongNames_AndTooManyViews()
     {
         var views = new SavedViews(new MemoryUiStateStore());
-        Assert.NotNull(await views.SaveAsync("", "/p", "A", Q("a=1"), cancellationToken: Xunit.TestContext.Current.CancellationToken));
-        Assert.NotNull(await views.SaveAsync("ana", "/p", "  ", Q("a=1"), cancellationToken: Xunit.TestContext.Current.CancellationToken));
-        Assert.NotNull(await views.SaveAsync("ana", "/p", new string('n', SavedViews.MaxName + 1), Q("a=1"), cancellationToken: Xunit.TestContext.Current.CancellationToken));
-        Assert.NotNull(await views.SaveAsync("ana", "/p", "Big", Q("a=" + new string('x', SavedViews.MaxQuery)), cancellationToken: Xunit.TestContext.Current.CancellationToken));
+        Assert.NotNull(await views.SaveAsync("", "/p", "A", Q("a=1"), cancellationToken: CancellationToken.None));
+        Assert.NotNull(await views.SaveAsync("ana", "/p", "  ", Q("a=1"), cancellationToken: CancellationToken.None));
+        Assert.NotNull(await views.SaveAsync("ana", "/p", new string('n', SavedViews.MaxName + 1), Q("a=1"), cancellationToken: CancellationToken.None));
+        Assert.NotNull(await views.SaveAsync("ana", "/p", "Big", Q("a=" + new string('x', SavedViews.MaxQuery)), cancellationToken: CancellationToken.None));
 
-        for (var i = 0; i < SavedViews.MaxViews; i++) Assert.Null(await views.SaveAsync("ana", "/p", $"V{i}", Q($"a={i}"), cancellationToken: Xunit.TestContext.Current.CancellationToken));
-        Assert.NotNull(await views.SaveAsync("ana", "/p", "One more", Q("a=x"), cancellationToken: Xunit.TestContext.Current.CancellationToken));
-        Assert.Null(await views.SaveAsync("ana", "/p", "v3", Q("a=y"), cancellationToken: Xunit.TestContext.Current.CancellationToken)); // replacing one is still fine
+        for (var i = 0; i < SavedViews.MaxViews; i++) Assert.Null(await views.SaveAsync("ana", "/p", $"V{i}", Q($"a={i}"), cancellationToken: CancellationToken.None));
+        Assert.NotNull(await views.SaveAsync("ana", "/p", "One more", Q("a=x"), cancellationToken: CancellationToken.None));
+        Assert.Null(await views.SaveAsync("ana", "/p", "v3", Q("a=y"), cancellationToken: CancellationToken.None)); // replacing one is still fine
     }
 
     [Fact]
     public async Task DefaultAndDelete_ChangeTheDefaultUrl()
     {
         var views = new SavedViews(new MemoryUiStateStore());
-        await views.SaveAsync("ana", "/p", "Mine", Q("rows=city"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
-        Assert.Null(await views.DefaultUrlAsync("ana", "/p", "/tables/p", [], cancellationToken: Xunit.TestContext.Current.CancellationToken));
+        await views.SaveAsync("ana", "/p", "Mine", Q("rows=city"), cancellationToken: CancellationToken.None);
+        Assert.Null(await views.DefaultUrlAsync("ana", "/p", "/tables/p", [], cancellationToken: CancellationToken.None));
 
-        await views.SetDefaultAsync("ana", "/p", "mine", cancellationToken: Xunit.TestContext.Current.CancellationToken);
-        Assert.Equal("/tables/p?rows=city", await views.DefaultUrlAsync("ana", "/p", "/tables/p", Q("page=2"), cancellationToken: Xunit.TestContext.Current.CancellationToken));
-        Assert.Null(await views.DefaultUrlAsync("ana", "/p", "/tables/p", Q("rows=status"), cancellationToken: Xunit.TestContext.Current.CancellationToken)); // the URL has a layout
+        await views.SetDefaultAsync("ana", "/p", "mine", cancellationToken: CancellationToken.None);
+        Assert.Equal("/tables/p?rows=city", await views.DefaultUrlAsync("ana", "/p", "/tables/p", Q("page=2"), cancellationToken: CancellationToken.None));
+        Assert.Null(await views.DefaultUrlAsync("ana", "/p", "/tables/p", Q("rows=status"), cancellationToken: CancellationToken.None)); // the URL has a layout
 
-        await views.SetDefaultAsync("ana", "/p", null, cancellationToken: Xunit.TestContext.Current.CancellationToken);
-        Assert.Null(await views.DefaultAsync("ana", "/p", cancellationToken: Xunit.TestContext.Current.CancellationToken));
+        await views.SetDefaultAsync("ana", "/p", null, cancellationToken: CancellationToken.None);
+        Assert.Null(await views.DefaultAsync("ana", "/p", cancellationToken: CancellationToken.None));
 
-        await views.SetDefaultAsync("ana", "/p", "Mine", cancellationToken: Xunit.TestContext.Current.CancellationToken);
-        await views.DeleteAsync("ana", "/p", "MINE", cancellationToken: Xunit.TestContext.Current.CancellationToken);
-        Assert.Empty(await views.ListAsync("ana", "/p", cancellationToken: Xunit.TestContext.Current.CancellationToken));
-        Assert.Null(await views.DefaultUrlAsync("ana", "/p", "/tables/p", [], cancellationToken: Xunit.TestContext.Current.CancellationToken));
+        await views.SetDefaultAsync("ana", "/p", "Mine", cancellationToken: CancellationToken.None);
+        await views.DeleteAsync("ana", "/p", "MINE", cancellationToken: CancellationToken.None);
+        Assert.Empty(await views.ListAsync("ana", "/p", cancellationToken: CancellationToken.None));
+        Assert.Null(await views.DefaultUrlAsync("ana", "/p", "/tables/p", [], cancellationToken: CancellationToken.None));
     }
 
     [Fact]
     public async Task List_OfAValueItCannotRead_IsEmpty()
     {
         var store = new MemoryUiStateStore();
-        await store.SetAsync("ana", "views:/p", "{not json", cancellationToken: Xunit.TestContext.Current.CancellationToken);
-        Assert.Empty(await new SavedViews(store).ListAsync("ana", "/p", cancellationToken: Xunit.TestContext.Current.CancellationToken));
+        await store.SetAsync("ana", "views:/p", "{not json", cancellationToken: CancellationToken.None);
+        Assert.Empty(await new SavedViews(store).ListAsync("ana", "/p", cancellationToken: CancellationToken.None));
     }
 
     [Fact]
@@ -229,16 +229,16 @@ public class SavedViewsTests
             provider.EnsureUiStateDatabase();
             var factory = provider.GetRequiredService<IDbContextFactory<UiStateDbContext>>();
             var views = new SavedViews(new EfUiStateStore(factory));
-            Assert.Null(await views.SaveAsync("ana", "/p", "Cities", Q("rows=city"), isDefault: true, cancellationToken: Xunit.TestContext.Current.CancellationToken));
-            await new EfUiStateStore(factory).SetAsync("", "views:/p", "x", cancellationToken: Xunit.TestContext.Current.CancellationToken); // anonymous: nothing kept
+            Assert.Null(await views.SaveAsync("ana", "/p", "Cities", Q("rows=city"), isDefault: true, cancellationToken: CancellationToken.None));
+            await new EfUiStateStore(factory).SetAsync("", "views:/p", "x", cancellationToken: CancellationToken.None); // anonymous: nothing kept
 
             // A new store (as after a restart) reads the same rows.
             var again = new SavedViews(new EfUiStateStore(factory));
-            Assert.Equal(new SavedView("Cities", "rows=city", true), Assert.Single(await again.ListAsync("ana", "/p", cancellationToken: Xunit.TestContext.Current.CancellationToken)));
-            await again.DeleteAsync("ana", "/p", "Cities", cancellationToken: Xunit.TestContext.Current.CancellationToken);
-            Assert.Null(await new EfUiStateStore(factory).GetAsync("ana", "views:/p", cancellationToken: Xunit.TestContext.Current.CancellationToken));
-            await using var db = await factory.CreateDbContextAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken);
-            Assert.Equal(0, await db.UiState.CountAsync(cancellationToken: Xunit.TestContext.Current.CancellationToken));
+            Assert.Equal(new SavedView("Cities", "rows=city", true), Assert.Single(await again.ListAsync("ana", "/p", cancellationToken: CancellationToken.None)));
+            await again.DeleteAsync("ana", "/p", "Cities", cancellationToken: CancellationToken.None);
+            Assert.Null(await new EfUiStateStore(factory).GetAsync("ana", "views:/p", cancellationToken: CancellationToken.None));
+            await using var db = await factory.CreateDbContextAsync(cancellationToken: CancellationToken.None);
+            Assert.Equal(0, await db.UiState.CountAsync(cancellationToken: CancellationToken.None));
         }
         finally
         {
@@ -266,7 +266,7 @@ public class SavedViewsTests
         await cut.Find(".m-views-save button").ClickAsync(new());
 
         var views = ctx.Services.GetRequiredService<SavedViews>();
-        Assert.Equal(new SavedView("Cities", "rows=city", true), Assert.Single(await views.ListAsync("ana", "/p", cancellationToken: Xunit.TestContext.Current.CancellationToken)));
+        Assert.Equal(new SavedView("Cities", "rows=city", true), Assert.Single(await views.ListAsync("ana", "/p", cancellationToken: CancellationToken.None)));
         cut.WaitForAssertion(() => Assert.Contains("aria-current=\"true\"", cut.Markup));
         Assert.Contains("<span>Cities</span>", cut.Find("summary").InnerHtml);
 

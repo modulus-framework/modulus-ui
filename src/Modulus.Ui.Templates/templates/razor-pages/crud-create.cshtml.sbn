@@ -1,0 +1,25 @@
+@* Create page for {{ entity_name }}: posts to the {{ module_name }} API through {{ entity_name }}ApiClient. Page model: Create.cshtml.cs *@
+@page "/{{ route }}/new"
+{{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ end }}
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@model {{ ui_namespace }}.Pages.{{ module_name }}.{{ entity_name_plural }}.CreateModel
+@{
+    ViewData["Title"] = "New {{ entity_name | string.downcase }}";
+}
+
+<app-page-header pretitle="{{ entity_name_plural }}" title="New {{ entity_name }}"></app-page-header>
+
+<div class="m-grid m-cols-main">
+    <div class="m-card">
+        <div class="m-card-body">
+            <form method="post" asp-antiforgery="true" class="ant-form ant-form-vertical" novalidate>
+                <partial name="_Form" model="Model" />
+                <div class="m-form-actions">
+                    <app-button type="primary" html-type="submit">Create</app-button>
+                    <app-button href="/{{ route }}">Cancel</app-button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

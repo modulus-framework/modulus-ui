@@ -1,0 +1,34 @@
+@* Shared form of the {{ entity_name }} create and edit pages: the fields and their validation. The pages call the API. *@
+@using System.ComponentModel.DataAnnotations
+
+<EditForm Model="Input" OnValidSubmit="HandleValidSubmit" class="ant-form ant-form-vertical">
+    <DataAnnotationsValidator />
+    <div class="ant-form-item">
+        <div class="ant-form-item-label"><label class="ant-form-item-required" for="name">Name</label></div>
+        <div class="ant-form-item-control">
+            <InputText id="name" placeholder="Enter a name" @bind-Value="Input.Name" class="ant-input" />
+            <ValidationMessage For="() => Input.Name" class="ant-form-item-explain-error" />
+        </div>
+    </div>
+    <div class="m-form-actions">
+        <button type="submit" class="ant-btn ant-btn-primary" disabled="@Busy"><span>@(IsNew ? "Create" : "Save")</span></button>
+        <a href="/{{ route }}" class="ant-btn ant-btn-default"><span>Cancel</span></a>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter, EditorRequired] public FormInput Input { get; set; } = new();
+
+    [Parameter] public bool IsNew { get; set; }
+
+    [Parameter] public bool Busy { get; set; }
+
+    [Parameter] public EventCallback<FormInput> OnSave { get; set; }
+
+    private Task HandleValidSubmit() => OnSave.InvokeAsync(Input);
+
+    public sealed class FormInput
+    {
+        [Required, StringLength(200)] public string Name { get; set; } = string.Empty;
+    }
+}
