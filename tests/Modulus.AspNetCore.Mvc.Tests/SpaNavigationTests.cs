@@ -63,7 +63,7 @@ public class SpaNavigationTests
 
         SpaNavigation.AddVary(http.Response);
 
-        Assert.Equal(["Accept-Encoding", "HX-Request, HX-Boosted"], http.Response.Headers.Vary.ToArray());
+        Assert.Equal(["Accept-Encoding", "HX-Request, HX-Boosted"], http.Response.Headers.Vary.Select(v => v ?? string.Empty).ToArray());
     }
 
     [Fact]

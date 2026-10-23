@@ -169,24 +169,26 @@ public class MultiSortTests : BunitContext
             .Add(t => t.MultiSort, multiSort)
             .Add(t => t.Columns, r => b =>
             {
-                var seq = 0;
-                foreach (var key in new[] { "Dept", "Salary" })
-                {
-                    b.OpenComponent<PropertyColumn<GridRecord, string>>(seq++);
-                    b.AddAttribute(seq++, "Property", (System.Linq.Expressions.Expression<Func<GridRecord, string>>)(x => x.Id));
-                    b.AddAttribute(seq++, "TitleTemplate", (RenderFragment)(t =>
-                    {
-                        t.OpenComponent<ColumnHeader>(0);
-                        t.AddAttribute(1, "Key", key);
-                        t.AddAttribute(2, "Title", key);
-                        t.AddAttribute(3, "Searchable", false);
-                        t.CloseComponent();
-                    }));
-                    b.CloseComponent();
-                }
+                b.OpenComponent<PropertyColumn<GridRecord, string>>(0);
+                b.AddAttribute(1, "Property", (System.Linq.Expressions.Expression<Func<GridRecord, string>>)(x => x.Id));
+                b.AddAttribute(2, "TitleTemplate", SortableTitle("Dept"));
+                b.CloseComponent();
+                b.OpenComponent<PropertyColumn<GridRecord, string>>(3);
+                b.AddAttribute(4, "Property", (System.Linq.Expressions.Expression<Func<GridRecord, string>>)(x => x.Id));
+                b.AddAttribute(5, "TitleTemplate", SortableTitle("Salary"));
+                b.CloseComponent();
             }));
         return (cut, requests);
     }
+
+    private static RenderFragment SortableTitle(string key) => t =>
+    {
+        t.OpenComponent<ColumnHeader>(0);
+        t.AddAttribute(1, "Key", key);
+        t.AddAttribute(2, "Title", key);
+        t.AddAttribute(3, "Searchable", false);
+        t.CloseComponent();
+    };
 
     [Fact]
     public async Task ProTable_ShiftClickAddsASort_AndTheHeadersShowTheirPlace()

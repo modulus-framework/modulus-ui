@@ -203,7 +203,7 @@ public class PackingListDemoTests
         var rows = PackingListDemo.Fill(PackingListDemo.Orders[0], "hm", null).Rows;
         var fill = PackingListDemo.FillWith(PackingListDemo.Orders[0], new[] { new[] { "{{Invoice.Number}}", "{{Container.Number}}", "{{Terms}}" } });
 
-        Assert.Equal(["INV-2025-0412", "MSKU4821350", "FOB"], fill.Rows[0].Select(c => c?.ToString()).ToArray());
+        Assert.Equal(["INV-2025-0412", "MSKU4821350", "FOB"], fill.Rows[0].Select(c => c?.ToString() ?? string.Empty).ToArray());
         Assert.NotEmpty(rows);
     }
 }
