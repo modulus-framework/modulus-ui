@@ -6,7 +6,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The Blazor LabelSheet and PrintTable draw the library's markup, the same the MVC tag helpers draw.</summary>
-public class PrintingComponentTests : BunitContext
+public class PrintingComponentTests : AsyncBunitContext
 {
     [Fact]
     public void LabelSheet_DrawsTheSameLabelsAsTheRenderer()

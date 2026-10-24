@@ -6,7 +6,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The dynamic form: the schema's refusals, its JSON, the checks and the stored values, the shared markup and the Blazor component.</summary>
-public class DynamicFormTests : BunitContext
+public class DynamicFormTests : AsyncBunitContext
 {
     private const string SampleJson = """
         {

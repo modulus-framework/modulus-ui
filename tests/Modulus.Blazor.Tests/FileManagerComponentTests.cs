@@ -11,7 +11,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The Blazor FileManager: the listing draws, folders open, names are checked before they are sent, and deletes confirm first.</summary>
-public class FileManagerComponentTests : BunitContext
+public class FileManagerComponentTests : AsyncBunitContext
 {
     private static readonly DateTime Now = new(2026, 10, 9, 12, 0, 0);
 

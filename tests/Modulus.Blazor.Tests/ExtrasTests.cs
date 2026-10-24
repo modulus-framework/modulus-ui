@@ -11,7 +11,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>QRCode, ColorPicker, FloatButton and Tour (Ant Design 5 components built in Modulus).</summary>
-public class ExtrasTests : BunitContext
+public class ExtrasTests : AsyncBunitContext
 {
     public ExtrasTests()
     {

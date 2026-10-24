@@ -7,7 +7,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>Multi-level headers: the bands over the shown columns, their markup, and ProTable's band rows.</summary>
-public class HeaderGroupsTests : BunitContext
+public class HeaderGroupsTests : AsyncBunitContext
 {
     public HeaderGroupsTests()
     {

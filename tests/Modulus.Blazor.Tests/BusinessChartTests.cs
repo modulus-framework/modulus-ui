@@ -211,7 +211,7 @@ public class BusinessChartHtmlTests
     }
 }
 
-public class BusinessChartComponentTests : BunitContext
+public class BusinessChartComponentTests : AsyncBunitContext
 {
     [Fact]
     public void WaterfallChart_RendersTheSharedMarkup()

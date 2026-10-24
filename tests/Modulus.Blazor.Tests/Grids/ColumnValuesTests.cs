@@ -9,7 +9,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The checkbox list of a column header (the Excel-style filter menu): value lists, their values and the Blazor menu.</summary>
-public class ColumnValuesTests : BunitContext
+public class ColumnValuesTests : AsyncBunitContext
 {
     private static readonly CultureInfo Us = CultureInfo.GetCultureInfo("en-US");
 

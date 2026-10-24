@@ -13,7 +13,7 @@ using SortDirection = Modulus.Ui.Abstractions.SortDirection;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>Sorting by several columns: SortKeys (clicks, text), the request and URL, TableQuery and ProTable's Shift+click.</summary>
-public class MultiSortTests : BunitContext
+public class MultiSortTests : AsyncBunitContext
 {
     public MultiSortTests()
     {

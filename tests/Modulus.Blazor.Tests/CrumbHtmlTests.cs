@@ -6,7 +6,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The breadcrumb trail: the current level, the links, the labels' encoding, the collapsing menu, and the Blazor component.</summary>
-public class CrumbHtmlTests : BunitContext
+public class CrumbHtmlTests : AsyncBunitContext
 {
     [Fact]
     public void NoLevels_RenderNothing()
@@ -77,7 +77,7 @@ public class CrumbHtmlTests : BunitContext
 }
 
 /// <summary>The page heading's own trail: rendered above the pretitle when there are crumbs, and absent otherwise.</summary>
-public class PageHeadingCrumbTests : BunitContext
+public class PageHeadingCrumbTests : AsyncBunitContext
 {
     [Fact]
     public void WithCrumbs_TheTrailSitsAboveTheTitle()

@@ -6,7 +6,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The "Download PDF" button: the form it submits, the action it posts to, the refused addresses, and the Blazor component.</summary>
-public class PdfDownloadButtonTests : BunitContext
+public class PdfDownloadButtonTests : AsyncBunitContext
 {
     [Fact]
     public void TheButton_SubmitsTheFormToTheAction()

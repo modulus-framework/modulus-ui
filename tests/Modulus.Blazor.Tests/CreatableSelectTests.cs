@@ -8,7 +8,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>GridSchema.AddOption and AppCreatableSelect (Select with an "Add item" row).</summary>
-public class CreatableSelectTests : BunitContext
+public class CreatableSelectTests : AsyncBunitContext
 {
     private static readonly GridOption[] Colors = [new("red", "Red", "red"), new("blue", "Blue", "blue")];
 

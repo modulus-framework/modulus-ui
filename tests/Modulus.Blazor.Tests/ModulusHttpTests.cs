@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Modulus.Blazor.Tests;
 
-public class ModulusHttpTests : BunitContext
+public class ModulusHttpTests : AsyncBunitContext
 {
     private const string Module = "./_content/Modulus.Ui.Assets/js/modulus-http.js";
 

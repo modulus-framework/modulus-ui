@@ -12,7 +12,7 @@ namespace Modulus.Blazor.Tests;
 
 /// <summary>The business fields (Components/Fields): money, quantity, duration, range, phone, mask, OTP, lookup,
 /// status bar, rich text and signature.</summary>
-public class BusinessFieldTests : BunitContext
+public class BusinessFieldTests : AsyncBunitContext
 {
     public BusinessFieldTests()
     {

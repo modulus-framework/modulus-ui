@@ -14,7 +14,7 @@ using SortDirection = Modulus.Ui.Abstractions.SortDirection;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>Grouping table rows: the request and URL, TableQuery's groups and totals (in memory and as SQL), the group markup and ProTable.</summary>
-public class GroupByTests : BunitContext
+public class GroupByTests : AsyncBunitContext
 {
     public GroupByTests()
     {

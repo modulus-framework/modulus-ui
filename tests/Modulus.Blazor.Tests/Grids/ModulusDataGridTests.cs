@@ -10,7 +10,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>DataGridAuto (the columns a grid discovers on a row type) and the ModulusDataGrid that renders both engines.</summary>
-public class ModulusDataGridTests : BunitContext
+public class ModulusDataGridTests : AsyncBunitContext
 {
     private enum OrderStatus { Draft, Confirmed, Received }
 

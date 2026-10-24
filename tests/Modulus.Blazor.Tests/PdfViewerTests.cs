@@ -6,7 +6,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The PDF viewer's markup: the source it loads, the page it opens on, the refused addresses, and the Blazor component.</summary>
-public class PdfViewerTests : BunitContext
+public class PdfViewerTests : AsyncBunitContext
 {
     [Fact]
     public void TheViewer_CarriesItsSourceAndPage_WithTheControlsPdfJsDrives()

@@ -298,7 +298,7 @@ public class GridSchemaTests
     }
 }
 
-public class EditableGridTests : BunitContext, IAsyncLifetime
+public class EditableGridTests : AsyncBunitContext
 {
     // Cells format with the current culture; CI runs under the invariant culture, which renders ¤1,200 instead of $1,200.
     private readonly CultureInfo culture = CultureInfo.CurrentCulture;
@@ -313,17 +313,6 @@ public class EditableGridTests : BunitContext, IAsyncLifetime
         // Select measures its trigger to size the dropdown.
         JSInterop.Setup<AntDesign.JsInterop.DomRect>(_ => true).SetResult(new AntDesign.JsInterop.DomRect());
         Services.AddAntDesign();
-    }
-
-    // xUnit awaits IAsyncLifetime.DisposeAsync before the synchronous Dispose. bUnit's async path awaits component teardown, so the
-    // components finish before AntDesign's shared DOM listener store is disposed.
-    Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
-
-    async Task IAsyncLifetime.DisposeAsync()
-    {
-        CultureInfo.CurrentCulture = culture;
-        CultureInfo.CurrentUICulture = uiCulture;
-        await ((IAsyncDisposable)this).DisposeAsync();
     }
 
     private static List<GridColumn> Columns() =>
@@ -511,12 +500,14 @@ public class EditableGridTests : BunitContext, IAsyncLifetime
 
         await cut.InvokeAsync(() => Save().Click());
         Assert.Equal(0, saved);
-        Assert.Contains("1 row needs attention", cut.Find(".ant-alert").TextContent);
-        Assert.Contains("m-grid-row-error", Row("Mobile").ClassList);
-        Assert.Equal("Over the limit.", Row("Mobile").QuerySelector(".m-grid-row-message")!.TextContent);
+        // The grid shows the refusal in a later render: wait for each part before reading the rows.
+        cut.WaitForAssertion(() => Assert.Contains("1 row needs attention", cut.Find(".ant-alert").TextContent));
+        cut.WaitForAssertion(() => Assert.Contains("m-grid-row-error", Row("Mobile").ClassList));
+        cut.WaitForAssertion(() => Assert.Equal("Over the limit.", Row("Mobile").QuerySelector(".m-grid-row-message")!.TextContent));
 
         // Fixing the cell clears the row's error at once.
         await cut.InvokeAsync(() => Row("Mobile").QuerySelector("[aria-label^='Edit Budget:']")!.ClickAsync(new()));
+        cut.WaitForAssertion(() => Assert.NotNull(Row("Mobile").QuerySelector("input[type=number]")));
         await cut.InvokeAsync(() => Row("Mobile").QuerySelector("input[type=number]")!.InputAsync(new ChangeEventArgs { Value = "800" }));
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll(".m-grid-row-error")));
         // Let the grid finish its pending render before the next click looks up the Save handler.
