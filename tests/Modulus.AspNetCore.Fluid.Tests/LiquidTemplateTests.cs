@@ -61,8 +61,8 @@ public class LiquidTemplateTests
     {
         var html = Run("{% modulus_head %}");
 
-        Assert.Contains("<link rel=\"stylesheet\" href=\"/_content/Modulus.Ui.Assets/css/modulus.css\" />", html);
-        Assert.Contains("<script src=\"/_content/Modulus.Ui.Assets/js/modulus-shell.js\" defer></script>", html);
+        Assert.Contains("<link rel=\"stylesheet\" href=\"/_content/Synvro.Modulus.Ui.Assets/css/modulus.css\" />", html);
+        Assert.Contains("<script src=\"/_content/Synvro.Modulus.Ui.Assets/js/modulus-shell.js\" defer></script>", html);
         Assert.Contains("/_content/AntDesign/css/ant-design-blazor.variable.min.css", html);
 
         var moved = Run("{% modulus_head %}", options: new ModulusLiquidOptions { AssetPrefix = "/static/ui/" });

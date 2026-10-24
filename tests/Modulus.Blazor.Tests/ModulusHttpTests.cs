@@ -10,7 +10,7 @@ namespace Modulus.Blazor.Tests;
 
 public class ModulusHttpTests : AsyncBunitContext
 {
-    private const string Module = "./_content/Modulus.Ui.Assets/js/modulus-http.js";
+    private const string Module = "./_content/Synvro.Modulus.Ui.Assets/js/modulus-http.js";
 
     private static InvocationMatcher Call(string method, string url) =>
         i => i.Identifier == "send" && i.Arguments[0] as string == method && i.Arguments[1] as string == url;

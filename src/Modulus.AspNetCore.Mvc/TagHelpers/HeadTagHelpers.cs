@@ -32,17 +32,17 @@ public class ModulusHeadTagHelper(IOptions<ModulusThemeOptions> options, IFileVe
 
         output.TagName = null;
         output.Content.SetHtmlContent($"""
-            <link rel="preload" href="{Url("/_content/Modulus.Ui.Assets/fonts/inter/inter-latin-wght-normal.woff2")}" as="font" type="font/woff2" crossorigin />
+            <link rel="preload" href="{Url("/_content/Synvro.Modulus.Ui.Assets/fonts/inter/inter-latin-wght-normal.woff2")}" as="font" type="font/woff2" crossorigin />
             <link rel="stylesheet" href="{Url("/_content/AntDesign/css/ant-design-blazor.variable.min.css")}" data-theme-css="light" media="{(dark ? "not all" : "all")}" />
             <link rel="stylesheet" href="{Url("/_content/AntDesign/css/ant-design-blazor.dark.min.css")}" data-theme-css="dark" media="{(dark ? "all" : "not all")}" />
-            <link rel="stylesheet" href="{Url("/_content/Modulus.Ui.Assets/css/antd-dark-brand.css")}" data-theme-css="dark" media="{(dark ? "all" : "not all")}" />
-            <link rel="stylesheet" href="{Url("/_content/Modulus.Ui.Assets/css/modulus.css")}" />
-            <link rel="stylesheet" href="{Url("/_content/Modulus.Ui.Assets/css/modulus-shell.css")}" />
-            <link rel="stylesheet" href="{Url("/_content/Modulus.Ui.Assets/css/modulus-pages.css")}" />
+            <link rel="stylesheet" href="{Url("/_content/Synvro.Modulus.Ui.Assets/css/antd-dark-brand.css")}" data-theme-css="dark" media="{(dark ? "all" : "not all")}" />
+            <link rel="stylesheet" href="{Url("/_content/Synvro.Modulus.Ui.Assets/css/modulus.css")}" />
+            <link rel="stylesheet" href="{Url("/_content/Synvro.Modulus.Ui.Assets/css/modulus-shell.css")}" />
+            <link rel="stylesheet" href="{Url("/_content/Synvro.Modulus.Ui.Assets/css/modulus-pages.css")}" />
             <style id="modulus-brand">{ThemeCss.Build(theme)}</style>
-            <script src="{Url("/_content/Modulus.Ui.Assets/js/modulus-theme.js")}" data-default="{@default}" {ThemeCss.ScriptAttributes(theme)}></script>
-            <script src="{Url("/_content/Modulus.Ui.Assets/js/modulus-shell.js")}" defer></script>
-            <script src="{Url("/_content/Modulus.Ui.Assets/js/modulus-plugins.js")}" defer></script>
+            <script src="{Url("/_content/Synvro.Modulus.Ui.Assets/js/modulus-theme.js")}" data-default="{@default}" {ThemeCss.ScriptAttributes(theme)}></script>
+            <script src="{Url("/_content/Synvro.Modulus.Ui.Assets/js/modulus-shell.js")}" defer></script>
+            <script src="{Url("/_content/Synvro.Modulus.Ui.Assets/js/modulus-plugins.js")}" defer></script>
             """);
     }
 }
@@ -62,12 +62,12 @@ public class ModulusScriptsTagHelper(IFileVersionProvider versions) : TagHelper
         output.TagName = null;
         string Url(string path) => versions.AddFileVersionToPath(ViewContext.HttpContext.Request.PathBase, path);
         output.Content.SetHtmlContent($"""
-            <script src="{Url("/_content/Modulus.Ui.Assets/lib/htmx/htmx.min.js")}"></script>
-            <script src="{Url("/_content/Modulus.Ui.Assets/js/modulus-mvc.js")}"></script>
-            <script src="{Url("/_content/Modulus.Ui.Assets/js/modulus-spa.js")}"></script>
-            <script src="{Url("/_content/Modulus.Ui.Assets/js/modulus-virtual.js")}" defer></script>
-            <script src="{Url("/_content/Modulus.Ui.Assets/js/modulus-widgets.js")}"></script>
-            <script defer src="{Url("/_content/Modulus.Ui.Assets/lib/alpinejs/alpine.min.js")}"></script>
+            <script src="{Url("/_content/Synvro.Modulus.Ui.Assets/lib/htmx/htmx.min.js")}"></script>
+            <script src="{Url("/_content/Synvro.Modulus.Ui.Assets/js/modulus-mvc.js")}"></script>
+            <script src="{Url("/_content/Synvro.Modulus.Ui.Assets/js/modulus-spa.js")}"></script>
+            <script src="{Url("/_content/Synvro.Modulus.Ui.Assets/js/modulus-virtual.js")}" defer></script>
+            <script src="{Url("/_content/Synvro.Modulus.Ui.Assets/js/modulus-widgets.js")}"></script>
+            <script defer src="{Url("/_content/Synvro.Modulus.Ui.Assets/lib/alpinejs/alpine.min.js")}"></script>
             """);
     }
 }

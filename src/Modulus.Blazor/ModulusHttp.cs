@@ -29,7 +29,7 @@ public sealed record ModulusHttpResult(int Status, bool Ok, JsonElement? Body)
 /// </summary>
 public sealed class ModulusHttp(IJSRuntime js) : IAsyncDisposable
 {
-    private const string Module = "./_content/Modulus.Ui.Assets/js/modulus-http.js";
+    private const string Module = "./_content/Synvro.Modulus.Ui.Assets/js/modulus-http.js";
 
     private IJSObjectReference? _module;
 

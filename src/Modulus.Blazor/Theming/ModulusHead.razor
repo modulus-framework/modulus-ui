@@ -13,18 +13,18 @@
 
 @* Hrefs are deliberately NOT fingerprinted: AntDesign's and ProLayout's JS initializers look for
    these exact paths and would inject duplicate stylesheets otherwise. *@
-<link rel="preload" href="_content/Modulus.Ui.Assets/fonts/inter/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="_content/Synvro.Modulus.Ui.Assets/fonts/inter/inter-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
 <link rel="stylesheet" href="_content/AntDesign/css/ant-design-blazor.variable.min.css" data-theme-css="light" media="@(Dark ? "not all" : "all")" />
 <link rel="stylesheet" href="_content/AntDesign/css/ant-design-blazor.dark.min.css" data-theme-css="dark" media="@(Dark ? "all" : "not all")" />
-<link rel="stylesheet" href="_content/Modulus.Ui.Assets/css/antd-dark-brand.css" data-theme-css="dark" media="@(Dark ? "all" : "not all")" />
+<link rel="stylesheet" href="_content/Synvro.Modulus.Ui.Assets/css/antd-dark-brand.css" data-theme-css="dark" media="@(Dark ? "all" : "not all")" />
 <link rel="stylesheet" href="_content/AntDesign.ProLayout/css/ant-design-pro-layout-blazor.css" />
-<link rel="stylesheet" href="_content/Modulus.Ui.Assets/css/modulus.css" />
-<link rel="stylesheet" href="_content/Modulus.Ui.Assets/css/modulus-shell.css" />
-<link rel="stylesheet" href="_content/Modulus.Ui.Assets/css/modulus-pages.css" />
+<link rel="stylesheet" href="_content/Synvro.Modulus.Ui.Assets/css/modulus.css" />
+<link rel="stylesheet" href="_content/Synvro.Modulus.Ui.Assets/css/modulus-shell.css" />
+<link rel="stylesheet" href="_content/Synvro.Modulus.Ui.Assets/css/modulus-pages.css" />
 <style id="modulus-brand">@((MarkupString)ThemeCss.Build(_options))</style>
 @((MarkupString)ThemeScript)
-<script src="_content/Modulus.Ui.Assets/js/modulus-shell.js" defer></script>
-<script src="_content/Modulus.Ui.Assets/js/modulus-plugins.js" defer></script>
+<script src="_content/Synvro.Modulus.Ui.Assets/js/modulus-shell.js" defer></script>
+<script src="_content/Synvro.Modulus.Ui.Assets/js/modulus-plugins.js" defer></script>
 <ModulusAntiforgery />
 
 @code {
@@ -46,5 +46,5 @@
     };
 
     private string ThemeScript =>
-        $"""<script src="_content/Modulus.Ui.Assets/js/modulus-theme.js"{(DefaultAttr is null ? "" : $" data-default=\"{DefaultAttr}\"")} {ThemeCss.ScriptAttributes(_options)}></script>""";
+        $"""<script src="_content/Synvro.Modulus.Ui.Assets/js/modulus-theme.js"{(DefaultAttr is null ? "" : $" data-default=\"{DefaultAttr}\"")} {ThemeCss.ScriptAttributes(_options)}></script>""";
 }

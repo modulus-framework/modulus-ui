@@ -14,7 +14,7 @@ public class SampleAdminDataTests
     [Fact]
     public async Task Users_SearchInviteRemove()
     {
-        var ct = Xunit.TestContext.Current.CancellationToken;
+        var ct = CancellationToken.None;
         var d = New();
         var all = await d.SearchAsync(null, ct);
         Assert.NotEmpty(all);
@@ -32,7 +32,7 @@ public class SampleAdminDataTests
     [Fact]
     public async Task Roles_CreateAndDelete()
     {
-        var ct = Xunit.TestContext.Current.CancellationToken;
+        var ct = CancellationToken.None;
         IRoleDirectory d = New();
         var before = (await d.SearchAsync(null, ct)).Count;
 
@@ -46,7 +46,7 @@ public class SampleAdminDataTests
     [Fact]
     public async Task Tenants_CreateSaveAndMembers()
     {
-        var ct = Xunit.TestContext.Current.CancellationToken;
+        var ct = CancellationToken.None;
         ITenantDirectory d = New();
         await d.CreateAsync("Contoso", "contoso.example", ct);
         var tenant = Assert.Single(await d.SearchAsync("contoso", ct));
@@ -65,7 +65,7 @@ public class SampleAdminDataTests
     [Fact]
     public async Task Notifications_MarkOneThenAllRead()
     {
-        var ct = Xunit.TestContext.Current.CancellationToken;
+        var ct = CancellationToken.None;
         INotificationCenter d = New();
         var list = await d.ListAsync("someone", null, ct);
         Assert.Contains(list, n => !n.Read);
@@ -80,7 +80,7 @@ public class SampleAdminDataTests
     [Fact]
     public async Task Settings_RoundTrip()
     {
-        var ct = Xunit.TestContext.Current.CancellationToken;
+        var ct = CancellationToken.None;
         IAdminSettingsStore d = New();
         var s = await d.GetAsync(ct);
         s.AppName = "Renamed";
@@ -91,7 +91,7 @@ public class SampleAdminDataTests
     [Fact]
     public async Task Metrics_AndAudit_ReturnData()
     {
-        var ct = Xunit.TestContext.Current.CancellationToken;
+        var ct = CancellationToken.None;
         var d = New();
         Assert.NotEmpty((await ((IMetricsSource)d).DashboardAsync(ct)).Stats);
         Assert.NotEmpty((await ((IMetricsSource)d).AnalyticsAsync(ct)).Traffic);
