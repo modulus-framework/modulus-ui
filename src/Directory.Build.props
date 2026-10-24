@@ -6,14 +6,12 @@
     One version for every library. CI stamps prereleases with -p:VersionSuffix=ci.<run>; a release tag vX.Y.Z packs X.Y.Z.
   -->
   <PropertyGroup>
-    <VersionPrefix>0.9.1</VersionPrefix>
+    <VersionPrefix>1.6.1</VersionPrefix>
     <IsPackable>true</IsPackable>
-    <!-- Same ID pattern as the Modulus framework packages (build/Modulus.Packaging.props there): Synvro.<project name>. -->
     <PackageId>Synvro.$(MSBuildProjectName)</PackageId>
-    <Authors>synvro</Authors>
-    <Company>synvro</Company>
-    <Copyright>Copyright © $([System.DateTime]::UtcNow.Year) synvro. All rights reserved.</Copyright>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <Authors>Azim Mahmud</Authors>
+    <Company>Modulus</Company>
+    <Copyright>Copyright © $([System.DateTime]::UtcNow.Year) Modulus</Copyright>
     <PackageProjectUrl>https://github.com/modulus-framework/modulus-ui</PackageProjectUrl>
     <RepositoryUrl>https://github.com/modulus-framework/modulus-ui.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

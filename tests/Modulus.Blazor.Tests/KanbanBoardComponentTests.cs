@@ -11,7 +11,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The Blazor KanbanBoard: its cards show, a drag moves a card, and the add form reports what it adds.</summary>
-public class KanbanBoardComponentTests : BunitContext
+public class KanbanBoardComponentTests : AsyncBunitContext
 {
     private static readonly KanbanColumn[] Columns = [new("todo", "To do"), new("progress", "In progress"), new("done", "Done")];
     private static readonly string[] Labels = ["UX", "Code review"];

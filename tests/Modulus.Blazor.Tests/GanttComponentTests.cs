@@ -6,7 +6,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The Blazor Gantt: a row per task, group headings, bars sized and filled, late marks and the today line.</summary>
-public class GanttComponentTests : BunitContext
+public class GanttComponentTests : AsyncBunitContext
 {
     private static readonly DateTime From = new(2026, 10, 5);
     private static readonly DateTime To = new(2026, 10, 18);

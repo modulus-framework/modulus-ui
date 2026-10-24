@@ -6,7 +6,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The Blazor workflow kit: the approval timeline's dots and notes, the audit trail's days, rows and filter, and the status badge's tone.</summary>
-public class WorkflowComponentTests : BunitContext
+public class WorkflowComponentTests : AsyncBunitContext
 {
     private static readonly ApprovalStep[] Steps =
     [

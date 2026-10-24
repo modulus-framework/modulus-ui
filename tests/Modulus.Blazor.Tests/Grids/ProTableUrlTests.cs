@@ -11,7 +11,7 @@ using SortDirection = Modulus.Ui.Abstractions.SortDirection;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>A table's state in the URL: ProTableUrl's keys (shared with the MVC grids) and ProTable's UrlState.</summary>
-public class ProTableUrlTests : BunitContext
+public class ProTableUrlTests : AsyncBunitContext
 {
     public ProTableUrlTests()
     {

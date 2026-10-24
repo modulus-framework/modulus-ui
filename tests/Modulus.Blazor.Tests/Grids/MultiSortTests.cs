@@ -1,7 +1,6 @@
 using AntDesign;
 using Bunit;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +13,7 @@ using SortDirection = Modulus.Ui.Abstractions.SortDirection;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>Sorting by several columns: SortKeys (clicks, text), the request and URL, TableQuery and ProTable's Shift+click.</summary>
-public class MultiSortTests : BunitContext
+public class MultiSortTests : AsyncBunitContext
 {
     public MultiSortTests()
     {
@@ -170,31 +169,26 @@ public class MultiSortTests : BunitContext
             .Add(t => t.MultiSort, multiSort)
             .Add(t => t.Columns, r => b =>
             {
-                // Each column sits in its own region, so the literal sequence numbers inside it never collide.
-                b.OpenRegion(0);
-                Column(b, "Dept");
-                b.CloseRegion();
-                b.OpenRegion(1);
-                Column(b, "Salary");
-                b.CloseRegion();
+                b.OpenComponent<PropertyColumn<GridRecord, string>>(0);
+                b.AddAttribute(1, "Property", (System.Linq.Expressions.Expression<Func<GridRecord, string>>)(x => x.Id));
+                b.AddAttribute(2, "TitleTemplate", SortableTitle("Dept"));
+                b.CloseComponent();
+                b.OpenComponent<PropertyColumn<GridRecord, string>>(3);
+                b.AddAttribute(4, "Property", (System.Linq.Expressions.Expression<Func<GridRecord, string>>)(x => x.Id));
+                b.AddAttribute(5, "TitleTemplate", SortableTitle("Salary"));
+                b.CloseComponent();
             }));
         return (cut, requests);
     }
 
-    private static void Column(RenderTreeBuilder b, string key)
+    private static RenderFragment SortableTitle(string key) => t =>
     {
-        b.OpenComponent<PropertyColumn<GridRecord, string>>(0);
-        b.AddAttribute(1, "Property", (System.Linq.Expressions.Expression<Func<GridRecord, string>>)(x => x.Id));
-        b.AddAttribute(2, "TitleTemplate", (RenderFragment)(t =>
-        {
-            t.OpenComponent<ColumnHeader>(0);
-            t.AddAttribute(1, "Key", key);
-            t.AddAttribute(2, "Title", key);
-            t.AddAttribute(3, "Searchable", false);
-            t.CloseComponent();
-        }));
-        b.CloseComponent();
-    }
+        t.OpenComponent<ColumnHeader>(0);
+        t.AddAttribute(1, "Key", key);
+        t.AddAttribute(2, "Title", key);
+        t.AddAttribute(3, "Searchable", false);
+        t.CloseComponent();
+    };
 
     [Fact]
     public async Task ProTable_ShiftClickAddsASort_AndTheHeadersShowTheirPlace()

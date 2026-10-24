@@ -231,7 +231,7 @@ public class PluginMarkupTests
     }
 }
 
-public class PluginComponentTests : BunitContext
+public class PluginComponentTests : AsyncBunitContext
 {
     private sealed record Item(string Id, string Name);
 

@@ -6,7 +6,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The uploader, cropper and code editor: their markup, the addresses and values they refuse, and their Blazor components.</summary>
-public class PluginEditingTests : BunitContext
+public class PluginEditingTests : AsyncBunitContext
 {
     // Uploader --------------------------------------------------------------------------------------------------
 

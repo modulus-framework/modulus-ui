@@ -6,7 +6,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The Blazor AppBarcode draws the same SVG as the MVC tag helper: the symbol, the value under the bars, the default white background.</summary>
-public class AppBarcodeComponentTests : BunitContext
+public class AppBarcodeComponentTests : AsyncBunitContext
 {
     [Fact]
     public void DrawsTheSymbol_WithTheValueAndAWhiteBackground()

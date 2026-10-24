@@ -48,7 +48,7 @@ public class SavedViewsTagHelperTests
             v => v.SaveAsync("ana", "/p", "Cities", SavedViews.Parse("rows=city")));
 
         var model = new SavedViewsModel("pv", "/p", "/tables/pivot", SavedViews.Parse("rows=city&views-error=Name the view."),
-            await views.ListAsync("ana", "/p", cancellationToken: Xunit.TestContext.Current.CancellationToken), CanSave: true, Error: "Name the view.");
+            await views.ListAsync("ana", "/p", cancellationToken: CancellationToken.None), CanSave: true, Error: "Name the view.");
         Assert.Equal(SavedViewsHtml.Render(model), html);
         Assert.Contains("aria-current=\"true\"", html);
         Assert.Contains("name=\"query\" value=\"rows=city\"", html);

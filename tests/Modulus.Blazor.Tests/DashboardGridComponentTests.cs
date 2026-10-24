@@ -10,7 +10,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The Blazor DashboardGrid: the tiles draw with their bodies, the buttons change a tile's place and size, and the ends are off.</summary>
-public class DashboardGridComponentTests : BunitContext
+public class DashboardGridComponentTests : AsyncBunitContext
 {
     private static readonly DashboardTileSpec[] Specs =
     [

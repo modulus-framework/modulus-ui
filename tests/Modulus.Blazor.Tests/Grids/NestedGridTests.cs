@@ -8,7 +8,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>NestedGridSettings, NestedGridQuery and the Blazor NestedGrid.</summary>
-public class NestedGridTests : BunitContext
+public class NestedGridTests : AsyncBunitContext
 {
     private static readonly GridColumn Name = new() { Key = "name", Title = "Name", Required = true };
     private static readonly GridColumn Qty = new() { Key = "qty", Title = "Qty", Type = GridCellType.Number };

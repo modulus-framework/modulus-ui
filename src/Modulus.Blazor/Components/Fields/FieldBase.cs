@@ -79,6 +79,10 @@ public abstract class FieldBase<TValue> : ComponentBase
             Text = typed;
             StateHasChanged();
             await Task.Yield();
+            Text = formatted;
+            // The typed text was rendered, and the value did not change, so nothing else would render the restored text.
+            StateHasChanged();
+            return;
         }
         Text = formatted;
     }

@@ -184,7 +184,7 @@ public class TableQueryTests
         {
             counted = true;
             return Task.FromResult(q.Count());
-        }, TestContext.Current.CancellationToken);
+        }, CancellationToken.None);
 
         Assert.True(counted);
         Assert.Equal(Query.Page(Source, Request("name", size: 15)).Items, page.Items);

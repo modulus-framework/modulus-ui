@@ -8,7 +8,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The Blazor QueryBuilder: the markup matches the MVC renderer's, and its controls report the filter they make.</summary>
-public class QueryBuilderComponentTests : BunitContext
+public class QueryBuilderComponentTests : AsyncBunitContext
 {
     private sealed record Row(string Customer, string Status, decimal Amount);
 

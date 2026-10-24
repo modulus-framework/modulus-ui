@@ -10,7 +10,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The Blazor ImportWizard: a file goes through the upload, mapping, check and import steps, as the library runs them.</summary>
-public class ImportWizardComponentTests : BunitContext
+public class ImportWizardComponentTests : AsyncBunitContext
 {
     private static readonly IReadOnlyList<ImportField> Fields =
     [

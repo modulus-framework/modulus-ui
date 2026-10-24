@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Modulus.Blazor.Tests;
 
-public class ComponentTests : BunitContext
+public class ComponentTests : AsyncBunitContext
 {
     public ComponentTests()
     {

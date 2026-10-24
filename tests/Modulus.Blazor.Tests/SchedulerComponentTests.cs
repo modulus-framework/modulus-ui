@@ -11,7 +11,7 @@ using Xunit;
 namespace Modulus.Blazor.Tests;
 
 /// <summary>The Blazor Scheduler: the grid and agenda draw, and its month, view, filter, day and event clicks report what was asked.</summary>
-public class SchedulerComponentTests : BunitContext
+public class SchedulerComponentTests : AsyncBunitContext
 {
     private static readonly SchedulerCategory[] Categories = [new("Business", "red"), new("Holiday", "green")];
     private static readonly DateTime Now = new(2026, 10, 9, 10, 0, 0);
