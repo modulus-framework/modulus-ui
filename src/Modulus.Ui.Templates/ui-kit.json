@@ -1,5 +1,5 @@
 {
-  "version": "1.7.0",
+  "version": "1.8.1",
   "name": "Modulus UI Kit",
   "description": "Admin template and components for MVC, Razor Pages, Blazor, and Fluid.",
   "engines": ["mvc", "razor-pages", "blazor", "fluid", "none"],

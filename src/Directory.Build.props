@@ -6,7 +6,7 @@
     One version for every library. CI stamps prereleases with -p:VersionSuffix=ci.<run>; a release tag vX.Y.Z packs X.Y.Z.
   -->
   <PropertyGroup>
-    <VersionPrefix>1.7.0</VersionPrefix>
+    <VersionPrefix>1.8.1</VersionPrefix>
     <IsPackable>true</IsPackable>
     <PackageId>Synvro.$(MSBuildProjectName)</PackageId>
     <Authors>Azim Mahmud</Authors>
