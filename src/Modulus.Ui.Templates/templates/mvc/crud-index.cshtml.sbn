@@ -16,7 +16,15 @@
 
 <div class="m-card">
     <div class="m-card-body m-card-body-flush">
-        @if (Model.Items.Count == 0)
+        @if (Model.Items.Count == 0 && Model.Failed)
+        {
+            <div class="m-empty">
+                <h3 class="m-empty-title">The {{ entity_name_plural | string.downcase }} could not be loaded</h3>
+                <p class="m-empty-subtitle">The message above says why. Try again in a moment.</p>
+                <a class="ant-btn ant-btn-default" href="/{{ route }}">Try again</a>
+            </div>
+        }
+        else if (Model.Items.Count == 0)
         {
             <div class="m-empty">
                 <h3 class="m-empty-title">No {{ entity_name_plural | string.downcase }} yet</h3>
