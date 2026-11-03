@@ -1,0 +1,12 @@
+@* PDF viewer: Url (the PDF), Id, Label, Page and Height *@
+@using Modulus.Blazor.Components.Extras
+
+<AppPdf Id="@Id" Url="@Url" Label="@Label" Page="Page" Height="@Height" />
+
+@code {
+    [Parameter] public string Id { get; set; } = "pdf";
+    [Parameter, EditorRequired] public string Url { get; set; } = "";
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public int Page { get; set; } = 1;
+    [Parameter] public string Height { get; set; } = "640px";
+}

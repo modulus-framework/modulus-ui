@@ -1,0 +1,11 @@
+@* Pivot grid: Result (a PivotResult), Label and DownloadHref *@
+@using Modulus.Ui.Abstractions.Pivot
+@using Modulus.Blazor.Components.Pro
+
+<AppPivotGrid Result="Result" Label="@Label" DownloadHref="@DownloadHref" />
+
+@code {
+    [Parameter, EditorRequired] public PivotResult Result { get; set; } = default!;
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? DownloadHref { get; set; }
+}

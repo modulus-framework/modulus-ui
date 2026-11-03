@@ -1,0 +1,14 @@
+@* Code editor: Id, Value, ValueChanged, Language (sql, json, csharp, html, ...), Label, ReadOnly and Height *@
+@using Modulus.Blazor.Components.Extras
+
+<AppCodeEditor Id="@Id" Value="@Value" ValueChanged="ValueChanged" Language="@Language" Label="@Label" ReadOnly="ReadOnly" Height="@Height" />
+
+@code {
+    [Parameter] public string Id { get; set; } = "code";
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public string Language { get; set; } = "";
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public string Height { get; set; } = "360px";
+}

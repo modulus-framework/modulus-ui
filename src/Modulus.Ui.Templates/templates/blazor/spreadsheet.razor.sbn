@@ -1,0 +1,14 @@
+@* Spreadsheet: Id, Sheets (a SpreadsheetSheet list), SheetsChanged, Label, ReadOnly and Height *@
+@using Modulus.Ui.Abstractions.Plugins
+@using Modulus.Blazor.Components.Extras
+
+<AppSpreadsheet Id="@Id" Sheets="Sheets" SheetsChanged="SheetsChanged" Label="@Label" ReadOnly="ReadOnly" Height="@Height" />
+
+@code {
+    [Parameter] public string Id { get; set; } = "sheet";
+    [Parameter, EditorRequired] public IReadOnlyList<SpreadsheetSheet> Sheets { get; set; } = [];
+    [Parameter] public EventCallback<IReadOnlyList<SpreadsheetSheet>> SheetsChanged { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public string Height { get; set; } = "420px";
+}

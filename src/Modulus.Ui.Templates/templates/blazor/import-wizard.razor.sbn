@@ -1,0 +1,10 @@
+@* Import wizard: Fields (the columns you accept) and OnImport, which gets the checked rows and returns a result message *@
+@using Modulus.Ui.Abstractions.Import
+@using Modulus.Blazor.Components.Pro
+
+<Modulus.Blazor.Components.Pro.ImportWizard Fields="Fields" OnImport="OnImport" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ImportField> Fields { get; set; } = [];
+    [Parameter, EditorRequired] public Func<IReadOnlyList<ImportRow>, Task<string>> OnImport { get; set; } = _ => Task.FromResult("");
+}

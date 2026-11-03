@@ -1,0 +1,13 @@
+@* Pivot grid: ViewBag.Result (a PivotResult), Label and DownloadHref *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Pivot
+@{
+    var result = ViewBag.Result as PivotResult;
+    string? label = ViewBag.Label;
+    string? download = ViewBag.DownloadHref;
+}
+
+@if (result is not null)
+{
+    <app-pivot-grid result="result" label="@label" download-href="@download" />
+}

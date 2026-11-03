@@ -1,0 +1,12 @@
+@* Import wizard: ViewBag.View (an ImportWizardView) and Action (where each step posts) *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Import
+@{
+    var view = ViewBag.View as ImportWizardView;
+    string action = ViewBag.Action ?? "";
+}
+
+@if (view is not null)
+{
+    <app-import-wizard view="view" action="@action" />
+}

@@ -1,0 +1,11 @@
+@* Data grid: ViewBag.Columns (a GridColumn list), Rows (a GridRecord list), Title, Name. Wrap it in a form to post the edits *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions
+@{
+    var columns = ViewBag.Columns as IList<GridColumn> ?? [];
+    var rows = ViewBag.Rows as IReadOnlyList<GridRecord> ?? [];
+    string? title = ViewBag.Title;
+    string name = ViewBag.Name ?? "grid";
+}
+
+<app-editable-grid name="@name" header-title="@title" columns="columns" rows="rows" searchable="true" selectable="true" exportable="true" paged="true" page-size="10" />

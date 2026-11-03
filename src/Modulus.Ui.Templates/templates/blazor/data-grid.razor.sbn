@@ -1,0 +1,16 @@
+@* Data grid: Columns, Rows, HeaderTitle, PageSize; OnSave, OnDiscard and OnChange report edits *@
+@using Modulus.Ui.Abstractions
+@using Modulus.Blazor.Components.Pro
+
+<EditableGrid Columns="Columns" Rows="Rows" HeaderTitle="@HeaderTitle" PageSize="PageSize" Searchable Selectable Exportable
+              OnSave="OnSave" OnDiscard="OnDiscard" OnChange="OnChange" />
+
+@code {
+    [Parameter, EditorRequired] public List<GridColumn> Columns { get; set; } = [];
+    [Parameter, EditorRequired] public List<GridRecord> Rows { get; set; } = [];
+    [Parameter] public string? HeaderTitle { get; set; }
+    [Parameter] public int PageSize { get; set; } = 10;
+    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnDiscard { get; set; }
+    [Parameter] public EventCallback OnChange { get; set; }
+}

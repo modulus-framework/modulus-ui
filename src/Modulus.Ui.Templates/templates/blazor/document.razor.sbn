@@ -1,0 +1,13 @@
+@* Document editor: Id, Value (HTML), ValueChanged, Label, ReadOnly and Height *@
+@using Modulus.Blazor.Components.Extras
+
+<AppDocument Id="@Id" Value="@Value" ValueChanged="ValueChanged" Label="@Label" ReadOnly="ReadOnly" Height="@Height" />
+
+@code {
+    [Parameter] public string Id { get; set; } = "document";
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public string Height { get; set; } = "640px";
+}

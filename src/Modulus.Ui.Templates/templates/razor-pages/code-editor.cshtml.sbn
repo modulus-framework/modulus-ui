@@ -1,0 +1,12 @@
+@* Code editor: ViewBag.Name, Label, Value, Language (sql, json, csharp, html, ...), ReadOnly, Height *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.Name ?? "code";
+    string? label = ViewBag.Label;
+    string? value = ViewBag.Value;
+    string? language = ViewBag.Language;
+    bool readOnly = ViewBag.ReadOnly == true;
+    string height = ViewBag.Height ?? "360px";
+}
+
+<app-code-editor name="@name" value="@value" label="@label" language="@language" read-only="readOnly" height="@height" />

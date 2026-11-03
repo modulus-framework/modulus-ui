@@ -1,0 +1,12 @@
+@* Document editor: ViewBag.Name (posts the HTML), Id, Value (HTML), Label, ReadOnly, Height *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.Name ?? "content";
+    string id = ViewBag.Id ?? "document";
+    string? value = ViewBag.Value;
+    string? label = ViewBag.Label;
+    bool readOnly = ViewBag.ReadOnly == true;
+    string height = ViewBag.Height ?? "640px";
+}
+
+<app-document id="@id" name="@name" value="@value" label="@label" read-only="readOnly" height="@height" />

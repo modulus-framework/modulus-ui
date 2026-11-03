@@ -1,0 +1,13 @@
+@* Spreadsheet: ViewBag.Name (posts the sheets), Id, Sheets (a SpreadsheetSheet list), Label, ReadOnly, Height *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Plugins
+@{
+    string name = ViewBag.Name ?? "sheets";
+    string id = ViewBag.Id ?? "sheet";
+    var sheets = ViewBag.Sheets as IReadOnlyList<SpreadsheetSheet> ?? [];
+    string? label = ViewBag.Label;
+    bool readOnly = ViewBag.ReadOnly == true;
+    string height = ViewBag.Height ?? "420px";
+}
+
+<app-spreadsheet id="@id" name="@name" sheets="sheets" label="@label" read-only="readOnly" height="@height" />

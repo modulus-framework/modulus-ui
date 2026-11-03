@@ -1,0 +1,11 @@
+@* PDF viewer: ViewBag.Url (the PDF), Id, Label, Page, Height *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string url = ViewBag.Url ?? "";
+    string id = ViewBag.Id ?? "pdf";
+    string? label = ViewBag.Label;
+    int page = ViewBag.Page ?? 1;
+    string height = ViewBag.Height ?? "640px";
+}
+
+<app-pdf id="@id" url="@url" label="@label" page="page" height="@height" />

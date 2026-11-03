@@ -1,0 +1,11 @@
+@* Rich text editor: ViewBag.Name, Label, Value (HTML), Placeholder, MinHeight *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.Name ?? "content";
+    string? label = ViewBag.Label;
+    string? value = ViewBag.Value;
+    string? placeholder = ViewBag.Placeholder;
+    int minHeight = ViewBag.MinHeight ?? 220;
+}
+
+<app-editor name="@name" value="@value" label="@label" placeholder="@placeholder" min-height="minHeight" />
