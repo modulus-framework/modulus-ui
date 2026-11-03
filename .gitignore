@@ -24,3 +24,6 @@ drift-reports/
 
 # Packed NuGet output (dotnet pack -o nupkg)
 nupkg/
+
+# Per-user Claude Code settings
+.claude/settings.local.json
