@@ -1,0 +1,15 @@
+@* Timeline: ViewBag.Items (objects with Text; optional Color, Label and Icon), Pending, Reverse *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    static string? Opt(object o, string name) => o.GetType().GetProperty(name)?.GetValue(o)?.ToString();
+    var items = ViewBag.Items as IEnumerable<dynamic> ?? [];
+    string? pending = ViewBag.Pending;
+    bool reverse = ViewBag.Reverse == true;
+}
+
+<app-timeline pending="@pending" reverse="reverse">
+    @foreach (var item in items)
+    {
+        <app-timeline-item color="@(Opt(item, "Color") ?? "blue")" label="@Opt(item, "Label")" icon="@Opt(item, "Icon")">@item.Text</app-timeline-item>
+    }
+</app-timeline>

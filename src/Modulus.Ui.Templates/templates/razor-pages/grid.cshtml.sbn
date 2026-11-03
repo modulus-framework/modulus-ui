@@ -1,0 +1,14 @@
+@* Grid: ViewBag.Columns (objects with Content; optional Span and Md), Gutter. Each column is 24 wide at most *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    static string? Opt(object o, string name) => o.GetType().GetProperty(name)?.GetValue(o)?.ToString();
+    var columns = ViewBag.Columns as IEnumerable<dynamic> ?? [];
+    int gutter = ViewBag.Gutter ?? 16;
+}
+
+<app-row gutter="gutter" vertical-gutter="gutter">
+    @foreach (var column in columns)
+    {
+        <app-col span="24" md="@(int.Parse(Opt(column, "Span") ?? "12"))">@column.Content</app-col>
+    }
+</app-row>

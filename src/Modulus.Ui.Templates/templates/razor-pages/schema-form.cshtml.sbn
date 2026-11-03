@@ -1,0 +1,12 @@
+@* Schema form: ViewBag.Schema (a FormSchema) and Values (a dictionary of field key to text) *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Forms
+@{
+    var schema = ViewBag.Schema as FormSchema;
+    var values = ViewBag.Values as IReadOnlyDictionary<string, string?>;
+}
+
+@if (schema is not null)
+{
+    <app-schema-form schema="schema" values="values" />
+}

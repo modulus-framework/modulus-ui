@@ -1,0 +1,35 @@
+@* Checkbox group: Label, Options (value and label) and the chosen Values *@
+
+<div class="ant-form-item m-field">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <div class="ant-form-item-label">
+            <label class="@(Required ? "ant-form-item-required" : "")">@Label</label>
+        </div>
+    }
+    <div class="ant-form-item-control">
+        <AntDesign.CheckboxGroup TValue="string" Options="_options" Value="@Values" ValueChanged="SetValues" Disabled="Disabled" />
+        @if (!string.IsNullOrEmpty(Help))
+        {
+            <div class="m-muted m-mt-4">@Help</div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Help { get; set; }
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string[] Values { get; set; } = [];
+    [Parameter] public EventCallback<string[]> ValuesChanged { get; set; }
+    [Parameter] public IEnumerable<Option> Options { get; set; } = [];
+    public sealed record Option(string Value, string Label);
+    private IEnumerable<CheckboxOption<string>> _options => Options.Select(o => new CheckboxOption<string> { Label = o.Label, Value = o.Value });
+
+    private async Task SetValues(string[] values)
+    {
+        Values = values;
+        await ValuesChanged.InvokeAsync(values);
+    }
+}

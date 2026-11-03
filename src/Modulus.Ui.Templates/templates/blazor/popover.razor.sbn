@@ -1,0 +1,13 @@
+@* Popover: Title, Content and the trigger as child content *@
+
+<AntDesign.Popover Title="@Title" Content="@Content" Trigger="new[] { AntDesign.Trigger.Click }" Placement="Placement.Bottom">
+    <Unbound>
+        <Button>@ChildContent</Button>
+    </Unbound>
+</AntDesign.Popover>
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Content { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

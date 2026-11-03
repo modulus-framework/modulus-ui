@@ -1,0 +1,7 @@
+@* Back to top: shows after the page is scrolled. ViewBag.VisibilityHeight in pixels *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    int height = ViewBag.VisibilityHeight ?? 400;
+}
+
+<app-back-top visibility-height="height" />

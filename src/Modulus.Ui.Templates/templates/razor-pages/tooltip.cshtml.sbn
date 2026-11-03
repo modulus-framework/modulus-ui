@@ -1,0 +1,9 @@
+@* Tooltip: ViewBag.Text (the hint), Label (what it points at), Placement (top, bottom, left, right) *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string text = ViewBag.Text ?? "";
+    string label = ViewBag.Label ?? "";
+    string placement = ViewBag.Placement ?? "top";
+}
+
+<app-tooltip title="@text" placement="@placement"><span>@label</span></app-tooltip>

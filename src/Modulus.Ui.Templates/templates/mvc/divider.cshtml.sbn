@@ -1,0 +1,10 @@
+@* Divider: ViewBag.Text (optional), Orientation (left, center, right), Dashed, Vertical *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string? text = ViewBag.Text;
+    string orientation = ViewBag.Orientation ?? "center";
+    bool dashed = ViewBag.Dashed == true;
+    string type = ViewBag.Vertical == true ? "vertical" : "horizontal";
+}
+
+<app-divider type="@type" orientation="@orientation" dashed="dashed">@text</app-divider>

@@ -1,0 +1,15 @@
+@* Slider: ViewBag.Name, Label, Value, Min, Max, Step, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    string? value = ViewBag.Value?.ToString();
+    decimal min = ViewBag.Min ?? 0m;
+    decimal max = ViewBag.Max ?? 100m;
+    decimal step = ViewBag.Step ?? 1m;
+}
+
+<app-form-item label="@label" help="@help">
+    <app-slider name="@name" value="@value" min="min" max="max" step="step" show-value="true" />
+</app-form-item>

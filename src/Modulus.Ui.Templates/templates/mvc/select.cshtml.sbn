@@ -1,0 +1,15 @@
+@* Select: ViewBag.Name, Label, Items (SelectListItem list), Placeholder, Multiple, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    var items = ViewBag.Items as IEnumerable<SelectListItem> ?? [];
+    string? placeholder = ViewBag.Placeholder;
+    bool multiple = ViewBag.Multiple == true;
+}
+
+<app-form-item label="@label" help="@help">
+    <app-select name="@name" items="items" placeholder="@placeholder" multiple="multiple" />
+</app-form-item>

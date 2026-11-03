@@ -1,0 +1,22 @@
+@* Collapse: Items (Title and Content), Accordion, Bordered and Ghost *@
+
+<AntDesign.Collapse Accordion="Accordion" Bordered="Bordered" Ghost="Ghost">
+    @foreach (var item in Items)
+    {
+        <Panel Key="@item.Id" Header="@item.Title">@item.Content</Panel>
+    }
+</AntDesign.Collapse>
+
+@code {
+    [Parameter] public IEnumerable<CollapseItem> Items { get; set; } = [];
+    [Parameter] public bool Accordion { get; set; }
+    [Parameter] public bool Bordered { get; set; } = true;
+    [Parameter] public bool Ghost { get; set; }
+
+    public sealed class CollapseItem
+    {
+        public string Id { get; set; } = "";
+        public string Title { get; set; } = "";
+        public RenderFragment? Content { get; set; }
+    }
+}

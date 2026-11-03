@@ -1,0 +1,17 @@
+@* Descriptions: Title, Items (Label and Value), Columns and Bordered *@
+
+<AntDesign.Descriptions Title="@Title" Column="Columns" Bordered="Bordered">
+    @foreach (var item in Items)
+    {
+        <DescriptionsItem Title="@item.Label" Span="item.Span">@item.Value</DescriptionsItem>
+    }
+</AntDesign.Descriptions>
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public IEnumerable<DescriptionItem> Items { get; set; } = [];
+    [Parameter] public int Columns { get; set; } = 3;
+    [Parameter] public bool Bordered { get; set; } = true;
+
+    public sealed record DescriptionItem(string Label, string? Value, int Span = 1);
+}

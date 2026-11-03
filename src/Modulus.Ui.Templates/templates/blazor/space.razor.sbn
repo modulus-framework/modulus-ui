@@ -1,0 +1,14 @@
+@* Space: the elements as child content, Size (Small, Middle, Large) and Vertical *@
+
+<AntDesign.Space Size="@Size" Direction="@(Vertical ? DirectionVHType.Vertical : DirectionVHType.Horizontal)" Wrap>
+    @foreach (var item in Items)
+    {
+        <SpaceItem>@item</SpaceItem>
+    }
+</AntDesign.Space>
+
+@code {
+    [Parameter] public IEnumerable<RenderFragment> Items { get; set; } = [];
+    [Parameter] public string Size { get; set; } = "small";
+    [Parameter] public bool Vertical { get; set; }
+}

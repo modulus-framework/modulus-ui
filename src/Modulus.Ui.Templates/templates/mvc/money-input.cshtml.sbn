@@ -1,0 +1,13 @@
+@* Money input: ViewBag.Name, Label, Value, Currency, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    string? value = ViewBag.Value?.ToString();
+    string currency = ViewBag.Currency ?? "USD";
+}
+
+<app-form-item label="@label" help="@help">
+    <app-money-input name="@name" value="@value" currency="@currency" />
+</app-form-item>

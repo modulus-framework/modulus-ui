@@ -1,0 +1,16 @@
+@* Descriptions: ViewBag.Title, Items (objects with Label and Value; optional Span), Columns, Bordered *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    static string? Opt(object o, string name) => o.GetType().GetProperty(name)?.GetValue(o)?.ToString();
+    var items = ViewBag.Items as IEnumerable<dynamic> ?? [];
+    string? title = ViewBag.Title;
+    int columns = ViewBag.Columns ?? 3;
+    bool bordered = ViewBag.Bordered != false;
+}
+
+<app-descriptions title="@title" column="columns" bordered="bordered">
+    @foreach (var item in items)
+    {
+        <app-descriptions-item label="@item.Label" span="@(int.Parse(Opt(item, "Span") ?? "1"))">@item.Value</app-descriptions-item>
+    }
+</app-descriptions>

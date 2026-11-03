@@ -1,0 +1,15 @@
+@* Text area: ViewBag.Name, Label, Value, Placeholder, Rows, ShowCount, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    string? value = ViewBag.Value?.ToString();
+    string? placeholder = ViewBag.Placeholder;
+    int rows = ViewBag.Rows ?? 4;
+    bool showCount = ViewBag.ShowCount == true;
+}
+
+<app-form-item label="@label" help="@help">
+    <app-textarea name="@name" value="@value" placeholder="@placeholder" rows="rows" show-count="showCount" />
+</app-form-item>

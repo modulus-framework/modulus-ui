@@ -1,0 +1,28 @@
+@* Menu: ViewBag.Items (objects with Key, Label and Url; optional Icon and Children), Selected (the Key), Mode (inline, vertical, horizontal) *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    static string? Opt(object o, string name) => o.GetType().GetProperty(name)?.GetValue(o)?.ToString();
+    static object? Prop(object o, string name) => o.GetType().GetProperty(name)?.GetValue(o);
+    var items = ViewBag.Items as IEnumerable<dynamic> ?? [];
+    string? selected = ViewBag.Selected;
+    string mode = ViewBag.Mode ?? "inline";
+}
+
+<app-menu mode="@mode" selected="@selected">
+    @foreach (var item in items)
+    {
+        if (Prop(item, "Children") is IEnumerable<object> children)
+        {
+            <app-sub-menu key="@item.Key" title="@item.Label" icon="@Opt(item, "Icon")">
+                @foreach (dynamic child in children)
+                {
+                    <app-menu-item key="@child.Key" href="@child.Url">@child.Label</app-menu-item>
+                }
+            </app-sub-menu>
+        }
+        else
+        {
+            <app-menu-item key="@item.Key" href="@item.Url" icon="@Opt(item, "Icon")">@item.Label</app-menu-item>
+        }
+    }
+</app-menu>

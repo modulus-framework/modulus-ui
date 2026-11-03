@@ -1,0 +1,12 @@
+@* File manager: ViewBag.View (a FileManagerView) and Url (the endpoint for folder actions) *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Files
+@{
+    var view = ViewBag.View as FileManagerView;
+    string url = ViewBag.Url ?? "/files";
+}
+
+@if (view is not null)
+{
+    <app-file-manager view="view" url="@url" />
+}

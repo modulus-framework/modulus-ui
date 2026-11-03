@@ -1,0 +1,11 @@
+@* Image: ViewBag.Src, Alt, Width, Height, Preview *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string src = ViewBag.Src ?? "";
+    string alt = ViewBag.Alt ?? "";
+    int? width = ViewBag.Width;
+    int? height = ViewBag.Height;
+    bool preview = ViewBag.Preview != false;
+}
+
+<app-image src="@src" alt="@alt" width="width" height="height" preview="preview" />

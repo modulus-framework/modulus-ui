@@ -1,0 +1,15 @@
+@* Collapse: ViewBag.Items (objects with Id, Title and Content), Accordion, Bordered, Open (the Id open first) *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    var items = ViewBag.Items as IEnumerable<dynamic> ?? [];
+    bool accordion = ViewBag.Accordion == true;
+    bool bordered = ViewBag.Bordered != false;
+    string? open = ViewBag.Open ?? (items.Any() ? (string?)items.First().Id : null);
+}
+
+<app-collapse active="@open" accordion="accordion" bordered="bordered">
+    @foreach (var item in items)
+    {
+        <app-panel key="@item.Id" header="@item.Title">@item.Content</app-panel>
+    }
+</app-collapse>

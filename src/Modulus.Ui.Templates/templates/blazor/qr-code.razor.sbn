@@ -1,0 +1,10 @@
+@* QR code: Value (the text or URL), Size and Bordered *@
+@using Modulus.Blazor.Components.Extras
+
+<AppQRCode Value="@Value" Size="Size" Bordered="Bordered" />
+
+@code {
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public int Size { get; set; } = 160;
+    [Parameter] public bool Bordered { get; set; } = true;
+}

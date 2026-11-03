@@ -1,0 +1,35 @@
+@* Text area: Label, Value, Placeholder, Rows, MaxLength, ShowCount and Help *@
+
+<div class="ant-form-item m-field">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <div class="ant-form-item-label">
+            <label class="@(Required ? "ant-form-item-required" : "")">@Label</label>
+        </div>
+    }
+    <div class="ant-form-item-control">
+        <TextArea Value="@Value" ValueChanged="SetValue" Placeholder="@Placeholder" MinRows="Rows" MaxLength="MaxLength" ShowCount="ShowCount" Disabled="Disabled" />
+        @if (!string.IsNullOrEmpty(Help))
+        {
+            <div class="m-muted m-mt-4">@Help</div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Help { get; set; }
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public uint Rows { get; set; } = 4;
+    [Parameter] public int MaxLength { get; set; } = -1;
+    [Parameter] public bool ShowCount { get; set; }
+    private async Task SetValue(string v)
+    {
+        Value = v;
+        await ValueChanged.InvokeAsync(v);
+    }
+}

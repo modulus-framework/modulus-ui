@@ -1,0 +1,12 @@
+@* Scheduler: ViewBag.View (a SchedulerView) and Url (the endpoint that returns the calendar for a date range) *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Scheduler
+@{
+    var view = ViewBag.View as SchedulerView;
+    string url = ViewBag.Url ?? "/scheduler";
+}
+
+@if (view is not null)
+{
+    <app-scheduler view="view" url="@url" />
+}

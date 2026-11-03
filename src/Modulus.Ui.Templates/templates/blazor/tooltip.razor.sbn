@@ -1,0 +1,11 @@
+@* Tooltip: Text (the hint), Placement and the element it points at as child content *@
+
+<AntDesign.Tooltip Title="@Text" Placement="@Placement">
+    <span>@ChildContent</span>
+</AntDesign.Tooltip>
+
+@code {
+    [Parameter] public string Text { get; set; } = "";
+    [Parameter] public Placement Placement { get; set; } = Placement.Top;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

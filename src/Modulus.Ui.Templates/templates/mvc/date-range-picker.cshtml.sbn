@@ -1,0 +1,15 @@
+@* Date range picker: ViewBag.NameFrom, NameTo, Label, From, To (yyyy-MM-dd), Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    string? nameFrom = ViewBag.NameFrom ?? "from";
+    string? nameTo = ViewBag.NameTo ?? "to";
+    string? fromValue = ViewBag.From?.ToString();
+    string? toValue = ViewBag.To?.ToString();
+}
+
+<app-form-item label="@label" help="@help">
+    <app-range-picker name-from="@nameFrom" name-to="@nameTo" value-from="@fromValue" value-to="@toValue" />
+</app-form-item>

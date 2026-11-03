@@ -1,0 +1,10 @@
+@* Tree: ViewBag.Options (a TreeOption list), Checkable, Selectable, ExpandAll *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions
+@{
+    var options = ViewBag.Options as IReadOnlyList<TreeOption> ?? [];
+    bool checkable = ViewBag.Checkable == true;
+    bool expandAll = ViewBag.ExpandAll != false;
+}
+
+<app-tree options="options" checkable="checkable" selectable="true" block-node="true" default-expand-all="expandAll" />

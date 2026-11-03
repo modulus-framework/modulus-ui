@@ -1,0 +1,11 @@
+@* Page header: ViewBag.Title, Subtitle, Pretitle; actions go in ViewBag.Body *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string title = ViewBag.Title ?? "";
+    string? subtitle = ViewBag.Subtitle;
+    string? pretitle = ViewBag.Pretitle;
+}
+
+<app-page-header title="@title" subtitle="@subtitle" pretitle="@pretitle">
+    @ViewBag.Body
+</app-page-header>

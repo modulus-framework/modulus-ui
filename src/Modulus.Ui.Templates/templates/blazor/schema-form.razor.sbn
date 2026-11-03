@@ -1,0 +1,12 @@
+@* Schema form: Schema (the fields), Values and ValuesChanged; Problems shows validation messages *@
+@using Modulus.Ui.Abstractions.Forms
+@using Modulus.Blazor.Components.Fields
+
+<AppSchemaForm Schema="Schema" Values="Values" ValuesChanged="ValuesChanged" Problems="Problems" />
+
+@code {
+    [Parameter, EditorRequired] public FormSchema Schema { get; set; } = default!;
+    [Parameter] public IReadOnlyDictionary<string, string?>? Values { get; set; }
+    [Parameter] public EventCallback<IReadOnlyDictionary<string, string?>> ValuesChanged { get; set; }
+    [Parameter] public IReadOnlyList<FormProblem>? Problems { get; set; }
+}

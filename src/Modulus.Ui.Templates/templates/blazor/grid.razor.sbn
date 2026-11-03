@@ -1,0 +1,19 @@
+@* Grid: Columns (a Span out of 24 and the content each), and Gutter; columns stack on phones *@
+
+<Row Gutter="@((Gutter, Gutter))">
+    @foreach (var column in Columns)
+    {
+        <Col Xs="24" Md="(ushort)column.Span">@column.Content</Col>
+    }
+</Row>
+
+@code {
+    [Parameter] public IEnumerable<GridColumn> Columns { get; set; } = [];
+    [Parameter] public int Gutter { get; set; } = 16;
+
+    public sealed class GridColumn
+    {
+        public int Span { get; set; } = 12;
+        public RenderFragment? Content { get; set; }
+    }
+}

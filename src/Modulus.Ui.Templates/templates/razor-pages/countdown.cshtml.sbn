@@ -1,0 +1,9 @@
+@* Countdown: ViewBag.Title, Target (a DateTime), Format *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string? title = ViewBag.Title;
+    DateTime target = ViewBag.Target ?? DateTime.Now.AddHours(1);
+    string format = ViewBag.Format ?? "HH:mm:ss";
+}
+
+<app-countdown title="@title" value="target" format="@format" />

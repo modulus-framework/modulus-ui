@@ -1,0 +1,16 @@
+@* Steps: Items (Title and Description), Current (0-based) and Vertical *@
+
+<AntDesign.Steps Current="Current" Direction="@(Vertical ? "vertical" : "horizontal")">
+    @foreach (var item in Items)
+    {
+        <Step Title="@item.Title" Description="@item.Description" />
+    }
+</AntDesign.Steps>
+
+@code {
+    [Parameter] public IEnumerable<StepItem> Items { get; set; } = [];
+    [Parameter] public int Current { get; set; }
+    [Parameter] public bool Vertical { get; set; }
+
+    public sealed record StepItem(string Title, string? Description = null);
+}

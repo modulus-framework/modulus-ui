@@ -1,0 +1,29 @@
+@* List: Header, Items (Title; optional Description and AvatarName), Bordered and an item click *@
+
+<AntList DataSource="@Items.ToList()" Bordered="Bordered" ItemLayout="ListItemLayout.Horizontal">
+    <Header>@Header</Header>
+    <ChildContent Context="item">
+        <ListItem>
+            <ListItemMeta Description="@item.Description">
+                <TitleTemplate>
+                    <a @onclick="() => OnSelect.InvokeAsync(item)">@item.Title</a>
+                </TitleTemplate>
+                <AvatarTemplate>
+                    @if (!string.IsNullOrEmpty(item.AvatarName))
+                    {
+                        <Avatar Style="background-color:var(--ant-color-primary,#1677ff)">@item.AvatarName[..1].ToUpperInvariant()</Avatar>
+                    }
+                </AvatarTemplate>
+            </ListItemMeta>
+        </ListItem>
+    </ChildContent>
+</AntList>
+
+@code {
+    [Parameter] public string? Header { get; set; }
+    [Parameter] public IEnumerable<ListEntry> Items { get; set; } = [];
+    [Parameter] public bool Bordered { get; set; } = true;
+    [Parameter] public EventCallback<ListEntry> OnSelect { get; set; }
+
+    public sealed record ListEntry(string Title, string? Description = null, string? AvatarName = null);
+}

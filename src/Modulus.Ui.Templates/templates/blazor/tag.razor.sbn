@@ -1,0 +1,10 @@
+@* Tag: the text as child content, Color (blue, green, red, orange, gold, purple, cyan or a hex value) and Closable *@
+
+<AntDesign.Tag Color="@Color" Closable="Closable" OnClose="OnClose">@ChildContent</AntDesign.Tag>
+
+@code {
+    [Parameter] public string? Color { get; set; }
+    [Parameter] public bool Closable { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

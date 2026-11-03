@@ -1,0 +1,14 @@
+@* Carousel: Slides (a render fragment each), Autoplay and Dots *@
+
+<AntDesign.Carousel Autoplay="Autoplay" Dots="Dots" DotPosition="CarouselDotPosition.Bottom">
+    @foreach (var slide in Slides)
+    {
+        <CarouselSlick>@slide</CarouselSlick>
+    }
+</AntDesign.Carousel>
+
+@code {
+    [Parameter] public IEnumerable<RenderFragment> Slides { get; set; } = [];
+    [Parameter] public bool Autoplay { get; set; }
+    [Parameter] public bool Dots { get; set; } = true;
+}

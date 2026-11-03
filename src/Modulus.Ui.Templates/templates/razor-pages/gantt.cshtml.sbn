@@ -1,0 +1,11 @@
+@* Gantt: ViewBag.View (a GanttView built with GanttModel.Build from your tasks) *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Gantt
+@{
+    var view = ViewBag.View as GanttView;
+}
+
+@if (view is not null)
+{
+    <app-gantt view="view" />
+}

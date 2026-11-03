@@ -1,0 +1,14 @@
+@* Segmented control: ViewBag.Name, Label, Value, Items (list of text), Block, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    string? value = ViewBag.Value?.ToString();
+    var items = ViewBag.Items as IEnumerable<string> ?? [];
+    bool block = ViewBag.Block == true;
+}
+
+<app-form-item label="@label" help="@help">
+    <app-segmented name="@name" value="@value" items="items" block="block" />
+</app-form-item>

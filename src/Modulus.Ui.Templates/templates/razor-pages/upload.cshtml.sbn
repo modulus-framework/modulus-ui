@@ -1,0 +1,19 @@
+@* Upload: ViewBag.Name, Label, Accept, Multiple, Drag, Text, Hint, MaxSize (MB), MaxCount, Action, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    string? accept = ViewBag.Accept;
+    bool multiple = ViewBag.Multiple == true;
+    bool drag = ViewBag.Drag != false;
+    string? text = ViewBag.Text;
+    string? hint = ViewBag.Hint;
+    double? maxSize = ViewBag.MaxSize;
+    int? maxCount = ViewBag.MaxCount;
+    string? action = ViewBag.Action;
+}
+
+<app-form-item label="@label" help="@help">
+    <app-upload name="@(name.Length > 0 ? name : "file")" accept="@accept" multiple="multiple" drag="drag" text="@text" hint="@hint" max-size="maxSize" max-count="maxCount" action="@action" />
+</app-form-item>

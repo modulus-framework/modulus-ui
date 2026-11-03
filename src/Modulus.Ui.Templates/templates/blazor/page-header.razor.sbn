@@ -1,0 +1,21 @@
+@* Page header: Title, Subtitle and the actions as child content *@
+
+<div class="m-page-header">
+    <div class="m-page-header-text">
+        <h1 class="m-page-title">@Title</h1>
+        @if (!string.IsNullOrEmpty(Subtitle))
+        {
+            <p class="m-muted">@Subtitle</p>
+        }
+    </div>
+    @if (ChildContent != null)
+    {
+        <div class="m-page-header-actions">@ChildContent</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

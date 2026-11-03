@@ -1,0 +1,15 @@
+@* File manager: Entries, Folder and Search; OnNavigate, OnCreate, OnRename and OnDelete tell you what the user did *@
+@using Modulus.Ui.Abstractions.Files
+@using Modulus.Blazor.Components.Pro
+
+<Modulus.Blazor.Components.Pro.FileManager Entries="Entries" Folder="Folder" Search="@Search" OnNavigate="OnNavigate" OnCreate="OnCreate" OnRename="OnRename" OnDelete="OnDelete" />
+
+@code {
+    [Parameter] public IReadOnlyList<FileEntry> Entries { get; set; } = [];
+    [Parameter] public int? Folder { get; set; }
+    [Parameter] public string Search { get; set; } = "";
+    [Parameter] public EventCallback<FileNavigation> OnNavigate { get; set; }
+    [Parameter] public EventCallback<FileCreate> OnCreate { get; set; }
+    [Parameter] public EventCallback<FileRename> OnRename { get; set; }
+    [Parameter] public EventCallback<int> OnDelete { get; set; }
+}

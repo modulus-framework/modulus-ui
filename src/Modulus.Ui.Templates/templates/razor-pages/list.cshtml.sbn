@@ -1,0 +1,15 @@
+@* List: ViewBag.Header, Items (objects with Title; optional Description, Href and AvatarName), Bordered *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    static string? Opt(object o, string name) => o.GetType().GetProperty(name)?.GetValue(o)?.ToString();
+    var items = ViewBag.Items as IEnumerable<dynamic> ?? [];
+    string? header = ViewBag.Header;
+    bool bordered = ViewBag.Bordered != false;
+}
+
+<app-list header="@header" bordered="bordered" split="true" empty-text="Nothing here yet.">
+    @foreach (var item in items)
+    {
+        <app-list-item title="@Opt(item, "Title")" description="@Opt(item, "Description")" href="@Opt(item, "Href")" avatar-name="@Opt(item, "AvatarName")" />
+    }
+</app-list>

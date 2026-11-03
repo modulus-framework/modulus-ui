@@ -1,0 +1,33 @@
+@* Date range picker: Label, From and To *@
+
+<div class="ant-form-item m-field">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <div class="ant-form-item-label">
+            <label class="@(Required ? "ant-form-item-required" : "")">@Label</label>
+        </div>
+    }
+    <div class="ant-form-item-control">
+        <RangePicker TValue="DateTime?[]" Value="@(new DateTime?[] { From, To })" ValueChanged="SetRange" Disabled="Disabled" Style="width:100%" />
+        @if (!string.IsNullOrEmpty(Help))
+        {
+            <div class="m-muted m-mt-4">@Help</div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Help { get; set; }
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public DateTime? From { get; set; }
+    [Parameter] public DateTime? To { get; set; }
+    [Parameter] public EventCallback<(DateTime?, DateTime?)> RangeChanged { get; set; }
+    private async Task SetRange(DateTime?[] range)
+    {
+        From = range.Length > 0 ? range[0] : null;
+        To = range.Length > 1 ? range[1] : null;
+        await RangeChanged.InvokeAsync((From, To));
+    }
+}

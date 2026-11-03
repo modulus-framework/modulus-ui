@@ -1,0 +1,9 @@
+@* QR code: ViewBag.Value (the text or URL), Size, Bordered *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string value = ViewBag.Value ?? "";
+    int size = ViewBag.Size ?? 160;
+    bool bordered = ViewBag.Bordered != false;
+}
+
+<app-qr-code value="@value" size="size" bordered="bordered" aria-label="QR code" />

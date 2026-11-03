@@ -1,0 +1,15 @@
+@* Calendar: Value, Fullscreen and OnSelect *@
+
+<AntDesign.Calendar TValue="DateTime" Value="@Value" Fullscreen="Fullscreen" OnSelect="Selected" />
+
+@code {
+    [Parameter] public DateTime Value { get; set; } = DateTime.Today;
+    [Parameter] public bool Fullscreen { get; set; } = true;
+    [Parameter] public EventCallback<DateTime> OnSelect { get; set; }
+
+    private async Task Selected(DateTime date)
+    {
+        Value = date;
+        await OnSelect.InvokeAsync(date);
+    }
+}

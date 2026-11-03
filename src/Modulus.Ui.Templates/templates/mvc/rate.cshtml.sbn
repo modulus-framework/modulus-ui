@@ -1,0 +1,13 @@
+@* Rating: ViewBag.Name, Label, Value, Count, AllowClear, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    string? value = ViewBag.Value?.ToString();
+    int count = ViewBag.Count ?? 5;
+}
+
+<app-form-item label="@label" help="@help">
+    <app-rate name="@name" value="@value" count="count" allow-clear="true" />
+</app-form-item>

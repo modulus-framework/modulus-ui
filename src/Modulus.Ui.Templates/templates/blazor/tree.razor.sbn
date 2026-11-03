@@ -1,0 +1,15 @@
+@* Tree: Options (a TreeOption tree), Checkable, ExpandAll and OnSelect *@
+
+<AntDesign.Tree TItem="TreeOption" DataSource="@Options" Checkable="Checkable" BlockNode DefaultExpandAll="ExpandAll"
+      TitleExpression="x => x.DataItem.Title" KeyExpression="x => x.DataItem.Value"
+      ChildrenExpression="x => x.DataItem.Children" IsLeafExpression="x => x.DataItem.IsLeaf"
+      OnClick="Clicked" />
+
+@code {
+    [Parameter] public IReadOnlyList<TreeOption> Options { get; set; } = [];
+    [Parameter] public bool Checkable { get; set; }
+    [Parameter] public bool ExpandAll { get; set; } = true;
+    [Parameter] public EventCallback<string> OnSelect { get; set; }
+
+    private Task Clicked(TreeEventArgs<TreeOption> args) => OnSelect.InvokeAsync(args.Node.Key);
+}

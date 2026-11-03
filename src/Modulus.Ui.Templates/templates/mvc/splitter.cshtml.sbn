@@ -1,0 +1,17 @@
+@* Splitter: ViewBag.Panels (objects with Content; optional Size, Min, Max), Vertical, Height *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    static string? Opt(object o, string name) => o.GetType().GetProperty(name)?.GetValue(o)?.ToString();
+    var panels = ViewBag.Panels as IEnumerable<dynamic> ?? [];
+    string layout = ViewBag.Vertical == true ? "vertical" : "horizontal";
+    int height = ViewBag.Height ?? 320;
+}
+
+<div style="height:@(height)px">
+    <app-splitter layout="@layout">
+        @foreach (var panel in panels)
+        {
+            <app-splitter-panel size="@Opt(panel, "Size")" min="@Opt(panel, "Min")" max="@Opt(panel, "Max")">@panel.Content</app-splitter-panel>
+        }
+    </app-splitter>
+</div>

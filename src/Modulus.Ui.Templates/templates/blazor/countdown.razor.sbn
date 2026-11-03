@@ -1,0 +1,10 @@
+@* Countdown: Title, Target and Format; OnFinish runs at zero *@
+
+<AntDesign.Countdown Title="@Title" Value="@Target" Format="@Format" OnFinish="OnFinish" />
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public DateTime Target { get; set; } = DateTime.Now.AddHours(1);
+    [Parameter] public string Format { get; set; } = "HH:mm:ss";
+    [Parameter] public EventCallback OnFinish { get; set; }
+}

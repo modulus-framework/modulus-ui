@@ -1,0 +1,29 @@
+@* Menu: Items (Key, Label and Url; optional Icon and Children), Selected and Mode (inline, vertical, horizontal) *@
+@inject NavigationManager Navigation
+
+<AntDesign.Menu Mode="@Mode" Theme="MenuTheme.Light" DefaultSelectedKeys="@(Selected is null ? Array.Empty<string>() : new[] { Selected })" DefaultOpenKeys="@(Items.Where(i => i.Children?.Any(c => c.Key == Selected) == true).Select(i => i.Key).ToArray())">
+    @foreach (var item in Items)
+    {
+        if (item.Children is { Count: > 0 })
+        {
+            <SubMenu Key="@item.Key" Title="@item.Label">
+                @foreach (var child in item.Children)
+                {
+                    <MenuItem Key="@child.Key" OnClick="() => Navigation.NavigateTo(child.Url)">@child.Label</MenuItem>
+                }
+            </SubMenu>
+        }
+        else
+        {
+            <MenuItem Key="@item.Key" OnClick="() => Navigation.NavigateTo(item.Url)">@item.Label</MenuItem>
+        }
+    }
+</AntDesign.Menu>
+
+@code {
+    [Parameter] public IReadOnlyList<NavItem> Items { get; set; } = [];
+    [Parameter] public string? Selected { get; set; }
+    [Parameter] public MenuMode Mode { get; set; } = MenuMode.Inline;
+
+    public sealed record NavItem(string Key, string Label, string Url = "#", IReadOnlyList<NavItem>? Children = null);
+}

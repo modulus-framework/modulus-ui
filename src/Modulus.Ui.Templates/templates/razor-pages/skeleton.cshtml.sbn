@@ -1,0 +1,11 @@
+@* Skeleton: ViewBag.Rows, Avatar, Active; the real content goes in ViewBag.Body and shows when Loading is false *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    int rows = ViewBag.Rows ?? 3;
+    bool avatar = ViewBag.Avatar == true;
+    bool loading = ViewBag.Loading != false;
+}
+
+<app-skeleton active="true" avatar="avatar" rows="rows" loading="loading">
+    @ViewBag.Body
+</app-skeleton>

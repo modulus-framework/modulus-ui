@@ -1,0 +1,7 @@
+@* Back to top: shows after the page is scrolled; VisibilityHeight in pixels *@
+
+<AntDesign.BackTop VisibilityHeight="VisibilityHeight" />
+
+@code {
+    [Parameter] public int VisibilityHeight { get; set; } = 400;
+}

@@ -1,0 +1,13 @@
+@* Search box: ViewBag.Name, Label, Value, Placeholder, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    string? value = ViewBag.Value?.ToString();
+    string? placeholder = ViewBag.Placeholder;
+}
+
+<app-form-item label="@label" help="@help">
+    <app-input-search name="@name" value="@value" placeholder="@(placeholder ?? "Search")" enter-button="true" allow-clear="true" />
+</app-form-item>

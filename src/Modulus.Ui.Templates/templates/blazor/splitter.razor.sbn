@@ -1,0 +1,24 @@
+@* Splitter: Panels (Content; optional Size, Min and Max such as "30%") and Vertical *@
+
+<div style="height:@(Height)px">
+    <AntDesign.Splitter Layout="@(Vertical ? "vertical" : "horizontal")">
+        @foreach (var panel in Panels)
+        {
+            <SplitterPanel DefaultSize="@panel.Size" Min="@panel.Min" Max="@panel.Max">@panel.Content</SplitterPanel>
+        }
+    </AntDesign.Splitter>
+</div>
+
+@code {
+    [Parameter] public IEnumerable<PanelItem> Panels { get; set; } = [];
+    [Parameter] public bool Vertical { get; set; }
+    [Parameter] public int Height { get; set; } = 320;
+
+    public sealed class PanelItem
+    {
+        public string? Size { get; set; }
+        public string? Min { get; set; }
+        public string? Max { get; set; }
+        public RenderFragment? Content { get; set; }
+    }
+}

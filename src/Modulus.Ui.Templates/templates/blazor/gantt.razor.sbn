@@ -1,0 +1,12 @@
+@* Gantt: Tasks, From and To; Today draws the marker *@
+@using Modulus.Ui.Abstractions.Gantt
+@using Modulus.Blazor.Components.Pro
+
+<Modulus.Blazor.Components.Pro.Gantt Tasks="Tasks" From="From" To="To" Today="Today" />
+
+@code {
+    [Parameter] public IReadOnlyList<GanttTask> Tasks { get; set; } = [];
+    [Parameter] public DateTime From { get; set; } = DateTime.Today.AddDays(-7);
+    [Parameter] public DateTime To { get; set; } = DateTime.Today.AddDays(60);
+    [Parameter] public DateTime Today { get; set; } = DateTime.Today;
+}

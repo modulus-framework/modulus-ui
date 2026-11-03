@@ -1,0 +1,15 @@
+@* Cascader: ViewBag.Name, Label, Value, Options (TreeOption list), Placeholder, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    string? value = ViewBag.Value?.ToString();
+    string? placeholder = ViewBag.Placeholder;
+    var options = ViewBag.Options as IReadOnlyList<TreeOption> ?? [];
+}
+
+<app-form-item label="@label" help="@help">
+    <app-cascader name="@name" value="@value" options="options" placeholder="@placeholder" />
+</app-form-item>

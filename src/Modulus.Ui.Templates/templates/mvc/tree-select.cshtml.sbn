@@ -1,0 +1,16 @@
+@* Tree select: ViewBag.Name, Label, Value, Options (TreeOption list), Checkable, Placeholder, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    string? value = ViewBag.Value?.ToString();
+    string? placeholder = ViewBag.Placeholder;
+    var options = ViewBag.Options as IReadOnlyList<TreeOption> ?? [];
+    bool checkable = ViewBag.Checkable == true;
+}
+
+<app-form-item label="@label" help="@help">
+    <app-tree-select name="@name" value="@value" options="options" checkable="checkable" placeholder="@placeholder" tree-default-expand-all="true" />
+</app-form-item>

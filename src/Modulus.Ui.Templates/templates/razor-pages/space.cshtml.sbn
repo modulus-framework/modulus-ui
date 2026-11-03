@@ -1,0 +1,10 @@
+@* Space: ViewBag.Size (small, middle, large), Vertical; the elements go in ViewBag.Body *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string size = ViewBag.Size ?? "small";
+    string direction = ViewBag.Vertical == true ? "vertical" : "horizontal";
+}
+
+<app-space size="@size" direction="@direction" wrap="true">
+    @ViewBag.Body
+</app-space>

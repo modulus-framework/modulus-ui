@@ -1,0 +1,12 @@
+@* Skeleton: Loading, Rows and Avatar; the real content is the child content *@
+
+<AntDesign.Skeleton Active Loading="Loading" Avatar="Avatar" Paragraph="@(new SkeletonParagraph { Rows = Rows })">
+    @ChildContent
+</AntDesign.Skeleton>
+
+@code {
+    [Parameter] public bool Loading { get; set; } = true;
+    [Parameter] public bool Avatar { get; set; }
+    [Parameter] public int Rows { get; set; } = 3;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

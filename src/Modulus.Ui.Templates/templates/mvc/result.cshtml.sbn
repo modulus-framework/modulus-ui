@@ -1,0 +1,11 @@
+@* Result: ViewBag.Status (success, info, warning, error, 404, 403, 500), Title, SubTitle; buttons go in ViewBag.Body *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string status = ViewBag.Status ?? "success";
+    string? title = ViewBag.Title;
+    string? subTitle = ViewBag.SubTitle;
+}
+
+<app-result status="@status" title="@title" sub-title="@subTitle">
+    @ViewBag.Body
+</app-result>

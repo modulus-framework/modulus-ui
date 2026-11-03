@@ -1,0 +1,11 @@
+@* Image: Src, Alt, Width, Height and Preview *@
+
+<AntDesign.Image Src="@Src" Alt="@Alt" Width="@Width" Height="@Height" Preview="Preview" />
+
+@code {
+    [Parameter] public string Src { get; set; } = "";
+    [Parameter] public string Alt { get; set; } = "";
+    [Parameter] public string? Width { get; set; }
+    [Parameter] public string? Height { get; set; }
+    [Parameter] public bool Preview { get; set; } = true;
+}

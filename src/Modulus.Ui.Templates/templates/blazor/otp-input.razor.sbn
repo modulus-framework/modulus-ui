@@ -1,0 +1,45 @@
+@* One-time code: Label, Length and OnComplete *@
+
+<div class="ant-form-item m-field">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <div class="ant-form-item-label">
+            <label class="@(Required ? "ant-form-item-required" : "")">@Label</label>
+        </div>
+    }
+    <div class="ant-form-item-control">
+        <div class="m-otp" role="group" aria-label="@Label">
+            @for (var i = 0; i < Length; i++)
+            {
+                var index = i;
+                <input class="ant-input m-otp-box" style="width:44px;text-align:center" maxlength="1" inputmode="numeric" autocomplete="one-time-code"
+                       value="@Digit(index)" disabled="@Disabled" @oninput="e => SetDigit(index, e.Value?.ToString())" />
+            }
+        </div>
+        @if (!string.IsNullOrEmpty(Help))
+        {
+            <div class="m-muted m-mt-4">@Help</div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Help { get; set; }
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public int Length { get; set; } = 6;
+    [Parameter] public EventCallback<string> OnComplete { get; set; }
+    private string Digit(int index) => Value is { } v && index < v.Length ? v[index].ToString() : "";
+
+    private async Task SetDigit(int index, string? digit)
+    {
+        var chars = (Value ?? "").PadRight(Length).ToCharArray();
+        chars[index] = string.IsNullOrEmpty(digit) ? ' ' : digit[^1];
+        Value = new string(chars).TrimEnd();
+        await ValueChanged.InvokeAsync(Value);
+        if (Value.Length == Length && !Value.Contains(' ')) await OnComplete.InvokeAsync(Value);
+    }
+}

@@ -1,0 +1,15 @@
+@* Steps: ViewBag.Items (objects with Title; optional Description), Current (0-based), Vertical *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    static string? Opt(object o, string name) => o.GetType().GetProperty(name)?.GetValue(o)?.ToString();
+    var items = ViewBag.Items as IEnumerable<dynamic> ?? [];
+    int current = ViewBag.Current ?? 0;
+    string direction = ViewBag.Vertical == true ? "vertical" : "horizontal";
+}
+
+<app-steps current="current" direction="@direction">
+    @foreach (var item in items)
+    {
+        <app-step title="@Opt(item, "Title")" description="@Opt(item, "Description")" />
+    }
+</app-steps>

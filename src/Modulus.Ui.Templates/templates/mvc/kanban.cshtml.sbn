@@ -1,0 +1,12 @@
+@* Kanban: ViewBag.Board (a KanbanBoardView) and Url (the endpoint that saves moves) *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Kanban
+@{
+    var board = ViewBag.Board as KanbanBoardView;
+    string url = ViewBag.Url ?? "/kanban";
+}
+
+@if (board is not null)
+{
+    <app-kanban board="board" url="@url" />
+}

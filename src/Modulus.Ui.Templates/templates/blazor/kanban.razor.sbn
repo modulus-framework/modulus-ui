@@ -1,0 +1,15 @@
+@* Kanban: Columns, Cards and Labels; OnMove, OnAdd and OnDelete tell you what changed *@
+@using Modulus.Ui.Abstractions.Kanban
+@using Modulus.Blazor.Components.Pro
+
+<KanbanBoard Columns="Columns" Cards="Cards" Labels="Labels" DoneColumnId="@DoneColumnId" OnMove="OnMove" OnAdd="OnAdd" OnDelete="OnDelete" />
+
+@code {
+    [Parameter] public IReadOnlyList<KanbanColumn> Columns { get; set; } = [];
+    [Parameter] public IReadOnlyList<KanbanCard> Cards { get; set; } = [];
+    [Parameter] public IReadOnlyList<string> Labels { get; set; } = [];
+    [Parameter] public string DoneColumnId { get; set; } = "done";
+    [Parameter] public EventCallback<KanbanMove> OnMove { get; set; }
+    [Parameter] public EventCallback<KanbanNewCard> OnAdd { get; set; }
+    [Parameter] public EventCallback<int> OnDelete { get; set; }
+}

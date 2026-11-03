@@ -1,0 +1,14 @@
+@* Carousel: ViewBag.Slides (the HTML or text of each slide), Autoplay (milliseconds, 0 for off), Dots *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    var slides = ViewBag.Slides as IEnumerable<dynamic> ?? [];
+    int autoplay = ViewBag.Autoplay ?? 0;
+    bool dots = ViewBag.Dots != false;
+}
+
+<app-carousel autoplay="autoplay" dots="dots">
+    @foreach (var slide in slides)
+    {
+        <carousel-slide>@slide</carousel-slide>
+    }
+</app-carousel>

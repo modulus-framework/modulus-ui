@@ -1,0 +1,9 @@
+@* Tag: ViewBag.Text, Color (blue, green, red, orange, gold, purple, cyan, a hex value), Closable *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string text = ViewBag.Text ?? "";
+    string? color = ViewBag.Color;
+    bool closable = ViewBag.Closable == true;
+}
+
+<app-tag color="@color" closable="closable">@text</app-tag>

@@ -1,0 +1,12 @@
+@* Statistic: ViewBag.Title, Value, Prefix, Suffix, Precision, ValueColor *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string? title = ViewBag.Title;
+    string? value = ViewBag.Value?.ToString();
+    string? prefix = ViewBag.Prefix;
+    string? suffix = ViewBag.Suffix;
+    int? precision = ViewBag.Precision;
+    string? color = ViewBag.ValueColor;
+}
+
+<app-statistic title="@title" value="@value" prefix="@prefix" suffix="@suffix" precision="precision" value-color="@color" />

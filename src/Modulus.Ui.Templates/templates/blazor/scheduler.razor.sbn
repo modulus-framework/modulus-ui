@@ -1,0 +1,12 @@
+@* Scheduler: View; OnQuery runs when the range changes, OnAdd on an empty slot and OnEdit on an event *@
+@using Modulus.Ui.Abstractions.Scheduler
+@using Modulus.Blazor.Components.Pro
+
+<Modulus.Blazor.Components.Pro.Scheduler View="View" OnQuery="OnQuery" OnAdd="OnAdd" OnEdit="OnEdit" />
+
+@code {
+    [Parameter, EditorRequired] public SchedulerView View { get; set; } = default!;
+    [Parameter] public EventCallback<SchedulerQuery> OnQuery { get; set; }
+    [Parameter] public EventCallback<DateTime> OnAdd { get; set; }
+    [Parameter] public EventCallback<SchedulerEvent> OnEdit { get; set; }
+}

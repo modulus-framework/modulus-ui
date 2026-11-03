@@ -1,0 +1,12 @@
+@* Drawer: the content goes in ViewBag.Body. Opened with $dispatch('modulus:drawer-open', '<DrawerId>'). ViewBag.DrawerId, Title, Placement (right, left, top, bottom), Width *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.DrawerId ?? "drawer";
+    string? title = ViewBag.Title;
+    string placement = ViewBag.Placement ?? "right";
+    int width = ViewBag.Width ?? 480;
+}
+
+<app-drawer name="@name" title="@title" placement="@placement" width="width">
+    @ViewBag.Body
+</app-drawer>

@@ -1,0 +1,33 @@
+@* Money input: Label, Value, Currency and Min *@
+
+<div class="ant-form-item m-field">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <div class="ant-form-item-label">
+            <label class="@(Required ? "ant-form-item-required" : "")">@Label</label>
+        </div>
+    }
+    <div class="ant-form-item-control">
+        <AntDesign.InputNumber TValue="decimal" Value="@Value" ValueChanged="SetValue" Min="Min" Step="0.01m" Precision="2" Disabled="Disabled" Style="width:100%"><AddOnBefore>@Currency</AddOnBefore></AntDesign.InputNumber>
+        @if (!string.IsNullOrEmpty(Help))
+        {
+            <div class="m-muted m-mt-4">@Help</div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Help { get; set; }
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public decimal Value { get; set; }
+    [Parameter] public EventCallback<decimal> ValueChanged { get; set; }
+    [Parameter] public string Currency { get; set; } = "USD";
+    [Parameter] public decimal Min { get; set; } = 0m;
+    private async Task SetValue(decimal v)
+    {
+        Value = v;
+        await ValueChanged.InvokeAsync(v);
+    }
+}

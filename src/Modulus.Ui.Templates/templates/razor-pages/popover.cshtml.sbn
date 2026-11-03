@@ -1,0 +1,11 @@
+@* Popover: ViewBag.Title, Content, Label (the trigger text), Trigger (click, hover), Placement *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string? title = ViewBag.Title;
+    string? content = ViewBag.Content;
+    string label = ViewBag.Label ?? "Details";
+    string trigger = ViewBag.Trigger ?? "click";
+    string placement = ViewBag.Placement ?? "bottom";
+}
+
+<app-popover title="@title" content="@content" trigger="@trigger" placement="@placement"><app-button>@label</app-button></app-popover>

@@ -1,0 +1,11 @@
+@* Query builder: Schema (the fields to filter on), Value (the filter) and ValueChanged *@
+@using Modulus.Ui.Abstractions.Query
+@using Modulus.Blazor.Components.Pro
+
+<Modulus.Blazor.Components.Pro.QueryBuilder Schema="Schema" Value="Value" ValueChanged="ValueChanged" />
+
+@code {
+    [Parameter] public IReadOnlyList<QueryField> Schema { get; set; } = [];
+    [Parameter] public FilterGroup Value { get; set; } = FilterGroup.Empty;
+    [Parameter] public EventCallback<FilterGroup> ValueChanged { get; set; }
+}

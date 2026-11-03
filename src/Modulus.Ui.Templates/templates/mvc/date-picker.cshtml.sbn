@@ -1,0 +1,14 @@
+@* Date picker: ViewBag.Name, Label, Value (yyyy-MM-dd), Picker (date, week, month, quarter, year, time), ShowTime, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    string? value = ViewBag.Value?.ToString();
+    string picker = ViewBag.Picker ?? "date";
+    bool showTime = ViewBag.ShowTime == true;
+}
+
+<app-form-item label="@label" help="@help">
+    <app-date-picker name="@name" value="@value" picker="@picker" show-time="showTime" />
+</app-form-item>

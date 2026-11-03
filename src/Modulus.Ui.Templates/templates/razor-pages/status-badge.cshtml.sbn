@@ -1,0 +1,8 @@
+@* Status badge: ViewBag.Text and Tone (default, success, warning, danger, info) *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string text = ViewBag.Text ?? "";
+    string tone = ViewBag.Tone ?? "default";
+}
+
+<app-status-badge tone="@tone">@text</app-status-badge>

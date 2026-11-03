@@ -1,0 +1,11 @@
+@* Statistic: Title, Value, Prefix, Suffix and Precision *@
+
+<AntDesign.Statistic Title="@Title" Value="@Value" Prefix="@Prefix" Suffix="@Suffix" Precision="Precision" />
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public decimal Value { get; set; }
+    [Parameter] public string? Prefix { get; set; }
+    [Parameter] public string? Suffix { get; set; }
+    [Parameter] public int Precision { get; set; }
+}

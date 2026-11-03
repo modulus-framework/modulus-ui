@@ -1,0 +1,13 @@
+@* One-time code: ViewBag.Name, Label, Length, Numeric, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    int length = ViewBag.Length ?? 6;
+    bool numeric = ViewBag.Numeric != false;
+}
+
+<app-form-item label="@label" help="@help">
+    <app-otp-input name="@name" length="length" numeric="numeric" aria-label="@label" />
+</app-form-item>

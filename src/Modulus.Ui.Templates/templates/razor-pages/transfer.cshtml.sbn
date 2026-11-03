@@ -1,0 +1,14 @@
+@* Transfer: ViewBag.Name, Label, Options (TreeOption list), TargetKeys, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    var options = ViewBag.Options as IReadOnlyList<TreeOption> ?? [];
+    var targets = ViewBag.TargetKeys as IEnumerable<string> ?? [];
+}
+
+<app-form-item label="@label" help="@help">
+    <app-transfer name="@name" options="options" target-keys="targets" titles="Available,Selected" show-search="true" />
+</app-form-item>

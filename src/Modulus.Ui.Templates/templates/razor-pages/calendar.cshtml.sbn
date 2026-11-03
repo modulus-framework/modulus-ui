@@ -1,0 +1,9 @@
+@* Calendar: ViewBag.Date, Fullscreen, Mode (month, year) *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    DateTime? date = ViewBag.Date;
+    bool fullscreen = ViewBag.Fullscreen != false;
+    string mode = ViewBag.Mode ?? "month";
+}
+
+<app-calendar date="date" fullscreen="fullscreen" mode="@mode" />

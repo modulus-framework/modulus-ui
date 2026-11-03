@@ -1,0 +1,15 @@
+@* Radio group: ViewBag.Name, Label, Items (SelectListItem list), Buttons, Vertical, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    var items = ViewBag.Items as IEnumerable<SelectListItem> ?? [];
+    string style = ViewBag.Buttons == true ? "outline" : "";
+    bool vertical = ViewBag.Vertical == true;
+}
+
+<app-form-item label="@label" help="@help">
+    <app-radio-group name="@name" items="items" button-style="@style" vertical="vertical" />
+</app-form-item>

@@ -1,0 +1,16 @@
+@* Timeline: Items (Text; optional Color and Label), Pending and Reverse *@
+
+<AntDesign.Timeline Pending="@Pending" Reverse="Reverse">
+    @foreach (var item in Items)
+    {
+        <TimelineItem Color="@(item.Color ?? "blue")" Label="@item.Label">@item.Text</TimelineItem>
+    }
+</AntDesign.Timeline>
+
+@code {
+    [Parameter] public IEnumerable<TimelineEntry> Items { get; set; } = [];
+    [Parameter] public string? Pending { get; set; }
+    [Parameter] public bool Reverse { get; set; }
+
+    public sealed record TimelineEntry(string Text, string? Color = null, string? Label = null);
+}

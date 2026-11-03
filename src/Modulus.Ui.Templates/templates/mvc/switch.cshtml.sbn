@@ -1,0 +1,14 @@
+@* Switch: ViewBag.Name, Label, Checked, OnText, OffText, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    bool isOn = ViewBag.Checked == true;
+    string? onText = ViewBag.OnText;
+    string? offText = ViewBag.OffText;
+}
+
+<app-form-item label="@label" help="@help">
+    <app-switch name="@name" checked="isOn" checked-text="@onText" unchecked-text="@offText" aria-label="@label" />
+</app-form-item>

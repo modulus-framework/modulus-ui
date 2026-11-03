@@ -1,0 +1,14 @@
+@* Auto-complete: ViewBag.Name, Label, Value, Options (list of text), Placeholder, Help *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string name = ViewBag.Name ?? "";
+    string label = ViewBag.Label ?? name;
+    string? help = ViewBag.Help;
+    string? value = ViewBag.Value?.ToString();
+    string? placeholder = ViewBag.Placeholder;
+    var options = ViewBag.Options as IEnumerable<string> ?? [];
+}
+
+<app-form-item label="@label" help="@help">
+    <app-auto-complete name="@name" value="@value" options="options" placeholder="@placeholder" />
+</app-form-item>

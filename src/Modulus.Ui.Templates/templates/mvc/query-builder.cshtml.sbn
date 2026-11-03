@@ -1,0 +1,13 @@
+@* Query builder: ViewBag.Schema (a QueryField list), Filter (a FilterGroup) and Action (where the filter posts) *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Query
+@{
+    var schema = ViewBag.Schema as IReadOnlyList<QueryField> ?? [];
+    var filter = ViewBag.Filter as FilterGroup;
+    string action = ViewBag.Action ?? "";
+}
+
+<form method="get" action="@action">
+    <app-query-builder schema="schema" model="filter" name="filter" />
+    <div class="m-mt-12"><app-button type="primary" html-type="submit">Apply filter</app-button></div>
+</form>
