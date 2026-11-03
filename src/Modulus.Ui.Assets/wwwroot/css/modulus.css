@@ -2886,3 +2886,21 @@ html[data-density='compact'] .m-settings-title { margin-bottom: 16px; font-size:
 @keyframes m-spin { to { transform: rotate(360deg); } }
 .m-input-loading .ant-input-prefix > span, .m-input-loading .ant-input-suffix > span { display: inline-flex; animation: m-spin 1s linear infinite; }
 .m-check-desc { margin: 2px 0 10px 24px; color: var(--m-text-secondary, #666); font-size: 12px; }
+
+/* Breadcrumb (app-breadcrumb, Ant Design's breadcrumb on the design tokens). It sits above the page title, the way SAP Fiori and Odoo
+ * place it. The text takes the body size (13 px compact, 14 px comfortable); the levels are separated by a slash; the current level is
+ * the heading colour. */
+.ant-breadcrumb { margin: 0 0 8px; color: var(--m-text-tertiary); font-size: inherit; line-height: inherit; }
+.ant-breadcrumb ol { display: flex; flex-wrap: wrap; align-items: center; margin: 0; padding: 0; list-style: none; }
+.ant-breadcrumb li { display: inline-flex; align-items: center; min-width: 0; }
+.ant-breadcrumb-link { color: var(--m-text-tertiary); }
+.ant-breadcrumb .ant-breadcrumb-link a { color: var(--m-text-tertiary); text-decoration: none; transition: color 150ms ease; }
+.ant-breadcrumb .ant-breadcrumb-link a:hover { color: var(--m-primary); }
+.ant-breadcrumb-link a:focus-visible { outline: 2px solid var(--m-primary); outline-offset: 2px; border-radius: 2px; }
+.ant-breadcrumb-link[aria-current='page'] { color: var(--m-heading); font-weight: 500; }
+.ant-breadcrumb-separator { margin: 0 8px; color: var(--m-text-tertiary); }
+/* The breadcrumb as the page title (app-page-header with no title): it takes the title's size and weight. */
+/* The whole path takes the body text size (14 px, 13 px compact); the current page is the same size, in the heading colour and semibold. */
+.m-page-title.m-page-trail > .ant-breadcrumb { margin: 0; font-size: 14px; line-height: 22px; font-weight: 400; }
+.m-page-title.m-page-trail > .ant-breadcrumb [aria-current='page'] { font-weight: 600; }
+html[data-density='compact'] .m-page-title.m-page-trail > .ant-breadcrumb { font-size: 13px; line-height: 20px; }

@@ -27,7 +27,11 @@ public class ThemeTests
         // Ant Design's own seed colours (the Modulus defaults are Tabler's).
         var css = ThemeCss.Build(new ModulusThemeOptions
         {
-            PrimaryColor = "#1890ff", InfoColor = "#1890ff", SuccessColor = "#52c41a", WarningColor = "#faad14", ErrorColor = "#ff4d4f",
+            PrimaryColor = "#1890ff",
+            InfoColor = "#1890ff",
+            SuccessColor = "#52c41a",
+            WarningColor = "#faad14",
+            ErrorColor = "#ff4d4f",
         });
 
         // Values copied from AntDesign 1.6.2 ant-design-blazor.variable.css :root.

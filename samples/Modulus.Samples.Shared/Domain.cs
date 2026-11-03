@@ -70,8 +70,14 @@ public sealed class UserInput
 
     public static UserInput From(AppUser u) => new()
     {
-        Name = u.Name, Email = u.Email, Company = u.Company, Country = u.Country, Phone = u.Phone,
-        Role = u.Role, Plan = u.Plan, Status = u.Status,
+        Name = u.Name,
+        Email = u.Email,
+        Company = u.Company,
+        Country = u.Country,
+        Phone = u.Phone,
+        Role = u.Role,
+        Plan = u.Plan,
+        Status = u.Status,
     };
 }
 
@@ -223,9 +229,17 @@ public sealed class InvoiceInput
 
     public static InvoiceInput From(Invoice i) => new()
     {
-        ClientName = i.ClientName, ClientCompany = i.ClientCompany, ClientEmail = i.ClientEmail,
-        ClientAddress = i.ClientAddress, ClientCountry = i.ClientCountry, IssuedAt = i.IssuedAt, DueAt = i.DueAt,
-        Status = i.Status, DiscountPercent = i.DiscountRate * 100, TaxPercent = i.TaxRate * 100, Note = i.Note,
+        ClientName = i.ClientName,
+        ClientCompany = i.ClientCompany,
+        ClientEmail = i.ClientEmail,
+        ClientAddress = i.ClientAddress,
+        ClientCountry = i.ClientCountry,
+        IssuedAt = i.IssuedAt,
+        DueAt = i.DueAt,
+        Status = i.Status,
+        DiscountPercent = i.DiscountRate * 100,
+        TaxPercent = i.TaxRate * 100,
+        Note = i.Note,
         Lines = i.Lines.Select(l => new InvoiceLine { Item = l.Item, Description = l.Description, Cost = l.Cost, Qty = l.Qty }).ToList(),
     };
 }
@@ -351,8 +365,14 @@ public sealed class EventInput
 
     public static EventInput From(CalendarEvent e) => new()
     {
-        Id = e.Id, Title = e.Title, Start = e.Start, End = e.End, AllDay = e.AllDay, Category = e.Category,
-        Location = e.Location, Description = e.Description,
+        Id = e.Id,
+        Title = e.Title,
+        Start = e.Start,
+        End = e.End,
+        AllDay = e.AllDay,
+        Category = e.Category,
+        Location = e.Location,
+        Description = e.Description,
     };
 }
 

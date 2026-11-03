@@ -434,9 +434,23 @@ public class CreatableSelectTagHelper : BoundControlTagHelper
         var values = Multiple ? (Values?.ToList() ?? Widgets.Values(For?.Model, value)) : [];
         var m = new CreatableSelectModel(name, $"m-cselect-{context.UniqueId}", Options.ToList())
         {
-            Id = id.Length > 0 ? id : null, SizeClass = SizeClass("ant-select"), Multiple = Multiple, Value = Multiple ? null : value, Values = values, Placeholder = Placeholder,
-            AllowClear = AllowClear, Disabled = Disabled, AllowAdd = AllowAdd, ShowColors = ShowColors, AddPlaceholder = AddPlaceholder,
-            AddText = AddText, CreateText = CreateText, AddHref = AddHref, AddModal = AddModal, AddNewText = AddNewText, AriaLabel = AriaLabel,
+            Id = id.Length > 0 ? id : null,
+            SizeClass = SizeClass("ant-select"),
+            Multiple = Multiple,
+            Value = Multiple ? null : value,
+            Values = values,
+            Placeholder = Placeholder,
+            AllowClear = AllowClear,
+            Disabled = Disabled,
+            AllowAdd = AllowAdd,
+            ShowColors = ShowColors,
+            AddPlaceholder = AddPlaceholder,
+            AddText = AddText,
+            CreateText = CreateText,
+            AddHref = AddHref,
+            AddModal = AddModal,
+            AddNewText = AddNewText,
+            AriaLabel = AriaLabel,
         };
 
         output.TagName = "div";

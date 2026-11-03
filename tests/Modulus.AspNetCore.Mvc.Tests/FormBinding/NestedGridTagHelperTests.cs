@@ -60,7 +60,11 @@ public class NestedGridTagHelperTests
     {
         var query = new QueryCollection(new Dictionary<string, StringValues>
         {
-            ["level"] = "1", ["parent"] = "PO-1", ["q"] = "shirt", ["sort"] = "style:desc", ["page"] = "3",
+            ["level"] = "1",
+            ["parent"] = "PO-1",
+            ["q"] = "shirt",
+            ["sort"] = "style:desc",
+            ["page"] = "3",
         });
         var request = NestedGridForm.ReadRequest(query, Settings());
         Assert.Equal(new NestedGridRequest(1, "PO-1", "shirt", "style", true, 3, 5), request);
@@ -86,7 +90,12 @@ public class NestedGridTagHelperTests
     {
         var query = new QueryCollection(new Dictionary<string, StringValues>
         {
-            ["level"] = "1", ["parent"] = "PO-1", ["f.style"] = "ST-1", ["f.bad key"] = "x", ["f.empty"] = "", ["page"] = "2",
+            ["level"] = "1",
+            ["parent"] = "PO-1",
+            ["f.style"] = "ST-1",
+            ["f.bad key"] = "x",
+            ["f.empty"] = "",
+            ["page"] = "2",
         });
         var request = NestedGridForm.ReadRequest(query, Settings());
 

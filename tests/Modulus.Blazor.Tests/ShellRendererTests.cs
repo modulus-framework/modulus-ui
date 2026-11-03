@@ -50,6 +50,33 @@ public class ShellRendererTests
     }
 
     [Fact]
+    public void MarkAllAsRead_PostsToTheAppWithItsAntiforgeryToken_WhenTheAppNamesAnAction()
+    {
+        var html = ShellRenderer.Topbar(View(new ShellContent
+        {
+            Notices = [new("Approval needed", null, "now", Unread: true)],
+            NoticesMarkAllAction = "Profile/Notifications?handler=ReadAll",
+            AntiForgeryToken = "tok123",
+        }));
+
+        Assert.Contains("""<form method="post" action="/Profile/Notifications?handler=ReadAll">""", html);
+        Assert.Contains("""<input type="hidden" name="__RequestVerificationToken" value="tok123" />""", html);
+        Assert.DoesNotContain("data-m-mark-read", html);
+    }
+
+    [Fact]
+    public void MarkAllAsRead_StaysClientOnly_WhenTheAppNamesNoAction()
+    {
+        var html = ShellRenderer.Topbar(View(new ShellContent
+        {
+            Notices = [new("Approval needed", null, "now", Unread: true)],
+        }));
+
+        Assert.Contains("""<button type="button" class="m-link-btn" data-m-mark-read>Mark all as read</button>""", html);
+        Assert.DoesNotContain("__RequestVerificationToken", html);
+    }
+
+    [Fact]
     public void AppSwitchers_WithManyApps_AddAFilter_FileAppsUnderGroups_AndWiden()
     {
         var sales = new MenuItemDefinition("sales", "Sales", null, "shopping-cart");

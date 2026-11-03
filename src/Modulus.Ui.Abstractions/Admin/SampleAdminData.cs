@@ -51,7 +51,10 @@ public sealed class SampleAdminData :
 
     private NotificationSettings _prefs = new()
     {
-        EmailActivitySummary = true, EmailSecurityAlerts = true, NotifySystemUpdates = true, NotifyReports = true,
+        EmailActivitySummary = true,
+        EmailSecurityAlerts = true,
+        NotifySystemUpdates = true,
+        NotifyReports = true,
     };
 
     private SystemSettings _settings = new() { AppName = "My Modulus App", SupportEmail = "support@example.com", TimeZone = "UTC" };
@@ -107,8 +110,13 @@ public sealed class SampleAdminData :
             if (!_profiles.TryGetValue(key, out var profile))
                 _profiles[key] = profile = new ProfileInfo
                 {
-                    FirstName = userName ?? "Sample", LastName = "User", Email = $"{(userName ?? "sample").ToLowerInvariant()}@example.com",
-                    MemberSince = Now.AddMonths(-8), AccountType = "Standard", LastLogin = Now.AddMinutes(-3), Status = "Active",
+                    FirstName = userName ?? "Sample",
+                    LastName = "User",
+                    Email = $"{(userName ?? "sample").ToLowerInvariant()}@example.com",
+                    MemberSince = Now.AddMonths(-8),
+                    AccountType = "Standard",
+                    LastLogin = Now.AddMinutes(-3),
+                    Status = "Active",
                 };
             return Task.FromResult(Copy(profile));
         }
@@ -130,8 +138,16 @@ public sealed class SampleAdminData :
 
     private static ProfileInfo Copy(ProfileInfo p) => new()
     {
-        FirstName = p.FirstName, LastName = p.LastName, Email = p.Email, Phone = p.Phone, JobTitle = p.JobTitle, Bio = p.Bio,
-        MemberSince = p.MemberSince, AccountType = p.AccountType, LastLogin = p.LastLogin, Status = p.Status,
+        FirstName = p.FirstName,
+        LastName = p.LastName,
+        Email = p.Email,
+        Phone = p.Phone,
+        JobTitle = p.JobTitle,
+        Bio = p.Bio,
+        MemberSince = p.MemberSince,
+        AccountType = p.AccountType,
+        LastLogin = p.LastLogin,
+        Status = p.Status,
     };
 
     // Roles
@@ -276,9 +292,16 @@ public sealed class SampleAdminData :
 
     private static NotificationSettings CopyPrefs(NotificationSettings p) => new()
     {
-        EmailActivitySummary = p.EmailActivitySummary, EmailSecurityAlerts = p.EmailSecurityAlerts, EmailProductUpdates = p.EmailProductUpdates,
-        EmailMarketing = p.EmailMarketing, NotifySystemUpdates = p.NotifySystemUpdates, NotifyReports = p.NotifyReports,
-        NotifyCollaboration = p.NotifyCollaboration, NotifyScheduled = p.NotifyScheduled, DigestFrequency = p.DigestFrequency, QuietHours = p.QuietHours,
+        EmailActivitySummary = p.EmailActivitySummary,
+        EmailSecurityAlerts = p.EmailSecurityAlerts,
+        EmailProductUpdates = p.EmailProductUpdates,
+        EmailMarketing = p.EmailMarketing,
+        NotifySystemUpdates = p.NotifySystemUpdates,
+        NotifyReports = p.NotifyReports,
+        NotifyCollaboration = p.NotifyCollaboration,
+        NotifyScheduled = p.NotifyScheduled,
+        DigestFrequency = p.DigestFrequency,
+        QuietHours = p.QuietHours,
     };
 
     // Audit

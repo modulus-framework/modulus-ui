@@ -259,16 +259,16 @@ public sealed class PivotResult
         var n = aggregates.Length;
 
         foreach (var (r, c, groups) in levels)
-        foreach (var leaf in groups)
-        {
-            var row = rows;
-            for (var i = 0; i < r; i++) row = Child(row, state.Rows[i], Slot(leaf.Key, i), label);
-            var column = columns;
-            for (var j = 0; j < c; j++) column = Child(column, state.Columns[j], Slot(leaf.Key, r + j), label);
-            var t = new Totals(n) { Count = leaf.Count };
-            for (var k = 0; k < n; k++) t.Values[k] = Value(leaf, k);
-            cells[(row.Path, column.Path)] = t;
-        }
+            foreach (var leaf in groups)
+            {
+                var row = rows;
+                for (var i = 0; i < r; i++) row = Child(row, state.Rows[i], Slot(leaf.Key, i), label);
+                var column = columns;
+                for (var j = 0; j < c; j++) column = Child(column, state.Columns[j], Slot(leaf.Key, r + j), label);
+                var t = new Totals(n) { Count = leaf.Count };
+                for (var k = 0; k < n; k++) t.Values[k] = Value(leaf, k);
+                cells[(row.Path, column.Path)] = t;
+            }
 
         var result = new PivotResult(state, fields, allMeasures, measures, rows, columns, cells, stored, aggregates, ratios, groupByTitle, null);
         Finish(rows, state, PivotAxis.Rows, order, result);
@@ -309,7 +309,14 @@ public sealed class PivotResult
 
     private static decimal Value(PivotLeaf leaf, int i) => i switch
     {
-        0 => leaf.V0, 1 => leaf.V1, 2 => leaf.V2, 3 => leaf.V3, 4 => leaf.V4, 5 => leaf.V5, 6 => leaf.V6, _ => leaf.V7,
+        0 => leaf.V0,
+        1 => leaf.V1,
+        2 => leaf.V2,
+        3 => leaf.V3,
+        4 => leaf.V4,
+        5 => leaf.V5,
+        6 => leaf.V6,
+        _ => leaf.V7,
     };
 
     /// <summary>A level's key as text: the text slot, or the number slot in invariant digits; empty for null.</summary>
@@ -317,8 +324,14 @@ public sealed class PivotResult
     {
         var (text, number) = i switch
         {
-            0 => (k.S0, k.N0), 1 => (k.S1, k.N1), 2 => (k.S2, k.N2), 3 => (k.S3, k.N3),
-            4 => (k.S4, k.N4), 5 => (k.S5, k.N5), 6 => (k.S6, k.N6), _ => (k.S7, k.N7),
+            0 => (k.S0, k.N0),
+            1 => (k.S1, k.N1),
+            2 => (k.S2, k.N2),
+            3 => (k.S3, k.N3),
+            4 => (k.S4, k.N4),
+            5 => (k.S5, k.N5),
+            6 => (k.S6, k.N6),
+            _ => (k.S7, k.N7),
         };
         return text ?? (number is { } v ? v.ToString(CultureInfo.InvariantCulture) : "");
     }

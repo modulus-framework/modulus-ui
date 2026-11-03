@@ -323,13 +323,13 @@ public sealed class PivotQuery<T>
         var columns = Opened(state, PivotAxis.Columns);
         var list = new List<PivotLevel>();
         for (var i = rows.Count; i >= 0; i--)
-        for (var j = columns.Count; j >= 0; j--)
-        {
-            var query = source;
-            if (i > 0 && rows[i - 1] is { } r) query = query.Where(r);
-            if (j > 0 && columns[j - 1] is { } c) query = query.Where(c);
-            list.Add(new PivotLevel(i, j, Group(query, state.Rows.Take(i).Concat(state.Columns.Take(j)).ToArray(), state)));
-        }
+            for (var j = columns.Count; j >= 0; j--)
+            {
+                var query = source;
+                if (i > 0 && rows[i - 1] is { } r) query = query.Where(r);
+                if (j > 0 && columns[j - 1] is { } c) query = query.Where(c);
+                list.Add(new PivotLevel(i, j, Group(query, state.Rows.Take(i).Concat(state.Columns.Take(j)).ToArray(), state)));
+            }
         return list;
     }
 

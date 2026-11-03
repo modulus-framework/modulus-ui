@@ -71,6 +71,8 @@ app.MapStaticAssets().AllowAnonymous();
 app.MapControllers().WithStaticAssets();
 // The "Views" dropdown (<app-saved-views>) posts here.
 app.MapModulusSavedViews();
+// The header search (htmx) asks here for its results.
+app.MapModulusShellSearch();
 // The dashboard layout tiles post here.
 app.MapModulusDashboard();
 

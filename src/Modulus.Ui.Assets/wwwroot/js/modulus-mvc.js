@@ -88,6 +88,51 @@
             };
         });
 
+        // Header search: htmx fetches the results (ShellRenderer.SearchEndpoint, the caller's own menu) into #m-search-results.
+        // Alpine owns what htmx does not: the open state, the keys, Enter, Escape and the shortcuts. The server marks the
+        // first result .active; the arrow keys move that class, and Enter clicks it.
+        Alpine.data('modulusSearch', function () {
+            return {
+                open: false,
+                init: function () {
+                    var self = this;
+                    this.$watch('open', function (on) { document.documentElement.classList.toggle('m-search-active', on); });
+                    // Every new result list opens the box; an empty one is hidden by CSS (.m-search-results:empty).
+                    this.$refs.results.addEventListener('htmx:afterSwap', function () { self.open = true; });
+                },
+                focus: function () {
+                    this.open = true;
+                    this.$refs.input.focus();
+                    this.$refs.input.select();
+                },
+                close: function (clear) {
+                    this.open = false;
+                    if (clear) {
+                        this.$refs.input.value = '';
+                        this.$refs.results.innerHTML = '';
+                    }
+                },
+                move: function (delta) {
+                    var items = this.$refs.results.querySelectorAll('.m-search-item');
+                    if (!items.length) return;
+                    var at = Array.prototype.findIndex.call(items, function (el) { return el.classList.contains('active'); });
+                    var next = (at + delta + items.length) % items.length;
+                    items.forEach(function (el, i) { el.classList.toggle('active', i === next); });
+                    items[next].scrollIntoView({ block: 'nearest' });
+                },
+                choose: function () {
+                    var active = this.$refs.results.querySelector('.m-search-item.active');
+                    if (active) active.click();
+                },
+                // Ctrl+K, Cmd+K or "/" (outside a field) opens the search; the keycap shows the platform's key.
+                shortcut: function (e) {
+                    var typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
+                    if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)) { e.preventDefault(); this.focus(); }
+                    else if (e.key === '/' && !typing) { e.preventDefault(); this.focus(); }
+                }
+            };
+        });
+
         // Row selection for server-rendered tables: <div x-data="tableSelection"> … name="ids" checkboxes.
         Alpine.data('tableSelection', function () {
             var densityKey = 'modulus-table-density';

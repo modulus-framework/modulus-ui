@@ -506,7 +506,10 @@ public class CoverageTagHelperTests
         var output = await RunAsync(new TransferTagHelper
         {
             Options = [new("r", "Read"), new("w", "Write"), new("d", "Delete", Disabled: true)],
-            TargetKeys = ["w"], Name = "perms", Titles = "Available,Granted", ShowSearch = true,
+            TargetKeys = ["w"],
+            Name = "perms",
+            Titles = "Available,Granted",
+            ShowSearch = true,
         }, "app-transfer");
 
         var html = Render(output);
@@ -590,7 +593,11 @@ public class BusinessChartTagHelperTests
     {
         var html = await RunAsync(new ScatterChartTagHelper
         {
-            Points = [new("P", 5, 10, 3, 0)], XTitle = "Revenue", YTitle = "Margin", XPrefix = "$", Quadrants = true,
+            Points = [new("P", 5, 10, 3, 0)],
+            XTitle = "Revenue",
+            YTitle = "Margin",
+            XPrefix = "$",
+            Quadrants = true,
         }, "app-scatter-chart");
 
         Assert.Contains("<div class=\"m-axis-title m-axis-title-x\">Revenue</div>", html);

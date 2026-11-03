@@ -88,7 +88,11 @@ public class BusinessFieldTagHelperTests
     {
         var html = await RenderAsync(new NumberRangeTagHelper
         {
-            FromFor = For<decimal?>("LeadFrom", 10m), ToFor = For<decimal?>("LeadTo", 5m), Decimals = 0, Suffix = "days", AriaLabel = "Lead time",
+            FromFor = For<decimal?>("LeadFrom", 10m),
+            ToFor = For<decimal?>("LeadTo", 5m),
+            Decimals = 0,
+            Suffix = "days",
+            AriaLabel = "Lead time",
         }, "app-number-range");
 
         Assert.StartsWith("<div class=\"ant-picker ant-picker-range ant-picker-status-error m-field m-number-range\"", html);
@@ -145,7 +149,9 @@ public class BusinessFieldTagHelperTests
     {
         var html = await RenderAsync(new LookupTagHelper
         {
-            For = For("Customer", "C1"), Items = Customers, AriaLabel = "Customer",
+            For = For("Customer", "C1"),
+            Items = Customers,
+            AriaLabel = "Customer",
             Columns = [new("value", "Code"), new("label", "Customer"), new("city", "City")],
         }, "app-lookup");
 
@@ -165,7 +171,9 @@ public class BusinessFieldTagHelperTests
     {
         var html = await RenderAsync(new LookupTagHelper
         {
-            For = For("Customer", "C1"), Items = Customers, AriaLabel = "Customer",
+            For = For("Customer", "C1"),
+            Items = Customers,
+            AriaLabel = "Customer",
             Columns = [new("value", "Code"), new("label", "Customer"), new("city", "City")],
         }, "app-lookup");
 

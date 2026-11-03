@@ -56,7 +56,8 @@ public static partial class NestedGridForm
         var levelSize = Math.Max(1, settings.Level(level)?.PageSize ?? 5);
         var custom = int.TryParse(query["size"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var sz) && Paging.SizesWith(levelSize).Contains(sz);
         return new NestedGridRequest(level, parent, NullIfEmpty(query["q"]), field, sort?.ElementAtOrDefault(1) == "desc", page, custom ? sz : levelSize,
-            filters.Count == 0 ? null : filters, searches) { CustomPageSize = custom };
+            filters.Count == 0 ? null : filters, searches)
+        { CustomPageSize = custom };
     }
 
     /// <summary>Query prefix of a level's filters (<c>f.status=draft</c>).</summary>
@@ -91,7 +92,8 @@ public static partial class NestedGridForm
     {
         var posted = post.Rows.Select(r => r.Id).ToHashSet(StringComparer.Ordinal);
         return new NestedGridChanges(request.Level, request.ParentId, post.Columns, post.Rows,
-            LoadedIds(form, request.Level).Where(id => !posted.Contains(id)).ToList()) { Ordered = request.SortField is null };
+            LoadedIds(form, request.Level).Where(id => !posted.Contains(id)).ToList())
+        { Ordered = request.SortField is null };
     }
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;

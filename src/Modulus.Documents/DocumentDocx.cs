@@ -186,7 +186,8 @@ public static class DocumentDocx
             for (var i = 1; i <= _orderedLists; i++)
                 numbering.Append(new NumberingInstance(
                     new AbstractNumId { Val = OrderedAbstract },
-                    new LevelOverride(new StartOverrideNumberingValue { Val = 1 }) { LevelIndex = 0 }) { NumberID = OrderedAbstract + i });
+                    new LevelOverride(new StartOverrideNumberingValue { Val = 1 }) { LevelIndex = 0 })
+                { NumberID = OrderedAbstract + i });
             return numbering;
         }
 
@@ -205,7 +206,8 @@ public static class DocumentDocx
                     {
                         Left = (720 * (l + 1)).ToString(CultureInfo.InvariantCulture),
                         Hanging = "360",
-                    })) { LevelIndex = l });
+                    }))
+                { LevelIndex = l });
             }
             return abstractNum;
         }
@@ -224,13 +226,15 @@ public static class DocumentDocx
             if (heading) paragraph.Append(new KeepNext());
             paragraph.Append(new SpacingBetweenLines { Before = heading ? "240" : "0", After = after.ToString(CultureInfo.InvariantCulture) });
             var style = new Style(new StyleName { Val = name }, new BasedOn { Val = "Normal" }, new NextParagraphStyle { Val = "Normal" },
-                new PrimaryStyle(), paragraph, run) { Type = StyleValues.Paragraph, StyleId = id };
+                new PrimaryStyle(), paragraph, run)
+            { Type = StyleValues.Paragraph, StyleId = id };
             return style;
         }
 
         var normal = new Style(new StyleName { Val = "Normal" }, new PrimaryStyle()) { Type = StyleValues.Paragraph, StyleId = "Normal", Default = true };
         var list = new Style(new StyleName { Val = "List Paragraph" }, new BasedOn { Val = "Normal" },
-            new StyleParagraphProperties(new SpacingBetweenLines { After = "60" }, new ContextualSpacing())) { Type = StyleValues.Paragraph, StyleId = "ListParagraph" };
+            new StyleParagraphProperties(new SpacingBetweenLines { After = "60" }, new ContextualSpacing()))
+        { Type = StyleValues.Paragraph, StyleId = "ListParagraph" };
         var border = () => new[]
         {
             (OpenXmlElement)new TopBorder { Val = BorderValues.Single, Size = 4, Color = "BFBFBF" },

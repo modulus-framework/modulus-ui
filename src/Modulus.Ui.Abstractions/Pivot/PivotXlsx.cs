@@ -76,16 +76,16 @@ public static class PivotXlsx
                     Text(r, col, cell.Total ? "Total" : cell.Header.Label, Heading);
                     Merge(r, col, cell.RowSpan, cell.ColSpan);
                     for (var i = 0; i < cell.RowSpan; i++)
-                    for (var j = 0; j < cell.ColSpan; j++)
-                        taken.Add((r + i, col + j));
+                        for (var j = 0; j < cell.ColSpan; j++)
+                            taken.Add((r + i, col + j));
                     col += cell.ColSpan;
                 }
             }
             var measureRow = headerRows.Count;
             var c = 1;
             foreach (var _ in columns)
-            foreach (var m in measures)
-                Text(measureRow, c++, m.Title, Heading);
+                foreach (var m in measures)
+                    Text(measureRow, c++, m.Title, Heading);
 
             var row = measureRow + 1;
             foreach (var header in result.BodyRows())
@@ -94,13 +94,13 @@ public static class PivotXlsx
                 Text(row, 0, new string(' ', header.Depth * 4) + header.Label, total ? Bold : Plain);
                 c = 1;
                 foreach (var column in columns)
-                foreach (var m in measures)
-                {
-                    var bold = total || column.Total;
-                    if (result.Value(header.Path, column.Header.Path, m.Key) is { } v)
-                        Number(row, c, v, m.Percent ? (bold ? BoldPercent : Percent) : m.Decimals == 0 ? (bold ? BoldWhole : Whole) : (bold ? BoldDecimal : Decimal));
-                    c++;
-                }
+                    foreach (var m in measures)
+                    {
+                        var bold = total || column.Total;
+                        if (result.Value(header.Path, column.Header.Path, m.Key) is { } v)
+                            Number(row, c, v, m.Percent ? (bold ? BoldPercent : Percent) : m.Decimals == 0 ? (bold ? BoldWhole : Whole) : (bold ? BoldDecimal : Decimal));
+                        c++;
+                    }
                 row++;
             }
             widths = $"""<cols><col min="1" max="1" width="32" customWidth="1"/><col min="2" max="{Math.Max(2, c).ToString(Inv)}" width="14" customWidth="1"/></cols>""";

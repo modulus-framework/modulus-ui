@@ -151,12 +151,14 @@ html:not(.m-can-fullscreen) .m-fullscreen-btn, html.m-fullscreen .m-show-windowe
     width: max(100%, 360px); max-height: min(420px, 70vh); overflow: auto; padding: 4px;
     background: var(--m-bg-elevated); border-radius: var(--m-radius-lg); box-shadow: var(--m-shadow-popup);
 }
+.m-search-results:empty { display: none; }
 .m-search-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--m-radius); color: var(--m-text); }
 .m-search-item:hover, .m-search-item.active { background: var(--m-primary-bg); color: var(--m-primary); }
 .m-search-item .m-ti { width: 18px; height: 18px; color: var(--m-text-tertiary); }
 .m-search-item.active .m-ti, .m-search-item:hover .m-ti { color: var(--m-primary); }
 .m-search-item-section { margin-inline-start: auto; font-size: 12px; color: var(--m-text-tertiary); white-space: nowrap; }
 .m-search-empty { padding: 20px 12px; text-align: center; color: var(--m-text-tertiary); }
+.m-search-group { padding: 8px 12px 4px; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--m-text-tertiary); }
 .m-search-open { display: none; }
 
 /* Dropdowns (details/summary; closed on outside click by modulus-shell.js) ------------------------ */
@@ -196,6 +198,8 @@ details.m-dropdown:not([open]) > .m-dropdown-menu { display: none; }
 /* Navbar menus are a collapsible tree: a group folds open in place under its name, to any depth, each level
    indented 14px (--m-depth on its list). Long trees scroll inside the menu. */
 .m-tree { min-width: 240px; max-height: min(70vh, 560px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+/* Each item and group in a tree keeps its own row: the gap stops hover fills from running into the next item. */
+.m-tree, .m-tree-sub { display: flex; flex-direction: column; gap: 4px; }
 .m-tree-group > summary { list-style: none; }
 .m-tree-group > summary::-webkit-details-marker { display: none; }
 .m-tree-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -452,7 +456,10 @@ html[data-nav='dark'] .m-hnav-item.active > details > .m-hnav-link::after { back
 .m-snav > .m-snav-item.active > details > .m-snav-link { color: var(--m-nav-text-strong); }
 .m-snav > .m-snav-item.active > .m-snav-link { background: var(--m-nav-active-bg); color: var(--m-nav-active-text); }
 .m-snav > .m-snav-item.active .m-snav-icon { color: var(--m-nav-active-text); }
-.m-snav-sub { position: relative; margin: 2px 0 4px; }
+.m-snav-sub { position: relative; margin: 4px 0 8px; }
+/* Child links sit apart from each other, so each one reads as its own target. */
+.m-snav-sub > .m-snav-item + .m-snav-item { margin-top: 4px; }
+.m-snav-sub > .m-snav-item > .m-snav-link { margin-block: 2px; border-radius: var(--m-radius); }
 .m-snav-sub::before { content: ''; position: absolute; top: 4px; bottom: 4px; inset-inline-start: 21px; width: 1px; background: var(--m-nav-border); }
 .m-snav-sub .m-snav-link { min-height: 36px; padding-block: 7px; padding-inline: 44px 12px; font-weight: 400; }
 .m-snav-sub .m-snav-item.active > .m-snav-link { color: var(--m-nav-active-text); background: var(--m-nav-active-bg); font-weight: 500; }
@@ -465,6 +472,8 @@ html[data-nav='dark'] .m-hnav-item.active > details > .m-hnav-link::after { back
 .m-snav-sub .m-snav-sub .m-snav-item.active > .m-snav-link::before { inset-inline-start: calc(19px + var(--m-depth, 0) * 14px); }
 .m-snav-branch > details > .m-snav-link .m-snav-chevron { width: 14px; height: 14px; }
 .m-snav-branch.m-in-path > details > .m-snav-link { color: var(--m-nav-text-strong); font-weight: 500; }
+.m-snav > .m-snav-header:not(.m-snav-header-top) { margin-top: 8px; }
+.m-snav-link:focus-visible { outline: 2px solid var(--m-primary); outline-offset: -2px; }
 .m-snav-header { padding-block: 12px 4px; padding-inline: 44px 12px; font-size: 11px; font-weight: 600; line-height: 16px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--m-nav-muted); }
 .m-sidebar-backdrop { display: none; }
 .m-snav-initial, .m-snav-flyout-title, .m-fold-toggle { display: none; }

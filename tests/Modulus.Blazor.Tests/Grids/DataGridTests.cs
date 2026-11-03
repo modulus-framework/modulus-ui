@@ -64,7 +64,12 @@ public class GridSchemaTests
         columns[0].SubtitleKey = "email";
         var row = new GridRecord("r", new Dictionary<string, string?>
         {
-            ["name"] = "Portal", ["email"] = "ann@example.com", ["status"] = "a", ["teams"] = "web,data", ["billable"] = "true", ["budget"] = "1250",
+            ["name"] = "Portal",
+            ["email"] = "ann@example.com",
+            ["status"] = "a",
+            ["teams"] = "web,data",
+            ["billable"] = "true",
+            ["budget"] = "1250",
         });
 
         Assert.True(GridSchema.Matches(columns, row, "active", culture: Us));   // the option label, not the value

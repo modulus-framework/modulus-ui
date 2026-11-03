@@ -28,9 +28,15 @@ public class PivotTests
     {
         var state = new PivotState
         {
-            Rows = ["city", "customer"], Columns = ["date:year"], Measures = ["amount", "count"],
-            RowsAllDepth = 1, RowPaths = ["*/Berlin", "*/Paris/Acme Labs"], ColumnPaths = ["*"],
-            SortMeasure = "amount", SortColumn = "*/2024", SortDescending = true,
+            Rows = ["city", "customer"],
+            Columns = ["date:year"],
+            Measures = ["amount", "count"],
+            RowsAllDepth = 1,
+            RowPaths = ["*/Berlin", "*/Paris/Acme Labs"],
+            ColumnPaths = ["*"],
+            SortMeasure = "amount",
+            SortColumn = "*/2024",
+            SortDescending = true,
         };
 
         var back = PivotState.Parse(PivotState.ReadQuery("?" + state.ToQueryString()))!;
@@ -367,8 +373,11 @@ public class PivotTests
         using var db = new ShipmentDb();
         var state = Pivot.Normalize(new PivotState
         {
-            Rows = ["city", "date:month"], Columns = ["status"], Measures = ["count", "amount", "average", "largest"],
-            RowPaths = [PivotPath.Root, PivotPath.Child(PivotPath.Root, "Oslo")], ColumnPaths = [PivotPath.Root],
+            Rows = ["city", "date:month"],
+            Columns = ["status"],
+            Measures = ["count", "amount", "average", "largest"],
+            RowPaths = [PivotPath.Root, PivotPath.Child(PivotPath.Root, "Oslo")],
+            ColumnPaths = [PivotPath.Root],
         });
 
         var levels = Pivot.Queries(db.Shipments, state);

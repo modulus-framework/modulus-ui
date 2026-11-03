@@ -30,6 +30,12 @@ public class NamedIconTagHelper : TagHelper
 /// Tabler page header; child content renders as the actions on the right:
 /// <code>&lt;app-page-header pretitle="Overview" title="Dashboard"&gt;&lt;app-button type="primary"&gt;New&lt;/app-button&gt;&lt;/app-page-header&gt;</code>
 /// </summary>
+/// <summary>The breadcrumb of the page header that contains it, handed over while the header's content runs.</summary>
+internal sealed class PageHeaderBreadcrumb
+{
+    public string Html { get; set; } = "";
+}
+
 [HtmlTargetElement("app-page-header")]
 public class PageHeaderTagHelper : TagHelper
 {
@@ -45,16 +51,25 @@ public class PageHeaderTagHelper : TagHelper
         // The app-crumb children (the page's breadcrumb trail) register here while the content runs.
         var crumbs = new ItemList<Crumb>();
         context.Items[typeof(PageHeaderTagHelper)] = crumbs;
+        var breadcrumb = new PageHeaderBreadcrumb();
+        context.Items[typeof(PageHeaderBreadcrumb)] = breadcrumb;
         var actions = (await output.GetChildContentAsync()).GetContent();
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;
         output.AddClasses("m-page-header");
         var trail = crumbs.Count == 0 ? "" : $"""<div class="m-page-crumbs">{CrumbHtml.Trail(crumbs)}</div>""";
+        // Odoo's control panel: with no title, the breadcrumb is the title (the page's path, its last level being the page).
+        // With a title, the breadcrumb sits above it.
+        var trailIsTitle = breadcrumb.Html.Length > 0 && Title.Length == 0;
+        var heading = trailIsTitle
+            ? $"""<div class="m-page-title m-page-trail">{breadcrumb.Html}</div>"""
+            : $"""<h1 class="m-page-title">{Html.E(Title)} {TitleExtraHtml}</h1>""";
+        var above = trailIsTitle ? "" : breadcrumb.Html;
         output.Content.SetHtmlContent(
-            trail +
             """<div class="m-page-header-text">""" +
+            above + trail +
             (Pretitle is null ? "" : $"""<div class="m-pretitle">{Html.E(Pretitle)}</div>""") +
-            $"""<h1 class="m-page-title">{Html.E(Title)} {TitleExtraHtml}</h1>""" +
+            heading +
             (Subtitle is null ? "" : $"""<p class="m-page-subtitle">{Html.E(Subtitle)}</p>""") +
             "</div>" +
             (string.IsNullOrWhiteSpace(actions) ? "" : $"""<div class="m-page-actions">{actions}</div>"""));
@@ -80,9 +95,18 @@ public abstract class ChartTagHelperBase : TagHelper
 
     protected ChartOptions Options(bool area = false, bool stacked = false, string? centerLabel = null) => new()
     {
-        Height = Height, ValueFormat = ValueFormat, Prefix = Prefix, Suffix = Suffix, Title = Title,
-        FirstSlot = FirstSlot, MaxXLabels = MaxXLabels, Area = area, Stacked = stacked, CenterLabel = centerLabel,
-        LegendToggle = LegendToggle, Links = Links,
+        Height = Height,
+        ValueFormat = ValueFormat,
+        Prefix = Prefix,
+        Suffix = Suffix,
+        Title = Title,
+        FirstSlot = FirstSlot,
+        MaxXLabels = MaxXLabels,
+        Area = area,
+        Stacked = stacked,
+        CenterLabel = centerLabel,
+        LegendToggle = LegendToggle,
+        Links = Links,
     };
 
     protected static void Emit(TagHelperOutput output, string html)

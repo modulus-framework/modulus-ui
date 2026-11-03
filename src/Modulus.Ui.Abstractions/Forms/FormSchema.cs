@@ -160,10 +160,19 @@ public sealed partial class FormSchema
             Name = Name,
             Fields = Fields.Select(f => new FieldDocument
             {
-                Key = f.Key, Label = f.Label, Kind = f.Kind.ToString(), Required = f.Required, MaxLength = f.MaxLength,
-                Pattern = f.Pattern, Min = f.Min, Max = f.Max, Decimals = f.Decimals, Currency = f.Currency,
+                Key = f.Key,
+                Label = f.Label,
+                Kind = f.Kind.ToString(),
+                Required = f.Required,
+                MaxLength = f.MaxLength,
+                Pattern = f.Pattern,
+                Min = f.Min,
+                Max = f.Max,
+                Decimals = f.Decimals,
+                Currency = f.Currency,
                 Options = f.Options.Count == 0 ? null : f.Options.Select(o => new OptionDocument { Value = o.Value, Label = o.Label }).ToList(),
-                Placeholder = f.Placeholder, Help = f.Help,
+                Placeholder = f.Placeholder,
+                Help = f.Help,
             }).ToList(),
         };
         return JsonSerializer.Serialize(document, JsonOptions);

@@ -14,7 +14,10 @@ public static class MenuFilter
             if (item.RequiredPolicy is { } policy && !await authorize(policy)) continue;
             var copy = new MenuItemDefinition(item.Key, item.Label, item.Href, item.Icon)
             {
-                Order = item.Order, RequiredPolicy = item.RequiredPolicy, ExactMatch = item.ExactMatch, ActivePaths = item.ActivePaths,
+                Order = item.Order,
+                RequiredPolicy = item.RequiredPolicy,
+                ExactMatch = item.ExactMatch,
+                ActivePaths = item.ActivePaths,
             };
             if (item.Children.Count > 0)
             {

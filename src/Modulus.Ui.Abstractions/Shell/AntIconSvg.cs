@@ -34,7 +34,8 @@ public static class AntIconSvg
         {
             var svg = key.Item1.StartsWith(ShellRenderer.TablerPrefix, StringComparison.Ordinal) ? null : Lookup.Value(key.Item1, key.Item2);
             if (string.IsNullOrEmpty(svg) && key.Item2 == Outline) svg = ExtraIconSvg.Svgs.GetValueOrDefault(key.Item1);
-            return string.IsNullOrEmpty(svg) ? null : svg.Replace("<svg ", SvgAttributes, StringComparison.Ordinal);
+            // The source carries class="icon"; callers add their own class, and two class attributes would be invalid HTML.
+            return string.IsNullOrEmpty(svg) ? null : svg.Replace("<svg ", SvgAttributes, StringComparison.Ordinal).Replace(" class=\"icon\"", "", StringComparison.Ordinal);
         });
 
     private static readonly ConcurrentDictionary<int, IReadOnlyList<string>> NameCache = new();

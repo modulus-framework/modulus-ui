@@ -344,7 +344,8 @@ public sealed class TableQuery<T>
             var next = more && list.Count > 0 ? Cursor.For(signature, sorts.Length == 1 ? sort : null, sort.Descending, _id, list[^1], offset + list.Count) : null;
             var result = new TablePage<T>(list, offset, size, total, more, next);
             return group is null ? result : result with { Groups = Spans(group, list, before == 1 && previous is not null, previous, more, following, plan!.GroupKeys) };
-        }) { GroupField = group };
+        })
+        { GroupField = group };
         return plan;
     }
 
