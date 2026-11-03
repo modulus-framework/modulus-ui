@@ -112,15 +112,15 @@ public static class PivotHtml
         // The measure row: a sort link per value column.
         sb.Append("<tr>");
         foreach (var column in columns)
-        foreach (var m in measures)
-        {
-            var sorted = state.SortMeasure == m.Key && state.SortColumn == column.Header.Path;
-            var sort = sorted ? (state.SortDescending ? "descending" : "ascending") : null;
-            sb.Append($"""<th class="ant-table-cell m-pivot-measure{(column.Total ? " m-pivot-total" : "")}" scope="col"{(sort is null ? "" : $" aria-sort=\"{sort}\"")}>""")
-              .Append($"""<a href="{E(href(state.SortBy(m.Key, column.Header.Path)))}" title="Sort by {E(m.Title)}">{E(m.Title)}""")
-              .Append(sorted ? ShellRenderer.Icon(state.SortDescending ? "caret-down" : "caret-up", "m-pivot-sort") : "")
-              .Append("</a></th>");
-        }
+            foreach (var m in measures)
+            {
+                var sorted = state.SortMeasure == m.Key && state.SortColumn == column.Header.Path;
+                var sort = sorted ? (state.SortDescending ? "descending" : "ascending") : null;
+                sb.Append($"""<th class="ant-table-cell m-pivot-measure{(column.Total ? " m-pivot-total" : "")}" scope="col"{(sort is null ? "" : $" aria-sort=\"{sort}\"")}>""")
+                  .Append($"""<a href="{E(href(state.SortBy(m.Key, column.Header.Path)))}" title="Sort by {E(m.Title)}">{E(m.Title)}""")
+                  .Append(sorted ? ShellRenderer.Icon(state.SortDescending ? "caret-down" : "caret-up", "m-pivot-sort") : "")
+                  .Append("</a></th>");
+            }
         sb.Append("</tr></thead><tbody class=\"ant-table-tbody\">");
 
         foreach (var row in result.BodyRows())
@@ -131,15 +131,15 @@ public static class PivotHtml
             Header(sb, result, PivotAxis.Rows, row, href);
             sb.Append("</th>");
             foreach (var column in columns)
-            foreach (var m in measures)
-            {
-                var value = result.Value(row.Path, column.Header.Path, m.Key);
-                var text = E(result.Format(value, m));
-                var link = value is null || cellHref is null ? null : cellHref(new PivotCell(row, column, m.Key));
-                sb.Append($"""<td class="ant-table-cell m-pivot-value{(column.Total ? " m-pivot-total" : "")}">""")
-                  .Append(link is null ? text : $"""<a href="{E(link)}">{text}</a>""")
-                  .Append("</td>");
-            }
+                foreach (var m in measures)
+                {
+                    var value = result.Value(row.Path, column.Header.Path, m.Key);
+                    var text = E(result.Format(value, m));
+                    var link = value is null || cellHref is null ? null : cellHref(new PivotCell(row, column, m.Key));
+                    sb.Append($"""<td class="ant-table-cell m-pivot-value{(column.Total ? " m-pivot-total" : "")}">""")
+                      .Append(link is null ? text : $"""<a href="{E(link)}">{text}</a>""")
+                      .Append("</td>");
+                }
             sb.Append("</tr>");
         }
         sb.Append("</tbody></table></div></div></div></div>");

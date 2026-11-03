@@ -169,19 +169,31 @@ public sealed record PivotState
         var columns = FullGroupBys(PivotAxis.Columns);
         return this with
         {
-            Rows = rows, RowsAllDepth = rows.Count, RowPaths = [], RowsFull = [],
-            Columns = columns, ColumnsAllDepth = columns.Count, ColumnPaths = [], ColumnsFull = [],
+            Rows = rows,
+            RowsAllDepth = rows.Count,
+            RowPaths = [],
+            RowsFull = [],
+            Columns = columns,
+            ColumnsAllDepth = columns.Count,
+            ColumnPaths = [],
+            ColumnsFull = [],
         };
     }
 
     /// <summary>Rows become columns and columns rows.</summary>
     public PivotState Flip() => this with
     {
-        Rows = Columns, Columns = Rows,
-        RowsAllDepth = ColumnsAllDepth, ColumnsAllDepth = RowsAllDepth,
-        RowPaths = ColumnPaths, ColumnPaths = RowPaths,
-        RowsFull = ColumnsFull, ColumnsFull = RowsFull,
-        SortMeasure = null, SortColumn = PivotPath.Root, SortDescending = false,
+        Rows = Columns,
+        Columns = Rows,
+        RowsAllDepth = ColumnsAllDepth,
+        ColumnsAllDepth = RowsAllDepth,
+        RowPaths = ColumnPaths,
+        ColumnPaths = RowPaths,
+        RowsFull = ColumnsFull,
+        ColumnsFull = RowsFull,
+        SortMeasure = null,
+        SortColumn = PivotPath.Root,
+        SortDescending = false,
     };
 
     /// <summary>Adds or removes a measure; the last one stays.</summary>

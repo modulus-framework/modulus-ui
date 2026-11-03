@@ -7,7 +7,8 @@
  *
  *   details.m-dropdown     one open at a time; closes on outside click, Escape or link click
  *   [data-m-nav-open]      opens the sidebar drawer (small screens); [data-m-nav-close] closes it
- *   [data-m-search]        filters every navigation link; Ctrl+K or "/" focuses it
+ *   [data-m-search]        filters every navigation link; Ctrl+K or "/" focuses it. MVC's header search is server-driven
+ *                          (htmx + Alpine, modulus-mvc.js: [data-m-search-server]); these handlers then leave it alone
  *   [data-m-theme-toggle]  light / dark
  *   form[data-confirm]     asks window.confirm(message) before the form submits (no inline handler, so it passes the CSP)
  *   [data-m-fullscreen]    the whole app full screen and back (html.m-fullscreen while it is; Escape also leaves).
@@ -95,6 +96,15 @@
         }
     }, true);
 
+    // A group opened in the sidebar brings its links into view: the nav scrolls, and a group near its end would
+    // otherwise open with its child links below the visible part.
+    document.addEventListener('toggle', function (e) {
+        var d = e.target;
+        if (d.open && d.matches && d.matches('.m-sidebar .m-snav-group') && !folded()) {
+            d.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    }, true);
+
     // A pivot link (header, menu, toolbar, sort) loads the next layout: mark the pivot busy until the new markup
     // replaces it (htmx swap or Blazor render), so a slow query shows progress. The timer clears a pivot that stayed.
     document.addEventListener('click', function (e) {
@@ -143,7 +153,7 @@
             var open = link.closest('details.m-dropdown[open], details[data-m-dropdown][open]');
             if (open) open.removeAttribute('open');
             if (link.closest('.m-sidebar')) { closeNav(); closeFly(); }
-            if (link.closest('.m-search-results')) closeSearch(true);
+            if (link.closest('.m-search-results') && !serverSearch()) closeSearch(true);
         }
 
         if (t.closest('[data-m-nav-open]')) { root.classList.add('m-nav-open'); return; }
@@ -160,7 +170,7 @@
         if (settingTab) { showSettingPane(settingTab.getAttribute('data-m-customizer-tab')); return; }
         if (t.closest('[data-m-launcher-open]')) { openLauncher(); return; }
         if (t.closest('[data-m-launcher-close]') || t.matches('.m-launcher-panel') || (link && link.closest('[data-m-launcher]'))) { closeLauncher(); return; }
-        if (t.closest('[data-m-search-open]')) { openSearch(); return; }
+        if (t.closest('[data-m-search-open]')) { if (serverSearch()) window.dispatchEvent(new CustomEvent('modulus-search-open')); else openSearch(); return; }
         if (t.closest('[data-m-mark-read]')) {
             var panel = t.closest('[data-m-notices]');
             if (panel) {
@@ -178,8 +188,9 @@
             closeFly();
             closeCustomizer();
             closeLauncher();
-            if (document.activeElement && document.activeElement.classList.contains('m-search-input')) closeSearch(true);
+            if (!serverSearch() && document.activeElement && document.activeElement.classList.contains('m-search-input')) closeSearch(true);
         }
+        if (serverSearch()) return;
         var typing = /^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '') || (e.target && e.target.isContentEditable);
         if ((e.key === 'k' || e.key === 'K') && (e.ctrlKey || e.metaKey)) { e.preventDefault(); openSearch(); }
         else if (e.key === '/' && !typing) { e.preventDefault(); openSearch(); }
@@ -455,6 +466,9 @@
 
     var activeIndex = -1;
 
+    // MVC's header search is modulus-mvc.js's modulusSearch (htmx results, Alpine state); the handlers below are the Blazor shell's.
+    function serverSearch() { return !!document.querySelector('[data-m-search-server]'); }
+
     function searchInput() { return document.querySelector('[data-m-search] .m-search-input'); }
 
     function openSearch() {
@@ -566,11 +580,12 @@
     }
 
     document.addEventListener('input', function (e) {
+        if (serverSearch()) return;
         if (e.target.classList && e.target.classList.contains('m-search-input')) renderResults(e.target.value);
     });
 
     document.addEventListener('keydown', function (e) {
-        if (!(e.target.classList && e.target.classList.contains('m-search-input'))) return;
+        if (serverSearch() || !(e.target.classList && e.target.classList.contains('m-search-input'))) return;
         if (e.key === 'ArrowDown') { e.preventDefault(); moveActive(1); }
         else if (e.key === 'ArrowUp') { e.preventDefault(); moveActive(-1); }
         else if (e.key === 'Enter') {
@@ -580,6 +595,7 @@
     });
 
     document.addEventListener('focusout', function (e) {
+        if (serverSearch()) return;
         if (!(e.target.classList && e.target.classList.contains('m-search-input'))) return;
         // Let a click on a result land before the list closes.
         setTimeout(function () {

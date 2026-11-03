@@ -569,10 +569,16 @@ public class EditableGridTagHelper : TagHelper
                 var multiple = c.Type == GridCellType.MultiSelect;
                 return CreatableSelectTagHelper.Render(new CreatableSelectModel(field, SafeId($"{field}-list"), c.Options)
                 {
-                    Multiple = multiple, Value = multiple ? null : value, Values = multiple ? GridSchema.Many(value) : [],
-                    AllowClear = !c.Required, AriaLabel = c.Title, AddPlaceholder = "New option",
-                    CreateText = $"Create new {c.Title.ToLowerInvariant()}", AllowAdd = c.Options.Count < GridSchema.MaxOptions,
-                    GridOp = $"add-option:{c.Key}:{rowId}", OptionField = EditableGridForm.OptionField(Name, rowId, c.Key),
+                    Multiple = multiple,
+                    Value = multiple ? null : value,
+                    Values = multiple ? GridSchema.Many(value) : [],
+                    AllowClear = !c.Required,
+                    AriaLabel = c.Title,
+                    AddPlaceholder = "New option",
+                    CreateText = $"Create new {c.Title.ToLowerInvariant()}",
+                    AllowAdd = c.Options.Count < GridSchema.MaxOptions,
+                    GridOp = $"add-option:{c.Key}:{rowId}",
+                    OptionField = EditableGridForm.OptionField(Name, rowId, c.Key),
                     ColorField = EditableGridForm.ColorField(Name, rowId, c.Key),
                 }, " style=\"width: 100%;\"");
             default:

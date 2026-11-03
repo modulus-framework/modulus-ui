@@ -116,8 +116,14 @@ public class ScatterChartTagHelper : ChartTagHelperBase
     public override void Process(TagHelperContext context, TagHelperOutput output) =>
         Emit(output, ChartHtml.Scatter(Points, Options(), new ScatterOptions
         {
-            XTitle = XTitle, YTitle = YTitle, SizeTitle = SizeTitle, XFormat = XFormat, XPrefix = XPrefix, XSuffix = XSuffix,
-            Groups = Groups, Quadrants = Quadrants,
+            XTitle = XTitle,
+            YTitle = YTitle,
+            SizeTitle = SizeTitle,
+            XFormat = XFormat,
+            XPrefix = XPrefix,
+            XSuffix = XSuffix,
+            Groups = Groups,
+            Quadrants = Quadrants,
         }));
 }
 

@@ -77,6 +77,8 @@ app.MapStaticAssets().AllowAnonymous();
 app.MapRazorPages().WithStaticAssets();
 // The "Views" dropdown (<app-saved-views>) posts here.
 app.MapModulusSavedViews();
+// The header search (htmx) asks here for its results.
+app.MapModulusShellSearch();
 app.MapModulusDashboard();
 // Audio track of the inline player page (/plugins/player), made on the server; the other samples serve the same URL.
 app.MapGet(PluginsContent.TrackUrl, () => Results.File(PluginsContent.DemoTrack(), "audio/wav", enableRangeProcessing: true));

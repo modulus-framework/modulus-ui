@@ -39,9 +39,21 @@ public sealed partial class SampleStore
         string[] plans = ["Basic", "Team", "Company", "Enterprise"];
         _users.Add(new AppUser
         {
-            Id = 1, Name = CurrentUser.Name, Username = "serena", Email = CurrentUser.Email, Role = "Admin", Plan = "Enterprise",
-            Status = UserStatus.Active, Company = "Modulus", Country = "United States", Phone = "+1 202 555 0111",
-            JoinedAt = today.AddYears(-3).AddDays(-41), LastActiveAt = now, TasksDone = 1_230, Projects = 568, Billed = 12_480,
+            Id = 1,
+            Name = CurrentUser.Name,
+            Username = "serena",
+            Email = CurrentUser.Email,
+            Role = "Admin",
+            Plan = "Enterprise",
+            Status = UserStatus.Active,
+            Company = "Modulus",
+            Country = "United States",
+            Phone = "+1 202 555 0111",
+            JoinedAt = today.AddYears(-3).AddDays(-41),
+            LastActiveAt = now,
+            TasksDone = 1_230,
+            Projects = 568,
+            Billed = 12_480,
         });
         for (var id = 2; id <= 64; id++)
         {
@@ -164,8 +176,15 @@ public sealed partial class SampleStore
             var m = mail[i];
             _mail.Add(new MailMessage
             {
-                Id = i + 1, FromName = m.From, FromEmail = m.Email, Subject = m.Subject, Body = [.. m.Body], Labels = [.. m.Labels],
-                At = now.AddMinutes(-(i * i * 37 + 14)), Read = i > 3 && i % 3 != 0, Starred = i is 0 or 5 or 9,
+                Id = i + 1,
+                FromName = m.From,
+                FromEmail = m.Email,
+                Subject = m.Subject,
+                Body = [.. m.Body],
+                Labels = [.. m.Labels],
+                At = now.AddMinutes(-(i * i * 37 + 14)),
+                Read = i > 3 && i % 3 != 0,
+                Starred = i is 0 or 5 or 9,
                 Attachments = i is 0 or 5 ? [new("contract-renewal.pdf", "1.4 MB"), new("sla-appendix.docx", "86 KB")] : [],
             });
         }
@@ -242,8 +261,13 @@ public sealed partial class SampleStore
             var start = month.AddDays(day - 1).AddHours(e.Hour);
             _events.Add(new CalendarEvent
             {
-                Id = _events.Count + 1, Title = e.Title, Start = start, End = e.AllDay ? start : start.AddHours(e.Hours),
-                AllDay = e.AllDay, Category = e.Category, Location = e.Location,
+                Id = _events.Count + 1,
+                Title = e.Title,
+                Start = start,
+                End = e.AllDay ? start : start.AddHours(e.Hours),
+                AllDay = e.AllDay,
+                Category = e.Category,
+                Location = e.Location,
             });
         }
         _nextEventId = _events.Count + 1;
@@ -266,8 +290,15 @@ public sealed partial class SampleStore
         {
             _tasks.Add(new KanbanTask
             {
-                Id = _tasks.Count + 1, Column = t.Column, Order = _tasks.Count(x => x.Column == t.Column), Title = t.Title, Label = t.Label,
-                Due = today.AddDays(t.DueDays), Assignees = [.. t.Who], Comments = t.Comments, Attachments = t.Files,
+                Id = _tasks.Count + 1,
+                Column = t.Column,
+                Order = _tasks.Count(x => x.Column == t.Column),
+                Title = t.Title,
+                Label = t.Label,
+                Due = today.AddDays(t.DueDays),
+                Assignees = [.. t.Who],
+                Comments = t.Comments,
+                Attachments = t.Files,
             });
         }
         _nextTaskId = _tasks.Count + 1;
@@ -281,7 +312,9 @@ public sealed partial class SampleStore
             var order = new Order
             {
                 Id = 6_979 - i,
-                CustomerId = c.Id, CustomerName = c.Name, CustomerEmail = c.Email,
+                CustomerId = c.Id,
+                CustomerName = c.Name,
+                CustomerEmail = c.Email,
                 PlacedAt = now.AddHours(-(i * 9.5 + rng.Next(0, 6))),
                 Status = status,
                 Payment = status == OrderStatus.Cancelled ? PaymentStatus.Refunded : (PaymentStatus)(rng.Next(10) switch { < 7 => 0, < 9 => 1, _ => 2 }),
@@ -621,9 +654,15 @@ public sealed partial class SampleStore
         {
             var message = new MailMessage
             {
-                Id = _nextMailId++, FromName = CurrentUser.Name, FromEmail = CurrentUser.Email, To = (input.To ?? "").Trim(), Subject = (input.Subject ?? "").Trim(),
+                Id = _nextMailId++,
+                FromName = CurrentUser.Name,
+                FromEmail = CurrentUser.Email,
+                To = (input.To ?? "").Trim(),
+                Subject = (input.Subject ?? "").Trim(),
                 Body = (input.Body ?? "").Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList(),
-                At = DateTime.Now, Folder = draft ? MailFolder.Draft : MailFolder.Sent, Read = true,
+                At = DateTime.Now,
+                Folder = draft ? MailFolder.Draft : MailFolder.Sent,
+                Read = true,
             };
             _mail.Add(message);
             return message;
@@ -632,8 +671,18 @@ public sealed partial class SampleStore
 
     private static MailMessage CloneMail(MailMessage m) => new()
     {
-        Id = m.Id, FromName = m.FromName, FromEmail = m.FromEmail, To = m.To, Subject = m.Subject, Body = [.. m.Body], At = m.At,
-        Folder = m.Folder, Labels = [.. m.Labels], Starred = m.Starred, Read = m.Read, Attachments = [.. m.Attachments],
+        Id = m.Id,
+        FromName = m.FromName,
+        FromEmail = m.FromEmail,
+        To = m.To,
+        Subject = m.Subject,
+        Body = [.. m.Body],
+        At = m.At,
+        Folder = m.Folder,
+        Labels = [.. m.Labels],
+        Starred = m.Starred,
+        Read = m.Read,
+        Attachments = [.. m.Attachments],
     };
 
     // Chat ---------------------------------------------------------------------------------------
@@ -727,8 +776,12 @@ public sealed partial class SampleStore
         {
             var task = new KanbanTask
             {
-                Id = _nextTaskId++, Column = KanbanColumns.Any(c => c.Id == input.Column) ? input.Column : "todo",
-                Title = input.Title.Trim(), Label = input.Label, Due = DateTime.Today.AddDays(7), Assignees = [CurrentUser.Name],
+                Id = _nextTaskId++,
+                Column = KanbanColumns.Any(c => c.Id == input.Column) ? input.Column : "todo",
+                Title = input.Title.Trim(),
+                Label = input.Label,
+                Due = DateTime.Today.AddDays(7),
+                Assignees = [CurrentUser.Name],
             };
             task.Order = _tasks.Count(t => t.Column == task.Column);
             _tasks.Add(task);

@@ -36,11 +36,13 @@ public static class ThemeCss
 
     /// <summary>
     /// Applies the user's theme-settings cookies to a copy of <paramref name="options"/>.
-    /// Only known preset names, radii from 0 to 16 and the enum values are accepted.
+    /// Only known preset names, radii from 0 to 16 and the enum values are accepted. With <see cref="ModulusThemeOptions.ShowCustomizer"/>
+    /// off there is no settings panel, so the cookies are ignored and the app's theme is fixed to its options (one layout for everyone).
     /// </summary>
     public static ModulusThemeOptions ResolveOptions(ModulusThemeOptions options, Func<string, string?> cookie)
     {
         var o = options.Clone();
+        if (!options.ShowCustomizer) return o;
         if (cookie(PrimaryCookie) is { } preset && o.ColorPresets.TryGetValue(preset, out var hex)) o.PrimaryColor = hex;
         if (int.TryParse(cookie(RadiusCookie), out var radius) && radius is >= 0 and <= 16) o.BorderRadius = radius;
         if (Enum.TryParse<ShellLayout>(cookie(LayoutCookie), true, out var layout)) o.Layout = layout;

@@ -62,7 +62,12 @@ public sealed class CustomerInput
 
     public static CustomerInput From(Customer c) => new()
     {
-        Name = c.Name, Company = c.Company, Email = c.Email, City = c.City, Tier = c.Tier, Status = c.Status,
+        Name = c.Name,
+        Company = c.Company,
+        Email = c.Email,
+        City = c.City,
+        Tier = c.Tier,
+        Status = c.Status,
     };
 }
 
@@ -134,7 +139,13 @@ public sealed class ProductInput
 
     public static ProductInput From(Product p) => new()
     {
-        Name = p.Name, Sku = p.Sku, Category = p.Category, Description = p.Description, Price = p.Price, Stock = p.Stock, Status = p.Status,
+        Name = p.Name,
+        Sku = p.Sku,
+        Category = p.Category,
+        Description = p.Description,
+        Price = p.Price,
+        Stock = p.Stock,
+        Status = p.Status,
     };
 }
 

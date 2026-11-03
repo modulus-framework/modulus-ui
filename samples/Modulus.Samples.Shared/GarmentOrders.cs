@@ -214,8 +214,11 @@ public sealed class GarmentStore
         {
             var order = Add(0, null, $"PO-{1001 + o}", new()
             {
-                ["order"] = $"PO-{1001 + o}", ["buyer"] = Pick(GarmentGrid.Buyers), ["season"] = Pick(GarmentGrid.Seasons),
-                ["qty"] = N(12, 90) + "00", ["delivery"] = GridSchema.FromDate(new DateOnly(2027, 1, 15).AddDays(rng.Next(0, 300))),
+                ["order"] = $"PO-{1001 + o}",
+                ["buyer"] = Pick(GarmentGrid.Buyers),
+                ["season"] = Pick(GarmentGrid.Seasons),
+                ["qty"] = N(12, 90) + "00",
+                ["delivery"] = GridSchema.FromDate(new DateOnly(2027, 1, 15).AddDays(rng.Next(0, 300))),
                 ["status"] = Pick(GarmentGrid.OrderStatuses),
             });
             for (var s = 0; s < rng.Next(2, 6); s++)
@@ -223,14 +226,19 @@ public sealed class GarmentStore
                 var name = styles[rng.Next(styles.Length)];
                 var style = Add(1, order.Id, $"S{_next++}", new()
                 {
-                    ["style"] = $"ST-{rng.Next(100, 999)}", ["description"] = name, ["color"] = Pick(GarmentGrid.Colors),
-                    ["qty"] = N(4, 30) + "00", ["fob"] = M(6, 38),
+                    ["style"] = $"ST-{rng.Next(100, 999)}",
+                    ["description"] = name,
+                    ["color"] = Pick(GarmentGrid.Colors),
+                    ["qty"] = N(4, 30) + "00",
+                    ["fob"] = M(6, 38),
                 });
                 foreach (var category in GarmentGrid.Categories.Where(_ => rng.Next(6) > 0))
                 {
                     var group = Add(2, style.Id, $"G{_next++}", new()
                     {
-                        ["category"] = category.Value, ["supplier"] = Pick(GarmentGrid.Suppliers), ["lead"] = N(10, 60),
+                        ["category"] = category.Value,
+                        ["supplier"] = Pick(GarmentGrid.Suppliers),
+                        ["lead"] = N(10, 60),
                         ["approved"] = GridSchema.FromFlag(rng.Next(3) > 0),
                     });
                     for (var i = 0; i < rng.Next(2, 5); i++)

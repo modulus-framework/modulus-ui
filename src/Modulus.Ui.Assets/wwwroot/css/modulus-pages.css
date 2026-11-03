@@ -603,6 +603,7 @@ a.m-list-item:hover { background: var(--m-bg-subtle); }
 .m-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
 .m-form-grid .m-span-2 { grid-column: 1 / -1; }
 .m-form-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.m-text-right { text-align: right; }
 .m-upload-row { display: flex; align-items: center; gap: 20px; }
 .m-plan-box { padding: 16px; border-radius: var(--m-radius-lg); background: var(--m-bg-subtle); border: 1px solid var(--m-border-secondary); }
 .m-pay-method { display: flex; align-items: center; gap: 16px; padding: 16px; border: 1px solid var(--m-border-secondary); border-radius: var(--m-radius-lg); }
@@ -1938,3 +1939,20 @@ select.m-select.m-select-multi option:checked { background: color-mix(in srgb, v
 #files .m-card-body > .ant-form-item, #files .m-card-body .ant-form-item-row, #files .m-card-body .ant-form-item-control, #files .m-uploader { flex: 1 1 auto; display: flex; flex-direction: column; }
 #files .m-uploader-host, #files .m-uploader, #files .ant-upload-wrapper, #files .ant-upload-btn, #files .ant-upload.ant-upload-drag { flex: 1 1 auto; min-height: 300px; height: 100%; }
 #files .ant-upload-drag-container { min-height: 260px; display: flex; flex-direction: column; justify-content: center; }
+
+/* List headers: sortable columns show a pointer and the current sort direction; the filter row sits under the header. */
+.m-col-sort { cursor: pointer; user-select: none; white-space: nowrap; }
+.m-col-sort:focus-visible { outline: 2px solid var(--m-primary); outline-offset: -2px; }
+.m-col-sort::after { content: ' \2195'; color: var(--m-text-tertiary); font-size: 11px; }
+.m-col-sort[aria-sort='ascending']::after { content: ' \25B2'; color: var(--m-primary); }
+.m-col-sort[aria-sort='descending']::after { content: ' \25BC'; color: var(--m-primary); }
+.m-col-filters th { padding-top: 6px !important; padding-bottom: 6px !important; font-weight: normal; }
+.m-col-filters select.ant-input { min-width: 0; height: 28px; padding: 0 8px; font-size: 13px; }
+
+/* Table toolbar stays on one line: the search box keeps a fixed width and the buttons sit beside it. */
+.m-table-toolbar-actions { flex-wrap: nowrap; align-items: center; }
+.m-table-toolbar-actions .ant-input-affix-wrapper, .m-table-toolbar-actions .ant-input-search, .m-table-toolbar-actions .ant-input-group-wrapper { width: 260px; flex: none; }
+/* Right-aligned header cells (the Actions column) line up with their right-aligned cells. */
+.ant-table-thead > tr > th.m-text-right { text-align: right; }
+/* A tag with no colour (a plain "No" flag) keeps a visible neutral look instead of the theme's near-white one. */
+.ant-table .ant-tag:not([class*="ant-tag-"]) { color: var(--m-text-secondary); background: var(--m-bg-subtle); border-color: var(--m-border); }

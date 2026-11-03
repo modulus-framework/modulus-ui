@@ -64,24 +64,39 @@ public class CrumbTagHelperTests
 public class PageHeaderCrumbTests
 {
     [Fact]
-    public async Task ACrumbInsideThePageHeader_IsTheTrailAboveTheTitle()
+    public async Task ABreadcrumbInsideThePageHeader_IsTheTrailAboveTheTitle()
     {
         var shared = new Dictionary<object, object>();
         var header = new PageHeaderTagHelper { Title = "Form layouts", Pretitle = "Forms" };
         var output = new TagHelperOutput("app-page-header", [], async (_, _) =>
         {
-            await new CrumbTagHelper { Href = "/forms" }.ProcessAsync(new TagHelperContext("app-crumb", [], shared, "c1"), Child("Forms"));
-            await new CrumbTagHelper().ProcessAsync(new TagHelperContext("app-crumb", [], shared, "c2"), Child("Form layouts"));
+            await RunBreadcrumb(shared, ("Forms", "/forms"), ("Form layouts", null));
             return new DefaultTagHelperContent();
         });
         await header.ProcessAsync(new TagHelperContext("app-page-header", [], shared, "p"), output);
-        using var writer = new StringWriter();
-        output.WriteTo(writer, HtmlEncoder.Default);
-        var html = writer.ToString();
+        var html = Render(output);
 
-        Assert.StartsWith("<div class=\"m-page-header\"><div class=\"m-page-crumbs\"><nav class=\"m-crumbs\"", html);
-        Assert.True(html.IndexOf("m-page-crumbs", StringComparison.Ordinal) < html.IndexOf("m-page-title", StringComparison.Ordinal));
+        Assert.StartsWith("<div class=\"m-page-header\"><div class=\"m-page-header-text\"><nav class=\"ant-breadcrumb\"", html);
+        Assert.True(html.IndexOf("ant-breadcrumb", StringComparison.Ordinal) < html.IndexOf("m-page-title", StringComparison.Ordinal));
         Assert.Contains("<a href=\"/forms\">", html);
+        Assert.DoesNotContain("m-page-trail", html);
+    }
+
+    [Fact]
+    public async Task ABreadcrumbWithoutATitle_IsTheTitle()
+    {
+        var shared = new Dictionary<object, object>();
+        var header = new PageHeaderTagHelper { Title = "" };
+        var output = new TagHelperOutput("app-page-header", [], async (_, _) =>
+        {
+            await RunBreadcrumb(shared, ("Forms", "/forms"), ("Form layouts", null));
+            return new DefaultTagHelperContent();
+        });
+        await header.ProcessAsync(new TagHelperContext("app-page-header", [], shared, "p"), output);
+        var html = Render(output);
+
+        Assert.Contains("<div class=\"m-page-title m-page-trail\"><nav class=\"ant-breadcrumb\"", html);
+        Assert.DoesNotContain("<h1", html);
     }
 
     [Fact]
@@ -93,6 +108,24 @@ public class PageHeaderCrumbTests
         output.WriteTo(writer, HtmlEncoder.Default);
 
         Assert.DoesNotContain("m-page-crumbs", writer.ToString());
+    }
+
+    private static async Task RunBreadcrumb(IDictionary<object, object> shared, params (string Label, string? Href)[] items)
+    {
+        var output = new TagHelperOutput("app-breadcrumb", [], async (_, _) =>
+        {
+            foreach (var (label, href) in items)
+                await new BreadcrumbItemTagHelper { Href = href }.ProcessAsync(new TagHelperContext("app-breadcrumb-item", [], shared, "i"), Child(label));
+            return new DefaultTagHelperContent();
+        });
+        await new BreadcrumbTagHelper().ProcessAsync(new TagHelperContext("app-breadcrumb", [], shared, "b"), output);
+    }
+
+    private static string Render(TagHelperOutput output)
+    {
+        using var writer = new StringWriter();
+        output.WriteTo(writer, HtmlEncoder.Default);
+        return writer.ToString();
     }
 
     private static TagHelperOutput Child(string text) =>

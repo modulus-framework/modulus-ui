@@ -35,7 +35,12 @@ public class EditingTagHelperTests
     {
         var html = await RenderAsync(new ImageCropperTagHelper
         {
-            Id = "photo", Src = "/a.jpg", Alt = "A", Name = "crop", Ratio = "4/3", Crop = "{\"x\":1,\"y\":2,\"width\":3,\"height\":4}",
+            Id = "photo",
+            Src = "/a.jpg",
+            Alt = "A",
+            Name = "crop",
+            Ratio = "4/3",
+            Crop = "{\"x\":1,\"y\":2,\"width\":3,\"height\":4}",
         }, "app-image-cropper");
 
         Assert.Contains("data-ratio=\"4/3\"", html);
@@ -63,7 +68,10 @@ public class EditingTagHelperTests
 
         var html = await RenderAsync(new SchemaFormTagHelper
         {
-            Schema = schema, Values = new Dictionary<string, string?> { ["receipt"] = "true" }, Problems = problems, IdPrefix = "claim",
+            Schema = schema,
+            Values = new Dictionary<string, string?> { ["receipt"] = "true" },
+            Problems = problems,
+            IdPrefix = "claim",
         }, "app-schema-form");
 
         Assert.StartsWith("<div class=\"m-schema-form\" id=\"claim\">", html);

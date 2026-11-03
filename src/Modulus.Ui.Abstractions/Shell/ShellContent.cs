@@ -8,6 +8,12 @@ public sealed record ShellUser(string Name, string? Subtitle = null, string? Ava
 /// <summary>A header notification. <paramref name="Tone"/> is primary, success, warning or danger.</summary>
 public sealed record ShellNotice(string Title, string? Description, string When, bool Unread, string Icon = "bell", string Tone = "primary", string? Href = null);
 
+/// <summary>
+/// A recent chat in the header chat menu: the conversation's name, its last message, when it was active and how many messages are unread.
+/// The avatar shows the initials of <paramref name="Title"/>, tinted by <paramref name="Tone"/>.
+/// </summary>
+public sealed record ShellChat(string Title, string? Preview, string When, int Unread, string Tone = "primary", string? Href = null);
+
 /// <summary>A link in the user menu or footer. Set <see cref="DividerBefore"/> to separate groups.</summary>
 public sealed record ShellLink(string Label, string Href, string? Icon = null)
 {
@@ -66,6 +72,21 @@ public sealed class ShellContent
 
     /// <summary>"View all" link under the notifications. Null hides it.</summary>
     public string? NoticesHref { get; set; }
+
+    /// <summary>
+    /// Where the notifications' "Mark all as read" posts, so the app marks the person's notices read on the server. Null keeps the
+    /// button client-only (the page's markers are cleared, nothing is stored).
+    /// </summary>
+    public string? NoticesMarkAllAction { get; set; }
+
+    /// <summary>The antiforgery token the "Mark all as read" form posts with, for an app that validates its posts.</summary>
+    public string? AntiForgeryToken { get; set; }
+
+    /// <summary>Recent chats (the chat bubble in the header, with the unread count). Null hides the chat menu.</summary>
+    public IReadOnlyList<ShellChat>? Chats { get; set; }
+
+    /// <summary>"Open chat" link under the chat menu. Null hides it.</summary>
+    public string? ChatsHref { get; set; }
 
     public IReadOnlyList<ShellLink> UserLinks { get; set; } =
     [

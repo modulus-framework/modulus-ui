@@ -322,9 +322,15 @@ public class DatePickerTagHelper : BoundControlTagHelper
         var attrs = output.TakeAttributes();
         var cfg = Widgets.Config(new
         {
-            picker, showTime = ShowTime, format = Format,
+            picker,
+            showTime = ShowTime,
+            format = Format,
             values = new[] { date is { } v ? PickerText.Canonical(v, picker, ShowTime, Format) : "" },
-            min, max, days = PickerText.Days(DisabledDays), message = DisabledDaysMessage, disabled = Disabled,
+            min,
+            max,
+            days = PickerText.Days(DisabledDays),
+            message = DisabledDaysMessage,
+            disabled = Disabled,
         });
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;
@@ -390,9 +396,16 @@ public class RangePickerTagHelper : BoundControlTagHelper
         const string Fmt = "yyyy-MM-dd";
         var cfg = Widgets.Config(new
         {
-            picker = "date", showTime = ShowTime, format = Format, range = true,
+            picker = "date",
+            showTime = ShowTime,
+            format = Format,
+            range = true,
             values = dates.Select(d => d is { } v ? PickerText.Canonical(v, "date", ShowTime, Format) : "").ToArray(),
-            min, max, days = PickerText.Days(DisabledDays), message = DisabledDaysMessage, disabled = Disabled,
+            min,
+            max,
+            days = PickerText.Days(DisabledDays),
+            message = DisabledDaysMessage,
+            disabled = Disabled,
             presets = (Presets ?? []).Select(p => new
             {
                 label = p.Label,
@@ -432,7 +445,11 @@ public static class PickerText
     /// <summary>AntD's en-US placeholders.</summary>
     public static string Placeholder(string picker) => picker switch
     {
-        "week" => "Select week", "month" => "Select month", "quarter" => "Select quarter", "year" => "Select year", "time" => "Select time",
+        "week" => "Select week",
+        "month" => "Select month",
+        "quarter" => "Select quarter",
+        "year" => "Select year",
+        "time" => "Select time",
         _ => "Select date",
     };
 

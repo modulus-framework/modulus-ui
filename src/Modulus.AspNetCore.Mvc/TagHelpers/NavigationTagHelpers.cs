@@ -9,7 +9,7 @@ internal sealed class ItemList<T> : List<T>;
 
 /// <summary>
 /// Breadcrumb: <c>&lt;app-breadcrumb&gt;&lt;app-breadcrumb-item href="/"&gt;Home&lt;/app-breadcrumb-item&gt;…&lt;/app-breadcrumb&gt;</c>.
-/// The last item is the current page.
+/// An item with an <c>href</c> is a link; the item without one (usually the last) is the current page.
 /// </summary>
 [HtmlTargetElement("app-breadcrumb")]
 public class BreadcrumbTagHelper : TagHelper
@@ -22,24 +22,36 @@ public class BreadcrumbTagHelper : TagHelper
         context.Items[typeof(BreadcrumbTagHelper)] = items;
         await output.GetChildContentAsync();
 
-        output.TagName = "nav";
-        output.TagMode = TagMode.StartTagAndEndTag;
-        output.AddClasses("ant-breadcrumb");
-        if (!output.Attributes.ContainsName("aria-label")) output.Attributes.SetAttribute("aria-label", "Breadcrumb");
+        var ariaLabel = output.Attributes.ContainsName("aria-label") ? output.Attributes["aria-label"].Value?.ToString() : null;
         var sb = new StringBuilder("<ol>");
         for (var i = 0; i < items.Count; i++)
         {
             var (href, icon, content) = items[i];
             var last = i == items.Count - 1;
             var inner = (icon is null ? "" : AntIcons.Span(icon) + " ") + content;
-            var link = href is null || last
+            // An item with a link is a level above the page; the item without one is the current page (or a plain level).
+            var link = href is null
                 ? $"""<span class="ant-breadcrumb-link"{(last ? " aria-current=\"page\"" : "")}>{inner}</span>"""
                 : $"""<span class="ant-breadcrumb-link"><a href="{Html.E(href)}">{inner}</a></span>""";
             sb.Append("<li>").Append(link);
             if (!last) sb.Append($"""<span class="ant-breadcrumb-separator" aria-hidden="true">{Html.E(Separator)}</span>""");
             sb.Append("</li>");
         }
-        output.Content.SetHtmlContent(sb.Append("</ol>").ToString());
+        sb.Append("</ol>");
+
+        // Inside an app-page-header the trail is part of the header: trail, title and actions form one unit (the control panel).
+        if (context.Items.TryGetValue(typeof(PageHeaderBreadcrumb), out var slot))
+        {
+            ((PageHeaderBreadcrumb)slot).Html = $"""<nav class="ant-breadcrumb" aria-label="{Html.E(ariaLabel ?? "Breadcrumb")}">{sb}</nav>""";
+            output.SuppressOutput();
+            return;
+        }
+
+        output.TagName = "nav";
+        output.TagMode = TagMode.StartTagAndEndTag;
+        output.AddClasses("ant-breadcrumb");
+        output.Attributes.SetAttribute("aria-label", ariaLabel ?? "Breadcrumb");
+        output.Content.SetHtmlContent(sb.ToString());
     }
 }
 

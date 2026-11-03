@@ -25,7 +25,7 @@
         async policy => (await Authorization.AuthorizeAsync(User, policy)).Succeeded);
     var shell = new ShellView(theme, menu, Context.Request.Path.Value?.Trim('/') ?? "",
         await ShellContentProvider.GetContentAsync(User, Context.RequestAborted),
-        ThemeCss.ResolveMode(cookies[ThemeCss.ModeCookie], ThemeMode.System), cookies[ShellRenderer.TenantCookie], cookies[ShellRenderer.TenantsCookie]);
+        ThemeCss.ResolveMode(cookies[ThemeCss.ModeCookie], ThemeMode.System), cookies[ShellRenderer.TenantCookie], cookies[ShellRenderer.TenantsCookie], ServerSearch: true);
     var title = ViewData["Title"] as string;
     var documentTitle = title is null ? theme.Title : $"{title} · {theme.Title}";
     var spa = theme.SpaNavigation;
@@ -33,6 +33,8 @@
     if (spa) SpaNavigation.AddVary(Context.Response);
     // Back and forward reload .m-page from a full page; the page's own assets go inside it, where htmx runs them.
     var restore = spa && Context.Request.Headers["HX-History-Restore-Request"] == "true";
+    // The history element of the SPA; the body's SPA markers are written as whole tags below, so none is left half-set.
+    string? historyAttr = spa ? "" : null;
 }
 @if (spa && Context.Request.IsBoosted())
 {
@@ -70,8 +72,8 @@
         @await RenderSectionAsync("Head", required: false)
     }
 </head>
-<body modulus-antiforgery hx-boost="@(spa ? "true" : null)" data-m-spa="@(spa ? "" : null)" data-m-prefetch="@(spa && theme.SpaPrefetch ? "" : null)">
-    <div class="m-page" hx-history-elt="@(spa ? "" : null)">
+<body modulus-antiforgery>
+    <div class="m-page" hx-history-elt="@historyAttr">
         @Html.Raw(ShellRenderer.Sidebar(shell))
         @Html.Raw(ShellRenderer.Header(shell))
         <div class="m-page-wrapper">

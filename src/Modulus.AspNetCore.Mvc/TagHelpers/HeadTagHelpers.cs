@@ -1,3 +1,4 @@
+using System.Net;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc.Razor.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -29,6 +30,8 @@ public class ModulusHeadTagHelper(IOptions<ModulusThemeOptions> options, IFileVe
         var mode = ThemeCss.ResolveMode(cookies[ThemeCss.ModeCookie], theme.DefaultMode);
         var dark = mode == "dark";
         var @default = theme.DefaultMode switch { ThemeMode.Dark => "dark", ThemeMode.Light => "light", _ => "" };
+        // The app's own stylesheets come after the framework's, so their rules win at equal specificity.
+        var appStyles = string.Concat(theme.Stylesheets.Select(path => $"<link rel=\"stylesheet\" href=\"{WebUtility.HtmlEncode(Url(path))}\" />\n            "));
 
         output.TagName = null;
         output.Content.SetHtmlContent($"""
@@ -39,7 +42,7 @@ public class ModulusHeadTagHelper(IOptions<ModulusThemeOptions> options, IFileVe
             <link rel="stylesheet" href="{Url("/_content/Synvro.Modulus.Ui.Assets/css/modulus.css")}" />
             <link rel="stylesheet" href="{Url("/_content/Synvro.Modulus.Ui.Assets/css/modulus-shell.css")}" />
             <link rel="stylesheet" href="{Url("/_content/Synvro.Modulus.Ui.Assets/css/modulus-pages.css")}" />
-            <style id="modulus-brand">{ThemeCss.Build(theme)}</style>
+            {appStyles}<style id="modulus-brand">{ThemeCss.Build(theme)}</style>
             <script src="{Url("/_content/Synvro.Modulus.Ui.Assets/js/modulus-theme.js")}" data-default="{@default}" {ThemeCss.ScriptAttributes(theme)}></script>
             <script src="{Url("/_content/Synvro.Modulus.Ui.Assets/js/modulus-shell.js")}" defer></script>
             <script src="{Url("/_content/Synvro.Modulus.Ui.Assets/js/modulus-plugins.js")}" defer></script>
@@ -77,7 +80,7 @@ public class ModulusScriptsTagHelper(IFileVersionProvider versions) : TagHelper
 /// <c>&lt;body modulus-antiforgery&gt;</c>. Every htmx request then passes [ValidateAntiForgeryToken].
 /// </summary>
 [HtmlTargetElement(Attributes = "modulus-antiforgery")]
-public class AntiforgeryHeadersTagHelper(IAntiforgery antiforgery) : TagHelper
+public class AntiforgeryHeadersTagHelper(IAntiforgery antiforgery, IOptions<ModulusThemeOptions> options) : TagHelper
 {
     [ViewContext, HtmlAttributeNotBound] public ViewContext ViewContext { get; set; } = default!;
 
@@ -86,5 +89,11 @@ public class AntiforgeryHeadersTagHelper(IAntiforgery antiforgery) : TagHelper
         output.Attributes.RemoveAll("modulus-antiforgery");
         var tokens = antiforgery.GetAndStoreTokens(ViewContext.HttpContext);
         output.Attributes.SetAttribute("hx-headers", $$"""{"{{tokens.HeaderName}}":"{{tokens.RequestToken}}"}""");
+
+        // The SPA markers of the body, set as whole attributes: modulus-spa.js needs hx-boost and data-m-spa together, or none.
+        var spa = options.Value.SpaNavigation;
+        if (spa) output.Attributes.SetAttribute("hx-boost", "true");
+        if (spa) output.Attributes.SetAttribute("data-m-spa", "");
+        if (spa && options.Value.SpaPrefetch) output.Attributes.SetAttribute("data-m-prefetch", "");
     }
 }

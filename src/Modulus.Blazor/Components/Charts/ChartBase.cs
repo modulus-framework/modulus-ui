@@ -31,8 +31,17 @@ public abstract class ChartBase : ComponentBase
 
     protected ChartOptions Options(bool area = false, bool stacked = false, string? centerLabel = null) => new()
     {
-        Height = Height, ValueFormat = ValueFormat, Prefix = Prefix, Suffix = Suffix, Title = Title,
-        FirstSlot = FirstSlot, MaxXLabels = MaxXLabels, Area = area, Stacked = stacked, CenterLabel = centerLabel,
-        LegendToggle = LegendToggle, Links = Links,
+        Height = Height,
+        ValueFormat = ValueFormat,
+        Prefix = Prefix,
+        Suffix = Suffix,
+        Title = Title,
+        FirstSlot = FirstSlot,
+        MaxXLabels = MaxXLabels,
+        Area = area,
+        Stacked = stacked,
+        CenterLabel = centerLabel,
+        LegendToggle = LegendToggle,
+        Links = Links,
     };
 }

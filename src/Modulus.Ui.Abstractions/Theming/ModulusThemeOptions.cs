@@ -249,12 +249,25 @@ public class ModulusThemeOptions
     /// <summary>With <see cref="SpaNavigation"/>: fetch a page when the pointer rests on its link, so the click shows it at once.</summary>
     public bool SpaPrefetch { get; set; } = true;
 
+    /// <summary>
+    /// The page's trail (app, section, page) in the app bar, on screens inside an app. Off when the page header draws its own
+    /// breadcrumb (<c>app-page-header</c> with <c>app-crumb</c> children), so the page shows one trail, as Odoo's control panel.
+    /// </summary>
+    public bool ShowAppTrail { get; set; } = true;
+
+    /// <summary>
+    /// Extra stylesheets the app loads after the Modulus ones, as app paths (<c>/css/app.css</c>). They carry the app's own
+    /// overrides of the shell, such as the menu spacing, and are versioned like the framework's files.
+    /// </summary>
+    public List<string> Stylesheets { get; set; } = [];
+
     /// <summary>Returns a copy, so per-request overrides (theme settings cookies) never touch the singleton.</summary>
     public ModulusThemeOptions Clone()
     {
         var copy = (ModulusThemeOptions)MemberwiseClone();
         copy.ColorPresets = new Dictionary<string, string>(ColorPresets);
         copy.Cultures = [.. Cultures];
+        copy.Stylesheets = [.. Stylesheets];
         return copy;
     }
 }

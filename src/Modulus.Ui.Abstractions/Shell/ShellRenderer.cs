@@ -12,7 +12,11 @@ namespace Modulus.Ui.Abstractions.Shell;
 /// <param name="Mode">"light" or "dark" when known on the server, otherwise null.</param>
 /// <param name="TenantId">Value of the <see cref="ShellRenderer.TenantCookie"/> cookie, used when the content names no current tenant.</param>
 /// <param name="TenantIds">Value of the <see cref="ShellRenderer.TenantsCookie"/> cookie (active tenants in multi-company mode).</param>
-public sealed record ShellView(ModulusThemeOptions Options, IReadOnlyList<MenuItemDefinition> Menu, string Path, ShellContent Content, string? Mode = null, string? TenantId = null, string? TenantIds = null);
+/// <param name="ServerSearch">
+/// The header search asks the server for its results (<see cref="ShellRenderer.SearchEndpoint"/>, through htmx) and Alpine
+/// runs it. Set by the MVC and Razor Pages layout, which load htmx and Alpine; Blazor searches the rendered links.
+/// </param>
+public sealed record ShellView(ModulusThemeOptions Options, IReadOnlyList<MenuItemDefinition> Menu, string Path, ShellContent Content, string? Mode = null, string? TenantId = null, string? TenantIds = null, bool ServerSearch = false);
 
 /// <summary>
 /// Renders the Tabler-style application shell (sidebar, header, horizontal navbar, footer and the
@@ -160,6 +164,96 @@ public static class ShellRenderer
 
     // Header ---------------------------------------------------------------------------------------
 
+    /// <summary>Where the header search (<see cref="ShellView.ServerSearch"/>) asks for its results; mapped by <c>MapModulusShellSearch</c>.</summary>
+    public const string SearchEndpoint = "/_ui/search";
+
+    // The search box of an htmx + Alpine shell: htmx fetches the results for what is typed, Alpine (modulusSearch in
+    // modulus-mvc.js) keeps the open state, the arrow keys, Enter, Escape and the shortcuts.
+    private static string ServerSearchBox(string placeholder) =>
+        $"""<div class="m-search" data-m-search data-m-search-server role="search" x-data="modulusSearch" @keydown.window="shortcut($event)" @modulus-search-open.window="focus()" @click.outside="close(false)">""" +
+        Icon("search", "m-search-icon") +
+        $"""<input type="search" name="q" class="m-search-input" x-ref="input" placeholder="{E(placeholder)}" aria-label="Search pages" autocomplete="off" spellcheck="false" aria-controls="m-search-results" :aria-expanded="open" hx-get="{SearchEndpoint}" hx-trigger="input changed delay:120ms, search" hx-target="#m-search-results" hx-sync="this:replace" @input="open = true" @focus="open = true" @keydown.down.prevent="move(1)" @keydown.up.prevent="move(-1)" @keydown.enter.prevent="choose()" @keydown.escape.stop="close(true)" />""" +
+        """<span class="m-search-kbd" aria-hidden="true"><kbd data-m-mod-key>Ctrl</kbd><kbd>K</kbd></span>""" +
+        """<div class="m-search-results" id="m-search-results" role="listbox" x-ref="results" x-show="open" x-cloak @click="if ($event.target.closest('a')) close(true)"></div></div>""";
+
+    // The search box of the Blazor shell: modulus-shell.js filters the navigation links it finds on the page.
+    private static string ClientSearchBox(string placeholder) =>
+        """<div class="m-search" data-m-search role="search">""" +
+        Icon("search", "m-search-icon") +
+        $"""<input type="search" class="m-search-input" placeholder="{E(placeholder)}" aria-label="Search pages" autocomplete="off" spellcheck="false" aria-controls="m-search-results" aria-expanded="false" />""" +
+        """<span class="m-search-kbd" aria-hidden="true"><kbd data-m-mod-key>Ctrl</kbd><kbd>K</kbd></span>""" +
+        """<div class="m-search-results" id="m-search-results" role="listbox" hidden></div></div>""";
+
+    /// <summary>
+    /// The header search's results for <paramref name="query"/>: the pages of the caller's menu (the tree the sidebar draws) whose name or
+    /// group trail contains the query, ranked exact, then prefix, then contains; then each provider group (records). Fewer than two characters
+    /// give no results. The first result is active, so Enter opens it.
+    /// </summary>
+    public static string SearchResults(IReadOnlyList<MenuItemDefinition> menu, string query) => SearchResults(menu, query, []);
+
+    /// <summary>The header search's results, with the groups the search providers answered (see <see cref="IShellSearchProvider"/>).</summary>
+    public static string SearchResults(IReadOnlyList<MenuItemDefinition> menu, string query, IReadOnlyList<ShellSearchGroup> groups)
+    {
+        var q = query.Trim();
+        if (q.Length < 2) return "";
+        q = q[..Math.Min(q.Length, 100)];
+        const int pageCap = 12, groupCap = 6, total = 14;
+
+        var matches = new List<(MenuItemDefinition Item, string Trail)>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var item in menu) CollectMatches(item, "", q, matches, seen);
+        // Exact label first, then labels that start with the query; the menu's own order breaks ties (OrderBy is stable).
+        var ranked = matches.OrderBy(m => Rank(m.Item.Label, q)).Take(pageCap).ToList();
+
+        var sections = new List<(string? Title, IReadOnlyList<(string Label, string Href, string? Detail, string? Icon)> Rows)>();
+        // A heading names a section only when there is another one to tell apart; a lone page list starts with its first result.
+        var pagesTitle = groups.Any(g => g.Items.Count > 0) ? "Pages" : null;
+        if (ranked.Count > 0)
+            sections.Add((pagesTitle, ranked.Select(m => (m.Item.Label, Href(m.Item), m.Trail.Length == 0 ? null : m.Trail, m.Item.Icon)).ToList()));
+        foreach (var group in groups)
+            if (group.Items.Count > 0)
+                sections.Add((group.Title, group.Items.Take(groupCap).Select(i => (i.Label, E("/" + i.Href.TrimStart('/')), i.Detail, (string?)null)).ToList()));
+
+        if (sections.Count == 0) return $"""<div class="m-search-empty">No pages match “{E(q)}”</div>""";
+
+        var sb = new StringBuilder();
+        var shown = 0;
+        var first = true;
+        foreach (var (title, rows) in sections)
+        {
+            if (shown >= total) break;
+            if (title is not null) sb.Append($"""<div class="m-search-group" role="presentation">{E(title)}</div>""");
+            foreach (var (label, href, detail, icon) in rows)
+            {
+                if (shown++ >= total) break;
+                sb.Append($"""<a class="m-search-item{(first ? " active" : "")}" href="{href}" role="option">""")
+                  .Append(icon is { } name ? Icon(name) : "")
+                  .Append($"""<span>{E(label)}</span>""")
+                  .Append(detail is null ? "" : $"""<span class="m-search-item-section">{E(detail)}</span>""")
+                  .Append("</a>");
+                first = false;
+            }
+        }
+        return sb.ToString();
+    }
+
+    private static int Rank(string label, string query) =>
+        string.Equals(label, query, StringComparison.OrdinalIgnoreCase) ? 0
+        : label.StartsWith(query, StringComparison.OrdinalIgnoreCase) ? 1
+        : 2;
+
+    // Leaves only, like the sidebar: a group opens to its pages and has no link of its own.
+    private static void CollectMatches(MenuItemDefinition item, string trail, string query, List<(MenuItemDefinition Item, string Trail)> matches, HashSet<string> seen)
+    {
+        if (item.Children.Count > 0)
+        {
+            foreach (var child in item.Children) CollectMatches(child, Join(trail, item.Label), query, matches, seen);
+            return;
+        }
+        if (item.Href is null || !seen.Add(item.Href)) return;
+        if ((item.Label + " " + trail).Contains(query, StringComparison.OrdinalIgnoreCase)) matches.Add((item, trail));
+    }
+
     /// <summary>
     /// The header row and the horizontal navbar in one wrapper, which the theme settings' header modes (sticky,
     /// floating) and the condensed layout (menu inside the header row) style as a unit. Render it once, after the sidebar.
@@ -167,7 +261,7 @@ public static class ShellRenderer
     public static string Header(ShellView view) =>
         """<div class="m-header" id="m-header">""" + Topbar(view) + Navbar(view) +
         // The module bar (with its trail) is hidden below 992 px, so the trail is repeated in a strip that shows only there.
-        (ModuleTrail(view) is { Length: > 0 } strip ? $"""<div class="m-crumbs-bar">{strip}</div>""" : "") + "</div>";
+        (view.Options.ShowAppTrail && ModuleTrail(view) is { Length: > 0 } strip ? $"""<div class="m-crumbs-bar">{strip}</div>""" : "") + "</div>";
 
     public static string Topbar(ShellView view)
     {
@@ -182,12 +276,7 @@ public static class ShellRenderer
 
         if (c.SearchPlaceholder is { } placeholder)
         {
-            // Keycaps: modulus-shell.js shows ⌘ instead of Ctrl on Apple devices.
-            sb.Append("""<div class="m-search" data-m-search role="search">""")
-              .Append(Icon("search", "m-search-icon"))
-              .Append($"""<input type="search" class="m-search-input" placeholder="{E(placeholder)}" aria-label="Search pages" autocomplete="off" spellcheck="false" aria-controls="m-search-results" aria-expanded="false" />""")
-              .Append("""<span class="m-search-kbd" aria-hidden="true"><kbd data-m-mod-key>Ctrl</kbd><kbd>K</kbd></span>""")
-              .Append("""<div class="m-search-results" id="m-search-results" role="listbox" hidden></div></div>""");
+            sb.Append(view.ServerSearch ? ServerSearchBox(placeholder) : ClientSearchBox(placeholder));
         }
 
         sb.Append("""<div class="m-topbar-actions">""");
@@ -213,7 +302,7 @@ public static class ShellRenderer
               .Append(unread > 0 ? $"""<span class="m-notice-dot" aria-hidden="true"></span><span class="m-sr-only">{unread} unread</span>""" : "")
               .Append("""</summary><div class="m-dropdown-menu m-dropdown-end m-dropdown-card">""")
               .Append("""<div class="m-dropdown-card-header"><span class="m-dropdown-card-title">Notifications</span>""")
-              .Append(unread > 0 ? """<button type="button" class="m-link-btn" data-m-mark-read>Mark all as read</button>""" : "")
+              .Append(unread > 0 ? MarkAllRead(c) : "")
               .Append("</div>");
             if (notices.Count == 0)
             {
@@ -239,6 +328,9 @@ public static class ShellRenderer
                 sb.Append($"""<a class="m-dropdown-card-footer" href="{Url(all)}">View all notifications</a>""");
             sb.Append("</div></details>");
         }
+
+        if (c.Chats is { } chats)
+            Chats(sb, chats, c.ChatsHref);
 
         sb.Append("</div>");
 
@@ -543,7 +635,7 @@ public static class ShellRenderer
             ModuleSwitcher(sb, view, shellApp);
             foreach (var item in menu.Children) NavbarItem(sb, item, view.Path, icons: false);
             sb.Append("</ul>");
-            sb.Append(ModuleTrail(view));
+            if (view.Options.ShowAppTrail) sb.Append(ModuleTrail(view));
             sb.Append("</div></nav>");
         }
         return sb.ToString();
@@ -1002,6 +1094,52 @@ public static class ShellRenderer
     private static string Href(MenuItemDefinition item) => E("/" + (item.Href ?? "").TrimStart('/'));
 
     /// <summary>App-relative links ("settings") resolve from the site root; absolute URLs and anchors pass through.</summary>
+    /// <summary>The chat menu of the header: the recent conversations with their unread messages, and a link to the chat page.</summary>
+    private static void Chats(StringBuilder sb, IReadOnlyList<ShellChat> chats, string? allHref)
+    {
+        var unread = chats.Sum(ch => ch.Unread);
+        sb.Append("""<details class="m-dropdown m-chats"><summary class="m-icon-btn" aria-label="Chat">""")
+          .Append(Icon("message"))
+          .Append(unread > 0 ? $"""<span class="m-notice-dot" aria-hidden="true"></span><span class="m-sr-only">{unread} unread</span>""" : "")
+          .Append("""</summary><div class="m-dropdown-menu m-dropdown-end m-dropdown-card">""")
+          .Append("""<div class="m-dropdown-card-header"><span class="m-dropdown-card-title">Chat</span>""")
+          .Append(unread > 0 ? $"""<span class="m-badge">{unread}</span>""" : "")
+          .Append("</div>");
+        if (chats.Count == 0)
+        {
+            sb.Append("""<div class="m-dropdown-empty">No conversations yet.</div>""");
+        }
+        else
+        {
+            sb.Append("""<ul class="m-notice-list">""");
+            foreach (var ch in chats)
+            {
+                var tag = ch.Href is null ? "div" : "a";
+                sb.Append($"""<li class="m-notice{(ch.Unread > 0 ? " unread" : "")}"><{tag} class="m-notice-link"{(ch.Href is null ? "" : $" href=\"{Url(ch.Href)}\"")}>""")
+                  .Append($"""<span class="m-icon-tile m-tile-{E(ch.Tone)}-lt">{E(Initials(ch.Title))}</span>""")
+                  .Append($"""<span class="m-notice-body"><span class="m-notice-title">{E(ch.Title)}</span>""")
+                  .Append(string.IsNullOrEmpty(ch.Preview) ? "" : $"""<span class="m-notice-desc">{E(ch.Preview)}</span>""")
+                  .Append($"""<span class="m-notice-time">{E(ch.When)}</span></span>""")
+                  .Append(ch.Unread > 0 ? $"""<span class="m-badge">{ch.Unread}</span>""" : "")
+                  .Append($"</{tag}></li>");
+            }
+            sb.Append("</ul>");
+        }
+
+        if (allHref is { } all)
+            sb.Append($"""<a class="m-dropdown-card-footer" href="{Url(all)}">Open chat</a>""");
+        sb.Append("</div></details>");
+    }
+
+    /// <summary>
+    /// "Mark all as read": a post to the app when it names where to post (the server then marks the notices read), otherwise the
+    /// client-only button that modulus-shell.js uses to clear the page's markers.
+    /// </summary>
+    private static string MarkAllRead(ShellContent c) =>
+        c.NoticesMarkAllAction is { } action
+            ? $"""<form method="post" action="{Url(action)}"><input type="hidden" name="__RequestVerificationToken" value="{E(c.AntiForgeryToken)}" /><button type="submit" class="m-link-btn">Mark all as read</button></form>"""
+            : """<button type="button" class="m-link-btn" data-m-mark-read>Mark all as read</button>""";
+
     private static string Url(string href) =>
         E(href.StartsWith('/') || href.StartsWith('#') || href.Contains("://", StringComparison.Ordinal) ? href : "/" + href);
 
