@@ -1,5 +1,5 @@
 @* Org chart: sample data below, replace it with your own (a query, an API call). A node whose parent is null is a root. *@
-@page "/charts/org-chart"
+@page "/charts/org"
 {{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 {{ end }}
 @using Modulus.Blazor.Components.Charts

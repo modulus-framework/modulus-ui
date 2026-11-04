@@ -12,7 +12,7 @@
             @for (var i = 0; i < Length; i++)
             {
                 var index = i;
-                <input class="ant-input m-otp-box" style="width:44px;text-align:center" maxlength="1" inputmode="numeric" autocomplete="one-time-code"
+                <input class="ant-input m-otp-box" style="width:44px;text-align:center" maxlength="1" inputmode="numeric" autocomplete="one-time-code" aria-label="@($"{Label} digit {index + 1}")"
                        value="@Digit(index)" disabled="@Disabled" @oninput="e => SetDigit(index, e.Value?.ToString())" />
             }
         </div>

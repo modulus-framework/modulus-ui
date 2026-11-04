@@ -988,7 +988,7 @@ unit tests for `SampleAdminData`.
 
 Also fixed: the Blazor sample did not build (two pages named like components, `Gantt` and `DatePicker`, and a boolean `ShowIcon` with no value). The pages are now `GanttDemo` and `DatePickerDemo` and keep their routes.
 
-Notes for the CLI (the `modulus` repo): the `ui add-component` list of 78 components should gain `tag-input`, `popconfirm` and `time-picker`; their templates are in `templates/mvc`, `razor-pages` and `blazor`, but the component registry lives in the CLI. `Blazor` tag input is a controlled field, so keystrokes typed faster than the server round trip can be dropped in Blazor Server; normal typing is not affected.
+CLI (the `modulus` repo, branch `claude/blissful-cori-5q9txc`): `ui add-component` now lists `tag-input`, `popconfirm` and `time-picker` (81 components). Their templates are in `templates/mvc`, `razor-pages` and `blazor`, and ship in the next Modulus UI release; until the CLI's pinned `DefaultVersion` (1.8.2 at the time of writing) is raised to that release, `--all` skips them and naming one says which version to use. `Blazor` tag input is a controlled field, so keystrokes typed faster than the server round trip can be dropped in Blazor Server; normal typing is not affected.
 
 ### 7. Advanced visuals (radar, candlestick, Sankey, org chart)
 
@@ -1006,7 +1006,8 @@ Behaviour worth knowing:
 - **Sankey** puts each node in the column of its longest path and gives every column one vertical scale, so equal flows are equally thick. Zero and negative flows are dropped, and so is the one link that closes a loop (the rest of the graph stays). The parameter is `Flows`, not `Links`, because `ChartBase` already has a `Links` drill-down parameter.
 - **Org chart** treats a node whose `ParentId` is null or unknown as a root (so a forest draws several trees), draws each node once even if the data has a loop, and shows the number of direct reports. `Href` accepts relative, `http` and `https` URLs only; anything else (`javascript:`, `data:`, `//host`) is dropped. Text is always encoded.
 - **Candlestick** hugs the data rather than starting at zero, and marks "up" (close at or above open) with the blue and "down" with the red of the diverging pair, so the meaning does not rest on red and green.
-- The CLI templates are `chart-radar`, `chart-candlestick`, `chart-sankey` and `org-chart` in `templates/mvc`, `razor-pages` and `blazor`. The `modulus` repo's `ui add-component` list needs the four names added.
+- Release note: the four chart pages and three component templates are new, and `otp-input` and `textarea` (Blazor) gained an `aria-label` so the CLI's accessibility audit passes. The CLI's `DefaultVersion` has to move to the release that contains them.
+- The CLI templates are `chart-radar`, `chart-candlestick`, `chart-sankey` and `chart-org` (the pages `modulus ui add-chart --type radar|candlestick|sankey|org` scaffolds) in `templates/mvc`, `razor-pages` and `blazor`. The `modulus` repo's `ui add-component` list needs the four names added.
 - `modulus-pages.css` grew by about 540 bytes gzipped, and its budget in `tests/browser/budgets.json` was raised on purpose (29,696 to 33,792).
 
 Not built, and why: a free-form node-and-edge **diagram editor** (drag, connect, route) and a **Gantt resource view with dependencies drawn as arrows** need an interactive canvas, which is a product of its own rather than one more chart. Rich **stock charts** (indicators, zoom, crosshair sync) are the same. The **icon sprite** and other items are in section 8.
