@@ -574,6 +574,8 @@
             <div class="m-demo-row">
                 <Tooltip Title="@("Copies the invoice link")"><Button Icon="link">Hover me</Button></Tooltip>
                 <Popover Title="@("Seats")" Content="@("18 of 25 seats used. Add seats from Billing.")"><Button>Popover</Button></Popover>
+                <Popconfirm Title="@("Delete this invoice?")" OkText="Delete" OkButtonProps="@(new ButtonProps { Danger = true })"><Button Danger>Popconfirm</Button></Popconfirm>
+                <TimePicker TValue="DateTime?" Format="HH:mm" Style="width: 140px" />
             </div>
             <Empty Simple Description="@("No invoices yet")" Style="margin-top: 16px" />
         </Card>

@@ -1,0 +1,103 @@
+@* Tag input: type a value and press Enter (or a separator) to add a tag; Backspace in the empty field removes the last one.
+   Renders the same DOM as the MVC <app-tag-input> (.m-tags) and applies the same rules (Modulus.Ui.Abstractions.Forms.TagInput).
+   The value is the list of tags; ValueChanged fires on every change. modulus-shell.js cancels Enter and the separators in the field
+   (the component adds the tag), so they never reach the text or submit the form. *@
+@using Modulus.Ui.Abstractions.Forms
+
+<div class="@RootClass" style="@Style" data-m-tags-keys="@Separators" @onclick="FocusField">
+    <div class="m-tags-list" role="list">
+        @foreach (var tag in _tags)
+        {
+            var t = tag;
+            <span class="m-tags-item" role="listitem">
+                <span class="m-tags-text">@t</span>
+                @if (!Disabled)
+                {
+                    <button type="button" class="m-tags-remove" tabindex="-1" aria-label="@($"Remove {t}")" @onclick="() => Remove(t)" @onclick:stopPropagation="true">×</button>
+                }
+            </span>
+        }
+        <input @ref="_field" type="text" class="m-tags-field" id="@Id" autocomplete="off" placeholder="@Placeholder" aria-label="@(AriaLabel ?? "Tags")"
+               disabled="@Disabled" value="@_text" @oninput="e => _text = e.Value as string ?? string.Empty"
+               @onkeydown="OnKeyDown" @onblur="Commit" />
+    </div>
+</div>
+
+@code {
+    /// <summary>The tags.</summary>
+    [Parameter] public IReadOnlyList<string>? Value { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<string>> ValueChanged { get; set; }
+
+    /// <summary>Most tags allowed; 0 for no limit.</summary>
+    [Parameter] public int Max { get; set; }
+
+    /// <summary>Longest tag in characters; 0 for no limit.</summary>
+    [Parameter] public int MaxLength { get; set; }
+
+    /// <summary>Characters that end a tag, besides Enter.</summary>
+    [Parameter] public string Separators { get; set; } = TagInput.DefaultSeparators;
+
+    [Parameter] public bool AllowDuplicates { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>"small", "middle" (default) or "large".</summary>
+    [Parameter] public string? Size { get; set; }
+
+    /// <summary>"error" or "warning".</summary>
+    [Parameter] public string? Status { get; set; }
+
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+
+    private List<string> _tags = [];
+    private string _text = "";
+    private ElementReference _field;
+
+    private string RootClass => string.Join(' ', new[]
+    {
+        "m-tags", Size == "small" ? "m-tags-sm" : Size == "large" ? "m-tags-lg" : null,
+        Status is { Length: > 0 } ? $"m-tags-status-{Status}" : null, Disabled ? "m-tags-disabled" : null, Class,
+    }.Where(c => !string.IsNullOrEmpty(c)));
+
+    protected override void OnParametersSet()
+    {
+        var incoming = Value ?? [];
+        if (!incoming.SequenceEqual(_tags)) _tags = TagInput.Clean(incoming, Max, MaxLength, AllowDuplicates);
+    }
+
+    private async Task FocusField()
+    {
+        if (!Disabled) await _field.FocusAsync();
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (Disabled) return;
+        if (e.Key == "Enter" || (e.Key.Length == 1 && Separators.Contains(e.Key[0])))
+        {
+            await Commit();
+        }
+        else if (e.Key == "Backspace" && _text.Length == 0 && _tags.Count > 0)
+        {
+            await Remove(_tags[^1]);
+        }
+    }
+
+    /// <summary>Turns the typed text (split at the separators, as a paste is) into tags.</summary>
+    private async Task Commit()
+    {
+        var added = false;
+        foreach (var part in TagInput.Split(_text, Separators)) added |= TagInput.TryAdd(_tags, part, Max, MaxLength, AllowDuplicates);
+        _text = "";
+        if (added) await ValueChanged.InvokeAsync(_tags.ToList());
+    }
+
+    private async Task Remove(string tag)
+    {
+        if (Disabled || !_tags.Remove(tag)) return;
+        await ValueChanged.InvokeAsync(_tags.ToList());
+    }
+}

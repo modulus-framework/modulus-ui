@@ -978,6 +978,18 @@ flows run (RP and MVC over HTTP, Blazor in Chromium). Menu: `AddModulusAdminUi()
 read the `admin` feature (the `modulus` repo, untouched), adapters from the seam interfaces to the real `Modulus.Platform` stores, and
 unit tests for `SampleAdminData`.
 
+### 6. Components added for production readiness
+
+| Component | Blazor | MVC and Razor Pages | Notes |
+| --- | --- | --- | --- |
+| Tag input | `AppTagInput` | `<app-tag-input asp-for="Labels" max="5" />` | Free-form tags in one box. Enter or a separator (`,;` by default) adds a tag, Backspace in the empty field removes the last, a paste is split at the separators. MVC posts one hidden input per tag, so `List<string>` and `string[]` bind back. Both flavours use `Forms.TagInput` (Abstractions) for the rules (trim, no case-insensitive duplicates, `max`, `max-length`); `modulus-shell.js` mirrors them in the browser. Raises `m-tags-change` in MVC. |
+| Popconfirm | `AppPopconfirm` (AntD) | `<app-popconfirm title="Delete?" ok-danger hx-delete="/x">…</app-popconfirm>` | An inline question on a control. Attributes other than `class` and `style` go on the OK button (htmx, `form`, `formaction`), so `id` goes there too. OK also raises `modulus:popconfirm-ok`. For a modal question use `hx-confirm`, which the framework turns into its own dialog. |
+| Time picker | `TimePicker` (AntD) | `<app-time-picker asp-for="Opens" format="HH:mm" />` | The same control as `app-date-picker picker="time"`. |
+
+Also fixed: the Blazor sample did not build (two pages named like components, `Gantt` and `DatePicker`, and a boolean `ShowIcon` with no value). The pages are now `GanttDemo` and `DatePickerDemo` and keep their routes.
+
+Notes for the CLI (the `modulus` repo): the `ui add-component` list of 78 components should gain `tag-input`, `popconfirm` and `time-picker`; their templates are in `templates/mvc`, `razor-pages` and `blazor`, but the component registry lives in the CLI. `Blazor` tag input is a controlled field, so keystrokes typed faster than the server round trip can be dropped in Blazor Server; normal typing is not affected.
+
 <!-- source: docs/PLAN.md -->
 ## Plan and progress
 

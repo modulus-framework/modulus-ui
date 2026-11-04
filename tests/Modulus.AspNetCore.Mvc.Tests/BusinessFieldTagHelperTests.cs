@@ -126,6 +126,51 @@ public class BusinessFieldTagHelperTests
     }
 
     [Fact]
+    public async Task TagInput_OneHiddenInputPerTag_BoundToAList()
+    {
+        var html = await RenderAsync(new TagInputTagHelper { For = For<List<string>>("Keywords", ["red", "Red", "<b>"]), Max = 5, Placeholder = "Add" }, "app-tag-input");
+
+        Assert.Contains("data-m-tags=\"Keywords\"", html);
+        Assert.Contains("data-max=\"5\"", html);
+        Assert.Equal(2, html.Split("m-tags-item\"").Length - 1); // the duplicate "Red" is dropped
+        Assert.Contains("<input type=\"hidden\" name=\"Keywords\" value=\"red\" />", html);
+        Assert.Contains("value=\"&lt;b&gt;\"", html);
+        Assert.DoesNotContain("<b>", html);
+        Assert.Contains("placeholder=\"Add\"", html);
+    }
+
+    [Fact]
+    public async Task TagInput_Disabled_HasNoRemoveButtons()
+    {
+        var html = await RenderAsync(new TagInputTagHelper { For = For<string[]>("Tags", ["a"]), Disabled = true }, "app-tag-input");
+
+        Assert.DoesNotContain("m-tags-remove", html);
+        Assert.Contains("m-tags-disabled", html);
+    }
+
+    [Fact]
+    public async Task Popconfirm_PutsTheActionOnTheOkButton()
+    {
+        var attributes = new TagHelperAttributeList { { "hx-delete", "/invoices/5" }, { "hx-target", "closest tr" } };
+        var html = await RenderAsync(new PopconfirmTagHelper { Title = "Delete it?", OkText = "Delete", OkDanger = true }, "app-popconfirm", attributes);
+
+        Assert.Contains("m-popconfirm", html);
+        Assert.Contains("Delete it?", html);
+        Assert.Contains("ant-btn-dangerous\" hx-delete=\"/invoices/5\" hx-target=\"closest tr\"", html);
+        Assert.DoesNotContain("<span class=\"m-tooltip-host m-popover-click m-popconfirm\" hx-delete", html);
+        Assert.Contains("Cancel", html);
+    }
+
+    [Fact]
+    public async Task TimePicker_IsTheTimeFlavourOfTheDatePicker()
+    {
+        var html = await RenderAsync(new TimePickerTagHelper { For = For("Opens", "09:30:00"), ShowTime = true }, "app-time-picker");
+
+        Assert.Contains("clock-circle", html);
+        Assert.DoesNotContain("calendar", html);
+    }
+
+    [Fact]
     public async Task Otp_OneBoxPerCharacter_PostsTheJoinedCode()
     {
         var html = await RenderAsync(new OtpInputTagHelper { For = For("Code", "123"), Separator = 3 }, "app-otp-input");

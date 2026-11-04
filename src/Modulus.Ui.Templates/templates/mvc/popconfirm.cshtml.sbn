@@ -1,0 +1,13 @@
+@* Popconfirm: ViewBag.Title, Label (the button), OkText, Url (hx-delete target), Danger *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string title = ViewBag.Title ?? "Are you sure?";
+    string label = ViewBag.Label ?? "Delete";
+    string okText = ViewBag.OkText ?? label;
+    string url = ViewBag.Url ?? "#";
+    bool danger = ViewBag.Danger != false;
+}
+
+<app-popconfirm title="@title" ok-text="@okText" ok-danger="danger" hx-delete="@url" hx-target="closest tr" hx-swap="outerHTML">
+    <app-button danger="danger">@label</app-button>
+</app-popconfirm>

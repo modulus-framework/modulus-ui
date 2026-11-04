@@ -10,7 +10,7 @@
         <div class="m-card-body">
             @if (_saved)
             {
-                <Alert Type="@AlertType.Success" ShowIcon Message="Board saved" Description="@string.Join(" · ", PluginsContent.BoardLists.Select(l => $"{l.Title}: {_board[l.Name].Count}"))" Class="m-mb-16" />
+                <Alert Type="@AlertType.Success" ShowIcon="true" Message="Board saved" Description="@string.Join(" · ", PluginsContent.BoardLists.Select(l => $"{l.Title}: {_board[l.Name].Count}"))" Class="m-mb-16" />
             }
             <div class="m-sort-board">
                 @foreach (var (name, title) in PluginsContent.BoardLists)

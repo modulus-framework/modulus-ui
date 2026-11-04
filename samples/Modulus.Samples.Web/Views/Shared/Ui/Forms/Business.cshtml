@@ -23,6 +23,7 @@
                     <app-form-item asp-for="Phone" label="Contact phone"><app-phone-input asp-for="Phone" default-country="US" placeholder="202 555 0111" aria-label="Contact phone" /></app-form-item>
                     <app-form-item asp-for="TaxId" label="Tax id"><app-masked-input asp-for="TaxId" mask="@BusinessFormsDemo.TaxIdMask" aria-label="Tax id" /></app-form-item>
                     <app-form-item asp-for="ApprovalCode" label="Approval code" help="The 6-digit code sent to the approver" class="m-span-2"><app-otp-input asp-for="ApprovalCode" length="6" separator="3" aria-label="Approval code" /></app-form-item>
+                    <app-form-item asp-for="Labels" label="Labels" help="Type a label and press Enter; up to 5" class="m-span-2"><app-tag-input asp-for="Labels" max="5" placeholder="Add a label" aria-label="Labels" /></app-form-item>
                     <app-form-item asp-for="Notes" label="Terms and notes" class="m-span-2"><app-rich-text asp-for="Notes" placeholder="Payment terms, delivery instructions…" aria-label="Terms and notes" /></app-form-item>
                     <app-form-item asp-for="Signature" label="Customer signature" class="m-span-2"><app-signature-pad asp-for="Signature" aria-label="Customer signature" /></app-form-item>
                 </div>

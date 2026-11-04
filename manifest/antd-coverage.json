@@ -163,7 +163,7 @@
       },
       "TimePicker": {
         "status": "alias",
-        "mvc": "app-date-picker picker=\"time\""
+        "mvc": "app-time-picker"
       },
       "Form": {
         "status": "alias",
@@ -352,7 +352,7 @@
       },
       "Popconfirm": {
         "status": "alias",
-        "mvc": "hx-confirm (modulus confirm dialog)"
+        "mvc": "app-popconfirm"
       },
       "Progress": {
         "status": "alias",
@@ -387,7 +387,7 @@
       "Confirm": {
         "status": "service",
         "note": "Inject IConfirmService / ModalService; MVC: hx-confirm",
-        "mvc": "hx-confirm (modulus confirm dialog)"
+        "mvc": "app-popconfirm"
       }
     },
     "Other": {
@@ -593,6 +593,11 @@
         "status": "modulus",
         "note": "AppOtpInput: Ant Design 5 Input.OTP; AntD Blazor 1.6.2 has none",
         "mvc": "app-otp-input"
+      },
+      "TagInput": {
+        "status": "modulus",
+        "note": "AppTagInput: free-form tags (Enter or a separator adds, Backspace removes); shared rules in Forms.TagInput",
+        "mvc": "app-tag-input"
       },
       "Lookup": {
         "status": "modulus",

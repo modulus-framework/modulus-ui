@@ -48,6 +48,10 @@ public sealed class BusinessFormInput
     [Required(ErrorMessage = "Enter the approval code"), RegularExpression(@"^\d{6}$", ErrorMessage = "Enter all 6 digits")]
     public string? ApprovalCode { get; set; }
 
+    /// <summary>Free-form labels, at most five (the tag input).</summary>
+    [MaxLength(5, ErrorMessage = "Use at most 5 labels")]
+    public List<string> Labels { get; set; } = [];
+
     /// <summary>Terms as HTML; cleaned with <see cref="RichText.Sanitize"/> before it is stored.</summary>
     [StringLength(20_000, ErrorMessage = "Keep the notes under 20,000 characters")]
     public string? Notes { get; set; }

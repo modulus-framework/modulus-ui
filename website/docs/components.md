@@ -85,6 +85,8 @@ The samples show every component at `/ui/components`, in the MVC sample and the 
 | `AppTimeline` | `app-timeline` | |
 | `AppCollapse`, `AppPanel` | `app-collapse`, `app-panel` | |
 | `AppTooltip`, `AppPopover` | `app-tooltip`, `app-popover` | |
+| `AppPopconfirm` | `app-popconfirm` | Attributes such as `hx-delete` go on the OK button; OK also raises `modulus:popconfirm-ok` |
+| `AppTimePicker` | `app-time-picker` | Same as `app-date-picker picker="time"` |
 | `AppEmpty` | `app-empty` | |
 | `AppTree` | `app-tree` | Checkable |
 | `AppCalendar` | `app-calendar` | |

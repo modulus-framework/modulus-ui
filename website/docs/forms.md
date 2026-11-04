@@ -26,6 +26,7 @@ These are for ERP-style forms. Each posts a plain, culture-invariant value, so t
 | Phone | `AppPhoneInput` | `app-phone-input` | A country picker and a national number, shown as `+1 202 555-0111` |
 | Masked input | `AppMaskedInput` | `app-masked-input` | A value that follows a pattern, such as `99-9999999` |
 | One-time code | `AppOtpInput` | `app-otp-input` | One box per character; paste and SMS autofill spread over the boxes |
+| Tags | `AppTagInput` | `app-tag-input` | A list of free-form tags; Enter or a separator adds one, Backspace removes the last. Posts one value per tag, so a `List<string>` binds back |
 | Lookup | `AppLookup` | `app-lookup` | A many-to-one field with type-ahead and a "Search more" dialog |
 | Status bar | `AppStatusBar` | `app-status-bar` | Workflow stages, with the finished ones folded |
 | Signature | `AppSignaturePad` | `app-signature-pad` | A PNG data URL |

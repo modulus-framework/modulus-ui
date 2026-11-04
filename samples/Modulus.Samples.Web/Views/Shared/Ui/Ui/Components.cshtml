@@ -561,6 +561,8 @@
                 <div class="m-demo-row">
                     <app-tooltip title="Copies the invoice link"><app-button icon="link">Hover me</app-button></app-tooltip>
                     <app-popover title="Seats" content="18 of 25 seats used. Add seats from Billing."><app-button>Popover</app-button></app-popover>
+                    <app-popconfirm title="Delete this invoice?" description="It can't be restored." ok-text="Delete" ok-danger><app-button danger>Popconfirm</app-button></app-popconfirm>
+                    <app-time-picker name="demo-time" format="HH:mm" placeholder="Opens at" style="width: 140px" />
                 </div>
                 <app-empty description="No invoices yet" style="margin-top: 16px" />
             </app-card>
