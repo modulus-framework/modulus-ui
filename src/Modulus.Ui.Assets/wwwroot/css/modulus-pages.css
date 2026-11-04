@@ -1952,6 +1952,11 @@ select.m-select.m-select-multi option:checked { background: color-mix(in srgb, v
 /* Table toolbar stays on one line: the search box keeps a fixed width and the buttons sit beside it. */
 .m-table-toolbar-actions { flex-wrap: nowrap; align-items: center; }
 .m-table-toolbar-actions .ant-input-affix-wrapper, .m-table-toolbar-actions .ant-input-search, .m-table-toolbar-actions .ant-input-group-wrapper { width: 260px; flex: none; }
+/* On a phone the toolbar wraps: the search box takes the full row, so nothing sticks out of the screen. */
+@media (max-width: 600px) {
+  .m-table-toolbar-actions { flex-wrap: wrap; }
+  .m-table-toolbar-actions .ant-input-affix-wrapper, .m-table-toolbar-actions .ant-input-search, .m-table-toolbar-actions .ant-input-group-wrapper { width: 100%; flex: 1 1 100%; }
+}
 /* Right-aligned header cells (the Actions column) line up with their right-aligned cells. */
 .ant-table-thead > tr > th.m-text-right { text-align: right; }
 /* A tag with no colour (a plain "No" flag) keeps a visible neutral look instead of the theme's near-white one. */
