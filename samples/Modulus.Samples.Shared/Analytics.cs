@@ -1,5 +1,6 @@
 using System.Globalization;
 using Modulus.Ui.Abstractions.Chat;
+using Modulus.Ui.Abstractions.Forecast;
 
 namespace Modulus.Samples.Shared;
 
@@ -23,8 +24,9 @@ public static class SalesAnalytics
     }
 
     /// <summary>
-    /// The next month's total, from a straight line fitted to the last twelve monthly totals (least squares). The table shows the
-    /// last six months and the forecast. The input is a city, or "all".
+    /// The next month's total, from Holt-Winters smoothing of every month of sales (a trend and a yearly season, once two seasons are
+    /// in). The text gives the error rate measured on the last six months. The table shows the last six months and the forecast.
+    /// The input is a city, or "all".
     /// </summary>
     public static (string Text, ChatTable Table) Forecast(string? city)
     {
@@ -42,32 +44,17 @@ public static class SalesAnalytics
             .OrderBy(g => g.Key)
             .Select(g => (Month: g.Key, Total: g.Sum(s => s.Amount)))
             .ToList();
-        var window = monthly.TakeLast(12).ToList();
-        if (window.Count < 2) return ("Not enough months of sales to forecast.", new ChatTable("Forecast", ["Month", "Total"], []));
+        if (monthly.Count < HoltWinters.MinimumPoints) return ("Not enough months of sales to forecast.", new ChatTable("Forecast", ["Month", "Total"], []));
 
-        var (slope, intercept) = LeastSquares(window.Select(w => (double)w.Total).ToArray());
-        var next = window[^1].Month.AddMonths(1);
-        var forecast = (decimal)(intercept + slope * window.Count);
-        var rows = window.TakeLast(6).Select(w => (IReadOnlyList<string>)new[] { w.Month.ToString("yyyy-MM"), w.Total.ToString("N2", CultureInfo.InvariantCulture) }).ToList();
-        rows.Add(new[] { next.ToString("yyyy-MM") + " (forecast)", forecast.ToString("N2", CultureInfo.InvariantCulture) });
+        var forecast = HoltWinters.Next(monthly.Select(m => (double)m.Total).ToList());
+        var next = monthly[^1].Month.AddMonths(1);
+        var value = (decimal)forecast.Next;
+        var rows = monthly.TakeLast(6).Select(w => (IReadOnlyList<string>)new[] { w.Month.ToString("yyyy-MM"), w.Total.ToString("N2", CultureInfo.InvariantCulture) }).ToList();
+        rows.Add(new[] { next.ToString("yyyy-MM") + " (forecast)", value.ToString("N2", CultureInfo.InvariantCulture) });
         var table = new ChatTable($"Monthly sales, {label}", ["Month", "Total"], rows);
-        var text = $"Forecast for {next:yyyy-MM} ({label}): {forecast.ToString("N2", CultureInfo.InvariantCulture)}. The trend over the last {window.Count} months is {(slope >= 0 ? "+" : "")}{slope.ToString("N2", CultureInfo.InvariantCulture)} a month.";
+        var method = forecast.Seasonal ? "trend and yearly season" : "trend only (not two full years yet)";
+        var text = $"Forecast for {next:yyyy-MM} ({label}): {value.ToString("N2", CultureInfo.InvariantCulture)}, from a {method} model. " +
+            $"Its error on the last six months: {forecast.ErrorRate:P1}.";
         return (text, table);
-    }
-
-    private static (double Slope, double Intercept) LeastSquares(double[] y)
-    {
-        var n = y.Length;
-        var meanX = (n - 1) / 2.0;
-        var meanY = y.Average();
-        var cov = 0.0;
-        var varX = 0.0;
-        for (var i = 0; i < n; i++)
-        {
-            cov += (i - meanX) * (y[i] - meanY);
-            varX += (i - meanX) * (i - meanX);
-        }
-        var slope = varX == 0 ? 0 : cov / varX;
-        return (slope, meanY - slope * meanX);
     }
 }

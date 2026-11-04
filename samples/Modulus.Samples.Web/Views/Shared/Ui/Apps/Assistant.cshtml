@@ -21,7 +21,7 @@
         <div class="m-card-body">
             <form method="post" action="/apps/assistant" asp-antiforgery="true" hx-boost="false">
                 <fieldset class="m-chat-modes">
-                    <legend class="m-muted">Answer from</legend>
+                    <legend class="m-muted">Answer from · model: @Model.ModelName</legend>
                     <label><input type="radio" name="mode" value="@AssistantView.KnowledgeBase" checked="@(Model.Mode == AssistantView.KnowledgeBase)" /> Knowledge base (sources cited)</label>
                     <label><input type="radio" name="mode" value="@AssistantView.Agent" checked="@(Model.Mode == AssistantView.Agent)" /> Agent with tools</label>
                 </fieldset>

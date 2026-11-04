@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Modulus.Ui.Abstractions.Assistant;
 using Modulus.Ui.Abstractions.Chat;
+using Modulus.Flow.Connectors;
 using Modulus.Ui.Abstractions.Language;
 
 namespace Modulus.Samples.Shared;
@@ -27,7 +28,7 @@ public static class HelpCenter
 /// What the assistant page shows: the conversation, the mode it was asked in, and the conversation as text for the forms. The
 /// knowledge base (the documents people uploaded, with the help centre) is <see cref="AssistantPage.Uploads"/>.
 /// </summary>
-public sealed record AssistantView(IReadOnlyList<ChatTurn> Turns, string Transcript, string Mode, IReadOnlyList<KnowledgeDocument>? Documents = null)
+public sealed record AssistantView(IReadOnlyList<ChatTurn> Turns, string Transcript, string Mode, IReadOnlyList<KnowledgeDocument>? Documents = null, string ModelName = "")
 {
     public const string Path = "/apps/assistant";
 
@@ -173,10 +174,43 @@ public static class AssistantPage
     }
 
     private static AssistantView View(IReadOnlyList<ChatTurn> turns, string mode) =>
-        new(turns, ChatTranscript.ToText(turns), mode, Uploads.Documents);
+        new(turns, ChatTranscript.ToText(turns), mode, Uploads.Documents, ModelDescription);
 
-    /// <summary>The model the samples use: a stand-in that follows the two protocols. An app puts a real client here.</summary>
-    public static ILanguageModel Model() => new AssistantModel();
+    private static ILanguageModel? _configured;
+    private static string _description = "A rule-based stand-in model (no model is configured)";
+
+    /// <summary>
+    /// Chooses the model from configuration (read through <paramref name="setting"/>): <c>Assistant:Provider</c> is "anthropic" (with
+    /// <c>Assistant:Anthropic:ApiKey</c>) or "openai" (with <c>Assistant:OpenAi:BaseUrl</c>, and an optional key); <c>Assistant:Model</c> names
+    /// the model. Without a usable setting the rule-based stand-in is used, and the page says so.
+    /// </summary>
+    public static void Configure(Func<string, string?> setting)
+    {
+        var provider = (setting("Assistant:Provider") ?? "").Trim().ToLowerInvariant();
+        var model = setting("Assistant:Model");
+        if (provider == "anthropic" && setting("Assistant:Anthropic:ApiKey") is { Length: > 0 } key)
+        {
+            _configured = new AnthropicLanguageModel(new HttpClient(), key, string.IsNullOrWhiteSpace(model) ? "claude-sonnet-5-5" : model);
+            _description = $"{(string.IsNullOrWhiteSpace(model) ? "claude-sonnet-5-5" : model)} (Anthropic)";
+        }
+        else if (provider == "openai" && setting("Assistant:OpenAi:BaseUrl") is { Length: > 0 } baseUrl && Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri))
+        {
+            var openAiKey = setting("Assistant:OpenAi:ApiKey");
+            _configured = new OpenAiLanguageModel(new HttpClient(), uri, string.IsNullOrWhiteSpace(model) ? "default" : model, openAiKey);
+            _description = $"{(string.IsNullOrWhiteSpace(model) ? "default" : model)} (OpenAI-compatible at {uri.Host})";
+        }
+        else
+        {
+            _configured = null;
+            _description = "A rule-based stand-in model (no model is configured)";
+        }
+    }
+
+    /// <summary>What answers the questions: the configured model, or the rule-based stand-in.</summary>
+    public static ILanguageModel Model() => _configured ?? new AssistantModel();
+
+    /// <summary>The model's name, for the page.</summary>
+    public static string ModelDescription => _description;
 
     private static async Task<ChatTurn> KnowledgeTurn(string question, ILanguageModel model)
     {

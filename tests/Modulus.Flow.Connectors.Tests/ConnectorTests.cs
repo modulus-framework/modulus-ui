@@ -196,3 +196,81 @@ public class FlowConnectorTests
         Assert.Contains("404", run.Step("n")!.Error);
     }
 }
+
+public class FlowConnectorsMoreTests
+{
+    private static FlowGraph One(string type, Dictionary<string, string> config) => new(
+        [new("t", "trigger.manual", 0, 0), new("n", type, 0, 0) { Config = config }],
+        [new("e", "t", "n")]);
+
+    private sealed class ReplyModel(params string[] replies) : Modulus.Ui.Abstractions.Language.ILanguageModel
+    {
+        private int _n;
+        public Task<string> CompleteAsync(string system, string user, int maxTokens, CancellationToken cancellationToken, string? model = null) =>
+            Task.FromResult(replies[Math.Min(_n++, replies.Length - 1)]);
+    }
+
+    [Fact]
+    public async Task Classifier_RoutesEachItemByTheModelsWord()
+    {
+        var runner = new FlowRunner().UseClassifier(new ReplyModel("Negative", "positive", "Something else"));
+        var run = await runner.RunAsync(One("ai.classify", new()), [FlowItem.Of(("message", "bad")), FlowItem.Of(("message", "great")), FlowItem.Of(("message", "x"))]);
+
+        Assert.Equal(FlowStatus.Success, run.Status);
+        Assert.Equal("1 positive, 1 negative, 1 other", run.Step("n")!.Note);
+    }
+
+    [Fact]
+    public async Task Extraction_SetsTheModelsFields_AndAnAnswerThatIsNotJsonFails()
+    {
+        var ok = await new FlowRunner().UseExtraction(new ReplyModel("Here: {\"orderNumber\":\"PO-7\",\"total\":12.5,\"urgent\":true}"))
+            .RunAsync(One("ai.extract", new() { ["schema"] = "{\"orderNumber\":\"string\"}" }), [FlowItem.Of(("message", "PO-7 is urgent"))]);
+        var extracted = (IReadOnlyDictionary<string, object?>)ok.Step("n")!.Outputs.Values.SelectMany(v => v).Single().Json["extracted"]!;
+        Assert.Equal("PO-7", extracted["orderNumber"]);
+        Assert.Equal(true, extracted["urgent"]);
+
+        var bad = await new FlowRunner().UseExtraction(new ReplyModel("no fields here"))
+            .RunAsync(One("ai.extract", new()), [FlowItem.Of(("message", "x"))]);
+        Assert.Equal(FlowStatus.Error, bad.Step("n")!.Status);
+        Assert.Contains("JSON object", bad.Step("n")!.Error);
+    }
+
+    [Fact]
+    public async Task Http_CallsAnAllowedHost_WithItsBodyFilled_AndParsesJson()
+    {
+        var handler = new StubHandler(System.Net.HttpStatusCode.OK, "{\"stock\":4}");
+        var runner = new FlowRunner().UseHttp(new HttpClient(handler), ["inventory.example.com"]);
+        var graph = One("data.http", new() { ["method"] = "POST", ["url"] = "https://inventory.example.com/api/check", ["body"] = "{\"sku\":\"{{sku}}\"}" });
+
+        var run = await runner.RunAsync(graph, [FlowItem.Of(("sku", "SKU-100"))]);
+
+        Assert.Equal(FlowStatus.Success, run.Status);
+        Assert.Equal("POST", handler.Request!.Method.Method);
+        Assert.Equal("{\"sku\":\"SKU-100\"}", handler.RequestBody);
+        var item = run.Step("n")!.Outputs.Values.SelectMany(v => v).Single();
+        Assert.Equal(200, item.Json["status"]);
+        Assert.Equal(4L, Convert.ToInt64(((IReadOnlyDictionary<string, object?>)item.Json["json"]!)["stock"]));
+    }
+
+    [Fact]
+    public async Task Http_ToAnotherHost_IsRefused_AndNothingIsSent()
+    {
+        var handler = new StubHandler(System.Net.HttpStatusCode.OK, "{}");
+        var run = await new FlowRunner().UseHttp(new HttpClient(handler), ["inventory.example.com"])
+            .RunAsync(One("data.http", new() { ["url"] = "https://evil.example.org/steal" }), [FlowItem.Of(("x", 1))]);
+
+        Assert.Equal(FlowStatus.Error, run.Step("n")!.Status);
+        Assert.Contains("not in the list", run.Step("n")!.Error);
+        Assert.Null(handler.Request);
+    }
+
+    [Fact]
+    public async Task Http_AnErrorStatus_FailsTheNode()
+    {
+        var handler = new StubHandler(System.Net.HttpStatusCode.NotFound, "missing");
+        var run = await new FlowRunner().UseHttp(new HttpClient(handler), ["inventory.example.com"])
+            .RunAsync(One("data.http", new() { ["url"] = "https://inventory.example.com/none" }), [FlowItem.Of(("x", 1))]);
+        Assert.Equal(FlowStatus.Error, run.Step("n")!.Status);
+        Assert.Contains("404", run.Step("n")!.Error);
+    }
+}

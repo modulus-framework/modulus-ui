@@ -18,6 +18,7 @@ using Modulus.Ui.Abstractions.Theming;
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
+Modulus.Samples.Shared.AssistantPage.Configure(key => builder.Configuration[key]);
 
 // The spreadsheet and document editors send their whole JSON back on each change; SignalR's 32 KB default would drop
 // the circuit on a large workbook or document.

@@ -19,7 +19,7 @@
     <div class="m-card">
         <div class="m-card-body">
             <fieldset class="m-chat-modes">
-                <legend class="m-muted">Answer from</legend>
+                <legend class="m-muted">Answer from · model: @_view.ModelName</legend>
                 <label><input type="radio" name="assistant-mode" checked="@(_mode == AssistantView.KnowledgeBase)" @onchange="SetKnowledgeBase" /> Knowledge base (sources cited)</label>
                 <label><input type="radio" name="assistant-mode" checked="@(_mode == AssistantView.Agent)" @onchange="SetAgent" /> Agent with tools</label>
             </fieldset>
