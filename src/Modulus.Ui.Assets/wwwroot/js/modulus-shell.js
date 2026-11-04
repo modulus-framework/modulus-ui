@@ -995,23 +995,29 @@
         return (sel && document.querySelector(sel)) || null;
     }
 
+    // The buttons are found when the DOM changes (the frame observer below), not on every scroll.
+    var backTops = [];
+    function refreshBackTops() { backTops = Array.prototype.slice.call(document.querySelectorAll('[data-m-back-top]')); }
     function syncBackTops() {
-        document.querySelectorAll('[data-m-back-top]').forEach(function (btn) {
+        backTops.forEach(function (btn) {
+            if (!btn.isConnected) return;
             var scroller = backTopScroller(btn);
             var top = scroller ? scroller.scrollTop : (window.scrollY || document.documentElement.scrollTop);
             var show = top >= (parseInt(btn.getAttribute('data-m-back-top'), 10) || 0);
-            if (show) btn.setAttribute('data-m-visible', ''); else btn.removeAttribute('data-m-visible');
+            if (show !== btn.hasAttribute('data-m-visible')) { if (show) btn.setAttribute('data-m-visible', ''); else btn.removeAttribute('data-m-visible'); }
         });
     }
 
-    document.addEventListener('scroll', syncBackTops, { capture: true, passive: true });
+    document.addEventListener('scroll', perFrame(syncBackTops), { capture: true, passive: true });
     document.addEventListener('click', function (e) {
         var btn = e.target instanceof Element && e.target.closest('[data-m-back-top]');
         if (!btn) return;
         var scroller = backTopScroller(btn);
         (scroller || window).scrollTo({ top: 0, behavior: 'smooth' });
     });
-    window.modulusShell.syncBackTops = syncBackTops;
+    window.modulusShell.syncBackTops = function () { refreshBackTops(); syncBackTops(); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { refreshBackTops(); syncBackTops(); });
+    else { refreshBackTops(); syncBackTops(); }
 
     // Chart legend toggle (ChartOptions.LegendToggle): [data-m-legend] buttons hide and show the chart's
     // [data-s="<series>"] marks and tooltip rows. The last visible series can't be hidden.
@@ -1142,9 +1148,28 @@
     }
     window.modulusShell.placeDropdown = placeDropdown;
 
+    // At most one run per frame, before paint: scroll and resize fire far more often than a frame, and these handlers read layout.
+    function perFrame(fn) {
+        var queued = false;
+        return function () {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(function () { queued = false; fn(); });
+        };
+    }
+    // Live collections: the engine keeps them current as classes change, so asking "is anything open?" on every scroll and
+    // resize costs next to nothing, where a selector query walks the whole document each time.
+    var openSelectClass = document.getElementsByClassName('ant-select-open');
+    var openLookupClass = document.getElementsByClassName('m-lookup-open');
+    var floatDropdowns = document.getElementsByClassName('m-dropdown-float');
     function placeSelects() {
-        document.querySelectorAll('.m-cselect.ant-select-open, .m-lookup.m-lookup-open').forEach(placeSelect);
-        document.querySelectorAll('.m-dropdown.m-dropdown-float').forEach(placeDropdown);
+        if (openSelectClass.length || openLookupClass.length) {
+            Array.prototype.concat.call(Array.prototype.slice.call(openSelectClass), Array.prototype.slice.call(openLookupClass))
+                .filter(function (el) { return el.matches('.m-cselect.ant-select-open, .m-lookup.m-lookup-open'); })
+                .forEach(placeSelect);
+        }
+        if (floatDropdowns.length)
+            Array.prototype.slice.call(floatDropdowns).filter(function (el) { return el.classList.contains('m-dropdown'); }).forEach(placeDropdown);
     }
 
     window.modulusShell.placeSelect = function (root) {
@@ -1167,12 +1192,15 @@
         selectsQueued.clear();
         rowsQueued.clear();
     }
-    function selectsNote(node) {
+    // A page has a handful of selects and lookups but a render can insert or restyle thousands of nodes, so the roots are
+    // collected once per batch and each node is only compared with them (contains), never searched.
+    function selectsNote(node, added, roots) {
         if (!(node instanceof Element)) return;
-        var root = node.closest('.m-cselect, .m-lookup');
+        var root = null, i;
+        for (i = 0; i < roots.length; i++) if (roots[i].contains(node)) { root = roots[i]; break; }
         if (!root) {
             // A whole select or lookup that appeared already open (an editable grid cell's editor).
-            node.querySelectorAll && node.querySelectorAll(OPEN_SELECT).forEach(function (r) { selectsQueued.add(r); });
+            if (added) for (i = 0; i < roots.length; i++) if (node.contains(roots[i]) && roots[i].matches(OPEN_SELECT)) selectsQueued.add(roots[i]);
             return;
         }
         if (node === root || node.parentElement === root || node.closest('.m-cselect-dropdown')) selectsQueued.add(root);
@@ -1182,10 +1210,13 @@
     }
     function watchSelects() {
         new MutationObserver(function (records) {
+            var list = document.querySelectorAll('.m-cselect, .m-lookup');
+            if (!list.length) return; // no select or lookup on the page: nothing to place
+            var roots = Array.prototype.slice.call(list);
             for (var i = 0; i < records.length; i++) {
                 var r = records[i];
-                if (r.type === 'attributes') selectsNote(r.target);
-                else for (var j = 0; j < r.addedNodes.length; j++) selectsNote(r.addedNodes[j].nodeType === 1 ? r.addedNodes[j] : r.target);
+                if (r.type === 'attributes') selectsNote(r.target, false, roots);
+                else for (var j = 0; j < r.addedNodes.length; j++) selectsNote(r.addedNodes[j].nodeType === 1 ? r.addedNodes[j] : r.target, true, roots);
             }
             if (selectsQueued.size || rowsQueued.size) selectsFlush();
         }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
@@ -1556,15 +1587,16 @@
         if (gridViewsQueued) return;
         gridViewsQueued = true;
         // Also re-applies hidden data-table columns after a Blazor render or navigation (a no-op when nothing changed).
-        requestAnimationFrame(function () { gridViewsQueued = false; watchGridViews(); applyAllHiddenCols(); });
+        requestAnimationFrame(function () { gridViewsQueued = false; watchGridViews(); applyAllHiddenCols(); refreshBackTops(); });
     }).observe(document.documentElement, { childList: true, subtree: true });
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchGridViews); else watchGridViews();
 
-    window.addEventListener('resize', placeSelects);
+    var placeSelectsSoon = perFrame(placeSelects);
+    window.addEventListener('resize', placeSelectsSoon);
     document.addEventListener('scroll', function (e) {
         // Scrolling the option list itself must not move the dropdown.
         if (e.target instanceof Element && e.target.closest('.m-cselect-dropdown')) return;
-        placeSelects();
+        placeSelectsSoon();
     }, { capture: true, passive: true });
 
     // Arrow keys, Enter and Space on the trigger open and move through the list instead of scrolling the page.
@@ -1575,14 +1607,17 @@
     });
 
     // Sticky section navs (the component gallery pill) get a raised shadow once they stick under the header.
+    var demoNavs = document.getElementsByClassName('m-demo-nav');
     function syncStuck() {
-        document.querySelectorAll('.m-demo-nav').forEach(function (nav) {
+        if (!demoNavs.length) return;
+        Array.prototype.slice.call(demoNavs).forEach(function (nav) {
             var top = parseFloat(getComputedStyle(nav).top) || 0;
             nav.classList.toggle('m-demo-nav-stuck', window.scrollY > 0 && nav.getBoundingClientRect().top <= top + 0.5);
         });
     }
-    document.addEventListener('scroll', syncStuck, { capture: true, passive: true });
-    window.addEventListener('resize', syncStuck);
+    var syncStuckSoon = perFrame(syncStuck);
+    document.addEventListener('scroll', syncStuckSoon, { capture: true, passive: true });
+    window.addEventListener('resize', syncStuckSoon);
 
     // ---- Pivot table: scroll horizontally with mouse wheel, drag to pan ----
     document.addEventListener('wheel', function (e) {

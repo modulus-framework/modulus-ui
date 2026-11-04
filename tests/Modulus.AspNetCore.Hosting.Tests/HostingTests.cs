@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection;
 using Modulus.AspNetCore.Hosting;
 using Xunit;
 
@@ -28,6 +29,26 @@ public class HostingTests
 
         Assert.Contains("connect-src 'self' ws: wss: https: https://tiles.example.com;", policy);
         Assert.EndsWith("; report-uri /csp-report", policy);
+    }
+
+    [Fact]
+    public void Compression_UsesTheConfiguredLevel_ForBothProviders()
+    {
+        var services = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+        services.AddModulusHardening();
+        using var provider = services.BuildServiceProvider();
+
+        // Optimal by default: the framework's Fastest leaves an admin page about twice the size for 2 ms less CPU.
+        Assert.Equal(System.IO.Compression.CompressionLevel.Optimal,
+            provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProviderOptions>>().Value.Level);
+        Assert.Equal(System.IO.Compression.CompressionLevel.Optimal,
+            provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProviderOptions>>().Value.Level);
+
+        var fast = new Microsoft.Extensions.DependencyInjection.ServiceCollection();
+        fast.AddModulusHardening(o => o.CompressionLevel = System.IO.Compression.CompressionLevel.Fastest);
+        using var fastProvider = fast.BuildServiceProvider();
+        Assert.Equal(System.IO.Compression.CompressionLevel.Fastest,
+            fastProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProviderOptions>>().Value.Level);
     }
 
     [Fact]

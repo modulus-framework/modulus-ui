@@ -16,4 +16,10 @@
     <ProjectReference Include="..\Modulus.Samples.Shared\Modulus.Samples.Shared.csproj" />
   </ItemGroup>
 
+  <!-- The views are compiled into the assembly. Publishing the .cshtml sources too makes an app that references two Razor
+       libraries fail (NETSDK1152: both ship Views/_ViewImports.cshtml), so they stay out of the publish output. -->
+  <ItemGroup>
+    <Content Update="Views\**\*.cshtml" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
 </Project>

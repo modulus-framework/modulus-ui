@@ -7,6 +7,13 @@ public sealed class ModulusHardeningOptions
     public bool Compression { get; set; } = true;
 
     /// <summary>
+    /// Compression level of dynamic responses (the pages). The framework default of <c>Fastest</c> leaves a 470 KB admin page at
+    /// about twice the size Optimal gives (measured: 115 KB against 49 KB with Brotli) for 2 ms more CPU, so <c>Optimal</c> is the
+    /// default here. Scripts and styles are served pre-compressed by <c>MapStaticAssets</c> and ignore this.
+    /// </summary>
+    public System.IO.Compression.CompressionLevel CompressionLevel { get; set; } = System.IO.Compression.CompressionLevel.Optimal;
+
+    /// <summary>
     /// The security headers: no MIME sniffing, a referrer policy, framing limited to the same site, and a permissions policy that
     /// switches off the camera, microphone and location. On by default.
     /// </summary>

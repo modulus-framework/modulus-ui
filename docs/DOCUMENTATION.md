@@ -990,6 +990,47 @@ Also fixed: the Blazor sample did not build (two pages named like components, `G
 
 Notes for the CLI (the `modulus` repo): the `ui add-component` list of 78 components should gain `tag-input`, `popconfirm` and `time-picker`; their templates are in `templates/mvc`, `razor-pages` and `blazor`, but the component registry lives in the CLI. `Blazor` tag input is a controlled field, so keystrokes typed faster than the server round trip can be dropped in Blazor Server; normal typing is not affected.
 
+### 7. Performance
+
+Measured with Chromium (Playwright) against the samples on the same machine; Debug numbers include JIT and unminified assets, so judge production by the Release rows.
+
+| Page (MVC sample) | Debug, cold | Release publish, cold |
+| --- | --- | --- |
+| Dashboard first load, transferred | 1,981 KB | **483 KB** (document 50 KB, styles 191 KB, scripts 147 KB, font 96 KB) |
+| First contentful paint / largest contentful paint | 1,648 / 1,740 ms | **156 / 224 ms** |
+| Total blocking time | 97 ms | **1 ms** |
+
+What the framework already does, and what to keep doing when you add pages:
+
+- **Pre-compressed assets.** `MapStaticAssets` serves scripts and styles pre-compressed at publish time (Brotli: `modulus.css` 222 KB raw, 35 KB sent). Use `app.MapStaticAssets()`, not `UseStaticFiles()`, and always check performance on a `-c Release` publish: a Debug build stores gzip uncompressed.
+- **Versioned, immutable assets.** `_content` files requested with `?v=` get `Cache-Control: public, max-age=31536000, immutable`. The Inter font is preloaded, scripts are `defer`red, and htmx / Alpine.js are served locally.
+- **Fast navigation (MVC and Razor Pages).** `SpaNavigation` swaps only the page body with a view transition; a link the pointer rests on for 65 ms (or touches) is prefetched and used once within 30 s; loaders appear only after 120 to 300 ms, so quick loads do not flicker. Turn it on in `ModulusThemeOptions`.
+- **Server paging and virtual rows.** `ProTable` pages on the server (`RemoteDataSource`); the MVC large-table helpers use `modulus-virtual.js`. Do not load every row to the page: page, filter and sort in the query.
+- **Size budgets.** `python tests/browser/budgets.py` fails when a script or stylesheet grows past its gzip budget.
+
+Changed for performance:
+
+- **Dynamic compression level.** `ModulusHardeningOptions.CompressionLevel` defaults to `Optimal` for Brotli and gzip. The framework default (`Fastest`) sent the 470 KB dashboard page at 115 KB (Brotli) / 97 KB (gzip); `Optimal` sends 50 KB / 81 KB for about 2 ms more CPU.
+- **Document-wide observer.** The select/lookup placement observer ran a subtree query for every class change on the page; on the Blazor components page it cost 87 ms of script at load. It now finds the few select roots once per batch and compares nodes with `contains`, and does nothing when the page has none.
+- **Scroll and resize handlers.** Placing open selects, the sticky gallery nav and the back-to-top buttons used document-wide selector queries on every scroll event. They now use live `getElementsByClassName` collections (or a cached list refreshed when the DOM changes) and run at most once per frame.
+- **`dotnet publish` of the samples failed** (NETSDK1152: the Mvc library and the sample views both published `Views/_ViewImports.cshtml`). Views are compiled into the assemblies, so `.cshtml` sources are no longer copied to publish output.
+- **ReadyToRun.** The three admin samples set `PublishReadyToRun` and `TieredPGO` when you publish with a runtime identifier (`dotnet publish -c Release -r linux-x64`). First requests got 32 to 44 % faster (560 to 379 ms, 746 to 419 ms, 290 to 188 ms), warm ones 47 to 34 ms. Do the same in your app.
+
+Deployment checklist:
+
+1. Publish with `-c Release -r <rid>` (ReadyToRun) and serve with HTTP/2 or HTTP/3 behind your proxy or CDN.
+2. Keep response compression on. `EnableForHttps` is off by default (BREACH); if TLS ends at Kestrel and no proxy compresses, pages go out uncompressed, so either compress at the proxy (preferred) or turn it on after weighing BREACH for your pages: they carry an antiforgery token, which ASP.NET Core encrypts afresh for each response, but that is your call to make, not a guarantee this framework gives.
+3. Cache `/_content/*?v=*` at the CDN for a year; never cache the HTML (`no-store` is what the pages send).
+4. Blazor Server: keep the circuit near the user, raise `MaximumReceiveMessageSize` only if editors need it, and prefer server paging over large in-memory lists.
+5. Measure after each change with `tests/browser/budgets.py` and a Release publish.
+
+Known limits and ideas not done:
+
+- A dashboard page is about 470 KB of HTML (5,000 DOM nodes). More than half is inline SVG, and 132 KB of that is the same icons repeated. A `<symbol>` / `<use>` sprite would shrink the DOM and the document, but it changes the markup the CSS, the scripts and both flavours' tests rely on, so it is a separate change. Compression already removes most of it from the wire (about 5 to 1).
+- The Ant Design stylesheet (563 KB raw, 54 KB sent) is render-blocking on every page, and the Ant Design Blazor script spends about 100 to 200 ms in `getBoundingClientRect` on pages with many components; both are upstream.
+- The Blazor tag input is a controlled field, so keys typed faster than the server round trip can be dropped.
+- Minifying the Modulus scripts and styles was not done: with Brotli it would save an estimated 15 to 20 % of about 100 KB, which does not justify a build step.
+
 <!-- source: docs/PLAN.md -->
 ## Plan and progress
 
