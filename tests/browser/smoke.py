@@ -11,6 +11,7 @@ one (see docs/DOCUMENTATION.md#upgrading-ant-design-blazor-htmx-alpinejs-and-the
 Set MODULUS_CHROMIUM to a browser executable to use one other than Playwright's own.
 """
 import json
+import base64
 import os
 import sys
 import urllib.request
@@ -66,12 +67,19 @@ def headers(base, name):
         fail(f"{name}: the page did not answer ({e})")
 
 
+# A 1x1 transparent PNG, used for every external map tile.
+BLANK_TILE = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=")
+
+
 def check_pages(base, name, enforced):
     with sync_playwright() as p:
         options = {"executable_path": os.environ["MODULUS_CHROMIUM"]} if os.environ.get("MODULUS_CHROMIUM") else {}
         browser = p.chromium.launch(args=["--no-sandbox"], **options)
         for path in PAGES:
             page = browser.new_page(viewport={"width": 1280, "height": 900})
+            # Map tiles come from an external server. The gate answers them with a blank tile, so the map pages do not depend
+            # on the network (CI has no tile server access guarantee); the app's own requests are not affected.
+            page.route("https://tile.openstreetmap.org/**", lambda route: route.fulfill(status=200, content_type="image/png", body=BLANK_TILE))
             page.add_init_script("""document.addEventListener('securitypolicyviolation', e => {
                 window.__csp = (window.__csp || []).concat([e.violatedDirective + ' | ' + (e.blockedURI || e.sample || '').slice(0, 60)]); });""")
             errors = []

@@ -27,7 +27,11 @@ jobs:
       run: dotnet build Modulus.slnx --configuration Release --no-restore
 
     - name: Test
-      run: dotnet test --solution Modulus.slnx --configuration Release --no-build
+      # One test project at a time: `dotnet test --solution` is not a switch in the .NET 10 SDK.
+      run: |
+        for project in tests/*/*.csproj; do
+          dotnet test "$project" --configuration Release --no-build
+        done
 
     # Fails when the manifest, the App* aliases and the pinned AntDesign disagree.
     - name: Ant Design drift check
