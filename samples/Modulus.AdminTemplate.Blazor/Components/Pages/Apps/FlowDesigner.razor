@@ -7,12 +7,18 @@
 <PageHeading Pretitle="Apps" Title="Workflow designer" Subtitle="Drag nodes from the palette, draw connections from an output dot to an input dot, double-click a node to set it up. An AI support desk is loaded.">
     <Actions>
         <button type="button" class="ant-btn ant-btn-default" @onclick="Reset"><span>Reset</span></button>
-        <button type="button" class="ant-btn ant-btn-primary" @onclick="RunAsync" disabled="@_running"><span>@(_running ? "Running…" : "Run (simulated)")</span></button>
+        <button type="button" class="ant-btn ant-btn-primary" @onclick="RunAsync" disabled="@_running"><span>@(_running ? "Running…" : "Run")</span></button>
     </Actions>
 </PageHeading>
 
 <div class="m-row-cards">
     <div class="m-card">
+        <div class="m-card-header">
+            <div><h3 class="m-card-title">Support desk</h3><p class="m-card-subtitle">Type what a customer writes and press Run: the workflow really runs, and the nodes light up as they do</p></div>
+            <div class="m-card-actions" style="min-width: min(420px, 100%)">
+                <input class="ant-input" aria-label="Customer message" placeholder="@FlowDemo.SampleMessage" @bind="_message" @bind:event="oninput" />
+            </div>
+        </div>
         <div class="m-card-body" style="padding: 0">
             <AppFlowEditor @ref="_editor" Graph="_graph" GraphChanged="OnGraphChanged" OnOpen="Open" Height="600" Label="Support desk workflow" />
         </div>
@@ -42,6 +48,25 @@
                     {
                         <p class="m-muted">This node has no settings.</p>
                     }
+                }
+            </div>
+        </div>
+
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Last run</h3><p class="m-card-subtitle">@(_run is null ? "Press Run to see each node's result" : $"{_run.Status} in {_run.Duration.TotalMilliseconds:0} ms")</p></div></div>
+            <div class="m-card-body">
+                @if (_run is null)
+                {
+                    <p class="m-muted">Nothing has run yet.</p>
+                }
+                else
+                {
+                    <ul class="m-flow-issues">
+                        @foreach (var step in _run.Steps.Where(x => x.Status != FlowStatus.Running))
+                        {
+                            <li class="@(step.Status == FlowStatus.Error ? "m-flow-issue-error" : "m-flow-issue-ok")"><strong>@Title(step.NodeId)</strong> @FlowDemo.Describe(step)</li>
+                        }
+                    </ul>
                 }
             </div>
         </div>
@@ -108,20 +133,24 @@
         _issues = FlowDemo.Check(_graph);
     }
 
-    // Walks the nodes in run order, ring and icon for each, without redrawing the canvas.
+    private string _message = "";
+    private FlowRunResult? _run;
+
+    private string Title(string id) => _graph.Node(id) is { } n ? n.Title ?? _types.Find(n.Type)?.Title ?? n.Id : id;
+
+    // Runs the workflow for real. Each node reports as it starts and ends, and the canvas shows it without being redrawn.
     private async Task RunAsync()
     {
         if (_running || _editor is null) return;
         _running = true;
+        _run = null;
         StateHasChanged();
-        var order = FlowDemo.RunOrder(_graph);
         foreach (var node in _graph.Nodes) await _editor.SetStatusAsync(node.Id, FlowStatus.None, "");
-        foreach (var id in order)
+        _run = await FlowDemo.Run(_graph, _message, async step =>
         {
-            await _editor.SetStatusAsync(id, FlowStatus.Running);
-            await Task.Delay(450);
-            await _editor.SetStatusAsync(id, FlowStatus.Success, $"{Random.Shared.Next(1, 6)} items");
-        }
+            await _editor.SetStatusAsync(step.NodeId, step.Status, step.Status == FlowStatus.Running ? null : step.Error ?? step.Note);
+            if (step.Status == FlowStatus.Running) await Task.Delay(350);
+        });
         _running = false;
     }
 }

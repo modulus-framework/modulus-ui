@@ -118,3 +118,4 @@
 .m-flow-issues li + li { margin-top: 6px; }
 .m-flow-issues .m-flow-issue-error { border-left-color: var(--m-error); }
 .m-flow-issues strong { margin-right: 4px; color: var(--m-text); }
+.m-flow-issues .m-flow-issue-ok { border-left-color: var(--m-success); }

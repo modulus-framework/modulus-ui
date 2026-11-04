@@ -17,6 +17,19 @@ public class FlowModel : SamplePageModel
         return Redirect("/apps/flow");
     }
 
+    /// <summary>Runs the workflow as it is on the canvas for one customer message, and shows what each node did.</summary>
+    public async Task<IActionResult> OnPostRunAsync([FromForm(Name = "Workflow")] string? workflow, [FromForm] string? message)
+    {
+        var view = await FlowPage.RunAsync(workflow, message);
+        if (view is null)
+        {
+            Flash("That is not a workflow, so nothing ran.", "error");
+            return Redirect("/apps/flow");
+        }
+        View = view;
+        return Page();
+    }
+
     public IActionResult OnPostReset()
     {
         FlowDemo.Reset();

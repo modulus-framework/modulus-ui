@@ -45,15 +45,74 @@ public static class FlowDemo
 
     public static bool IsSaved => _saved is not null;
 
-    /// <summary>The nodes in the order a run visits them, for the simulated run.</summary>
-    public static IReadOnlyList<string> RunOrder(FlowGraph graph) => graph.ExecutionOrder(FlowCatalog.Default).Where(n => !n.Disabled).Select(n => n.Id).ToList();
+    private static readonly string[] Negative = ["refund", "late", "broken", "angry", "terrible", "cancel", "damaged", "worst", "never arrived"];
+    private static readonly string[] Positive = ["thank", "great", "love", "awesome", "perfect", "happy"];
+
+    /// <summary>
+    /// The engine with stand-ins for the nodes that would call outside systems: a keyword sentiment classifier for the "AI" node, prompts
+    /// that fill in the item, a tiny help-centre search, an approval that rejects threats of legal action, and email and chat that only
+    /// say what they would send. An app registers real ones (a model client, an SMTP sender) the same way.
+    /// </summary>
+    public static FlowRunner Runner() => new FlowRunner()
+        .On("ai.classify", (ctx, _) =>
+        {
+            var positive = new List<FlowItem>();
+            var negative = new List<FlowItem>();
+            var other = new List<FlowItem>();
+            foreach (var item in ctx.Items)
+            {
+                var text = item.Text("message").ToLowerInvariant();
+                (Negative.Any(text.Contains) ? negative : Positive.Any(text.Contains) ? positive : other).Add(item);
+            }
+            return Task.FromResult(new FlowResult { Note = $"{positive.Count} positive, {negative.Count} negative, {other.Count} other" }
+                .To("positive", positive).To("negative", negative).To("other", other));
+        })
+        .OnEach("ai.chat", (ctx, item, _) => Task.FromResult(item.With("reply", $"[{ctx.Setting("model")}] {ctx.Setting("prompt", item)}")))
+        .OnEach("ai.agent", (ctx, item, _) => Task.FromResult(item.With("summary", $"{ctx.Setting("goal")}: \"{item.Text("message")}\"; proposed fix: review the order and offer a refund")))
+        .OnEach("ai.vector", (ctx, item, _) =>
+        {
+            var text = item.Text("message").ToLowerInvariant();
+            var articles = new List<object?> { text.Contains("order") || text.Contains("late") ? "Where is my order?" : "Getting started", "Returns and refunds" };
+            return Task.FromResult(item.With("articles", articles.Take(int.TryParse(ctx.Setting("topK"), out var k) ? Math.Clamp(k, 1, 2) : 2).ToList()));
+        })
+        .On("ai.human", (ctx, _) =>
+        {
+            var approved = ctx.Items.Where(i => !i.Text("message").Contains("lawyer", StringComparison.OrdinalIgnoreCase)).ToList();
+            var rejected = ctx.Items.Except(approved).ToList();
+            return Task.FromResult(new FlowResult { Note = approved.Count > 0 ? "Approved" : "Rejected" }.To("approved", approved).To("rejected", rejected));
+        })
+        .OnEach("action.email", (ctx, item, _) => Task.FromResult(item.With("emailed", $"To {ctx.Setting("to", item)}: {ctx.Setting("subject", item)}")))
+        .OnEach("action.slack", (ctx, item, _) => Task.FromResult(item.With("posted", $"{ctx.Setting("channel")}: {item.Text("message")}")))
+        .OnEach("action.respond", (_, item, _) => Task.FromResult(item.With("responded", true)));
+
+    /// <summary>What a customer's chat message looks like when it reaches the trigger.</summary>
+    public static FlowItem Message(string text) => FlowItem.Of(("message", text), ("customer", new Dictionary<string, object?> { ["name"] = "Ada Park", ["email"] = "ada@example.com" }));
+
+    public const string SampleMessage = "My order arrived late and I want a refund";
+
+    /// <summary>Runs the workflow for one chat message, reporting each node as it starts and ends.</summary>
+    public static Task<FlowRunResult> Run(FlowGraph graph, string? message, Func<FlowNodeRun, Task>? onStep = null) =>
+        Runner().RunAsync(graph, [Message(string.IsNullOrWhiteSpace(message) ? SampleMessage : message)],
+            new FlowRunOptions { OnStep = onStep, NodeTimeout = TimeSpan.FromSeconds(5) });
+
+    /// <summary>The words of each finished node for a result list: what it said, or why it failed.</summary>
+    public static string Describe(FlowNodeRun step)
+    {
+        if (step.Error is not null) return step.Error;
+        var last = step.Outputs.Values.SelectMany(v => v).FirstOrDefault();
+        var shown = last is null ? "" : new[] { "responded", "emailed", "posted", "reply", "summary" }.Select(k => last.Text(k)).FirstOrDefault(t => t.Length > 0) ?? "";
+        return shown.Length > 0 ? shown : step.Note ?? "";
+    }
 
     /// <summary>Why this graph can or cannot run, as plain lines for the page.</summary>
     public static IReadOnlyList<FlowIssue> Check(FlowGraph graph) => graph.Validate(FlowCatalog.Default);
 }
 
-/// <summary>What the MVC and Razor Pages workflow page shows.</summary>
-public sealed record FlowView(FlowGraph Graph, IReadOnlyList<FlowIssue> Issues, bool Saved);
+/// <summary>What the MVC and Razor Pages workflow page shows; <paramref name="Run"/> is set after a run (the canvas then shows each node's status).</summary>
+public sealed record FlowView(FlowGraph Graph, IReadOnlyList<FlowIssue> Issues, bool Saved, FlowRunView? Run = null);
+
+/// <summary>The result of a run for the MVC and Razor Pages result list: the message that was run and what each node did.</summary>
+public sealed record FlowRunView(FlowRunResult Result, string Message);
 
 public static class FlowPage
 {
@@ -71,9 +130,24 @@ public static class FlowPage
             message = "That is not a workflow, so nothing was saved.";
             return false;
         }
-        FlowDemo.Save(graph);
+        FlowDemo.Save(Clean(graph));
         var errors = FlowDemo.Check(graph).Count(i => i.Level == FlowIssueLevel.Error);
         message = errors == 0 ? $"Workflow saved: {graph.Nodes.Count} nodes, {graph.Edges.Count} connections." : $"Workflow saved with {errors} error{(errors == 1 ? "" : "s")} to fix before it can run.";
         return true;
     }
+
+    /// <summary>Runs the workflow as posted (saved or not) for one message. Null when the post is not a workflow.</summary>
+    public static async Task<FlowView?> RunAsync(string? json, string? message)
+    {
+        if (!FlowGraph.TryParse(json, out var graph)) return null;
+        var text = string.IsNullOrWhiteSpace(message) ? FlowDemo.SampleMessage : message.Trim();
+        var result = await FlowDemo.Run(graph, text);
+        return new FlowView(result.ApplyTo(graph), FlowDemo.Check(graph), FlowDemo.IsSaved, new FlowRunView(result, text));
+    }
+
+    /// <summary>The graph without the statuses and remarks of a run, so a saved workflow starts clean.</summary>
+    private static FlowGraph Clean(FlowGraph graph) => graph with
+    {
+        Nodes = graph.Nodes.Select(n => n with { Status = FlowStatus.None, Note = null }).ToList(),
+    };
 }

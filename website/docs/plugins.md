@@ -26,7 +26,7 @@ Third-party libraries load only on the pages that use them. `modulus-plugins.js`
 
 ## Workflow designer
 
-A canvas of nodes you drag and wire together, for AI agents, RAG pipelines, approval flows and ETL jobs. The workflow is a `FlowGraph` (nodes, connections, each node's settings), which saves as JSON and which an engine can run.
+A canvas of nodes you drag and wire together, for AI agents, RAG pipelines, approval flows and ETL jobs. The workflow is a `FlowGraph` (nodes, connections, each node's settings), which saves as JSON and runs on the built-in `FlowRunner`.
 
 ```razor
 <AppFlowEditor @bind-Graph="_graph" OnOpen="id => _open = _graph.Node(id)" Height="600" />
@@ -39,7 +39,20 @@ A canvas of nodes you drag and wire together, for AI agents, RAG pipelines, appr
 </form>
 ```
 
-In MVC and Razor Pages the graph posts as JSON in one field: read it with `FlowGraph.TryParse`. The palette comes from a `FlowCatalog`; `FlowCatalog.Default` has triggers (manual, webhook, schedule, chat), AI (chat model, agent, classifier, extractor, embeddings, vector search, human approval), logic (if, switch, merge, loop, wait), data (HTTP, set fields, code, database, filter) and actions (email, chat message, respond). Pass your own catalog for your node kinds.
+In MVC and Razor Pages the graph posts as JSON in one field: read it with `FlowGraph.TryParse`.
+
+### Running a workflow
+
+```csharp
+var runner = new FlowRunner()
+    .OnEach("ai.chat", async (ctx, item, ct) => item.With("reply", await model.CompleteAsync(ctx.Setting("prompt", item), ct)))
+    .OnEach("action.email", async (ctx, item, ct) => { await mail.SendAsync(ctx.Setting("to", item), ctx.Setting("subject", item), ct); return item; });
+
+var result = await runner.RunAsync(graph, [FlowItem.Of(("message", text))], new FlowRunOptions { OnStep = step => Task.CompletedTask });
+var statuses = result.ApplyTo(graph); // hand this to the editor to show each node's status
+```
+
+The built-in nodes (triggers, if, switch, merge, wait, set fields, filter) need no handler. Expressions use `{{path}}` and conditions such as `customer.tier == "gold"`; see the Workflow designer section of the documentation. The library has no model, mail or HTTP clients: your app supplies them, and loop nodes are not run. The palette comes from a `FlowCatalog`; `FlowCatalog.Default` has triggers (manual, webhook, schedule, chat), AI (chat model, agent, classifier, extractor, embeddings, vector search, human approval), logic (if, switch, merge, loop, wait), data (HTTP, set fields, code, database, filter) and actions (email, chat message, respond). Pass your own catalog for your node kinds.
 
 | You can | How |
 | --- | --- |
@@ -53,7 +66,7 @@ In MVC and Razor Pages the graph posts as JSON in one field: read it with `FlowG
 | Show a run | `SetStatusAsync` or `modulusFlow.setStatus(editor, id, 'running' / 'success' / 'error' / 'waiting', note)` draws a ring and an icon on each node |
 | Check it | `graph.Validate(catalog)` finds unknown node kinds, broken connections, a missing trigger, nodes no trigger reaches and loops; `graph.ExecutionOrder(catalog)` gives a valid run order |
 
-`modulus-flow.js` (about 11 KB gzipped) and its stylesheet load only on a page that has a designer. The designer does not run workflows: it draws and edits them, and the graph is yours to execute. See the "Workflow designer" sample.
+`modulus-flow.js` (about 11 KB gzipped) and its stylesheet load only on a page that has a designer. The designer draws and edits workflows; `FlowRunner` runs them. See the "Workflow designer" sample.
 
 ## Notes on use
 

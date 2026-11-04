@@ -1,43 +1,19 @@
-@* The workflow designer: the editor posts its graph as JSON in the "Workflow" field, so a plain form saves it. The run is a
-   simulation in the browser (modulusFlow.setStatus walks the nodes). The same page is the Razor Pages and Blazor sample. *@
+@* The workflow designer: the editor posts its graph as JSON in the "Workflow" field, so a plain form saves it and runs it. Run is the
+   real engine on the server (FlowDemo.Run); the canvas shows each node's status from the result. The same page is the MVC and Razor Pages sample. *@
+@using Modulus.Samples.Shared
 @using Modulus.Ui.Abstractions.Flow
 @model FlowView
-<app-page-header pretitle="Apps" title="Workflow designer" subtitle="Drag nodes from the palette, draw connections from an output dot to an input dot, press Delete to remove. An AI support desk is loaded.">
+<app-page-header pretitle="Apps" title="Workflow designer" subtitle="Drag nodes from the palette, draw connections from an output dot to an input dot, press Delete to remove. Run sends a customer message through the workflow and lights up each node.">
 </app-page-header>
 
 <form method="post" action="/apps/flow" asp-antiforgery="true" hx-boost="false">
-    <div class="m-row-cards"
-         x-data="{
-            running: false,
-            async run() {
-                const root = $el.querySelector('[data-m-flow]');
-                const g = modulusFlow.getGraph(root);
-                let level = g.nodes.filter(n => n.type.startsWith('trigger.') && !n.disabled).map(n => n.id);
-                const seen = new Set(), order = [];
-                while (level.length) {
-                    const next = [];
-                    for (const id of level) {
-                        if (seen.has(id)) continue;
-                        seen.add(id); order.push(id);
-                        g.edges.filter(e => e.from === id).forEach(e => next.push(e.to));
-                    }
-                    level = next;
-                }
-                this.running = true;
-                g.nodes.forEach(n => modulusFlow.setStatus(root, n.id, 'none', ''));
-                for (const id of order) {
-                    modulusFlow.setStatus(root, id, 'running');
-                    await new Promise(r => setTimeout(r, 450));
-                    modulusFlow.setStatus(root, id, 'success', (1 + Math.floor(Math.random() * 5)) + ' items');
-                }
-                this.running = false;
-            }
-         }">
+    <div class="m-row-cards">
         <div class="m-card">
             <div class="m-card-header">
                 <div><h3 class="m-card-title">Support desk</h3><p class="m-card-subtitle">@Model.Graph.Nodes.Count nodes, @Model.Graph.Edges.Count connections · @(Model.Saved ? "your saved version" : "the sample")</p></div>
-                <div class="m-card-actions">
-                    <button type="button" class="ant-btn ant-btn-default" @@click="run()" :disabled="running"><span x-text="running ? 'Running…' : 'Run (simulated)'">Run (simulated)</span></button>
+                <div class="m-card-actions" style="min-width: min(420px, 100%)">
+                    <input class="ant-input" name="message" aria-label="Customer message" value="@Model.Run?.Message" placeholder="@FlowDemo.SampleMessage" />
+                    <button type="submit" class="ant-btn ant-btn-primary" formaction="/apps/flow/run"><span>Run</span></button>
                 </div>
             </div>
             <div class="m-card-body" style="padding: 0">
@@ -48,6 +24,25 @@
                 <button type="submit" class="ant-btn ant-btn-default" formaction="/apps/flow/reset"><span>Reset to the sample</span></button>
             </div>
         </div>
+
+        @if (Model.Run is { } run)
+        {
+            <div class="m-card">
+                <div class="m-card-header">
+                    <div><h3 class="m-card-title">Last run</h3><p class="m-card-subtitle">"@run.Message" · @run.Result.Steps.Count nodes in @run.Result.Duration.TotalMilliseconds.ToString("0") ms · @run.Result.Status</p></div>
+                </div>
+                <div class="m-card-body">
+                    <ul class="m-flow-issues">
+                        @foreach (var step in run.Result.Steps)
+                        {
+                            var node = Model.Graph.Nodes.FirstOrDefault(n => n.Id == step.NodeId);
+                            var title = node is null ? step.NodeId : node.Title ?? FlowCatalog.Default.Find(node.Type)?.Title ?? node.Type;
+                            <li class="@(step.Status == FlowStatus.Error ? "m-flow-issue-error" : step.Status == FlowStatus.Success ? "m-flow-issue-ok" : "m-flow-issue-warn")"><strong>@title</strong> <span class="m-muted">@FlowDemo.Describe(step)</span></li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        }
 
         <div class="m-card">
             <div class="m-card-header"><div><h3 class="m-card-title">Checks</h3><p class="m-card-subtitle">What the saved workflow would need before it can run</p></div></div>

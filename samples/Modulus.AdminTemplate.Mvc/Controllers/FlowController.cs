@@ -18,6 +18,19 @@ public class FlowController : SampleController
         return Redirect("/apps/flow");
     }
 
+    /// <summary>Runs the workflow as it is on the canvas for one customer message, and shows what each node did.</summary>
+    [HttpPost("run")]
+    public async Task<IActionResult> Run([FromForm(Name = "Workflow")] string? workflow, [FromForm] string? message)
+    {
+        var view = await FlowPage.RunAsync(workflow, message);
+        if (view is null)
+        {
+            Flash("That is not a workflow, so nothing ran.", "error");
+            return Redirect("/apps/flow");
+        }
+        return Page("Workflow designer", "Apps/Flow/Flow", view);
+    }
+
     [HttpPost("reset")]
     public IActionResult Reset()
     {
