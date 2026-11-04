@@ -1456,10 +1456,68 @@ None planned yet.
 **Order of work:** the §7.2 order stands (finish §7.1, stabilise the 🟡 work, Spreadsheet, Fluid, document
 templates, Document Processing); the P0 phases follow that, P1 items as needed.
 
+#### 7.4 Remaining work plan (2026-11-04)
+
+Everything still open, in one place. Each item says what is missing and when it counts as done. The items marked
+**Decision** need an answer from the maintainers before work starts; the rest can be done as written. Items already
+finished are not repeated here (see the change log in §8).
+
+**A. Workflow designer and engine** (§8, "Workflow designer")
+
+| # | Item | Done when | Decision |
+|---|------|-----------|----------|
+| A1 | Real adapters for the stand-in nodes: AI chat and classifier (a model client), email (SMTP or a provider), chat posts, and an HTTP node. Each lives in the app or a separate package, not in Abstractions. | Each adapter has a unit test against a fake, and one sample run per adapter uses it (behind a setting, off by default). | **Decision:** which model, mail and chat providers to ship adapters for first. |
+| A2 | Loop node (`logic.loop`) is reported by the validator but not run. | Runs items one batch at a time with a bounded iteration count and a `MaxItems` guard; tests cover an empty list, a cap and an error inside the loop. | — |
+| A3 | Secrets and credentials: node settings hold plain text, and there is no reference to a secret store (`{{secret.name}}`). | A setting can refer to a named secret, resolved by the app at run time; the editor never shows the value. | **Decision:** the secret store to build on (the app's configuration, or an interface the app implements). |
+| A4 | Run history: a run's result is kept only for the page that shows it. | Each workflow keeps its last N runs (time, message, per-node status) through `IUiStateStore` or an app store; a page lists them. | — |
+| A5 | Browser gate for the run: `tests/browser/smoke.py` only opens `/apps/flow`. The run (press Run, check statuses, save clears them) is checked by hand. | A `tests/browser/flow.py` script runs the sample on Blazor, MVC and Razor Pages and asserts the node statuses, and it runs in the browser CI job. | — |
+| A6 | Editor features not built: sub-workflows, groups, sticky notes, minimap, marquee selection. | Each one has a sample and tests in all three flavours, or is dropped from the list. | **Decision:** which of these matter for the ERP and AI use cases. |
+| A7 | Scheduler and webhook triggers are nodes only. The library starts nothing on a timer or an HTTP call. | Out of this repo: the app decides how to start a run. Document one pattern (a hosted service calling `RunAsync`) with a sample. | **Decision:** whether the framework should ship a hosted-service helper. |
+
+**B. Release, CI and verification**
+
+| # | Item | Done when | Decision |
+|---|------|-----------|----------|
+| B1 | The GitHub CI job has never run on this branch. The browser job, `EditableGridTests` (culture) and the Actions version bumps are all unverified there. | A CI run on the branch is green, with the link recorded in §8. | — |
+| B2 | Razor compile check of the templates. An unescaped `@media` in `mvc` and `razor-pages` `user-profile` was found and fixed as `@@media`; no full compile of every template has been done. | Each engine's generated project builds with no template errors. | — |
+| B3 | The `shared/table.sbn` and `shared/form-input.sbn` Fluid files are neither valid Liquid nor valid Scriban, and nothing includes them. | Fixed, or deleted, and the Fluid tests pass. | **Decision:** fix or delete (nothing uses them). |
+| B4 | Blazor CRUD against a live API was not run separately; only the MVC CRUD was. | The Blazor entity form is saved and reloaded against the running API, as in the MVC check. | — |
+| B5 | The CLI's `DefaultVersion` points at the released UI version, so the new components and the workflow designer do not reach scaffolded apps yet. | After a UI release is published, the CLI version is bumped and `add-component flow-editor` works against the published package. | **Decision:** when to publish a UI release. |
+| B6 | Phase 26 (printing) is listed as the resume point in the status table, but the resume note says phases 1 to 26 are complete. | The two notes agree, and the printing checks in §7.3 are either confirmed or listed as open. | — |
+
+**C. Browser sweep of the 🟡 pages** (§3 to §6)
+
+| # | Item | Done when | Decision |
+|---|------|-----------|----------|
+| C1 | Pro pages written but not swept in the browser: sortable, inline player, WYSIWYG editor, map, map fullsize, map vector, tour, spreadsheet, document, charts advanced, color picker, date picker, lightbox, dropzone, and the other §6 plugin pages. | Each page is opened in all three samples at 390 px, 1280 px and dark theme, with no console errors and no CSP violation, and the result is recorded in §8. | — |
+| C2 | The Playwright run for the Fluid files (item 10 in §4). | Covered by B3 once the files are fixed or removed. | — |
+
+**D. Modulus 2.0 and ERP follow-ups** (§7.1 and §7.3)
+
+| # | Item | Done when | Decision |
+|---|------|-----------|----------|
+| D1 | PivotGrid later items: "Compare" period, the graph view switch, "Insert in spreadsheet". | Built only if asked. Each has a sample in all three flavours. | **Decision:** whether any of them is asked for. |
+| D2 | Gantt (P1) is read-only: no drag to reschedule, no dependency links. | Drag to reschedule (with the date change posted back) and dependency arrows, in all three flavours. | — |
+| D3 | PDF viewer does not select text. | Text layer on, selection works, checked in the three samples. | — |
+| D4 | Dashboard tiles resize with buttons, not by pointer drag. | Pointer resize with keyboard equivalents, saved through `IUiStateStore`. | — |
+| D5 | P2 items: AI-assist hooks (a natural-language filter that compiles to the QueryBuilder model) and a chat UI. | Not started. Start only after A1 is decided. | **Decision:** whether to start P2 at all. |
+
+**E. CLI repository** (`modulus-framework/modulus`, same branch name)
+
+| # | Item | Done when | Decision |
+|---|------|-----------|----------|
+| E1 | The website's `npm ci` fails because the lock file is out of sync (this predates the workflow work). The build works with `npm install --no-package-lock --no-save`, which is not committed. | The lock file is regenerated and `npm ci` passes in CI. | — |
+| E2 | A workflow template for the runner (an optional `flow-runner` scaffold that wires a catalog and handlers). | Scaffold tests pass in all three engines; the CLI test count is recorded. | **Decision:** whether scaffolding the runner is wanted, or only the component. |
+
+**Order of work (proposed):** B1 and B6 first, because they tell us whether the branch is green. Then A5 and C1, which
+check what is already built. Then A1 to A4 once the providers are decided. B3 and B2 can go at any point. B5 waits for
+a release. Everything under D and A6 waits for a decision.
+
 ### 8. Change log
 
 | Date | Change |
 |---|---|
+| 2026-11-04 | **Workflow engine and the remaining-work plan.** `FlowRunner`, `FlowItem` and `FlowTemplate` in Abstractions (built-ins for triggers, if, switch, merge, wait, set fields and filter; per-node timeouts, item limits and cancellation; `ApplyTo` paints the statuses). 41 unit tests. The Blazor sample runs on the engine and was checked in a browser (5 nodes succeeded, no server exceptions); MVC and Razor Pages post the canvas to `/apps/flow/run` and were checked the same way, including save clearing the statuses. Sections 8 and 7.4 describe the engine, its limits and what is left, with decisions marked. The CLI is unchanged. Unit tests: Blazor 943, MVC 256, Hosting 16, Fluid 13, all passing. |
 | 2026-10-13 | **Blazor sign-in and CRUD against a live API.** Supersedes the Blazor limits in the 2026-10-12 rows below. `modulus app --ui-engine blazor --auth` (OpenIddict password) now generates the sign-in path: `Program.Blazor` configures cookies with `LoginPath = /account/login`, `AddModulusBff` with a default web client, `POST /account/login` and `GET /account/logout`; `Routes` uses `AuthorizeRouteView` with `RedirectToLogin` for anonymous users; the `Account/Login` page posts a native form with an antiforgery token and sits on a `BlankLayout`; the Home page carries `[Authorize]`. Sign-in was verified end to end with curl against a running OpenIddict API. The MVC app's CRUD (list, create, edit, delete) was run against the live API. The Blazor entity form saves through the generated typed client, but Blazor CRUD against a live API was not separately run. With `--auth`, the Blazor host also runs the startup security guard, like the MVC and Razor Pages hosts: the component endpoints require sign-in, the sign-in, sign-out, health and static-file endpoints carry `.Loosen(reason)`, and `security/loosening-allowlist.json` lists the routes. Checked by starting the generated host with `ASPNETCORE_ENVIRONMENT=Production`: the guard reports 0 findings, an anonymous `/` redirects to `/account/login`, and the sign-in page, health and a static file return 200. The generated Blazor host has a `wwwroot/.gitkeep`, so the static file middleware no longer warns about a missing web root. The Development settings set `Bff:RequireHttpsMetadata` to false (as the BFF host does), so a plain-HTTP issuer works in development. External providers: a Keycloak-style Blazor host, with its authority pointed at the local OpenIddict API, starts with 0 guard findings and redirects anonymous users to the issuer's `/connect/authorize` with the client ID, `/signin-oidc` redirect, PKCE S256, scope, nonce and state. The generated OpenIddict API is password-only by default, so the full code flow was run against a scratch copy of it with `Identity:AllowAuthorizationCodeFlow` on, a public client that redirects to `/signin-oidc`, a test user and a minimal login page (test code only, not in the templates). The whole flow completes: the host's sign-in redirect, the issuer's login, the authorization code posted to `/signin-oidc`, the token exchange at `/connect/token` (200), `/connect/userinfo` (200), and then the signed-in home page (200, showing the signed-in user). An anonymous visit still redirects to sign-in. Keycloak and Authentik themselves were not run here (they need their own servers). The CLI's 530 unit tests pass. |
 | 2026-10-12 | **CLI gaps closed.** `modulus app --ui-engine blazor` creates a Blazor app host (App, Routes, the shell layout from `AppShell`, a home page, the typed API clients); `--auth` other than `none` is refused for Blazor until its sign-in pages exist. `ui create-crud` works for MVC (Controllers/<Entities>Controller.cs with list, delete, create and edit, Views/<Entities>/Index and Edit, from the new `mvc/crud-*.cshtml.sbn` templates). `ui create-dashboard` writes a controller at the dashboard route that passes the figures from IMetricsSource or IAuditTrail, so the page renders. The Blazor entity form saves through the entity's typed client (`create-crud` first). Fixed on the way: Blazor admin pages injected services under their page's own name (CS0542); the Blazor UI packages were not referenced; the admin sign-in warning said pages would be refused when they are open. Verified: all three engines scaffold, build with 0 errors, and serve their generated routes (MVC and Razor Pages with no API running; Blazor pages render while the API is down and log the failed calls). CRUD against a running API is not yet tested. Modulus.Cli tests: 530 pass.
 | 2026-10-12 | **NuGet packages and CLI scaffolding.** The UI packages use the Modulus pattern `Synvro.<project>` (`src/Directory.Build.props`), version 0.9.0, Apache-2.0, author `synvro`; `dotnet pack` writes 8 packages (and symbol packages) to `nupkg/` (git-ignored). The static assets of `Synvro.Modulus.Ui.Assets` are served under `_content/Modulus.Ui.Assets` (pinned with `StaticWebAssetBasePath`, so project and package consumers get the same URL; the tag helpers write that prefix). Generated apps: `modulus app` (webapp+api, mvc or razor-pages) with `--package-source`; `add-module`, `generate-crud`, `ui add-component`, `ui add-admin`, `ui create-dashboard`, `ui create-form-from-entity`, and `ui create-crud` (razor-pages) all build with 0 errors. Fixed on the way: the Program template path for `ui create-form-from-entity` now references the module's Application project and imports its DTOs; `ApiClientExtensions` no longer imports a namespace that `--no-example` never creates; and `[Authorize]` appears in the generated pages only when the app signs users in (`use_auth`, read from the app's `Program.cs`), because without an auth scheme an authorized page answers 500. Known gaps: `ui create-crud` is refused for mvc and blazor has no app host in the CLI yet; `ui create-dashboard` writes a view with no action, so that page 404s until an action is added. Modulus.Cli tests: 530 pass.
