@@ -1,0 +1,71 @@
+@* The workflow designer: the editor posts its graph as JSON in the "Workflow" field, so a plain form saves it. The run is a
+   simulation in the browser (modulusFlow.setStatus walks the nodes). The same page is the Razor Pages and Blazor sample. *@
+@using Modulus.Ui.Abstractions.Flow
+@model FlowView
+<app-page-header pretitle="Apps" title="Workflow designer" subtitle="Drag nodes from the palette, draw connections from an output dot to an input dot, press Delete to remove. An AI support desk is loaded.">
+</app-page-header>
+
+<form method="post" action="/apps/flow" asp-antiforgery="true" hx-boost="false">
+    <div class="m-row-cards"
+         x-data="{
+            running: false,
+            async run() {
+                const root = $el.querySelector('[data-m-flow]');
+                const g = modulusFlow.getGraph(root);
+                let level = g.nodes.filter(n => n.type.startsWith('trigger.') && !n.disabled).map(n => n.id);
+                const seen = new Set(), order = [];
+                while (level.length) {
+                    const next = [];
+                    for (const id of level) {
+                        if (seen.has(id)) continue;
+                        seen.add(id); order.push(id);
+                        g.edges.filter(e => e.from === id).forEach(e => next.push(e.to));
+                    }
+                    level = next;
+                }
+                this.running = true;
+                g.nodes.forEach(n => modulusFlow.setStatus(root, n.id, 'none', ''));
+                for (const id of order) {
+                    modulusFlow.setStatus(root, id, 'running');
+                    await new Promise(r => setTimeout(r, 450));
+                    modulusFlow.setStatus(root, id, 'success', (1 + Math.floor(Math.random() * 5)) + ' items');
+                }
+                this.running = false;
+            }
+         }">
+        <div class="m-card">
+            <div class="m-card-header">
+                <div><h3 class="m-card-title">Support desk</h3><p class="m-card-subtitle">@Model.Graph.Nodes.Count nodes, @Model.Graph.Edges.Count connections · @(Model.Saved ? "your saved version" : "the sample")</p></div>
+                <div class="m-card-actions">
+                    <button type="button" class="ant-btn ant-btn-default" @@click="run()" :disabled="running"><span x-text="running ? 'Running…' : 'Run (simulated)'">Run (simulated)</span></button>
+                </div>
+            </div>
+            <div class="m-card-body" style="padding: 0">
+                <app-flow-editor graph="Model.Graph" name="Workflow" height="600" label="Support desk workflow" />
+            </div>
+            <div class="m-card-footer m-form-actions">
+                <button type="submit" class="ant-btn ant-btn-primary"><span>Save workflow</span></button>
+                <button type="submit" class="ant-btn ant-btn-default" formaction="/apps/flow/reset"><span>Reset to the sample</span></button>
+            </div>
+        </div>
+
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Checks</h3><p class="m-card-subtitle">What the saved workflow would need before it can run</p></div></div>
+            <div class="m-card-body">
+                @if (Model.Issues.Count == 0)
+                {
+                    <p class="m-muted">The workflow is ready to run.</p>
+                }
+                else
+                {
+                    <ul class="m-flow-issues">
+                        @foreach (var issue in Model.Issues)
+                        {
+                            <li class="@(issue.Level == FlowIssueLevel.Error ? "m-flow-issue-error" : "m-flow-issue-warn")"><strong>@issue.Level</strong> @issue.Message</li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</form>

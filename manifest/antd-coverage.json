@@ -520,6 +520,11 @@
         "note": "OrgChart (Components/Charts): reporting hierarchy as nested lists",
         "mvc": "app-org-chart"
       },
+      "FlowEditor": {
+        "status": "modulus",
+        "note": "AppFlowEditor (Components/Extras): n8n style workflow designer; modulus-flow.js loads when one appears",
+        "mvc": "app-flow-editor"
+      },
       "FunnelChart": {
         "status": "modulus",
         "note": "FunnelChart (Components/Charts)",

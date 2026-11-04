@@ -4,13 +4,15 @@
  * Like modulus-shell.js it works from the markup alone: event delegation on document, plus a MutationObserver
  * that starts the widgets which need a library (maps, editors, spreadsheet, documents) when their element appears, so Blazor re-renders,
  * enhanced navigation and htmx swaps all work without calls from the page. Libraries load on first use from
- * /_content/Modulus.Ui.Assets/lib (served locally, no CDN).
+ * /_content/Synvro.Modulus.Ui.Assets/lib (served locally, no CDN; the base comes from this script's own URL).
  *
  *   [data-m-sortable]      drag to reorder (pointer, touch and keyboard), between lists of the same data-m-sort-group.
  *                          The result goes to the list's [data-m-sort-result] input as JSON { id, from, to, index },
  *                          followed by a bubbling change event (Blazor @onchange, htmx hx-trigger="change").
  *                          data-m-sort-mode="event" (Blazor) leaves the DOM alone; otherwise the item moves and its
  *                          [data-m-sort-value] inputs take the new list's name, so a form posts the order.
+ *   [data-m-flow]          workflow designer (n8n style canvas): modulus-flow.js and modulus-flow.css load when one appears; the
+ *                          graph JSON goes to [data-m-flow-value] with a change event.
  *   [data-m-player]        custom controls for a <video> or <audio>: play, seek, time, mute, volume, speed,
  *                          captions (data-captions JSON cues), fullscreen and keyboard keys.
  *   [data-m-editor]        WYSIWYG editor on Tiptap; the HTML goes to [data-m-editor-value] with a change event.
@@ -36,7 +38,14 @@
 (function () {
     'use strict';
 
-    var LIB = '/_content/Modulus.Ui.Assets/lib/';
+    // The package's own URL, taken from where this script was loaded, so a renamed package (it is _content/Synvro.Modulus.Ui.Assets)
+    // or a path base never breaks the lazy loading of the libraries, styles and the flow editor.
+    var ASSETS = (function () {
+        var el = document.currentScript || document.querySelector('script[src*="modulus-plugins.js"]');
+        var m = el && el.src && /^(.*\/)js\/modulus-plugins\.js(?:[?#].*)?$/.exec(el.src);
+        return m ? m[1] : '/_content/Synvro.Modulus.Ui.Assets/';
+    })();
+    var LIB = ASSETS + 'lib/';
     var loading = {};
 
     function loadCss(href) {
@@ -45,7 +54,7 @@
         link.rel = 'stylesheet';
         link.href = href;
         // Before the Modulus stylesheets, so their overrides win.
-        var first = document.querySelector('link[href*="Modulus.Ui.Assets/css/"]');
+        var first = document.querySelector('link[href*="/css/modulus"]');
         document.head.insertBefore(link, first || null);
     }
 
@@ -1984,6 +1993,15 @@
     widget('[data-m-vector-map]', initVectorMap);
     widget('[data-m-pdf]', initPdf);
     widget('[data-m-uploader]', initUploader);
+    // The workflow designer (modulus-flow.js and its stylesheet) loads when an editor appears, so other pages never download it.
+    // The editor starts hidden (opacity 0) and shows once styled; if the files cannot load it is shown as the server drew it.
+    function initFlow(root) {
+        root.setAttribute('data-m-ready', '');
+        libs([ASSETS + 'css/modulus-flow.css'], [ASSETS + 'js/modulus-flow.js'])
+            .then(function () { window.modulusFlow.init(root); })
+            .catch(function (e) { root.style.opacity = ''; if (window.console) console.error(e); });
+    }
+    widget('[data-m-flow]', initFlow);
     widget('[data-m-cropper]', initCropper);
     widget('[data-m-code]', initCode);
     widget('[data-m-editor]', initEditor);

@@ -1012,7 +1012,25 @@ Behaviour worth knowing:
 
 Not built, and why: a free-form node-and-edge **diagram editor** (drag, connect, route) and a **Gantt resource view with dependencies drawn as arrows** need an interactive canvas, which is a product of its own rather than one more chart. Rich **stock charts** (indicators, zoom, crosshair sync) are the same. The **icon sprite** and other items are in section 8.
 
-### 8. Performance
+### 8. Workflow designer (n8n style)
+
+`AppFlowEditor` (Blazor) and `<app-flow-editor>` (MVC and Razor Pages): a canvas for AI and automation workflows. Nodes are dragged from a palette, connected from an output dot to an input, moved with grid snapping, panned and zoomed (wheel, pinch, toolbar), and every edit can be undone. It is the same DOM in all three flavours: `FlowHtml` (Abstractions) renders the first paint, and `modulus-flow.js` makes it interactive.
+
+- **Model** (`Modulus.Ui.Abstractions.Flow`): `FlowGraph` (nodes and edges), `FlowNode` (id, type, position, title, settings, disabled, run status, note), `FlowEdge`, `FlowCatalog` and `FlowNodeType` (the palette; `FlowCatalog.Default` has 24 AI, logic, data, trigger and action nodes). `FlowGraph` reads and writes JSON, `Validate(catalog)` reports unknown kinds, broken connections, triggers with inputs, a missing trigger, nodes no trigger reaches and loops, `ExecutionOrder(catalog)` returns a run order, `AutoLayout()` lays nodes out in columns.
+- **Saving.** MVC and Razor Pages post the graph as JSON in one hidden field (`asp-for` or `name`); read it with `FlowGraph.TryParse`. Blazor binds `@bind-Graph`. The sample keeps the graph in memory; an app stores it.
+- **Events.** `m-flow-change`, `m-flow-open`, `m-flow-select` and `m-flow-pending` on the editor; in Blazor `GraphChanged`, `OnOpen` and `OnSelect`. Selection is only sent to Blazor when `OnSelect` is set, since each report is a round trip.
+- **Running and editing from the page.** `SetStatusAsync` / `modulusFlow.setStatus` shows a run (running, success, error, waiting, with a note) and `UpdateNodeAsync` / `modulusFlow.updateNode` edits a node's title and settings (one undo step), both without redrawing the canvas.
+- **Loading.** `modulus-plugins.js` loads `modulus-flow.js` (11 KB gzipped) and `modulus-flow.css` (3 KB) when an editor appears; other pages never request them. Budgets for both are in `tests/browser/budgets.json`.
+- **Blazor details.** The component only redraws the canvas when the page hands it a graph other than the one the editor just reported, so panning, zoom and selection survive edits. Blazor delivers `change` only to a handler on the input itself, so the component renders the two hidden inputs as Razor beside the markup (`FlowOptions.Inputs = false`) and keys the whole block so a replaced graph gives new elements.
+- **Phones.** The palette folds behind an "Add a node" button, the fit zoom stays at 50% or more (the flow is panned), and two-finger pinch zooms.
+- **Accessibility.** Nodes are focusable groups with labels that include their status; every mouse action has a key (`C`, Enter, `U`, `D`, arrows, Delete); changes are announced in a live region.
+- **CLI.** `modulus ui add-component flow-editor` scaffolds the component for the three flavours (template `flow-editor`).
+
+Not built: the designer does not run workflows (there is no engine, scheduler or credential store), and it has no sub-workflows, groups, sticky notes, minimap or marquee selection. The graph and `ExecutionOrder` are the contract an engine builds on.
+
+Also fixed on the way: `modulus-plugins.js` loaded every plugin library (code editor, maps, rich-text editor, spreadsheet, documents, uploader, cropper, PDF) from `/_content/Modulus.Ui.Assets/…`, a path that stopped existing when the package was renamed to `Synvro.Modulus.Ui.Assets`, so all of them returned 404. It now takes the base from its own URL.
+
+### 9. Performance
 
 Measured with Chromium (Playwright) against the samples on the same machine; Debug numbers include JIT and unminified assets, so judge production by the Release rows.
 

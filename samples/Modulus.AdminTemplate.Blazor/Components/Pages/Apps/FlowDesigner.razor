@@ -1,0 +1,127 @@
+@page "/apps/flow"
+@using Modulus.Samples.Shared
+@using Modulus.Ui.Abstractions.Flow
+
+<PageTitle>Workflow designer · Modulus</PageTitle>
+
+<PageHeading Pretitle="Apps" Title="Workflow designer" Subtitle="Drag nodes from the palette, draw connections from an output dot to an input dot, double-click a node to set it up. An AI support desk is loaded.">
+    <Actions>
+        <button type="button" class="ant-btn ant-btn-default" @onclick="Reset"><span>Reset</span></button>
+        <button type="button" class="ant-btn ant-btn-primary" @onclick="RunAsync" disabled="@_running"><span>@(_running ? "Running…" : "Run (simulated)")</span></button>
+    </Actions>
+</PageHeading>
+
+<div class="m-row-cards">
+    <div class="m-card">
+        <div class="m-card-body" style="padding: 0">
+            <AppFlowEditor @ref="_editor" Graph="_graph" GraphChanged="OnGraphChanged" OnOpen="Open" Height="600" Label="Support desk workflow" />
+        </div>
+    </div>
+
+    <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Node settings</h3><p class="m-card-subtitle">@(_open is null ? "Double-click a node, or select it and press Enter" : _types.Find(_open.Type)?.Title)</p></div></div>
+            <div class="m-card-body ant-form ant-form-vertical">
+                @if (_open is null)
+                {
+                    <p class="m-muted">Nothing is open.</p>
+                }
+                else
+                {
+                    <FieldItem Label="Name">
+                        <input class="ant-input" value="@_open.Title" aria-label="Name" @onchange="e => SetTitle(e.Value?.ToString())" />
+                    </FieldItem>
+                    @foreach (var key in _open.Config.Keys.ToList())
+                    {
+                        var k = key;
+                        <FieldItem Label="@k">
+                            <textarea class="ant-input" rows="@(_open.Config[k].Length > 60 ? 3 : 1)" aria-label="@k" @onchange="e => SetConfig(k, e.Value?.ToString())">@_open.Config[k]</textarea>
+                        </FieldItem>
+                    }
+                    @if (_open.Config.Count == 0)
+                    {
+                        <p class="m-muted">This node has no settings.</p>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Checks</h3><p class="m-card-subtitle">@_graph.Nodes.Count nodes, @_graph.Edges.Count connections</p></div></div>
+            <div class="m-card-body">
+                @if (_issues.Count == 0)
+                {
+                    <p class="m-muted">The workflow is ready to run.</p>
+                }
+                else
+                {
+                    <ul class="m-flow-issues">
+                        @foreach (var issue in _issues)
+                        {
+                            <li class="@(issue.Level == FlowIssueLevel.Error ? "m-flow-issue-error" : "m-flow-issue-warn")"><strong>@issue.Level</strong> @issue.Message</li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly FlowCatalog _types = FlowCatalog.Default;
+    private AppFlowEditor? _editor;
+    private FlowGraph _graph = FlowDemo.SupportDesk();
+    private IReadOnlyList<FlowIssue> _issues = [];
+    private FlowNode? _open;
+    private bool _running;
+
+    protected override void OnInitialized() => _issues = FlowDemo.Check(_graph);
+
+    private void OnGraphChanged(FlowGraph graph)
+    {
+        _graph = graph;
+        _issues = FlowDemo.Check(graph);
+        // Keep the open node in step with edits made on the canvas (it may have been deleted or renamed).
+        if (_open is not null) _open = graph.Node(_open.Id);
+    }
+
+    private void Open(string id) => _open = _graph.Node(id);
+
+    private async Task SetTitle(string? title)
+    {
+        if (_open is null || _editor is null) return;
+        await _editor.UpdateNodeAsync(_open.Id, title: title ?? "");
+    }
+
+    private async Task SetConfig(string key, string? value)
+    {
+        if (_open is null || _editor is null) return;
+        var config = _open.Config.ToDictionary(p => p.Key, p => p.Value);
+        config[key] = value ?? "";
+        await _editor.UpdateNodeAsync(_open.Id, config: config);
+    }
+
+    private void Reset()
+    {
+        _open = null;
+        _graph = FlowDemo.SupportDesk();
+        _issues = FlowDemo.Check(_graph);
+    }
+
+    // Walks the nodes in run order, ring and icon for each, without redrawing the canvas.
+    private async Task RunAsync()
+    {
+        if (_running || _editor is null) return;
+        _running = true;
+        StateHasChanged();
+        var order = FlowDemo.RunOrder(_graph);
+        foreach (var node in _graph.Nodes) await _editor.SetStatusAsync(node.Id, FlowStatus.None, "");
+        foreach (var id in order)
+        {
+            await _editor.SetStatusAsync(id, FlowStatus.Running);
+            await Task.Delay(450);
+            await _editor.SetStatusAsync(id, FlowStatus.Success, $"{Random.Shared.Next(1, 6)} items");
+        }
+        _running = false;
+    }
+}
