@@ -64,8 +64,24 @@ public static partial class FlowTemplate
     private static partial Regex Slot();
 
     /// <summary>Replaces every <c>{{path}}</c> by that value of the item; a missing value is an empty text.</summary>
-    public static string Render(string? template, FlowItem item) =>
-        string.IsNullOrEmpty(template) ? "" : Slot().Replace(template, m => item.Text(m.Groups[1].Value));
+    public static string Render(string? template, FlowItem item, Func<string, string?>? secrets = null) =>
+        string.IsNullOrEmpty(template) ? "" : Slot().Replace(template, m => Value(m.Groups[1].Value, item, secrets));
+
+    /// <summary>Replaces only the <c>{{secret.name}}</c> slots of a text, leaving the others as written.</summary>
+    public static string RenderSecrets(string? template, Func<string, string?>? secrets) =>
+        string.IsNullOrEmpty(template) ? "" : Slot().Replace(template, m => m.Groups[1].Value.StartsWith(SecretPrefix, StringComparison.Ordinal) ? SecretValue(m.Groups[1].Value, secrets) : m.Value);
+
+    private const string SecretPrefix = "secret.";
+
+    // One pass: a value inserted for a slot is never scanned again, so text a customer typed cannot pull a secret in.
+    private static string Value(string path, FlowItem item, Func<string, string?>? secrets) =>
+        path.StartsWith(SecretPrefix, StringComparison.Ordinal) ? SecretValue(path, secrets) : item.Text(path);
+
+    private static string SecretValue(string path, Func<string, string?>? secrets)
+    {
+        var name = path[SecretPrefix.Length..];
+        return secrets?.Invoke(name) ?? throw new InvalidOperationException($"The workflow secret \"{name}\" is not configured.");
+    }
 
     private static readonly string[] Operators = ["==", "!=", ">=", "<=", ">", "<", " contains ", " startsWith ", " endsWith "];
 

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Description>Connectors for Modulus workflows: language model clients (Anthropic, OpenAI-compatible servers), email over SMTP and Slack webhooks, registered on a FlowRunner. Endpoints and credentials come from the app, never from a workflow.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Modulus.Ui.Abstractions\Modulus.Ui.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

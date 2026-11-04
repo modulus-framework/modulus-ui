@@ -13,6 +13,7 @@
     <Project Path="src/Modulus.AspNetCore.Fluid/Modulus.AspNetCore.Fluid.csproj" />
     <Project Path="src/Modulus.AspNetCore.Hosting/Modulus.AspNetCore.Hosting.csproj" />
     <Project Path="src/Modulus.Documents/Modulus.Documents.csproj" />
+    <Project Path="src/Modulus.Flow.Connectors/Modulus.Flow.Connectors.csproj" />
     <Project Path="src/Modulus.Ui.Abstractions/Modulus.Ui.Abstractions.csproj" />
     <Project Path="src/Modulus.Ui.Assets/Modulus.Ui.Assets.csproj" />
     <Project Path="src/Modulus.Ui.Templates/Modulus.Ui.Templates.csproj" />
@@ -22,6 +23,7 @@
     <Project Path="tests/Modulus.AspNetCore.Hosting.Tests/Modulus.AspNetCore.Hosting.Tests.csproj" />
     <Project Path="tests/Modulus.AspNetCore.Mvc.Tests/Modulus.AspNetCore.Mvc.Tests.csproj" />
     <Project Path="tests/Modulus.Blazor.Tests/Modulus.Blazor.Tests.csproj" />
+    <Project Path="tests/Modulus.Flow.Connectors.Tests/Modulus.Flow.Connectors.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/antd-drift/antd-drift.csproj" />

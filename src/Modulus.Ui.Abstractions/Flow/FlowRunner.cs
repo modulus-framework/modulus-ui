@@ -12,7 +12,7 @@ public sealed record FlowContext(FlowNode Node, FlowNodeType Type, IReadOnlyList
     public string Setting(string key, FlowItem? item = null)
     {
         var raw = Node.Config.TryGetValue(key, out var v) ? v : Type.Defaults.TryGetValue(key, out var d) ? d : "";
-        return item is null ? raw : FlowTemplate.Render(raw, item);
+        return item is null ? FlowTemplate.RenderSecrets(raw, Options.Secret) : FlowTemplate.Render(raw, item, Options.Secret);
     }
 }
 
@@ -74,6 +74,12 @@ public sealed record FlowRunOptions
 
     /// <summary>The longest a single node may take; null for no limit besides the cancellation token.</summary>
     public TimeSpan? NodeTimeout { get; init; }
+
+    /// <summary>
+    /// Resolves <c>{{secret.name}}</c> in node settings: the app returns the value (from its configuration or vault), or null
+    /// when it has none, which fails the node. Secret values are never written into a graph or an output.
+    /// </summary>
+    public Func<string, string?>? Secret { get; init; }
 
     /// <summary>The longest a Wait node waits, whatever it is set to.</summary>
     public TimeSpan MaxWait { get; init; } = TimeSpan.FromSeconds(10);
