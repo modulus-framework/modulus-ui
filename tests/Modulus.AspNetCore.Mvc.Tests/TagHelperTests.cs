@@ -589,6 +589,26 @@ public class BusinessChartTagHelperTests
     }
 
     [Fact]
+    public async Task AdvancedCharts_MatchTheSharedRenderer()
+    {
+        string[] axes = ["Quality", "Cost", "Delivery"];
+        Modulus.Ui.Abstractions.Charts.ChartSeries[] scores = [new("Acme", [4, 3, 5])];
+        Modulus.Ui.Abstractions.Charts.Candle[] prices = [new("Mon", 10, 12, 9, 11, 500)];
+        Modulus.Ui.Abstractions.Charts.SankeyLink[] flows = [new("A", "B", 5), new("B", "C", 3)];
+        Modulus.Ui.Abstractions.Charts.OrgNode[] people = [new("1", null, "Ada", "CEO"), new("2", "1", "Alan", "CTO")];
+        var o = new Modulus.Ui.Abstractions.Charts.ChartOptions { Title = "T", Height = 240 };
+
+        Assert.Equal(Modulus.Ui.Abstractions.Charts.ChartHtml.Radar(axes, scores, o, 5),
+            await RunAsync(new RadarChartTagHelper { Axes = axes, Series = scores, Max = 5, Title = "T", Height = 240 }, "app-radar-chart"));
+        Assert.Equal(Modulus.Ui.Abstractions.Charts.ChartHtml.Candlestick(prices, o),
+            await RunAsync(new CandlestickChartTagHelper { Candles = prices, Title = "T", Height = 240 }, "app-candlestick-chart"));
+        Assert.Equal(Modulus.Ui.Abstractions.Charts.ChartHtml.Sankey(flows, o),
+            await RunAsync(new SankeyChartTagHelper { Flows = flows, Title = "T", Height = 240 }, "app-sankey-chart"));
+        Assert.Equal(Modulus.Ui.Abstractions.Charts.ChartHtml.OrgChart(people, o),
+            await RunAsync(new OrgChartTagHelper { Nodes = people, Title = "T", Height = 240 }, "app-org-chart"));
+    }
+
+    [Fact]
     public async Task Scatter_PassesAxisOptions()
     {
         var html = await RunAsync(new ScatterChartTagHelper

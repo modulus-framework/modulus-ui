@@ -1,0 +1,9 @@
+@* A reporting hierarchy as boxes and lines, drawn as nested lists: <OrgChart Nodes="people" /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.OrgChart(Nodes, Options()))
+
+@code {
+    /// <summary>Boxes; a node whose <c>ParentId</c> is null or unknown is a root.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<OrgNode> Nodes { get; set; } = [];
+}

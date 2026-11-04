@@ -990,7 +990,28 @@ Also fixed: the Blazor sample did not build (two pages named like components, `G
 
 Notes for the CLI (the `modulus` repo): the `ui add-component` list of 78 components should gain `tag-input`, `popconfirm` and `time-picker`; their templates are in `templates/mvc`, `razor-pages` and `blazor`, but the component registry lives in the CLI. `Blazor` tag input is a controlled field, so keystrokes typed faster than the server round trip can be dropped in Blazor Server; normal typing is not affected.
 
-### 7. Performance
+### 7. Advanced visuals (radar, candlestick, Sankey, org chart)
+
+Four components that the paid suites (Syncfusion, DevExpress, Telerik) sell and ERP screens need. They follow the other charts: one renderer in `Modulus.Ui.Abstractions.Charts.ChartHtml` that Blazor, MVC and Razor Pages all call, so the markup is identical. Server-rendered HTML and SVG, hover tips and layout in CSS, no JavaScript, a screen-reader table (the org chart is a nested list), light and dark mode from the same tokens.
+
+| Visual | Blazor | MVC and Razor Pages | Data | Use it for |
+| --- | --- | --- | --- | --- |
+| Radar | `RadarChart Axes Series Max` | `<app-radar-chart axes series max>` | `ChartSeries` (3 or more axes) | Supplier scorecards, skills, KPIs per plant |
+| Candlestick | `CandlestickChart Candles` | `<app-candlestick-chart candles>` | `Candle(Label, Open, High, Low, Close, Volume)` | Prices, FX, commodities, min / max ranges; a volume strip appears when any volume is set |
+| Sankey | `SankeyChart Flows` | `<app-sankey-chart flows>` | `SankeyLink(From, To, Value)` | Material flow, budget allocation, cash from revenue to profit |
+| Org chart | `OrgChart Nodes` | `<app-org-chart nodes>` | `OrgNode(Id, ParentId, Title, Subtitle, Badge, Href)` | Reporting lines, cost centres, chart of accounts, bill of materials |
+
+Behaviour worth knowing:
+
+- **Sankey** puts each node in the column of its longest path and gives every column one vertical scale, so equal flows are equally thick. Zero and negative flows are dropped, and so is the one link that closes a loop (the rest of the graph stays). The parameter is `Flows`, not `Links`, because `ChartBase` already has a `Links` drill-down parameter.
+- **Org chart** treats a node whose `ParentId` is null or unknown as a root (so a forest draws several trees), draws each node once even if the data has a loop, and shows the number of direct reports. `Href` accepts relative, `http` and `https` URLs only; anything else (`javascript:`, `data:`, `//host`) is dropped. Text is always encoded.
+- **Candlestick** hugs the data rather than starting at zero, and marks "up" (close at or above open) with the blue and "down" with the red of the diverging pair, so the meaning does not rest on red and green.
+- The CLI templates are `chart-radar`, `chart-candlestick`, `chart-sankey` and `org-chart` in `templates/mvc`, `razor-pages` and `blazor`. The `modulus` repo's `ui add-component` list needs the four names added.
+- `modulus-pages.css` grew by about 540 bytes gzipped, and its budget in `tests/browser/budgets.json` was raised on purpose (29,696 to 33,792).
+
+Not built, and why: a free-form node-and-edge **diagram editor** (drag, connect, route) and a **Gantt resource view with dependencies drawn as arrows** need an interactive canvas, which is a product of its own rather than one more chart. Rich **stock charts** (indicators, zoom, crosshair sync) are the same. The **icon sprite** and other items are in section 8.
+
+### 8. Performance
 
 Measured with Chromium (Playwright) against the samples on the same machine; Debug numbers include JIT and unminified assets, so judge production by the Release rows.
 

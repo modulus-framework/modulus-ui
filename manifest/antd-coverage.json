@@ -500,6 +500,26 @@
         "note": "WaterfallChart (Components/Charts)",
         "mvc": "app-waterfall-chart"
       },
+      "RadarChart": {
+        "status": "modulus",
+        "note": "RadarChart (Components/Charts): several measures on shared spokes",
+        "mvc": "app-radar-chart"
+      },
+      "CandlestickChart": {
+        "status": "modulus",
+        "note": "CandlestickChart (Components/Charts): open, high, low, close with volume",
+        "mvc": "app-candlestick-chart"
+      },
+      "SankeyChart": {
+        "status": "modulus",
+        "note": "SankeyChart (Components/Charts): flows between nodes",
+        "mvc": "app-sankey-chart"
+      },
+      "OrgChart": {
+        "status": "modulus",
+        "note": "OrgChart (Components/Charts): reporting hierarchy as nested lists",
+        "mvc": "app-org-chart"
+      },
       "FunnelChart": {
         "status": "modulus",
         "note": "FunnelChart (Components/Charts)",

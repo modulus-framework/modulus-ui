@@ -1,0 +1,8 @@
+@* Open, high, low and close per period, with optional volume: <CandlestickChart Candles="prices" /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.Candlestick(Candles, Options()))
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<Candle> Candles { get; set; } = [];
+}

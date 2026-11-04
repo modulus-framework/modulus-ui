@@ -1,0 +1,28 @@
+@* Radar chart: sample data below, replace it with your own (a query, an API call). *@
+@page "/charts/radar"
+{{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ end }}
+@using Modulus.Blazor.Components.Charts
+@using Modulus.Ui.Abstractions.Charts
+
+<PageTitle>Radar chart</PageTitle>
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Charts</div><h1 class="m-page-title">Radar chart</h1></div>
+</div>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">Radar chart</h2></div>
+    <div class="m-card-body">
+        <RadarChart Axes="_axes" Series="_series" Max="5" Title="Supplier scorecard" Height="320" />
+    </div>
+</div>
+
+@code {
+    private readonly string[] _axes = ["Quality", "Delivery", "Price", "Service", "Compliance"];
+    private readonly ChartSeries[] _series =
+    [
+        new("Supplier A", [4.5, 4.0, 3.2, 4.1, 4.7]),
+        new("Supplier B", [3.6, 4.6, 4.4, 3.5, 3.9]),
+    ];
+}
