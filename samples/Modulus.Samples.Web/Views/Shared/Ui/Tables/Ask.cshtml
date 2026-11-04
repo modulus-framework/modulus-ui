@@ -1,0 +1,55 @@
+@model AskView
+@* Ask your data: a question becomes a filter on the shipments. The conversation and the filter ride in hidden fields, so the
+   form needs no server state; the rows it leaves are listed under the chat. The Blazor sample is Tables/Ask.razor. *@
+<app-page-header pretitle="Tables" title="Ask your data" subtitle="Ask in plain words. The answer is a filter on the shipments, the same one the query builder would make, and the rows it leaves are listed below."></app-page-header>
+
+<div class="m-card">
+    <div class="m-card-body">
+        <form method="post" action="/tables/ask" asp-antiforgery="true" hx-boost="false">
+            <app-chat turns="Model.Turns" filter="Model.Filter" placeholder="@AskView.Examples" label="Your question" button="Ask" />
+        </form>
+    </div>
+</div>
+
+<div class="m-query-summary">
+    <span class="m-badge m-badge-gray-lt">@Model.Results.Matches.ToString("N0")</span>
+    <span>shipments match</span>
+    <span class="m-muted">· @Model.Results.Sentence</span>
+    <span class="m-query-total">Total <strong>@Model.Results.Total.ToString("N2")</strong></span>
+</div>
+
+<div class="m-card">
+    <table class="ant-table m-query-table" aria-label="Shipments that match the question">
+        <thead class="ant-table-thead">
+            <tr>
+                <th class="ant-table-cell">Reference</th>
+                <th class="ant-table-cell">Customer</th>
+                <th class="ant-table-cell">City</th>
+                <th class="ant-table-cell">Status</th>
+                <th class="ant-table-cell" style="text-align: right;">Amount</th>
+                <th class="ant-table-cell">Date</th>
+            </tr>
+        </thead>
+        <tbody class="ant-table-tbody">
+            @foreach (var s in Model.Results.Rows)
+            {
+                <tr class="ant-table-row">
+                    <td class="ant-table-cell">@s.Reference</td>
+                    <td class="ant-table-cell">@s.Customer</td>
+                    <td class="ant-table-cell">@s.City</td>
+                    <td class="ant-table-cell">@s.Status</td>
+                    <td class="ant-table-cell" style="text-align: right;">@s.Amount.ToString("N2")</td>
+                    <td class="ant-table-cell">@s.Date.ToString("yyyy-MM-dd")</td>
+                </tr>
+            }
+            @if (Model.Results.Rows.Count == 0)
+            {
+                <tr class="ant-table-placeholder"><td class="ant-table-cell" colspan="6">No shipments match this question.</td></tr>
+            }
+        </tbody>
+    </table>
+    @if (Model.Results.Matches > Model.Results.Rows.Count)
+    {
+        <div class="m-muted m-query-more">Showing the first @Model.Results.Rows.Count of @Model.Results.Matches.ToString("N0") rows.</div>
+    }
+</div>

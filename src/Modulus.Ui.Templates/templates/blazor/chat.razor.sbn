@@ -1,0 +1,18 @@
+@* Conversation and question field: Turns, Busy (true while an answer is pending), Placeholder and OnAsk (called with the question) *@
+@using Modulus.Ui.Abstractions.Chat
+
+<Modulus.Blazor.Components.Extras.AppChat Turns="Turns" OnAsk="OnAsk" Busy="Busy" Placeholder="Placeholder" Label="Your question" Button="Ask" />
+
+@code {
+    /// <summary>The conversation so far.</summary>
+    [Parameter] public IReadOnlyList<ChatTurn>? Turns { get; set; }
+
+    /// <summary>Called with the question when it is sent; the page answers it and sets Turns.</summary>
+    [Parameter] public EventCallback<string> OnAsk { get; set; }
+
+    /// <summary>True while an answer is pending: the field and the button are off.</summary>
+    [Parameter] public bool Busy { get; set; }
+
+    /// <summary>The hint in the question field.</summary>
+    [Parameter] public string Placeholder { get; set; } = "Ask a question";
+}

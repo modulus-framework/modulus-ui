@@ -2019,3 +2019,19 @@ a.m-org-title:hover { color: var(--m-primary); }
 .m-org-meta { display: flex; gap: 6px; margin-top: 4px; }
 .m-org-badge, .m-org-count { padding: 0 8px; border-radius: 10px; background: color-mix(in oklab, var(--m-primary) 16%, transparent); color: var(--m-heading); font-size: 11px; line-height: 18px; font-variant-numeric: tabular-nums; }
 .m-org-count { background: var(--m-fill-secondary); color: var(--m-text-secondary); }
+
+/* Chat: the conversation log and the composer (Modulus.Ui.Abstractions/Chat). */
+.m-chat-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; max-height: 420px; overflow-y: auto; }
+.m-chat-turn { display: flex; flex-direction: column; max-width: 85%; gap: 4px; }
+.m-chat-user { align-self: flex-end; align-items: flex-end; }
+.m-chat-assistant { align-self: flex-start; }
+.m-chat-who { font-size: 12px; color: var(--m-text-secondary); }
+.m-chat-bubble { padding: 8px 12px; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.m-chat-user .m-chat-bubble { background: var(--m-primary-bg); color: var(--m-text); }
+.m-chat-assistant .m-chat-bubble { background: var(--m-fill-quaternary, #f5f5f5); color: var(--m-text); }
+.m-chat-notes { margin: 0; padding-left: 18px; font-size: 12px; color: var(--m-text-secondary); }
+.m-chat-empty { list-style: none; text-align: center; padding: 24px 0; }
+.m-chat-composer { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-top: 12px; }
+.m-chat-label { flex: 0 0 100%; font-size: 13px; color: var(--m-text-secondary); }
+.m-chat-input { flex: 1 1 260px; min-width: 0; resize: vertical; }
+@media (max-width: 600px) { .m-chat-turn { max-width: 100%; } .m-chat-composer .ant-btn { width: 100%; } }

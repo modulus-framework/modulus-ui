@@ -525,6 +525,11 @@
         "note": "AppFlowEditor (Components/Extras): n8n style workflow designer; modulus-flow.js loads when one appears",
         "mvc": "app-flow-editor"
       },
+      "Chat": {
+        "status": "modulus",
+        "note": "AppChat (Components/Extras): a conversation log and a question field; the same markup as ChatHtml (Abstractions/Chat)",
+        "mvc": "app-chat"
+      },
       "FunnelChart": {
         "status": "modulus",
         "note": "FunnelChart (Components/Charts)",

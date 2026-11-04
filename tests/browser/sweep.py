@@ -10,7 +10,7 @@ from playwright.sync_api import sync_playwright
 PAGES = ["/plugins/charts-advanced","/plugins/code-editor","/plugins/color-picker","/plugins/date-picker","/plugins/document",
  "/plugins/dropzone","/plugins/editor","/plugins/image-cropper","/plugins/lightbox","/plugins/map","/plugins/map-fullsize",
  "/plugins/map-vector","/plugins/player","/plugins/sortable","/plugins/spreadsheet","/plugins/tour","/plugins/pdf",
- "/tables/tree","/tables/advanced","/apps/calendar","/apps/users/grid","/pages/changelog","/ui/icons","/ui/typography","/ui/colors","/ui/charts"]
+ "/tables/tree","/tables/advanced","/apps/calendar","/apps/users/grid","/pages/changelog","/ui/icons","/ui/typography","/ui/colors","/ui/charts","/tables/ask"]
 import os
 BASES = {"mvc": os.environ.get("MODULUS_MVC", "http://localhost:5100"), "razor": os.environ.get("MODULUS_RAZOR", "http://localhost:5101"), "blazor": os.environ.get("MODULUS_BLAZOR", "http://localhost:5102")}
 import base64
