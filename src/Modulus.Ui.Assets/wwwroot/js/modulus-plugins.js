@@ -2017,6 +2017,57 @@
             if (el.form.requestSubmit) el.form.requestSubmit(); else el.form.submit();
         });
     });
+    // ---- Gantt: drag a bar to another day, or move it with the arrow keys. The new dates go to the hidden field (a JSON array of
+    // {id, start, end}) and a change event is raised on it: a form posts it (data-m-submit-change), Blazor receives it (@onchange).
+    function initGantt(root) {
+        root.setAttribute('data-m-ready', '');
+        var days = Math.max(1, parseInt(root.getAttribute('data-days'), 10) || 1);
+        var input = root.querySelector('input[data-m-gantt-value]');
+        var drag = null;
+        function dayPx(bar) { return bar.parentElement.getBoundingClientRect().width / days; }
+        function shift(iso, n) { var d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+        function commit(bar, n) {
+            if (!input || !n) return;
+            input.value = JSON.stringify([{ id: parseInt(bar.getAttribute('data-m-task'), 10), start: shift(bar.getAttribute('data-start'), n), end: shift(bar.getAttribute('data-end'), n) }]);
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        function bar(e) { return e.target && e.target.closest ? e.target.closest('.m-gantt-bar[data-m-task]') : null; }
+        root.addEventListener('pointerdown', function (e) {
+            var b = bar(e);
+            if (!b || e.button !== 0) return;
+            drag = { bar: b, x: e.clientX, px: dayPx(b), days: 0, pid: e.pointerId };
+            b.setPointerCapture(e.pointerId);
+            b.classList.add('dragging');
+            e.preventDefault();
+        });
+        root.addEventListener('pointermove', function (e) {
+            if (!drag || e.pointerId !== drag.pid) return;
+            drag.days = Math.round((e.clientX - drag.x) / drag.px);
+            drag.bar.style.transform = 'translate(' + (drag.days * drag.px) + 'px, -50%)';
+        });
+        root.addEventListener('pointerup', function (e) {
+            if (!drag || e.pointerId !== drag.pid) return;
+            var d = drag;
+            drag = null;
+            d.bar.classList.remove('dragging');
+            d.bar.style.transform = '';
+            commit(d.bar, d.days);
+        });
+        root.addEventListener('pointercancel', function (e) {
+            if (!drag || e.pointerId !== drag.pid) return;
+            drag.bar.classList.remove('dragging');
+            drag.bar.style.transform = '';
+            drag = null;
+        });
+        root.addEventListener('keydown', function (e) {
+            var b = bar(e);
+            if (!b || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+            e.preventDefault();
+            commit(b, e.key === 'ArrowLeft' ? -1 : 1);
+        });
+    }
+    widget('[data-m-gantt]', initGantt);
+
     // data-m-print: the element prints the page when it is clicked (a print link).
     widget('[data-m-print]', function (el) {
         el.setAttribute('data-m-ready', '');

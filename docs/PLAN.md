@@ -104,7 +104,7 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 | Chat | `/apps/chat`, `/apps/chat/{id}` | ✅ | ✅ | ✅ |
 | Calendar (month, agenda, category filter, event form) | `/apps/calendar` | ✅ | ✅ | ✅ |
 | Kanban (drag, move, add, delete) | `/apps/kanban` | ✅ | ✅ | ✅ |
-| Gantt (read-only project timeline) | `/apps/gantt` | ✅ | ✅ | ✅ |
+| Gantt (project timeline; drag to reschedule, dependency arrows, keyboard moves) | `/apps/gantt` | ✅ | ✅ | ✅ |
 | Invoices (list, preview, print, add, edit) | `/apps/invoice/*` | ✅ | ✅ | ✅ |
 | Users (list, view) | `/apps/users/list`, `/apps/users/view/{id}` | ✅ | ✅ | ✅ |
 | Users grid (cards, role filter, search) | `/apps/users/grid` | 🟡 | 🟡 | 🟡 |

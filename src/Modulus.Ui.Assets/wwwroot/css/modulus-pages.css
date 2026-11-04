@@ -2054,3 +2054,14 @@ a.m-org-title:hover { color: var(--m-primary); }
 .m-chat-table caption { caption-side: top; text-align: left; font-weight: 600; padding-bottom: 4px; }
 .m-chat-table .ant-table-cell { padding: 4px 8px; border-bottom: 1px solid var(--m-split); }
 @media (max-width: 600px) { .m-approval-details { grid-template-columns: 1fr; } }
+/* Gantt: fixed rows (so the dependency arrows line up), the arrows, and a bar being dragged. */
+.m-gantt-body { position: relative; }
+.m-gantt-row, .m-gantt-group { height: 52px; box-sizing: border-box; }
+.m-gantt-group { display: flex; align-items: center; }
+.m-gantt-row .m-gantt-track { height: 52px; min-height: 0; }
+.m-gantt-links { position: absolute; left: 240px; right: 0; top: 0; width: calc(100% - 240px); height: 100%; pointer-events: none; overflow: visible; }
+.m-gantt-link { fill: none; stroke: var(--m-text-tertiary); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.m-gantt-link.conflict { stroke: var(--m-error); stroke-dasharray: 4 3; }
+.m-gantt-bar[data-m-task] { cursor: grab; touch-action: none; }
+.m-gantt-bar.dragging { cursor: grabbing; opacity: .85; z-index: 2; }
+.m-gantt-bar:focus-visible { outline: 2px solid var(--m-primary); outline-offset: 2px; }

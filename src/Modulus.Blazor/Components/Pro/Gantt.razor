@@ -1,14 +1,16 @@
 @using Modulus.Ui.Abstractions.Gantt
+@using Microsoft.AspNetCore.Components.Forms
 
 @*
-    A read-only timeline: each task is a bar on the days it runs (filled to its progress), grouped under a heading, with weekly
-    ticks along the top and a line for today. Late tasks are marked. The rows and bars come from GanttModel, the same the MVC
+    A timeline: each task is a bar on the days it runs (filled to its progress), grouped under a heading, with weekly ticks along the
+    top, a line for today, and an arrow for each dependency (a conflict is drawn red). A bar can be dragged to another day, or moved
+    with the arrow keys; the new dates go to OnMove. The rows, bars and arrows come from GanttModel and GanttDrawing, the same the MVC
     app-gantt draws.
 
-    <Gantt Tasks="_tasks" From="_from" To="_to" />
+    <Gantt Tasks="_tasks" From="_from" To="_to" OnMove="ApplyMoveAsync" />
 *@
 
-<div class="m-gantt" data-m-gantt>
+<div class="m-gantt" data-m-gantt data-days="@_days">
     <div class="m-gantt-head" aria-hidden="true">
         <div class="m-gantt-name">Task</div>
         <div class="m-gantt-track">
@@ -19,6 +21,15 @@
         </div>
     </div>
     <div class="m-gantt-body" role="table" aria-label="Timeline">
+        @if (_view.Links is { Count: > 0 } links)
+        {
+            <svg class="m-gantt-links" viewBox="@GanttDrawing.ViewBox(_view)" preserveAspectRatio="none" aria-hidden="true">
+                @foreach (var link in links)
+                {
+                    <path class="m-gantt-link@(link.Conflict ? " conflict" : "")" d="@GanttDrawing.LinkPath(link)" />
+                }
+            </svg>
+        }
         @foreach (var row in _view.Rows)
         {
             var task = row.Task;
@@ -32,7 +43,8 @@
                     @if (task.Owner is { Length: > 0 }) { <span class="m-xsmall m-muted m-truncate">@task.Owner</span> }
                 </div>
                 <div class="m-gantt-track" role="cell">
-                    <div class="@BarClass(row)" style="@BarStyle(row)" title="@Title(row)" aria-label="@Title(row)">
+                    <div class="@BarClass(row)" style="@BarStyle(row)" title="@Title(row)" aria-label="@Title(row)"
+                         data-m-task="@task.Id" data-start="@GanttDrawing.Iso(task.Start)" data-end="@GanttDrawing.Iso(task.End)" tabindex="0">
                         <span class="m-gantt-fill" style="width:@row.Progress%"></span>
                         <span class="m-gantt-bar-label">@row.Progress%</span>
                     </div>
@@ -44,6 +56,8 @@
             </div>
         }
     </div>
+    @* The script writes the moves here (a JSON array) and raises change: OnMove receives each new date range. *@
+    <input type="hidden" name="moves" data-m-gantt-value data-m-submit-change @onchange="MovedAsync" />
 </div>
 
 @code {
@@ -59,9 +73,23 @@
     /// <summary>The day the timeline is drawn for: tasks that ended before it and are not done are late. Defaults to today.</summary>
     [Parameter] public DateTime Today { get; set; } = DateTime.Today;
 
-    private GanttView _view = GanttModel.Build([], DateTime.Today, DateTime.Today, DateTime.Today);
+    /// <summary>Called with each task's new dates when a bar is dragged or moved with the keyboard. The page applies them.</summary>
+    [Parameter] public EventCallback<GanttMove> OnMove { get; set; }
 
-    protected override void OnParametersSet() => _view = GanttModel.Build(Tasks, From, To, Today);
+    private GanttView _view = GanttModel.Build([], DateTime.Today, DateTime.Today, DateTime.Today);
+    private int _days = 1;
+
+    protected override void OnParametersSet()
+    {
+        _view = GanttModel.Build(Tasks, From, To, Today);
+        _days = (To.Date - From.Date).Days + 1;
+    }
+
+    private async Task MovedAsync(ChangeEventArgs e)
+    {
+        foreach (var move in GanttDrawing.ParseMoves(e.Value as string))
+            await OnMove.InvokeAsync(move);
+    }
 
     private static string Pct(double value) => value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture) + "%";
 

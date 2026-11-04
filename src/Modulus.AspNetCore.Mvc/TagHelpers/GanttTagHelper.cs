@@ -21,10 +21,18 @@ public class GanttTagHelper : TagHelper
     {
         var view = View ?? throw new InvalidOperationException("app-gantt needs a view.");
         var sb = new StringBuilder();
-        sb.Append("""<div class="m-gantt" data-m-gantt><div class="m-gantt-head" aria-hidden="true"><div class="m-gantt-name">Task</div><div class="m-gantt-track">""");
+        var days = (view.To.Date - view.From.Date).Days + 1;
+        sb.Append($"""<div class="m-gantt" data-m-gantt data-days="{days}"><div class="m-gantt-head" aria-hidden="true"><div class="m-gantt-name">Task</div><div class="m-gantt-track">""");
         foreach (var tick in view.Ticks)
             sb.Append($"""<span class="m-gantt-tick" style="left:{Pct(tick.LeftPct)}">{Html.E(tick.Label)}</span>""");
         sb.Append("""</div></div><div class="m-gantt-body" role="table" aria-label="Timeline">""");
+        if (view.Links is { Count: > 0 } links)
+        {
+            sb.Append($"""<svg class="m-gantt-links" viewBox="{GanttDrawing.ViewBox(view)}" preserveAspectRatio="none" aria-hidden="true">""");
+            foreach (var link in links)
+                sb.Append($"""<path class="m-gantt-link{(link.Conflict ? " conflict" : "")}" d="{GanttDrawing.LinkPath(link)}" />""");
+            sb.Append("</svg>");
+        }
         foreach (var row in view.Rows)
         {
             var task = row.Task;
@@ -36,11 +44,12 @@ public class GanttTagHelper : TagHelper
             sb.Append("""</div><div class="m-gantt-track" role="cell">""");
             var classes = $"m-gantt-bar m-gantt-{Html.E(task.Tone)}{(row.Late ? " late" : "")}{(row.ClippedStart ? " clip-start" : "")}{(row.ClippedEnd ? " clip-end" : "")}";
             var title = Html.E(Title(row));
-            sb.Append($"""<div class="{classes}" style="left:{Pct(row.LeftPct)};width:{Pct(row.WidthPct)}" title="{title}" aria-label="{title}"><span class="m-gantt-fill" style="width:{row.Progress}%"></span><span class="m-gantt-bar-label">{row.Progress}%</span></div>""");
+            sb.Append($"""<div class="{classes}" style="left:{Pct(row.LeftPct)};width:{Pct(row.WidthPct)}" title="{title}" aria-label="{title}" data-m-task="{task.Id}" data-start="{GanttDrawing.Iso(task.Start)}" data-end="{GanttDrawing.Iso(task.End)}" tabindex="0"><span class="m-gantt-fill" style="width:{row.Progress}%"></span><span class="m-gantt-bar-label">{row.Progress}%</span></div>""");
             if (view.TodayPct is { } today)
                 sb.Append($"""<div class="m-gantt-today" style="left:{Pct(today)}" aria-hidden="true"></div>""");
             sb.Append("</div></div>");
         }
+        sb.Append("""<input type="hidden" name="moves" data-m-gantt-value data-m-submit-change />""");
         sb.Append("</div></div>");
         output.TagName = null;
         output.Content.SetHtmlContent(sb.ToString());

@@ -1,5 +1,8 @@
 @model Modulus.Ui.Abstractions.Gantt.GanttView
-@* The timeline is app-gantt (GanttTagHelper); the Blazor sample draws the same rows with <Gantt>. *@
-<app-page-header pretitle="Apps" title="Gantt" subtitle="The website relaunch, planned in weeks. Bars fill to their progress; the red line is today."></app-page-header>
+@* The timeline is app-gantt (GanttTagHelper); a bar dropped on another day posts its new dates to /apps/gantt/move. The Blazor sample
+   draws the same rows with <Gantt> and applies the same moves. *@
+<app-page-header pretitle="Apps" title="Gantt" subtitle="The website relaunch, planned in weeks. Drag a bar to another day (or select it and press the arrow keys). Bars fill to their progress; the red line is today; arrows are dependencies, and a red arrow is one the dates break."></app-page-header>
 
-<app-gantt view="Model" />
+<form method="post" action="@(ViewData["GanttMoveAction"] as string ?? "/apps/gantt/move")" asp-antiforgery="true" hx-boost="false">
+    <app-gantt view="Model" />
+</form>
