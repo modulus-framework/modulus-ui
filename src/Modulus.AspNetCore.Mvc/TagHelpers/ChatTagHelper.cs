@@ -32,6 +32,9 @@ public class ChatTagHelper : TagHelper
     /// <summary>The send button's text.</summary>
     public string Button { get; set; } = "Ask";
 
+    /// <summary>The id of the form the approval buttons submit (the buttons sit in the chat, the form is outside it).</summary>
+    public string? DecisionForm { get; set; }
+
     /// <summary>What the log says before the first question.</summary>
     public string EmptyText { get; set; } = "Ask a question to start.";
 
@@ -41,6 +44,6 @@ public class ChatTagHelper : TagHelper
         output.TagName = "section";
         output.TagMode = TagMode.StartTagAndEndTag;
         output.Attributes.SetAttribute("class", "m-chat");
-        output.Content.SetHtmlContent(ChatHtml.Log(turns, EmptyText) + ChatHtml.Composer(ChatTranscript.ToText(turns), Filter, "question", Label, Placeholder, Button));
+        output.Content.SetHtmlContent(ChatHtml.Log(turns, EmptyText, DecisionForm) + ChatHtml.Composer(ChatTranscript.ToText(turns), Filter, "question", Label, Placeholder, Button));
     }
 }

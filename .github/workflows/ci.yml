@@ -119,6 +119,13 @@ jobs:
         MODULUS_BLAZOR: http://localhost:5102
       run: python3 tests/browser/flow.py
 
+    - name: Assistant gate
+      env:
+        MODULUS_MVC: http://localhost:5100
+        MODULUS_RAZOR: http://localhost:5101
+        MODULUS_BLAZOR: http://localhost:5102
+      run: python3 tests/browser/assistant.py
+
     - name: Sample logs
       if: failure()
       run: tail -n 60 mvc.log razor.log blazor.log fluid.log

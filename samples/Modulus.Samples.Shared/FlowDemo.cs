@@ -91,9 +91,34 @@ public static class FlowDemo
     public const string SampleMessage = "My order arrived late and I want a refund";
 
     /// <summary>Runs the workflow for one chat message, reporting each node as it starts and ends.</summary>
-    public static Task<FlowRunResult> Run(FlowGraph graph, string? message, Func<FlowNodeRun, Task>? onStep = null) =>
-        Runner().RunAsync(graph, [Message(string.IsNullOrWhiteSpace(message) ? SampleMessage : message)],
+    public static async Task<FlowRunResult> Run(FlowGraph graph, string? message, Func<FlowNodeRun, Task>? onStep = null)
+    {
+        var text = string.IsNullOrWhiteSpace(message) ? SampleMessage : message.Trim();
+        var result = await Runner().RunAsync(graph, [Message(text)],
             new FlowRunOptions { OnStep = onStep, NodeTimeout = TimeSpan.FromSeconds(5) });
+        Record(result, text);
+        return result;
+    }
+
+    private static readonly List<FlowRunRecord> _history = [];
+    private static readonly object _historyLock = new();
+
+    /// <summary>The last runs, newest first. The sample keeps them in memory; an app keeps them in its own store.</summary>
+    public static IReadOnlyList<FlowRunRecord> History()
+    {
+        lock (_historyLock) return _history.ToList();
+    }
+
+    private const int HistoryLength = 10;
+
+    private static void Record(FlowRunResult result, string message)
+    {
+        lock (_historyLock)
+        {
+            _history.Insert(0, new FlowRunRecord(DateTimeOffset.UtcNow, message, result.Status, result.Steps.Count, result.Duration));
+            if (_history.Count > HistoryLength) _history.RemoveRange(HistoryLength, _history.Count - HistoryLength);
+        }
+    }
 
     /// <summary>The words of each finished node for a result list: what it said, or why it failed.</summary>
     public static string Describe(FlowNodeRun step)
@@ -109,7 +134,10 @@ public static class FlowDemo
 }
 
 /// <summary>What the MVC and Razor Pages workflow page shows; <paramref name="Run"/> is set after a run (the canvas then shows each node's status).</summary>
-public sealed record FlowView(FlowGraph Graph, IReadOnlyList<FlowIssue> Issues, bool Saved, FlowRunView? Run = null);
+public sealed record FlowView(FlowGraph Graph, IReadOnlyList<FlowIssue> Issues, bool Saved, FlowRunView? Run = null, IReadOnlyList<FlowRunRecord>? History = null);
+
+/// <summary>One run in the history: when, for which message, how it ended, how many nodes ran, and how long it took.</summary>
+public sealed record FlowRunRecord(DateTimeOffset At, string Message, FlowStatus Status, int Nodes, TimeSpan Duration);
 
 /// <summary>The result of a run for the MVC and Razor Pages result list: the message that was run and what each node did.</summary>
 public sealed record FlowRunView(FlowRunResult Result, string Message);
@@ -119,7 +147,7 @@ public static class FlowPage
     public static FlowView Show()
     {
         var graph = FlowDemo.Current();
-        return new FlowView(graph, FlowDemo.Check(graph), FlowDemo.IsSaved);
+        return new FlowView(graph, FlowDemo.Check(graph), FlowDemo.IsSaved, null, FlowDemo.History());
     }
 
     /// <summary>Stores what the form posted. False (and nothing stored) when it is not a workflow.</summary>
@@ -142,7 +170,7 @@ public static class FlowPage
         if (!FlowGraph.TryParse(json, out var graph)) return null;
         var text = string.IsNullOrWhiteSpace(message) ? FlowDemo.SampleMessage : message.Trim();
         var result = await FlowDemo.Run(graph, text);
-        return new FlowView(result.ApplyTo(graph), FlowDemo.Check(graph), FlowDemo.IsSaved, new FlowRunView(result, text));
+        return new FlowView(result.ApplyTo(graph), FlowDemo.Check(graph), FlowDemo.IsSaved, new FlowRunView(result, text), FlowDemo.History());
     }
 
     /// <summary>The graph without the statuses and remarks of a run, so a saved workflow starts clean.</summary>

@@ -38,6 +38,7 @@ public sealed class AdminMenuContributor : IMenuContributor
                 Link("gantt", "Gantt", "apps/gantt", "tb:timeline"),
                 Link("workflow", "Approvals", "apps/workflow", "tb:list-check"),
                 Link("flow", "Workflow designer", "apps/flow", "apartment"),
+                    Link("assistant", "AI assistant", "apps/assistant", "robot"),
                 Link("files", "Files", "apps/files", "folder")))
             .Add(Group("settings", "Settings", "setting", 40,
                 Link("account-settings", "General settings", "pages/account-settings", "setting"),

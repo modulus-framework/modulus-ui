@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 
 namespace Modulus.Ui.Abstractions.Flow;
 
@@ -137,6 +138,98 @@ public sealed class FlowRunner
             if (o.OnStep is not null) await o.OnStep(step);
         }
 
+        // Runs one node on the items that reached it, and returns its step and what it hands on (nothing while it waits or fails).
+        async Task<(FlowNodeRun Step, IReadOnlyDictionary<string, IReadOnlyList<FlowItem>> Outputs)> Execute(FlowNode node, FlowNodeType type, IReadOnlyList<FlowItem> items)
+        {
+            var none = new Dictionary<string, IReadOnlyList<FlowItem>>();
+            await Report(new FlowNodeRun(node.Id, FlowStatus.Running, 0, null, null, TimeSpan.Zero, none));
+            var watch = Stopwatch.StartNew();
+            try
+            {
+                FlowResult result;
+                if (node.Type == FlowLoop.NodeType)
+                {
+                    result = await RunLoopAsync(node, type, items);
+                }
+                else
+                {
+                    if (!_handlers.TryGetValue(node.Type, out var handler))
+                        throw new InvalidOperationException($"No handler is registered for '{node.Type}'.");
+                    using var timeout = o.NodeTimeout is { } t ? CancellationTokenSource.CreateLinkedTokenSource(cancellation) : null;
+                    timeout?.CancelAfter(o.NodeTimeout!.Value);
+                    result = await handler(new FlowContext(node, type, items) { Options = o }, timeout?.Token ?? cancellation);
+                }
+                var outputs = result.Outputs.Where(p => p.Value.Count > 0).ToDictionary(p => p.Key, p => p.Value);
+                var count = outputs.Values.Sum(v => v.Count);
+                total += count;
+                if (total > o.MaxItems) throw new InvalidOperationException($"The run produced more than {o.MaxItems} items.");
+                if (result.Waiting && status != FlowStatus.Error) status = FlowStatus.Waiting;
+                var step = new FlowNodeRun(node.Id, result.Waiting ? FlowStatus.Waiting : FlowStatus.Success, count, result.Note ?? (count == 1 ? "1 item" : $"{count} items"), null, watch.Elapsed, outputs);
+                return (step, result.Waiting ? none : outputs);
+            }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                status = FlowStatus.Error;
+                var message = e is OperationCanceledException ? $"Took longer than {o.NodeTimeout}." : e.Message;
+                return (new FlowNodeRun(node.Id, FlowStatus.Error, 0, null, message, watch.Elapsed, none), none);
+            }
+        }
+
+        // The loop: the body runs once per round on the items still going round, until the condition fails for an item or
+        // the round limit is reached. The items that leave go out on "done". Body nodes are reported like any other node.
+        async Task<FlowResult> RunLoopAsync(FlowNode loop, FlowNodeType type, IReadOnlyList<FlowItem> items)
+        {
+            var body = graph.LoopBody(loop.Id, out var error);
+            if (body is null) throw new InvalidOperationException(error);
+            var ctx = new FlowContext(loop, type, items) { Options = o };
+            var condition = ctx.Setting("condition");
+            var limit = int.TryParse(ctx.Setting("maxIterations"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var n)
+                ? Math.Clamp(n, 1, FlowLoop.MaxIterations)
+                : 5;
+
+            var done = new List<FlowItem>();
+            var current = items.ToList();
+            var rounds = 0;
+            while (current.Count > 0)
+            {
+                var keep = new List<FlowItem>();
+                foreach (var item in current) (FlowTemplate.Test(condition, item) ? keep : done).Add(item);
+                if (keep.Count == 0) break;
+                if (rounds >= limit)
+                {
+                    done.AddRange(keep);
+                    break;
+                }
+
+                var carried = keep;
+                foreach (var bodyStep in body)
+                {
+                    if (carried.Count == 0) break;
+                    if (bodyStep.Node.Disabled)
+                    {
+                        var bypass = new FlowNodeRun(bodyStep.Node.Id, FlowStatus.None, carried.Count, "Disabled: items passed through", null, TimeSpan.Zero, new Dictionary<string, IReadOnlyList<FlowItem>>());
+                        steps.Add(bypass);
+                        await Report(bypass);
+                        continue;
+                    }
+                    var bodyType = _catalog.Find(bodyStep.Node.Type) ?? throw new InvalidOperationException($"Unknown node type '{bodyStep.Node.Type}' in the loop body.");
+                    var (step, outputs) = await Execute(bodyStep.Node, bodyType, carried);
+                    steps.Add(step);
+                    await Report(step);
+                    if (step.Status == FlowStatus.Error)
+                        throw new InvalidOperationException($"The loop body stopped at \"{bodyStep.Node.Id}\": {step.Error}");
+                    carried = outputs.TryGetValue(bodyStep.Port, out var next) ? next.ToList() : [];
+                }
+                current = carried;
+                rounds++;
+            }
+            return new FlowResult { Note = $"{rounds} round{(rounds == 1 ? "" : "s")}, {done.Count} done" }.To(FlowLoop.DonePort, done);
+        }
+
         foreach (var node in graph.ExecutionOrder(_catalog))
         {
             cancellation.ThrowIfCancellationRequested();
@@ -172,35 +265,8 @@ public sealed class FlowRunner
                 continue;
             }
 
-            await Report(new FlowNodeRun(node.Id, FlowStatus.Running, 0, null, null, TimeSpan.Zero, new Dictionary<string, IReadOnlyList<FlowItem>>()));
-            var watch = Stopwatch.StartNew();
-            FlowNodeRun step;
-            try
-            {
-                if (!_handlers.TryGetValue(node.Type, out var handler))
-                    throw new InvalidOperationException($"No handler is registered for '{node.Type}'.");
-                using var timeout = o.NodeTimeout is { } t ? CancellationTokenSource.CreateLinkedTokenSource(cancellation) : null;
-                timeout?.CancelAfter(o.NodeTimeout!.Value);
-                var result = await handler(new FlowContext(node, type, items) { Options = o }, timeout?.Token ?? cancellation);
-                var outputs = result.Outputs.Where(p => p.Value.Count > 0).ToDictionary(p => p.Key, p => p.Value);
-                var count = outputs.Values.Sum(v => v.Count);
-                total += count;
-                if (total > o.MaxItems) throw new InvalidOperationException($"The run produced more than {o.MaxItems} items.");
-                produced[node.Id] = result.Waiting ? new Dictionary<string, IReadOnlyList<FlowItem>>() : outputs;
-                if (result.Waiting && status != FlowStatus.Error) status = FlowStatus.Waiting;
-                step = new FlowNodeRun(node.Id, result.Waiting ? FlowStatus.Waiting : FlowStatus.Success, count, result.Note ?? (count == 1 ? "1 item" : $"{count} items"), null, watch.Elapsed, outputs);
-            }
-            catch (OperationCanceledException) when (cancellation.IsCancellationRequested)
-            {
-                throw;
-            }
-            catch (Exception e)
-            {
-                produced[node.Id] = new Dictionary<string, IReadOnlyList<FlowItem>>();
-                status = FlowStatus.Error;
-                var message = e is OperationCanceledException ? $"Took longer than {o.NodeTimeout}." : e.Message;
-                step = new FlowNodeRun(node.Id, FlowStatus.Error, 0, null, message, watch.Elapsed, new Dictionary<string, IReadOnlyList<FlowItem>>());
-            }
+            var (step, outputs) = await Execute(node, type, items);
+            produced[node.Id] = outputs;
             steps.Add(step);
             await Report(step);
             if (step.Status == FlowStatus.Error && o.StopOnError) break;

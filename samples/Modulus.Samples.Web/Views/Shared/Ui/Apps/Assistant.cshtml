@@ -1,0 +1,36 @@
+@model AssistantView
+@* The AI assistant: documents in the knowledge base, a mode (the knowledge base with cited sources, or an agent with tools), the
+   chat, and the approval cards. The approval buttons submit the decision form outside the chat, so they never submit the question.
+   The Blazor sample is Apps/Assistant.razor. *@
+@using Modulus.Samples.Shared
+@using Modulus.Ui.Abstractions.Assistant
+<app-page-header pretitle="Apps" title="AI assistant" subtitle="Upload style guides, terms or purchase orders; ask questions that cite them; let an agent look up orders, analyse sales, forecast, or prepare an order for your approval."></app-page-header>
+
+<div class="m-row-cards">
+    <div class="m-card">
+        <div class="m-card-body">
+            <form method="post" action="/apps/assistant/upload" enctype="multipart/form-data" asp-antiforgery="true" hx-boost="false">
+                <input type="hidden" name="transcript" value="@Model.Transcript" />
+                <input type="hidden" name="mode" value="@Model.Mode" />
+                <app-document-upload documents="Model.Documents" label="Add documents (style guides, terms, purchase orders)" />
+            </form>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-body">
+            <form method="post" action="/apps/assistant" asp-antiforgery="true" hx-boost="false">
+                <fieldset class="m-chat-modes">
+                    <legend class="m-muted">Answer from</legend>
+                    <label><input type="radio" name="mode" value="@AssistantView.KnowledgeBase" checked="@(Model.Mode == AssistantView.KnowledgeBase)" /> Knowledge base (sources cited)</label>
+                    <label><input type="radio" name="mode" value="@AssistantView.Agent" checked="@(Model.Mode == AssistantView.Agent)" /> Agent with tools</label>
+                </fieldset>
+                <app-chat turns="Model.Turns" placeholder="@AssistantView.Examples" label="Your question" button="Ask" decision-form="assistant-decide" />
+            </form>
+            <form id="assistant-decide" method="post" action="/apps/assistant/decide" asp-antiforgery="true" hx-boost="false" hidden>
+                <input type="hidden" name="transcript" value="@Model.Transcript" />
+                <input type="hidden" name="mode" value="@Model.Mode" />
+            </form>
+        </div>
+    </div>
+</div>

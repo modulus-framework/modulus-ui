@@ -2035,3 +2035,22 @@ a.m-org-title:hover { color: var(--m-primary); }
 .m-chat-label { flex: 0 0 100%; font-size: 13px; color: var(--m-text-secondary); }
 .m-chat-input { flex: 1 1 260px; min-width: 0; resize: vertical; }
 @media (max-width: 600px) { .m-chat-turn { max-width: 100%; } .m-chat-composer .ant-btn { width: 100%; } }
+/* Assistant: the approval card, the document upload field, and tables in the chat. */
+.m-approval { border: 1px solid var(--m-split); border-left: 3px solid var(--m-warning, #d48806); border-radius: 8px; padding: 10px 12px; margin-top: 8px; background: var(--m-bg-container, #fff); font-size: 13px; }
+.m-approval-approved { border-left-color: var(--m-success, #389e0d); }
+.m-approval-rejected { border-left-color: var(--m-error, #cf1322); }
+.m-approval-title { font-weight: 600; color: var(--m-heading); margin-bottom: 6px; }
+.m-approval-details { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0 0 6px; }
+.m-approval-details dt { color: var(--m-text-secondary); }
+.m-approval-details dd { margin: 0; overflow-wrap: anywhere; }
+.m-approval-status { font-size: 12px; color: var(--m-text-secondary); }
+.m-approval-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.m-upload { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.m-upload-label { flex: 0 0 100%; font-size: 13px; color: var(--m-text-secondary); }
+.m-upload-input { max-width: 100%; }
+.m-upload-list { flex: 0 0 100%; list-style: none; margin: 4px 0 0; padding: 0; font-size: 13px; display: flex; flex-direction: column; gap: 2px; }
+.m-upload-name { font-weight: 500; }
+.m-chat-table { width: 100%; margin-top: 8px; font-size: 12px; border-collapse: collapse; }
+.m-chat-table caption { caption-side: top; text-align: left; font-weight: 600; padding-bottom: 4px; }
+.m-chat-table .ant-table-cell { padding: 4px 8px; border-bottom: 1px solid var(--m-split); }
+@media (max-width: 600px) { .m-approval-details { grid-template-columns: 1fr; } }

@@ -59,7 +59,7 @@ public sealed class FlowCatalog(IReadOnlyList<FlowNodeType> types)
         new("logic.if", "If", "Logic", "branches") { Slot = 3, Description = "Split on a condition.", Outputs = Ports("True", "False"), Defaults = Cfg(("condition", "")) },
         new("logic.switch", "Switch", "Logic", "apartment") { Slot = 3, Description = "Route by value to one of several branches.", Outputs = Ports("Case 1", "Case 2", "Fallback") },
         new("logic.merge", "Merge", "Logic", "merge-cells") { Slot = 3, Description = "Join branches back into one." },
-        new("logic.loop", "Loop over items", "Logic", "retweet") { Slot = 3, Description = "Run the next nodes once per item.", Outputs = Ports("Each item", "Done") },
+        new("logic.loop", "Loop over items", "Logic", "retweet") { Slot = 3, Description = "Repeat a chain of nodes while an item passes the condition, up to a limit; the chain links back into this node. Items that leave go out on Done.", Outputs = Ports("Each item", "Done"), Defaults = Cfg(("maxIterations", "5"), ("condition", "")) },
         new("logic.wait", "Wait", "Logic", "hourglass") { Slot = 3, Description = "Pause for a time or until a date.", Defaults = Cfg(("seconds", "60")) },
 
         // Data

@@ -1,0 +1,12 @@
+@* An approval waiting for a person: Request (an ApprovalRequest) and OnDecide (called with "id:approve" or "id:reject"). *@
+@using Modulus.Ui.Abstractions.Assistant
+
+<Modulus.Blazor.Components.Extras.AppApprovalCard Request="Request" OnDecide="OnDecide" />
+
+@code {
+    /// <summary>The approval to show.</summary>
+    [Parameter, EditorRequired] public ApprovalRequest Request { get; set; } = null!;
+
+    /// <summary>Called with "id:approve" or "id:reject".</summary>
+    [Parameter] public EventCallback<string> OnDecide { get; set; }
+}

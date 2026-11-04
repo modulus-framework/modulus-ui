@@ -1,0 +1,37 @@
+@* An approval waiting for a person: what it is, its details, its status, and the Approve and Reject buttons while it is pending.
+   OnDecide receives "id:approve" or "id:reject". The same card is <app-approval-card> in MVC and Razor Pages (ApprovalHtml). *@
+@using Modulus.Ui.Abstractions.Assistant
+@using Modulus.Ui.Abstractions.Chat
+
+<section class="m-approval m-approval-@Request.Status.ToString().ToLowerInvariant()" aria-label="@Request.Title">
+    <div class="m-approval-title">@Request.Title</div>
+    @if (Request.Details.Count > 0)
+    {
+        <dl class="m-approval-details">
+            @foreach (var field in Request.Details)
+            {
+                <dt>@field.Label</dt>
+                <dd>@field.Value</dd>
+            }
+        </dl>
+    }
+    <div class="m-approval-status">@ApprovalHtml.StatusText(Request.Status)</div>
+    @if (Request.Status == ApprovalStatus.Pending)
+    {
+        <div class="m-approval-actions">
+            <button type="button" class="ant-btn ant-btn-primary" @onclick="ApproveAsync">Approve</button>
+            <button type="button" class="ant-btn ant-btn-default" @onclick="RejectAsync">Reject</button>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public ApprovalRequest Request { get; set; } = null!;
+
+    /// <summary>Called with "id:approve" or "id:reject".</summary>
+    [Parameter] public EventCallback<string> OnDecide { get; set; }
+
+    private Task ApproveAsync() => OnDecide.InvokeAsync(Request.Id + ":approve");
+
+    private Task RejectAsync() => OnDecide.InvokeAsync(Request.Id + ":reject");
+}

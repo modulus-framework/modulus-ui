@@ -530,6 +530,16 @@
         "note": "AppChat (Components/Extras): a conversation log and a question field; the same markup as ChatHtml (Abstractions/Chat)",
         "mvc": "app-chat"
       },
+      "ApprovalCard": {
+        "status": "modulus",
+        "note": "AppApprovalCard (Components/Extras): an approval waiting for a person, with approve and reject buttons (ApprovalHtml)",
+        "mvc": "app-approval-card"
+      },
+      "DocumentUpload": {
+        "status": "modulus",
+        "note": "AppDocumentUpload (Components/Extras): the upload field of a knowledge base, with the documents in it (UploadHtml)",
+        "mvc": "app-document-upload"
+      },
       "FunnelChart": {
         "status": "modulus",
         "note": "FunnelChart (Components/Charts)",

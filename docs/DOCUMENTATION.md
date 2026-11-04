@@ -1032,6 +1032,8 @@ Not built, and why: a free-form node-and-edge **diagram editor** (drag, connect,
 - **Limits.** There are no real model, mail or HTTP clients in the library, no scheduler (a webhook or schedule trigger is a node that is started by the app), no credential store, and loop nodes are not run (the validator reports loops). Sub-workflows, groups, sticky notes, minimap and marquee selection are not built.
 - **Connectors** (`Modulus.Flow.Connectors`, a separate package). `UseLanguageModel(model)` serves the AI chat node (the prompt is the instruction, the item's `message` the input, the reply goes to `reply`; a `model` setting picks the model). `UseEmail(sender)` serves the email node (`to` must be a valid address; `subject`; `body` defaults to `reply`). `UseSlack(webhook)` serves the chat node (`text` defaults to `reply`). Clients: `AnthropicLanguageModel` (Messages API) and `OpenAiLanguageModel` (any server with the chat completions API, the base address ending in `/v1/`); `SmtpEmailSender`; `SlackWebhook`. Endpoints, keys and webhook URLs come from the app's configuration, never from a workflow, so an edited graph cannot point a connector at another server. A failed call names the status, never the key. The connectors are tested against stub HTTP handlers and a fake sender; they have not been run against live servers in this repository.
 - **Secrets.** `{{secret.name}}` in a node setting is replaced by `FlowRunOptions.Secret(name)`, which the app implements from its configuration or vault (decision: app configuration). The resolution is one pass with the item values, so text a customer typed cannot pull a secret in. A missing secret fails the node with its name and never its value. Secret values are not written into a graph or a result.
+- **Loops (A2, done).** `logic.loop` repeats a chain of nodes while an item passes its condition, up to a limit. Its "Each item" output starts the body, the body's last node links back into the loop, and items that leave go out on "Done". Settings: `condition` (an item continues while it passes; empty means every item continues) and `maxIterations` (5 by default, at most 50). The body must be one chain: a branch inside it, a body that does not come back, or no connection is reported by `Validate` and fails the loop node with the reason. Body nodes are reported like any other node, once per round. Quote text in conditions (`tag != "xxx"`): a bare word is a path.
+- **Run history (A4, done for the sample).** The flow sample keeps the last ten runs in memory (`FlowDemo.History()`) and shows them on the page. An app keeps them in its own store.
 - **Schedules and webhooks (pattern, not a helper).** The library starts nothing on a timer or an HTTP call (decision: no hosted-service helper). An app starts a run from a hosted service on its schedule, or from a minimal API endpoint, by calling `FlowRunner.RunAsync` with the items it received.
 
 Also fixed on the way: `modulus-plugins.js` loaded every plugin library (code editor, maps, rich-text editor, spreadsheet, documents, uploader, cropper, PDF) from `/_content/Modulus.Ui.Assets/…`, a path that stopped existing when the package was renamed to `Synvro.Modulus.Ui.Assets`, so all of them returned 404. It now takes the base from its own URL.
@@ -1459,6 +1461,45 @@ None planned yet.
 **Order of work:** the §7.2 order stands (finish §7.1, stabilise the 🟡 work, Spreadsheet, Fluid, document
 templates, Document Processing); the P0 phases follow that, P1 items as needed.
 
+#### 7.3.2 AI platform: documents, RAG, agents and approvals (2026-11-04)
+
+The assistant (`/apps/assistant` in all three samples) is the AI platform surface. Its pieces, each a library type with an
+interface an app implements, and the sample's stand-in for it:
+
+- **Upload documents** (`app-document-upload`, `AppDocumentUpload`, `UploadHtml`). Text formats (`.txt .md .csv .json .log`,
+  UTF-8, 2 MB at most) are read by `DocumentText.Read` and split into passages (`DocumentText.Chunk`, about 700 characters, at
+  paragraphs). The passages go into a `KnowledgeStore` (an `IKnowledgeSearch`; a document with the same name replaces the old one).
+  Other formats need an app reader (PDF, Word); the sample refuses them with a message.
+- **Knowledge answers (RAG)** (`RagAssistant`). The question finds the passages (`KeywordRanking` in the sample, a vector index in
+  an app), the model answers from up to 4,000 characters of them and cites them as [1], [2]; the answer carries its sources, which
+  the chat shows as links (only site paths and http(s) addresses become links). With no passage found the model is not asked.
+- **Agents with tools** (`AgentRunner`). The model replies with JSON to call a tool or to answer; a reply that is not the protocol
+  is the answer. Tools are an allowlist; inputs are cut to 300 characters and results to 1,000; a failing tool reports its failure
+  as the result; the run stops after `maxSteps` (5 by default, at most 10). Each step is shown in the chat as a collapsible trace.
+- **Approvals** (`ApprovalRequest`, `ApprovalHtml`, `app-approval-card`, `AppApprovalCard`). A tool marked `RequiresApproval` is not
+  run by the agent: the run stops with an approval request (what it is, its details, its input). Only `AgentRunner.ExecuteApproved`
+  runs an approved request; a rejected one is closed without running. The approval buttons post `approval` as "id:approve" or
+  "id:reject" to the decision form, so they never submit the question.
+- **Purchase orders** (sample, `PurchaseApprovals.cs`). Uploading a document that reads as a purchase order (a `PO-1001` number,
+  a `Buyer:` line, and lines like `SKU-100 2 x 49.90`) starts the order's process: a workflow records the order and stops at its
+  approval node (`ai.human`), which waits for a decision (`FlowResult.Waiting`). The approval card asks the buyer; approving runs
+  the workflow again with the decision and creates the order, rejecting closes it. The agent can prepare the same approval with
+  the `create_purchase_order` tool.
+- **Analytics and prediction** (sample, `Analytics.cs`). `sales_by_city` totals the sales by city (a table), and `forecast_sales`
+  fits a least-squares straight line to the last twelve monthly totals and predicts the next month (a table with a forecast row).
+  The sample forecast is a trend, not a statistical model; an app plugs its own forecasting in as a tool.
+- **Chat with tables and approvals** (`ChatTurn.Table`, `ChatTurn.Approval`, `ChatHtml.Turn`). An answer can carry a table and an
+  approval card, and both survive the transcript.
+
+Browser gate: `tests/browser/assistant.py` (in the CI browser job) uploads the style guide and a purchase order, approves the
+order, asks a knowledge question that must cite the style guide, runs a sales question (table), a forecast (forecast row) and
+an order lookup, on MVC, Razor Pages and Blazor. Unit tests: `AssistantTests`, `DocumentsAndApprovalsTests`, `FlowLoopTests`.
+
+Limits, stated plainly: the samples' language model is a rule-based stand-in (it follows the two protocols and quotes the best
+sentence; it is not a language model). The knowledge search is shared words, not embeddings. The approval store, the knowledge
+base, the purchase orders and the run history are in memory and shared by every visitor of the sample; an app keeps them in its
+own storage, per user. Only plain-text uploads are read. Streaming answers and a model's own tool-calling format are not built.
+
 #### 7.3.1 Chat and ask your data (P2, started 2026-11-04)
 
 The natural-language filter and a chat component. A question in plain words becomes a filter on the same fields the
@@ -1495,9 +1536,9 @@ finished are not repeated here (see the change log in §8).
 | # | Item | Done when | Decision |
 |---|------|-----------|----------|
 | A1 | Real adapters for the stand-in nodes: AI chat and classifier (a model client), email (SMTP or a provider), chat posts, and an HTTP node. | Done 2026-11-04 for the decided four (Anthropic, OpenAI-compatible, SMTP, Slack or Teams webhook) in `Modulus.Flow.Connectors`, tested with stub handlers. Not yet done: the classifier and extractor nodes, and the HTTP node; not run against live servers here. | **Decided:** Anthropic, OpenAI-compatible, SMTP, Slack webhook. |
-| A2 | Loop node (`logic.loop`) is reported by the validator but not run. | Runs items one batch at a time with a bounded iteration count and a `MaxItems` guard; tests cover an empty list, a cap and an error inside the loop. | — |
+| A2 | Loop node (`logic.loop`) is reported by the validator but not run. | Done 2026-11-04: repeats a one-chain body while items pass the condition, up to `maxIterations` (at most 50); malformed bodies are validation errors; tested (`FlowLoopTests`). | — |
 | A3 | Secrets and credentials: node settings hold plain text, and there is no reference to a secret store (`{{secret.name}}`). | Done 2026-11-04: `{{secret.name}}` resolves through `FlowRunOptions.Secret`, from app configuration (decided). Tested: a customer cannot pull a secret in, and a missing one fails the node without its value. | **Decided:** app configuration. |
-| A4 | Run history: a run's result is kept only for the page that shows it. | Each workflow keeps its last N runs (time, message, per-node status) through `IUiStateStore` or an app store; a page lists them. | — |
+| A4 | Run history: a run's result is kept only for the page that shows it. | Done for the sample 2026-11-04: the last ten runs, shown on the flow pages (`FlowDemo.History()`, in memory). An app keeps its own store (`IUiStateStore` or a database). | — |
 | A5 | Browser gate for the run: `tests/browser/smoke.py` only opens `/apps/flow`, so the run was checked by hand. | Done 2026-11-04: `tests/browser/flow.py` runs a message through the support desk on the three samples, asserts five successful nodes and no failures, checks that MVC and Razor Pages keep the message and clear the run on save, and fails on console errors. It runs in the CI browser job. Checking it found a CSP bug: the shared flash toast (`_Flash.cshtml`) and the invoice print script were inline without the nonce; both now carry it, which affects every MVC and Razor Pages page that shows a flash message. | — |
 | A6 | Editor features not built: sub-workflows, groups, sticky notes, minimap, marquee selection. | Each one has a sample and tests in all three flavours, or is dropped from the list. | **Decision:** which of these matter for the ERP and AI use cases. |
 | A7 | Scheduler and webhook triggers are nodes only. The library starts nothing on a timer or an HTTP call. | Decided 2026-11-04: no hosted-service helper; the pattern is documented in §8 (an app starts a run from its own hosted service or endpoint). | **Decided:** no helper. |
@@ -1528,7 +1569,7 @@ finished are not repeated here (see the change log in §8).
 | D2 | Gantt (P1) is read-only: no drag to reschedule, no dependency links. | Drag to reschedule (with the date change posted back) and dependency arrows, in all three flavours. | — |
 | D3 | PDF viewer does not select text. | Text layer on, selection works, checked in the three samples. | — |
 | D4 | Dashboard tiles resize with buttons, not by pointer drag. | Pointer resize with keyboard equivalents, saved through `IUiStateStore`. | — |
-| D5 | P2 items: AI-assist hooks (a natural-language filter that compiles to the QueryBuilder model) and a chat UI. | Started 2026-11-04 (decided): the natural-language filter and the chat component, with `/tables/ask` in all three samples (§7.3.1). Still open: streaming, server-side history, refining a filter from a follow-up, and a real model in the samples. | **Decided:** start P2 now. |
+| D5 | P2 items: AI-assist hooks (a natural-language filter that compiles to the QueryBuilder model) and a chat UI. | Started 2026-11-04 and extended (§7.3.1, §7.3.2): the natural-language filter, the chat with sources, traces, tables and approvals, document upload, RAG, agents with approval-gated tools, a purchase-order approval process, and analytics and forecast tools; in all three samples. Still open: streaming answers, server-side history, a real model in the samples, and a statistical forecast. | **Decided:** start P2 now. |
 
 **E. CLI repository** (`modulus-framework/modulus`, same branch name)
 
@@ -1546,6 +1587,7 @@ a release. Everything under D and A6 waits for a decision.
 | Date | Change |
 |---|---|
 | 2026-11-04 | **Browser checks of the workflow and the plugin pages.** `tests/browser/flow.py` (the workflow run on all three samples) found an inline script without the CSP nonce in the shared flash toast, which every MVC and Razor Pages page shows after a redirect; fixed. `tests/browser/sweep.py` checked 26 plugin and table pages in the three samples at 1280 px, 390 px and dark: the advanced tables toolbar overflowed the phone screen; fixed. CI gets the workflow gate; the sweep is run by hand. |
+| 2026-11-04 | **AI platform: uploads, RAG, agents with approvals, purchase orders, analytics.** `DocumentText`, `KnowledgeStore`, `RagAssistant`, `AgentRunner` with approval-gated tools, `ApprovalRequest` and its card in MVC and Blazor, `app-document-upload`, the chat's tables. The sample's purchase-order process is a workflow that waits for the buyer's decision. The loop node and the run history are built. Tests: Blazor 993, MVC 261, Connectors 12, Hosting 16, Fluid 13, CLI 680. Browser gates: the assistant gate (new), the workflow gate, smoke, and the page sweep. |
 | 2026-11-04 | **Decisions taken: connectors, secrets, P2 started.** `Modulus.Flow.Connectors` (Anthropic, OpenAI-compatible, SMTP, Slack webhook), `{{secret.name}}` from app configuration, `FilterAssistant` (a question becomes a QueryBuilder filter, kept within the builder), and the chat component (`app-chat`, `AppChat`) with `/tables/ask` in the three samples. PR #1 opened for the branch; the release (B5) waits for it to merge. Browser checks: the ask page answers and filters in all three samples; the page sweep (243 loads) and the smoke gate pass. |
 | 2026-11-04 | **CI and the plan.** CI on `main` was red (run 28). Two causes, both fixed on this branch: the build job used `dotnet test --solution`, which the CI SDK rejects, and `origin/main` loaded plugin libraries from a hardcoded `/_content/Modulus.Ui.Assets/` path (fixed on this branch in `2f3956d`). The branch also fixed two CSP violations (inline handlers on the tree and form pages). The smoke gate now answers external map tiles with a blank tile. Verified locally on a fresh Release clone: tests (13, 16, 256, 943), drift, budgets, smoke and parity all pass. Printing (phase 26) confirmed done. |
 | 2026-11-04 | **Workflow engine and the remaining-work plan.** `FlowRunner`, `FlowItem` and `FlowTemplate` in Abstractions (built-ins for triggers, if, switch, merge, wait, set fields and filter; per-node timeouts, item limits and cancellation; `ApplyTo` paints the statuses). 41 unit tests. The Blazor sample runs on the engine and was checked in a browser (5 nodes succeeded, no server exceptions); MVC and Razor Pages post the canvas to `/apps/flow/run` and were checked the same way, including save clearing the statuses. Sections 8 and 7.4 describe the engine, its limits and what is left, with decisions marked. The CLI is unchanged. Unit tests: Blazor 943, MVC 256, Hosting 16, Fluid 13, all passing. |

@@ -1,0 +1,12 @@
+@* Upload field of a knowledge base: Documents, and OnFiles (called with the chosen files as name and bytes). *@
+@using Modulus.Ui.Abstractions.Assistant
+
+<Modulus.Blazor.Components.Extras.AppDocumentUpload Documents="Documents" OnFiles="OnFiles" Label="Add documents to the knowledge base" />
+
+@code {
+    /// <summary>The documents already in the knowledge base.</summary>
+    [Parameter] public IEnumerable<KnowledgeDocument>? Documents { get; set; }
+
+    /// <summary>Called with the chosen files, as names and bytes.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<(string Name, byte[] Bytes)>> OnFiles { get; set; }
+}

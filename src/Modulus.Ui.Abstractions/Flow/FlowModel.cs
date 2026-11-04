@@ -32,6 +32,20 @@ public sealed record FlowNode(string Id, string Type, double X, double Y)
 }
 
 /// <summary>A connection from output port <see cref="FromPort"/> of one node to the input of another.</summary>
+/// <summary>The loop node (<c>logic.loop</c>): its body is the chain from its "each item" output back into it, and its items leave on "done".</summary>
+public static class FlowLoop
+{
+    public const string NodeType = "logic.loop";
+    public const string BodyPort = "each-item";
+    public const string DonePort = "done";
+
+    /// <summary>The most iterations a loop may be set to run.</summary>
+    public const int MaxIterations = 50;
+}
+
+/// <summary>One node of a loop body and the output port it hands items on to the next node (the last one hands them back to the loop).</summary>
+public sealed record FlowLoopStep(FlowNode Node, string Port);
+
 public sealed record FlowEdge(string Id, string From, string To)
 {
     /// <summary>The output port of <see cref="From"/>; "out" for a node with one output.</summary>
@@ -136,7 +150,73 @@ public sealed record FlowGraph(IReadOnlyList<FlowNode> Nodes, IReadOnlyList<Flow
                 issues.Add(new(FlowIssueLevel.Warning, n.Id, $"'{Label(n)}' is not connected to a trigger, so it never runs."));
 
         if (HasLoop()) issues.Add(new(FlowIssueLevel.Warning, null, "The workflow contains a loop; make sure something ends it."));
+        foreach (var loop in Nodes.Where(n => n.Type == FlowLoop.NodeType).DistinctBy(n => n.Id))
+            if (LoopBody(loop.Id, out var loopError) is null) issues.Add(new(FlowIssueLevel.Error, loop.Id, loopError));
         return issues;
+    }
+
+    /// <summary>
+    /// The connections that close a loop: from a node of a loop's body back into that loop. They are not part of the run order;
+    /// the loop node runs its body instead.
+    /// </summary>
+    public IReadOnlyList<FlowEdge> LoopBackEdges()
+    {
+        var result = new List<FlowEdge>();
+        foreach (var loop in Nodes.Where(n => n.Type == FlowLoop.NodeType).Select(n => n.Id).Distinct())
+        {
+            var body = new HashSet<string>();
+            var queue = new Queue<string>(Edges.Where(e => e.From == loop && e.FromPort == FlowLoop.BodyPort && e.To != loop).Select(e => e.To));
+            while (queue.Count > 0)
+            {
+                var id = queue.Dequeue();
+                if (id == loop || !body.Add(id)) continue;
+                foreach (var e in Edges.Where(e => e.From == id)) queue.Enqueue(e.To);
+            }
+            result.AddRange(Edges.Where(e => e.To == loop && body.Contains(e.From)));
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// The body of a loop as a chain of nodes, each handing items to the next, the last one back into the loop. Null with
+    /// <paramref name="error"/> when the body is not one chain: no connection or more than one from the body port, a branch
+    /// inside the body, or a body that does not come back to the loop.
+    /// </summary>
+    public IReadOnlyList<FlowLoopStep>? LoopBody(string loopId, out string? error)
+    {
+        error = null;
+        var starts = Edges.Where(e => e.From == loopId && e.FromPort == FlowLoop.BodyPort).ToList();
+        if (starts.Count != 1)
+        {
+            error = "Connect the loop's \"Each item\" output to the first node of its body (one connection).";
+            return null;
+        }
+        var byId = Nodes.GroupBy(n => n.Id).ToDictionary(g => g.Key, g => g.First());
+        var chain = new List<FlowLoopStep>();
+        var seen = new HashSet<string>();
+        var current = starts[0].To;
+        while (true)
+        {
+            if (!byId.TryGetValue(current, out var node))
+            {
+                error = "The loop body connects to a node that does not exist.";
+                return null;
+            }
+            if (!seen.Add(current))
+            {
+                error = $"The loop body loops back into \"{current}\" before it reaches the loop.";
+                return null;
+            }
+            var outgoing = Edges.Where(e => e.From == current).ToList();
+            if (outgoing.Count != 1)
+            {
+                error = $"The loop body must be one chain: \"{current}\" has {outgoing.Count} outgoing connections.";
+                return null;
+            }
+            chain.Add(new FlowLoopStep(node, outgoing[0].FromPort));
+            if (outgoing[0].To == loopId) return chain;
+            current = outgoing[0].To;
+        }
     }
 
     /// <summary>
@@ -146,7 +226,8 @@ public sealed record FlowGraph(IReadOnlyList<FlowNode> Nodes, IReadOnlyList<Flow
     public IReadOnlyList<FlowNode> ExecutionOrder(FlowCatalog catalog)
     {
         var byId = Nodes.GroupBy(n => n.Id).ToDictionary(g => g.Key, g => g.First());
-        var edges = Edges.Where(e => byId.ContainsKey(e.From) && byId.ContainsKey(e.To) && e.From != e.To).ToList();
+        var back = LoopBackEdges().ToHashSet();
+        var edges = Edges.Where(e => byId.ContainsKey(e.From) && byId.ContainsKey(e.To) && e.From != e.To && !back.Contains(e)).ToList();
         var reached = new HashSet<string>();
         var queue = new Queue<string>(Nodes.Where(n => catalog.Find(n.Type) is { HasInput: false }).Select(n => n.Id));
         while (queue.Count > 0)
@@ -226,7 +307,8 @@ public sealed record FlowGraph(IReadOnlyList<FlowNode> Nodes, IReadOnlyList<Flow
     private bool HasLoop()
     {
         var ids = Nodes.Select(n => n.Id).Distinct().ToHashSet();
-        var next = Edges.Where(e => ids.Contains(e.From) && ids.Contains(e.To)).GroupBy(e => e.From).ToDictionary(g => g.Key, g => g.Select(e => e.To).ToList());
+        var back = LoopBackEdges().ToHashSet();
+        var next = Edges.Where(e => ids.Contains(e.From) && ids.Contains(e.To) && !back.Contains(e)).GroupBy(e => e.From).ToDictionary(g => g.Key, g => g.Select(e => e.To).ToList());
         var state = new Dictionary<string, int>();
         bool Visit(string id)
         {

@@ -1,0 +1,61 @@
+@page "/apps/assistant"
+@using Modulus.Samples.Shared
+@using Modulus.Ui.Abstractions.Assistant
+@using Modulus.Ui.Abstractions.Chat
+
+<PageTitle>AI assistant · Modulus</PageTitle>
+
+@* The AI assistant: documents in the knowledge base, the help centre with cited sources, an agent with tools, and approval cards for
+   purchase orders and other actions. The MVC and Razor Pages samples post the same actions to /apps/assistant (Views/Shared/Ui/Apps/Assistant.cshtml). *@
+<PageHeading Pretitle="Apps" Title="AI assistant" Subtitle="Upload style guides, terms or purchase orders; ask questions that cite them; let an agent look up orders, analyse sales, forecast, or prepare an order for your approval." />
+
+<div class="m-row-cards">
+    <div class="m-card">
+        <div class="m-card-body">
+            <AppDocumentUpload Documents="_view.Documents" OnFiles="UploadAsync" Label="Add documents (style guides, terms, purchase orders)" />
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-body">
+            <fieldset class="m-chat-modes">
+                <legend class="m-muted">Answer from</legend>
+                <label><input type="radio" name="assistant-mode" checked="@(_mode == AssistantView.KnowledgeBase)" @onchange="SetKnowledgeBase" /> Knowledge base (sources cited)</label>
+                <label><input type="radio" name="assistant-mode" checked="@(_mode == AssistantView.Agent)" @onchange="SetAgent" /> Agent with tools</label>
+            </fieldset>
+            <AppChat Turns="_view.Turns" OnAsk="AskAsync" OnDecide="DecideAsync" Busy="_busy" Placeholder="@AssistantView.Examples" Label="Your question" Button="Ask" />
+        </div>
+    </div>
+</div>
+
+@code {
+    private static readonly Modulus.Ui.Abstractions.Language.ILanguageModel Model = AssistantPage.Model();
+    private AssistantView _view = null!;
+    private string _mode = AssistantView.KnowledgeBase;
+    private bool _busy;
+
+    protected override async Task OnInitializedAsync() => _view = await AssistantPage.AskAsync(null, null, null, Model);
+
+    private void SetKnowledgeBase() => _mode = AssistantView.KnowledgeBase;
+
+    private void SetAgent() => _mode = AssistantView.Agent;
+
+    private async Task AskAsync(string question) => await RunAsync(() => AssistantPage.AskAsync(_view.Transcript, _mode, question, Model));
+
+    private async Task DecideAsync(string decision) => await RunAsync(() => AssistantPage.DecideAsync(_view.Transcript, _mode, decision));
+
+    private async Task UploadAsync(IReadOnlyList<(string Name, byte[] Bytes)> files) => await RunAsync(() => AssistantPage.UploadAsync(_view.Transcript, _mode, files));
+
+    private async Task RunAsync(Func<Task<AssistantView>> action)
+    {
+        _busy = true;
+        try
+        {
+            _view = await action();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

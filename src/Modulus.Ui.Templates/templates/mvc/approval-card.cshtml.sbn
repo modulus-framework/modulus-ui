@@ -1,0 +1,9 @@
+@* An approval waiting for a person: ViewBag.Request (an ApprovalRequest) and ViewBag.Form (the id of the form the buttons submit). *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Assistant
+@{
+    ApprovalRequest? request = ViewBag.Request as ApprovalRequest;
+    string? form = ViewBag.Form as string;
+}
+
+<app-approval-card request="request" form="form" />

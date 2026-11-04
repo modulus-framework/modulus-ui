@@ -1,9 +1,27 @@
-@* A conversation and its composer: the turns as a log (the same markup as the MVC <app-chat>, from ChatHtml), and a question
-   field that calls OnAsk with the question when it is sent. The page owns the turns and answers the question. *@
+@* A conversation and its composer: the turns as a log (the same markup as the MVC <app-chat>, from ChatHtml), approval cards as
+   components, and a question field that calls OnAsk with the question when it is sent. The page owns the turns and answers. *@
 @using Modulus.Ui.Abstractions.Chat
 
 <section class="m-chat">
-    @((MarkupString)ChatHtml.Log(Turns ?? [], EmptyText))
+    <ol class="m-chat-log" role="log" aria-live="polite">
+        @if (Turns is null || Turns.Count == 0)
+        {
+            <li class="m-chat-empty m-muted">@EmptyText</li>
+        }
+        else
+        {
+            @foreach (var turn in Turns)
+            {
+                @((MarkupString)ChatHtml.Turn(turn with { Approval = null }))
+                @if (turn.Approval is { } request)
+                {
+                    <li class="m-chat-turn m-chat-assistant">
+                        <AppApprovalCard Request="request" OnDecide="OnDecide" />
+                    </li>
+                }
+            }
+        }
+    </ol>
     <form class="m-chat-form" @onsubmit="SubmitAsync" @onsubmit:preventDefault>
         <div class="m-chat-composer">
             <label class="m-chat-label" for="@_id">@Label</label>
@@ -22,6 +40,9 @@
 
     /// <summary>Called with the question when it is sent.</summary>
     [Parameter] public EventCallback<string> OnAsk { get; set; }
+
+    /// <summary>Called with "id:approve" or "id:reject" when a person answers an approval card.</summary>
+    [Parameter] public EventCallback<string> OnDecide { get; set; }
 
     [Parameter] public string Label { get; set; } = "Your question";
 

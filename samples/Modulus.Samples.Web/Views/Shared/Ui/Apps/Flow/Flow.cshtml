@@ -45,6 +45,34 @@
         }
 
         <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Recent runs</h3><p class="m-card-subtitle">The last ten runs of this sample, kept in memory</p></div></div>
+            <div class="m-card-body">
+                @if (Model.History is null || Model.History.Count == 0)
+                {
+                    <p class="m-muted">No runs yet. Press Run to try the workflow.</p>
+                }
+                else
+                {
+                    <table class="ant-table" aria-label="Recent runs">
+                        <thead class="ant-table-thead"><tr><th class="ant-table-cell">When (UTC)</th><th class="ant-table-cell">Message</th><th class="ant-table-cell">Result</th><th class="ant-table-cell" style="text-align: right;">Nodes</th><th class="ant-table-cell" style="text-align: right;">Time</th></tr></thead>
+                        <tbody class="ant-table-tbody">
+                            @foreach (var record in Model.History)
+                            {
+                                <tr class="ant-table-row">
+                                    <td class="ant-table-cell">@record.At.ToString("HH:mm:ss")</td>
+                                    <td class="ant-table-cell">@record.Message</td>
+                                    <td class="ant-table-cell">@record.Status</td>
+                                    <td class="ant-table-cell" style="text-align: right;">@record.Nodes</td>
+                                    <td class="ant-table-cell" style="text-align: right;">@record.Duration.TotalMilliseconds.ToString("0") ms</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        </div>
+
+        <div class="m-card">
             <div class="m-card-header"><div><h3 class="m-card-title">Checks</h3><p class="m-card-subtitle">What the saved workflow would need before it can run</p></div></div>
             <div class="m-card-body">
                 @if (Model.Issues.Count == 0)
