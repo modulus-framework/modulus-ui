@@ -150,7 +150,7 @@ public class NestedGridTagHelperTests
             [Row("PO-1", "PO-1"), Row("n1", "New")], 5, ["PO-1"], Title: "Orders"));
 
         Assert.StartsWith("<div id=\"nested-0-root\" class=\"m-nested m-nested-level-0\" @grid-change.stop=\"\">", html);
-        Assert.Contains("<form method=\"post\" hx-post=\"/nested/level?depth=2&amp;level=0\" hx-target=\"#nested-0-root\" hx-swap=\"outerHTML\" onsubmit=\"event.stopPropagation()\" novalidate>", html);
+        Assert.Contains("<form method=\"post\" hx-post=\"/nested/level?depth=2&amp;level=0\" hx-target=\"#nested-0-root\" hx-swap=\"outerHTML\" data-m-stop=\"submit\" novalidate>", html);
         Assert.Contains("<input type=\"hidden\" name=\"l0.loaded\" value=\"PO-1\" />", html);
         Assert.Contains("name=\"l0.schema\"", html);
         Assert.Contains("id=\"nested-0-root-grid\"", html);

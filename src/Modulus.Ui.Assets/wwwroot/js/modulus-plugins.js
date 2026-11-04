@@ -2001,6 +2001,37 @@
             .then(function () { window.modulusFlow.init(root); })
             .catch(function (e) { root.style.opacity = ''; if (window.console) console.error(e); });
     }
+    // ---- Markup behaviour without inline handlers (a strict Content-Security-Policy blocks onchange="...") -----------
+    // data-m-stop="change submit": the element stops these events from reaching its ancestors (a nested grid's filters).
+    widget('[data-m-stop]', function (el) {
+        el.setAttribute('data-m-ready', '');
+        el.getAttribute('data-m-stop').split(' ').forEach(function (type) {
+            if (type) el.addEventListener(type, function (e) { e.stopPropagation(); });
+        });
+    });
+    // data-m-submit-change: a change submits the form the field is in (the query builder's field and operator).
+    widget('[data-m-submit-change]', function (el) {
+        el.setAttribute('data-m-ready', '');
+        el.addEventListener('change', function () {
+            if (!el.form) return;
+            if (el.form.requestSubmit) el.form.requestSubmit(); else el.form.submit();
+        });
+    });
+    // data-m-print: the element prints the page when it is clicked (a print link).
+    widget('[data-m-print]', function (el) {
+        el.setAttribute('data-m-ready', '');
+        el.addEventListener('click', function (e) { e.preventDefault(); window.print(); });
+    });
+    // data-m-swallow: a click on the element does nothing else (it is inside a clickable row, or a menu).
+    widget('[data-m-swallow]', function (el) {
+        el.setAttribute('data-m-ready', '');
+        el.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); });
+    });
+    // data-m-no-enter: Enter in the field does not submit the form (a search that filters as the page changes).
+    widget('[data-m-no-enter]', function (el) {
+        el.setAttribute('data-m-ready', '');
+        el.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+    });
     widget('[data-m-flow]', initFlow);
     widget('[data-m-cropper]', initCropper);
     widget('[data-m-code]', initCode);

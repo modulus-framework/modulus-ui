@@ -50,7 +50,7 @@ public class KnowledgeStoreTests
         Assert.Equal(2, store.Documents.Count);
 
         store.Add("buyer-terms.txt", "Payment is due within 45 days.");
-        Assert.Single(store.Documents.Where(d => d.Name == "buyer-terms.txt"));
+        Assert.Single(store.Documents, d => d.Name == "buyer-terms.txt");
         Assert.Contains("45 days", (await store.SearchAsync("payment", 3, default))[0].Text);
     }
 
