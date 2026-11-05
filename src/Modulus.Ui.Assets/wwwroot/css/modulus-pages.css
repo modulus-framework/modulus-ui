@@ -931,7 +931,13 @@ a.m-card, a.m-card:hover { color: inherit; }
 .m-pdf-zoom { min-width: 48px; text-align: center; font-size: 13px; }
 .m-pdf-scroll { position: relative; flex: 1; min-height: 0; overflow: auto; padding: 16px; background: var(--m-bg-subtle); }
 .m-pdf-canvas { display: flex; justify-content: center; }
-.m-pdf-canvas canvas { display: block; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .2); }
+.m-pdf-page { position: relative; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .2); }
+.m-pdf-page canvas { display: block; }
+/* pdf.js's text layer (pdf_viewer.css): transparent glyphs over the canvas, so the text can be selected and copied. */
+.m-pdf-page .textLayer { position: absolute; inset: 0; overflow: hidden; line-height: 1; text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; caret-color: CanvasText; z-index: 0; user-select: text; }
+.m-pdf-page .textLayer span, .m-pdf-page .textLayer br { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; }
+.m-pdf-page .textLayer span.markedContent { top: 0; height: 0; }
+.m-pdf-page .textLayer ::selection { background: rgba(0, 100, 255, .3); }
 /* A page turn or zoom keeps the current page on screen until the next one is drawn; a thin bar shows the work. */
 .m-pdf-toolbar { position: relative; }
 .m-pdf-busy .m-pdf-toolbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: linear-gradient(90deg, transparent, var(--m-primary), transparent); background-size: 40% 100%; background-repeat: no-repeat; animation: m-pdf-progress 0.9s linear infinite; }

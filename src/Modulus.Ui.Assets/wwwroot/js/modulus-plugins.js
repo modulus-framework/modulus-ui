@@ -1774,9 +1774,26 @@
             canvas.style.height = Math.floor(viewport.height / dpr) + 'px';
             canvas.setAttribute('role', 'img');
             canvas.setAttribute('aria-label', 'Page ' + s.page + ' of ' + s.doc.numPages);
-            return page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise.then(function () {
+            // The text layer sits over the canvas at CSS scale, so selected text lines up with the drawn glyphs.
+            var wrap = document.createElement('div');
+            wrap.className = 'm-pdf-page';
+            wrap.style.width = canvas.style.width;
+            wrap.style.height = canvas.style.height;
+            var layer = document.createElement('div');
+            layer.className = 'textLayer';
+            wrap.append(canvas, layer);
+            if (s.text) s.text.cancel();
+            var text = s.text = new s.lib.TextLayer({
+                textContentSource: page.streamTextContent(),
+                container: layer,
+                viewport: page.getViewport({ scale: css })
+            });
+            var drawn = page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+            // A text layer that fails leaves the page readable as a picture; it is not a reason to fail the page.
+            var layered = text.render().catch(function () {});
+            return Promise.all([drawn, layered]).then(function () {
                 if (token !== s.token || !document.contains(el)) return;
-                el.querySelector('[data-m-pdf-canvas]').replaceChildren(canvas);
+                el.querySelector('[data-m-pdf-canvas]').replaceChildren(wrap);
                 el.classList.remove('m-pdf-busy');
                 pdfSync(el);
             });
@@ -1809,6 +1826,7 @@
         });
         pdfSync(el);
         loadPdf().then(function (pdfjs) {
+            s.lib = pdfjs;
             return pdfjs.getDocument({ url: el.getAttribute('data-src'), withCredentials: false }).promise;
         }).then(function (doc) {
             if (!document.contains(el)) return;
