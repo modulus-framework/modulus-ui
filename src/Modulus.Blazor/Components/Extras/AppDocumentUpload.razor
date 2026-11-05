@@ -1,0 +1,51 @@
+@* The upload field of a knowledge base: a file input for the accepted types, the documents already in it, and OnFiles, which
+   receives the chosen files as (name, bytes). Files over the size limit are passed with no bytes, so the page reports them. The same
+   field is <app-document-upload> in MVC and Razor Pages. *@
+@using Microsoft.AspNetCore.Components.Forms
+@using Modulus.Ui.Abstractions.Assistant
+
+<section class="m-upload-section">
+    <div class="m-upload">
+        <label class="m-upload-label" for="@_id">@Label</label>
+        <InputFile id="@_id" class="m-upload-input" multiple accept="@Accept" OnChange="OnChangeAsync" />
+        <ul class="m-upload-list" aria-label="Documents in the knowledge base">
+            @if (Documents is null || !Documents.Any())
+            {
+                <li class="m-muted">No documents yet.</li>
+            }
+            else
+            {
+                @foreach (var document in Documents)
+                {
+                    <li><span class="m-upload-name">@document.Name</span><span class="m-muted"> @document.Chunks passage@(document.Chunks == 1 ? "" : "s")</span></li>
+                }
+            }
+        </ul>
+    </div>
+</section>
+
+@code {
+    private readonly string _id = "upload-" + Guid.NewGuid().ToString("N")[..8];
+
+    [Parameter] public IEnumerable<KnowledgeDocument>? Documents { get; set; }
+
+    [Parameter] public string Label { get; set; } = "Add documents to the knowledge base";
+
+    [Parameter] public string Accept { get; set; } = DocumentText.Accept;
+
+    /// <summary>Called with the chosen files, read into memory (at most 20 at a time).</summary>
+    [Parameter] public EventCallback<IReadOnlyList<(string Name, byte[] Bytes)>> OnFiles { get; set; }
+
+    private async Task OnChangeAsync(InputFileChangeEventArgs e)
+    {
+        var files = new List<(string Name, byte[] Bytes)>();
+        foreach (var file in e.GetMultipleFiles(20))
+        {
+            using var stream = new MemoryStream();
+            if (file.Size <= DocumentText.MaxDocumentBytes)
+                await file.OpenReadStream(DocumentText.MaxDocumentBytes).CopyToAsync(stream);
+            files.Add((Path.GetFileName(file.Name), stream.ToArray()));
+        }
+        await OnFiles.InvokeAsync(files);
+    }
+}

@@ -1,0 +1,27 @@
+@* Sankey chart: sample data below, replace it with your own (a query, an API call). *@
+@page "/charts/sankey"
+{{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ end }}
+@using Modulus.Blazor.Components.Charts
+@using Modulus.Ui.Abstractions.Charts
+
+<PageTitle>Sankey chart</PageTitle>
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Charts</div><h1 class="m-page-title">Sankey chart</h1></div>
+</div>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">Sankey chart</h2></div>
+    <div class="m-card-body">
+        <SankeyChart Flows="_flows" Title="Material flow" Height="300" />
+    </div>
+</div>
+
+@code {
+    private readonly SankeyLink[] _flows =
+    [
+        new("Supplier A", "Plant", 60), new("Supplier B", "Plant", 40),
+        new("Plant", "Customers", 85), new("Plant", "Scrap", 15),
+    ];
+}

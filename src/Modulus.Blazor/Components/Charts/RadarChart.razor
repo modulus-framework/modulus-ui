@@ -1,0 +1,15 @@
+@* Several measures on shared spokes (supplier scorecards, skills): <RadarChart Axes="axes" Series="series" Max="5" /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.Radar(Axes, Series, Options(), Max))
+
+@code {
+    /// <summary>The spokes (at least three).</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<string> Axes { get; set; } = [];
+
+    /// <summary>One polygon per series; values align with <see cref="Axes"/>.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSeries> Series { get; set; } = [];
+
+    /// <summary>Value at the outer ring; null takes the next tidy tick above the data.</summary>
+    [Parameter] public double? Max { get; set; }
+}

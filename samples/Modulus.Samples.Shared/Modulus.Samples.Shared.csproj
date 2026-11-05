@@ -15,4 +15,8 @@
     <ProjectReference Include="..\..\src\Modulus.Ui.Abstractions\Modulus.Ui.Abstractions.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Modulus.Flow.Connectors\Modulus.Flow.Connectors.csproj" />
+  </ItemGroup>
+
 </Project>

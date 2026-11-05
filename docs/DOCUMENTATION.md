@@ -978,13 +978,114 @@ flows run (RP and MVC over HTTP, Blazor in Chromium). Menu: `AddModulusAdminUi()
 read the `admin` feature (the `modulus` repo, untouched), adapters from the seam interfaces to the real `Modulus.Platform` stores, and
 unit tests for `SampleAdminData`.
 
+### 6. Components added for production readiness
+
+| Component | Blazor | MVC and Razor Pages | Notes |
+| --- | --- | --- | --- |
+| Tag input | `AppTagInput` | `<app-tag-input asp-for="Labels" max="5" />` | Free-form tags in one box. Enter or a separator (`,;` by default) adds a tag, Backspace in the empty field removes the last, a paste is split at the separators. MVC posts one hidden input per tag, so `List<string>` and `string[]` bind back. Both flavours use `Forms.TagInput` (Abstractions) for the rules (trim, no case-insensitive duplicates, `max`, `max-length`); `modulus-shell.js` mirrors them in the browser. Raises `m-tags-change` in MVC. |
+| Popconfirm | `AppPopconfirm` (AntD) | `<app-popconfirm title="Delete?" ok-danger hx-delete="/x">…</app-popconfirm>` | An inline question on a control. Attributes other than `class` and `style` go on the OK button (htmx, `form`, `formaction`), so `id` goes there too. OK also raises `modulus:popconfirm-ok`. For a modal question use `hx-confirm`, which the framework turns into its own dialog. |
+| Time picker | `TimePicker` (AntD) | `<app-time-picker asp-for="Opens" format="HH:mm" />` | The same control as `app-date-picker picker="time"`. |
+
+Also fixed: the Blazor sample did not build (two pages named like components, `Gantt` and `DatePicker`, and a boolean `ShowIcon` with no value). The pages are now `GanttDemo` and `DatePickerDemo` and keep their routes.
+
+CLI (the `modulus` repo, branch `claude/blissful-cori-5q9txc`): `ui add-component` now lists `tag-input`, `popconfirm` and `time-picker` (81 components). Their templates are in `templates/mvc`, `razor-pages` and `blazor`, and ship in the next Modulus UI release; until the CLI's pinned `DefaultVersion` (1.8.2 at the time of writing) is raised to that release, `--all` skips them and naming one says which version to use. `Blazor` tag input is a controlled field, so keystrokes typed faster than the server round trip can be dropped in Blazor Server; normal typing is not affected.
+
+### 7. Advanced visuals (radar, candlestick, Sankey, org chart)
+
+Four components that the paid suites (Syncfusion, DevExpress, Telerik) sell and ERP screens need. They follow the other charts: one renderer in `Modulus.Ui.Abstractions.Charts.ChartHtml` that Blazor, MVC and Razor Pages all call, so the markup is identical. Server-rendered HTML and SVG, hover tips and layout in CSS, no JavaScript, a screen-reader table (the org chart is a nested list), light and dark mode from the same tokens.
+
+| Visual | Blazor | MVC and Razor Pages | Data | Use it for |
+| --- | --- | --- | --- | --- |
+| Radar | `RadarChart Axes Series Max` | `<app-radar-chart axes series max>` | `ChartSeries` (3 or more axes) | Supplier scorecards, skills, KPIs per plant |
+| Candlestick | `CandlestickChart Candles` | `<app-candlestick-chart candles>` | `Candle(Label, Open, High, Low, Close, Volume)` | Prices, FX, commodities, min / max ranges; a volume strip appears when any volume is set |
+| Sankey | `SankeyChart Flows` | `<app-sankey-chart flows>` | `SankeyLink(From, To, Value)` | Material flow, budget allocation, cash from revenue to profit |
+| Org chart | `OrgChart Nodes` | `<app-org-chart nodes>` | `OrgNode(Id, ParentId, Title, Subtitle, Badge, Href)` | Reporting lines, cost centres, chart of accounts, bill of materials |
+
+Behaviour worth knowing:
+
+- **Sankey** puts each node in the column of its longest path and gives every column one vertical scale, so equal flows are equally thick. Zero and negative flows are dropped, and so is the one link that closes a loop (the rest of the graph stays). The parameter is `Flows`, not `Links`, because `ChartBase` already has a `Links` drill-down parameter.
+- **Org chart** treats a node whose `ParentId` is null or unknown as a root (so a forest draws several trees), draws each node once even if the data has a loop, and shows the number of direct reports. `Href` accepts relative, `http` and `https` URLs only; anything else (`javascript:`, `data:`, `//host`) is dropped. Text is always encoded.
+- **Candlestick** hugs the data rather than starting at zero, and marks "up" (close at or above open) with the blue and "down" with the red of the diverging pair, so the meaning does not rest on red and green.
+- Release note: the four chart pages and three component templates are new, and `otp-input` and `textarea` (Blazor) gained an `aria-label` so the CLI's accessibility audit passes. The CLI's `DefaultVersion` has to move to the release that contains them.
+- The CLI templates are `chart-radar`, `chart-candlestick`, `chart-sankey` and `chart-org` (the pages `modulus ui add-chart --type radar|candlestick|sankey|org` scaffolds) in `templates/mvc`, `razor-pages` and `blazor`. The `modulus` repo's `ui add-component` list needs the four names added.
+- `modulus-pages.css` grew by about 540 bytes gzipped, and its budget in `tests/browser/budgets.json` was raised on purpose (29,696 to 33,792).
+
+Not built, and why: a free-form node-and-edge **diagram editor** (drag, connect, route) and a **Gantt resource view with dependencies drawn as arrows** need an interactive canvas, which is a product of its own rather than one more chart. Rich **stock charts** (indicators, zoom, crosshair sync) are the same. The **icon sprite** and other items are in section 8.
+
+### 8. Workflow designer (n8n style)
+
+`AppFlowEditor` (Blazor) and `<app-flow-editor>` (MVC and Razor Pages): a canvas for AI and automation workflows. Nodes are dragged from a palette, connected from an output dot to an input, moved with grid snapping, panned and zoomed (wheel, pinch, toolbar), and every edit can be undone. It is the same DOM in all three flavours: `FlowHtml` (Abstractions) renders the first paint, and `modulus-flow.js` makes it interactive.
+
+- **Model** (`Modulus.Ui.Abstractions.Flow`): `FlowGraph` (nodes and edges), `FlowNode` (id, type, position, title, settings, disabled, run status, note), `FlowEdge`, `FlowCatalog` and `FlowNodeType` (the palette; `FlowCatalog.Default` has 24 AI, logic, data, trigger and action nodes). `FlowGraph` reads and writes JSON, `Validate(catalog)` reports unknown kinds, broken connections, triggers with inputs, a missing trigger, nodes no trigger reaches and loops, `ExecutionOrder(catalog)` returns a run order, `AutoLayout()` lays nodes out in columns.
+- **Saving.** MVC and Razor Pages post the graph as JSON in one hidden field (`asp-for` or `name`); read it with `FlowGraph.TryParse`. Blazor binds `@bind-Graph`. The sample keeps the graph in memory; an app stores it.
+- **Events.** `m-flow-change`, `m-flow-open`, `m-flow-select` and `m-flow-pending` on the editor; in Blazor `GraphChanged`, `OnOpen` and `OnSelect`. Selection is only sent to Blazor when `OnSelect` is set, since each report is a round trip.
+- **Showing a run and editing from the page.** `SetStatusAsync` / `modulusFlow.setStatus` shows a run (`FlowRunResult.ApplyTo` does the same for a server-side run) (running, success, error, waiting, with a note) and `UpdateNodeAsync` / `modulusFlow.updateNode` edits a node's title and settings (one undo step), both without redrawing the canvas.
+- **Loading.** `modulus-plugins.js` loads `modulus-flow.js` (11 KB gzipped) and `modulus-flow.css` (3 KB) when an editor appears; other pages never request them. Budgets for both are in `tests/browser/budgets.json`.
+- **Blazor details.** The component only redraws the canvas when the page hands it a graph other than the one the editor just reported, so panning, zoom and selection survive edits. Blazor delivers `change` only to a handler on the input itself, so the component renders the two hidden inputs as Razor beside the markup (`FlowOptions.Inputs = false`) and keys the whole block so a replaced graph gives new elements.
+- **Phones.** The palette folds behind an "Add a node" button, the fit zoom stays at 50% or more (the flow is panned), and two-finger pinch zooms.
+- **Accessibility.** Nodes are focusable groups with labels that include their status; every mouse action has a key (`C`, Enter, `U`, `D`, arrows, Delete); changes are announced in a live region.
+- **CLI.** `modulus ui add-component flow-editor` scaffolds the component for the three flavours (template `flow-editor`).
+
+- **Engine** (`FlowRunner`, `FlowItem`, `FlowTemplate`, Abstractions). `new FlowRunner().RunAsync(graph, items, options)` walks the graph from its triggers, passing a list of `FlowItem`s (a bag of named values) from node to node. A node's handler is registered by type: `On(type, (ctx, items, ct))` gets the whole list, `OnEach(type, (ctx, item, ct))` one item at a time. The built-in nodes need no handler: triggers pass items through; `logic.if` sends each item out of the `true` or `false` port; `logic.switch` sends it to `case-1`… by its rules, else `fallback`; `logic.merge` joins branches; `logic.wait` pauses (capped by `MaxWait`, 10 s); `data.set` writes `name = value` lines (dotted names set nested values); `data.filter` keeps the items that pass its condition. Disabled nodes pass their items through. A node that throws (or runs past `NodeTimeout`) fails its own branch, or the whole run with `StopOnError`. `FlowRunOptions` also takes `OnStep` (called as each node starts and ends, so the page can paint it), `MaxItems` (10,000 by default) and a cancellation token. The result (`FlowRunResult`) lists each node's status, note, items out and error, and `ApplyTo(graph)` returns the graph with those statuses for the editor.
+- **Expressions** (`FlowTemplate`). `{{customer.email}}` in a text is replaced by that value of the item (a missing value is empty; `articles.0.title` indexes a list). A condition is `path` (has a value), `!path`, or `a op b` with `== != > >= < <= contains startsWith endsWith`. A value is a number, `true`, `false`, a quoted text or another `{{path}}`. Comparison is numeric when both sides are numbers, and text ignores case otherwise.
+- **Running in the samples.** `FlowDemo.Runner()` (Samples.Shared) registers stand-ins for the nodes that call outside systems: a keyword classifier for the AI classifier, prompts that echo what they would send, a tiny help-centre search, an approval that rejects threats of legal action, and email and chat that only describe what they would send. The Blazor page (`/apps/flow`) runs on each press of Run and lights the nodes as they go; MVC and Razor Pages post the canvas as it is (saved or not) to `/apps/flow/run` and show the same statuses and a "Last run" list. Saving clears a run's statuses and remarks. An app registers its real model, mail and HTTP clients the same way.
+- **Limits.** There are no real model, mail or HTTP clients in the library, no scheduler (a webhook or schedule trigger is a node that is started by the app), no credential store, and loop nodes are not run (the validator reports loops). Sub-workflows, groups, sticky notes, minimap and marquee selection are not built.
+- **Connectors** (`Modulus.Flow.Connectors`, a separate package). `UseLanguageModel(model)` serves the AI chat node (the prompt is the instruction, the item's `message` the input, the reply goes to `reply`; a `model` setting picks the model). `UseEmail(sender)` serves the email node (`to` must be a valid address; `subject`; `body` defaults to `reply`). `UseSlack(webhook)` serves the chat node (`text` defaults to `reply`). Clients: `AnthropicLanguageModel` (Messages API) and `OpenAiLanguageModel` (any server with the chat completions API, the base address ending in `/v1/`); `SmtpEmailSender`; `SlackWebhook`. Endpoints, keys and webhook URLs come from the app's configuration, never from a workflow, so an edited graph cannot point a connector at another server. A failed call names the status, never the key. The connectors are tested against stub HTTP handlers and a fake sender; they have not been run against live servers in this repository.
+- **Secrets.** `{{secret.name}}` in a node setting is replaced by `FlowRunOptions.Secret(name)`, which the app implements from its configuration or vault (decision: app configuration). The resolution is one pass with the item values, so text a customer typed cannot pull a secret in. A missing secret fails the node with its name and never its value. Secret values are not written into a graph or a result.
+- **Loops (A2, done).** `logic.loop` repeats a chain of nodes while an item passes its condition, up to a limit. Its "Each item" output starts the body, the body's last node links back into the loop, and items that leave go out on "Done". Settings: `condition` (an item continues while it passes; empty means every item continues) and `maxIterations` (5 by default, at most 50). The body must be one chain: a branch inside it, a body that does not come back, or no connection is reported by `Validate` and fails the loop node with the reason. Body nodes are reported like any other node, once per round. Quote text in conditions (`tag != "xxx"`): a bare word is a path.
+- **Run history (A4, done for the sample).** The flow sample keeps the last ten runs in memory (`FlowDemo.History()`) and shows them on the page. An app keeps them in its own store.
+- **Schedules and webhooks (pattern, not a helper).** The library starts nothing on a timer or an HTTP call (decision: no hosted-service helper). An app starts a run from a hosted service on its schedule, or from a minimal API endpoint, by calling `FlowRunner.RunAsync` with the items it received.
+
+Also fixed on the way: `modulus-plugins.js` loaded every plugin library (code editor, maps, rich-text editor, spreadsheet, documents, uploader, cropper, PDF) from `/_content/Modulus.Ui.Assets/…`, a path that stopped existing when the package was renamed to `Synvro.Modulus.Ui.Assets`, so all of them returned 404. It now takes the base from its own URL.
+
+### 9. Performance
+
+Measured with Chromium (Playwright) against the samples on the same machine; Debug numbers include JIT and unminified assets, so judge production by the Release rows.
+
+| Page (MVC sample) | Debug, cold | Release publish, cold |
+| --- | --- | --- |
+| Dashboard first load, transferred | 1,981 KB | **483 KB** (document 50 KB, styles 191 KB, scripts 147 KB, font 96 KB) |
+| First contentful paint / largest contentful paint | 1,648 / 1,740 ms | **156 / 224 ms** |
+| Total blocking time | 97 ms | **1 ms** |
+
+What the framework already does, and what to keep doing when you add pages:
+
+- **Pre-compressed assets.** `MapStaticAssets` serves scripts and styles pre-compressed at publish time (Brotli: `modulus.css` 222 KB raw, 35 KB sent). Use `app.MapStaticAssets()`, not `UseStaticFiles()`, and always check performance on a `-c Release` publish: a Debug build stores gzip uncompressed.
+- **Versioned, immutable assets.** `_content` files requested with `?v=` get `Cache-Control: public, max-age=31536000, immutable`. The Inter font is preloaded, scripts are `defer`red, and htmx / Alpine.js are served locally.
+- **Fast navigation (MVC and Razor Pages).** `SpaNavigation` swaps only the page body with a view transition; a link the pointer rests on for 65 ms (or touches) is prefetched and used once within 30 s; loaders appear only after 120 to 300 ms, so quick loads do not flicker. Turn it on in `ModulusThemeOptions`.
+- **Server paging and virtual rows.** `ProTable` pages on the server (`RemoteDataSource`); the MVC large-table helpers use `modulus-virtual.js`. Do not load every row to the page: page, filter and sort in the query.
+- **Size budgets.** `python tests/browser/budgets.py` fails when a script or stylesheet grows past its gzip budget.
+
+Changed for performance:
+
+- **Dynamic compression level.** `ModulusHardeningOptions.CompressionLevel` defaults to `Optimal` for Brotli and gzip. The framework default (`Fastest`) sent the 470 KB dashboard page at 115 KB (Brotli) / 97 KB (gzip); `Optimal` sends 50 KB / 81 KB for about 2 ms more CPU.
+- **Document-wide observer.** The select/lookup placement observer ran a subtree query for every class change on the page; on the Blazor components page it cost 87 ms of script at load. It now finds the few select roots once per batch and compares nodes with `contains`, and does nothing when the page has none.
+- **Scroll and resize handlers.** Placing open selects, the sticky gallery nav and the back-to-top buttons used document-wide selector queries on every scroll event. They now use live `getElementsByClassName` collections (or a cached list refreshed when the DOM changes) and run at most once per frame.
+- **`dotnet publish` of the samples failed** (NETSDK1152: the Mvc library and the sample views both published `Views/_ViewImports.cshtml`). Views are compiled into the assemblies, so `.cshtml` sources are no longer copied to publish output.
+- **ReadyToRun.** The three admin samples set `PublishReadyToRun` and `TieredPGO` when you publish with a runtime identifier (`dotnet publish -c Release -r linux-x64`). First requests got 32 to 44 % faster (560 to 379 ms, 746 to 419 ms, 290 to 188 ms), warm ones 47 to 34 ms. Do the same in your app.
+
+Deployment checklist:
+
+1. Publish with `-c Release -r <rid>` (ReadyToRun) and serve with HTTP/2 or HTTP/3 behind your proxy or CDN.
+2. Keep response compression on. `EnableForHttps` is off by default (BREACH); if TLS ends at Kestrel and no proxy compresses, pages go out uncompressed, so either compress at the proxy (preferred) or turn it on after weighing BREACH for your pages: they carry an antiforgery token, which ASP.NET Core encrypts afresh for each response, but that is your call to make, not a guarantee this framework gives.
+3. Cache `/_content/*?v=*` at the CDN for a year; never cache the HTML (`no-store` is what the pages send).
+4. Blazor Server: keep the circuit near the user, raise `MaximumReceiveMessageSize` only if editors need it, and prefer server paging over large in-memory lists.
+5. Measure after each change with `tests/browser/budgets.py` and a Release publish.
+
+Known limits and ideas not done:
+
+- A dashboard page is about 470 KB of HTML (5,000 DOM nodes). More than half is inline SVG, and 132 KB of that is the same icons repeated. A `<symbol>` / `<use>` sprite would shrink the DOM and the document, but it changes the markup the CSS, the scripts and both flavours' tests rely on, so it is a separate change. Compression already removes most of it from the wire (about 5 to 1).
+- The Ant Design stylesheet (563 KB raw, 54 KB sent) is render-blocking on every page, and the Ant Design Blazor script spends about 100 to 200 ms in `getBoundingClientRect` on pages with many components; both are upstream.
+- The Blazor tag input is a controlled field, so keys typed faster than the server round trip can be dropped.
+- Minifying the Modulus scripts and styles was not done: with Brotli it would save an estimated 15 to 20 % of about 100 KB, which does not justify a build step.
+
 <!-- source: docs/PLAN.md -->
 ## Plan and progress
 
 The plan for the Modulus UI admin template and where each piece stands. Update the status tables in the same commit
 as the work they describe.
 
-Last updated: 2026-10-12 · release gates green: Release build 0 warnings, 1105 tests, smoke and parity gates, budgets, and a route sweep of 105 pages × 3 apps at 390 px, 1280 px and dark (864 loads; the one failure left is an external-tile timeout, see the change log) · phases 20 and 22 checked in the browser; phase 24 (QueryBuilder) built and browser-checked on MVC and Blazor, with the 390 px and dark-mode checks done; phase 25 (import wizard) built and browser-checked in all three samples; phase 23 (grid engine) done: multi-column sort, group-by, multi-level headers, the checkbox filter menu, row states, the ERP batch toolbar, TreeGrid mode (sample at `/tables/tree` in all three) and pivot derived measures, plus print for the spreadsheet and document · **resume here:** phase 26 printing components (see the resume note under §3) · the Modulus 2.0 roadmap is in §7, the ERP UI roadmap in §7.3
+Last updated: 2026-11-04 · release gates green: Release build 0 warnings, 1105 tests, smoke and parity gates, budgets, and a route sweep of 105 pages × 3 apps at 390 px, 1280 px and dark (864 loads; the one failure left is an external-tile timeout, see the change log) · phases 20 and 22 checked in the browser; phase 24 (QueryBuilder) built and browser-checked on MVC and Blazor, with the 390 px and dark-mode checks done; phase 25 (import wizard) built and browser-checked in all three samples; phase 23 (grid engine) done: multi-column sort, group-by, multi-level headers, the checkbox filter menu, row states, the ERP batch toolbar, TreeGrid mode (sample at `/tables/tree` in all three) and pivot derived measures, plus print for the spreadsheet and document · **resume here:** §7.4 remaining work (phase 26 printing is done: `PrintingTests`, the print sample pages) · the Modulus 2.0 roadmap is in §7, the ERP UI roadmap in §7.3
 
 **Legend:** ✅ done and verified · 🟡 in progress · ⬜ not started · ❌ failing · ➖ not applicable
 
@@ -1087,7 +1188,7 @@ Every route below exists in all three samples. Status columns: **B** Blazor · *
 | Chat | `/apps/chat`, `/apps/chat/{id}` | ✅ | ✅ | ✅ |
 | Calendar (month, agenda, category filter, event form) | `/apps/calendar` | ✅ | ✅ | ✅ |
 | Kanban (drag, move, add, delete) | `/apps/kanban` | ✅ | ✅ | ✅ |
-| Gantt (read-only project timeline) | `/apps/gantt` | ✅ | ✅ | ✅ |
+| Gantt (project timeline; drag to reschedule, dependency arrows, keyboard moves) | `/apps/gantt` | ✅ | ✅ | ✅ |
 | Invoices (list, preview, print, add, edit) | `/apps/invoice/*` | ✅ | ✅ | ✅ |
 | Users (list, view) | `/apps/users/list`, `/apps/users/view/{id}` | ✅ | ✅ | ✅ |
 | Users grid (cards, role filter, search) | `/apps/users/grid` | 🟡 | 🟡 | 🟡 |
@@ -1348,7 +1449,7 @@ its UI. Nothing of it is planned in this repo.
 2026-10-09: `KanbanBoard` and `Scheduler` in the library, drawn by the Blazor components and the MVC `app-kanban` and
 `app-scheduler`); Gantt (done 2026-10-09, read only: bars, groups, progress, late marks, today; drag to reschedule and
 dependency links are not in it); a PDF viewer (done 2026-10-09, pdf.js 6.3.289, Apache-2.0: one page at a time, zoom,
-download; text is not selectable yet); file manager (done 2026-10-09);
+download; text selectable from 2026-11-05); file manager (done 2026-10-09);
 dashboard layout (tiles on a 12-column grid, moved and resized, saved through `IUiStateStore`; done 2026-10-09 with
 buttons rather than pointer-drag resizing, see the change log); barcode (done 2026-10-09, Code128 and EAN-13, beside the QR
 encoder); rich-text tables in `AppRichText` (done 2026-10-09, §8); a workflow and audit UI kit (done 2026-10-09: `ApprovalTimeline`, `AuditTrail`, `StatusBadge`); a multi-column, paged `AppLookup`
@@ -1360,10 +1461,138 @@ None planned yet.
 **Order of work:** the §7.2 order stands (finish §7.1, stabilise the 🟡 work, Spreadsheet, Fluid, document
 templates, Document Processing); the P0 phases follow that, P1 items as needed.
 
+#### 7.3.2 AI platform: documents, RAG, agents and approvals (2026-11-04)
+
+The assistant (`/apps/assistant` in all three samples) is the AI platform surface. Its pieces, each a library type with an
+interface an app implements, and the sample's stand-in for it:
+
+- **Upload documents** (`app-document-upload`, `AppDocumentUpload`, `UploadHtml`). Text formats (`.txt .md .csv .json .log`,
+  UTF-8, 2 MB at most) are read by `DocumentText.Read` and split into passages (`DocumentText.Chunk`, about 700 characters, at
+  paragraphs). The passages go into a `KnowledgeStore` (an `IKnowledgeSearch`; a document with the same name replaces the old one).
+  Other formats need an app reader (PDF, Word); the sample refuses them with a message.
+- **Knowledge answers (RAG)** (`RagAssistant`). The question finds the passages (`KeywordRanking` in the sample, a vector index in
+  an app), the model answers from up to 4,000 characters of them and cites them as [1], [2]; the answer carries its sources, which
+  the chat shows as links (only site paths and http(s) addresses become links). With no passage found the model is not asked.
+- **Agents with tools** (`AgentRunner`). The model replies with JSON to call a tool or to answer; a reply that is not the protocol
+  is the answer. Tools are an allowlist; inputs are cut to 300 characters and results to 1,000; a failing tool reports its failure
+  as the result; the run stops after `maxSteps` (5 by default, at most 10). Each step is shown in the chat as a collapsible trace.
+- **Approvals** (`ApprovalRequest`, `ApprovalHtml`, `app-approval-card`, `AppApprovalCard`). A tool marked `RequiresApproval` is not
+  run by the agent: the run stops with an approval request (what it is, its details, its input). Only `AgentRunner.ExecuteApproved`
+  runs an approved request; a rejected one is closed without running. The approval buttons post `approval` as "id:approve" or
+  "id:reject" to the decision form, so they never submit the question.
+- **Purchase orders** (sample, `PurchaseApprovals.cs`). Uploading a document that reads as a purchase order (a `PO-1001` number,
+  a `Buyer:` line, and lines like `SKU-100 2 x 49.90`) starts the order's process: a workflow records the order and stops at its
+  approval node (`ai.human`), which waits for a decision (`FlowResult.Waiting`). The approval card asks the buyer; approving runs
+  the workflow again with the decision and creates the order, rejecting closes it. The agent can prepare the same approval with
+  the `create_purchase_order` tool.
+- **Analytics and prediction** (sample, `Analytics.cs`). `sales_by_city` totals the sales by city (a table), and `forecast_sales`
+  fits a least-squares straight line to the last twelve monthly totals and predicts the next month (a table with a forecast row).
+  The sample forecast is a trend, not a statistical model; an app plugs its own forecasting in as a tool.
+- **Chat with tables and approvals** (`ChatTurn.Table`, `ChatTurn.Approval`, `ChatHtml.Turn`). An answer can carry a table and an
+  approval card, and both survive the transcript.
+
+Browser gate: `tests/browser/assistant.py` (in the CI browser job) uploads the style guide and a purchase order, approves the
+order, asks a knowledge question that must cite the style guide, runs a sales question (table), a forecast (forecast row) and
+an order lookup, on MVC, Razor Pages and Blazor. Unit tests: `AssistantTests`, `DocumentsAndApprovalsTests`, `FlowLoopTests`.
+
+Limits, stated plainly: the samples' language model is a rule-based stand-in (it follows the two protocols and quotes the best
+sentence; it is not a language model). The knowledge search is shared words, not embeddings. The approval store, the knowledge
+base, the purchase orders and the run history are in memory and shared by every visitor of the sample; an app keeps them in its
+own storage, per user. Only plain-text uploads are read. Streaming answers and a model's own tool-calling format are not built.
+
+#### 7.3.1 Chat and ask your data (P2, started 2026-11-04)
+
+The natural-language filter and a chat component. A question in plain words becomes a filter on the same fields the
+visual query builder offers, and the answer shows what was applied and the rows it leaves.
+
+- **`FilterAssistant`** (`Modulus.Ui.Abstractions.Query`). `TranslateAsync(builder, question, model, today)` describes the
+  builder's fields (kind, operators, options) to an `ILanguageModel`, reads the first JSON object in its reply, and keeps
+  it within the builder (`Normalize`). A field or operator the builder does not offer is dropped and reported as a note
+  ("1 condition left out"); a restricted field (`Restrict`) stays out; a question over 500 characters or an empty one is
+  refused without calling the model. The filter is data, never code.
+- **`ILanguageModel`** (`Modulus.Ui.Abstractions.Language`): one interface for the AI nodes and the assistant.
+- **`ChatTranscript` and `ChatHtml`** (`Modulus.Ui.Abstractions.Chat`): the conversation as JSON in a hidden field, so MVC
+  and Razor Pages keep it without server state (the newest 40 turns, 1000 characters each); the log and the composer as
+  markup, escaped, with `role="log"` so screen readers announce new answers.
+- **Components.** `<app-chat turns filter>` (MVC tag helper) and `AppChat` (Blazor), the same markup from `ChatHtml`. The
+  host puts them in a form with `asp-antiforgery` (MVC) or handles `OnAsk` (Blazor). Templates: `chat` for the three engines;
+  manifest entry `Chat`.
+- **Sample** `/tables/ask` in all three samples (menu: Tables → Ask your data). It uses `RuleLanguageModel`, a stand-in that
+  reads amounts ("over 500"), status words, cities, "last month", "this month" and years ("in 2025") and answers with the
+  filter JSON a real model would. Follow-up questions replace the filter (they do not refine it); the page says what it
+  applied. Set a real client (`AnthropicLanguageModel` or `OpenAiLanguageModel`) in place of the stand-in to use a model.
+- **Not built:** streaming replies, a conversation kept on the server (history lives in the form), refining a filter from a
+  follow-up, and a real model in the samples (no key is configured there). Checked in the browser on the three samples: the
+  answer, the rows, the kept conversation, no console errors; the page sweep and the smoke gate include `/tables/ask`.
+
+### 7.4 Remaining work plan (2026-11-04)
+
+Everything still open, in one place. Each item says what is missing and when it counts as done. The items marked
+**Decision** need an answer from the maintainers before work starts; the rest can be done as written. Items already
+finished are not repeated here (see the change log in §8).
+
+**A. Workflow designer and engine** (§8, "Workflow designer")
+
+| # | Item | Done when | Decision |
+|---|------|-----------|----------|
+| A1 | Real adapters for the stand-in nodes: AI chat and classifier (a model client), email (SMTP or a provider), chat posts, and an HTTP node. | Done 2026-11-04 for the decided four (Anthropic, OpenAI-compatible, SMTP, Slack or Teams webhook) in `Modulus.Flow.Connectors`, tested with stub handlers. Not yet done: the classifier and extractor nodes, and the HTTP node; not run against live servers here. | **Decided:** Anthropic, OpenAI-compatible, SMTP, Slack webhook. |
+| A2 | Loop node (`logic.loop`) is reported by the validator but not run. | Done 2026-11-04: repeats a one-chain body while items pass the condition, up to `maxIterations` (at most 50); malformed bodies are validation errors; tested (`FlowLoopTests`). | — |
+| A3 | Secrets and credentials: node settings hold plain text, and there is no reference to a secret store (`{{secret.name}}`). | Done 2026-11-04: `{{secret.name}}` resolves through `FlowRunOptions.Secret`, from app configuration (decided). Tested: a customer cannot pull a secret in, and a missing one fails the node without its value. | **Decided:** app configuration. |
+| A4 | Run history: a run's result is kept only for the page that shows it. | Done for the sample 2026-11-04: the last ten runs, shown on the flow pages (`FlowDemo.History()`, in memory). An app keeps its own store (`IUiStateStore` or a database). | — |
+| A5 | Browser gate for the run: `tests/browser/smoke.py` only opens `/apps/flow`, so the run was checked by hand. | Done 2026-11-04: `tests/browser/flow.py` runs a message through the support desk on the three samples, asserts five successful nodes and no failures, checks that MVC and Razor Pages keep the message and clear the run on save, and fails on console errors. It runs in the CI browser job. Checking it found a CSP bug: the shared flash toast (`_Flash.cshtml`) and the invoice print script were inline without the nonce; both now carry it, which affects every MVC and Razor Pages page that shows a flash message. | — |
+| A6 | Editor features not built: sub-workflows, groups, sticky notes, minimap, marquee selection. | Each one has a sample and tests in all three flavours, or is dropped from the list. | **Decision:** which of these matter for the ERP and AI use cases. |
+| A7 | Scheduler and webhook triggers are nodes only. The library starts nothing on a timer or an HTTP call. | Decided 2026-11-04: no hosted-service helper; the pattern is documented in §8 (an app starts a run from its own hosted service or endpoint). | **Decided:** no helper. |
+
+**B. Release, CI and verification**
+
+| # | Item | Done when | Decision |
+|---|------|-----------|----------|
+| B1 | The CI workflow runs only on pushes to `main` and on pull requests into `main`, so this branch has never run it on GitHub. `main` is red: run 28 (2026-11-03) failed on two things, both fixed on this branch. (a) The build job calls `dotnet test --solution`, which the CI SDK rejects (MSB1001); the workflow now runs each test project. (b) The browser job failed its smoke gate with 93 failures: `origin/main` has a hardcoded `/_content/Modulus.Ui.Assets/lib/` path in `modulus-plugins.js` (fixed here in `2f3956d`), and two pages broke the CSP (fixed here). The smoke gate also depends on the network: map tiles come from `tile.openstreetmap.org`, so it now answers them with a blank tile. | On a fresh Release build of this branch, locally: all four test projects pass (13, 16, 256, 943), the antd drift check and budgets pass, and smoke and parity pass with the same environment as CI. A GitHub run needs a pull request into `main`. | **Decision:** open a pull request from this branch into `main` so CI runs here, and whether to merge to `main` (which fixes `main`). |
+| B2 | Razor compile check of the templates. An unescaped `@media` in `mvc` and `razor-pages` `user-profile` was found and fixed as `@@media`; no full compile of every template has been done. | Each engine's generated project builds with no template errors. **Not started (2026-11-04):** the check needs the templates rendered by the CLI, so it is a scaffold job: pack the eight `Synvro.*` UI packages into `~/.modulus/feed` (the CLI reads `Synvro.Modulus.Ui.Templates` from there), build the CLI from `modulus-framework/modulus`, create a host app per engine that references the feed, add every component (`ui add-component --all`), and build each one. Expect a few hours. | — |
+| B3 | The `shared/table.sbn` and `shared/form-input.sbn` Fluid files were neither valid Liquid nor valid Scriban, and nothing included them. | Resolved 2026-11-04: both deleted (decision: nothing used them). The Fluid tests pass (13). The CLI component `form-input` is unaffected: it is generated from the MVC, Razor Pages and Blazor templates. | — |
+| B4 | Blazor CRUD against a live API was not run separately; only the MVC CRUD was. | The Blazor entity form is saved and reloaded against the running API, as in the MVC check. | — |
+| B5 | The CLI's `DefaultVersion` points at the released UI version, so the new components and the workflow designer do not reach scaffolded apps yet. | After a UI release is published, the CLI version is bumped and `add-component flow-editor` works against the published package. | **Decision:** when to publish a UI release. |
+| B6 | Phase 26 (printing) was listed as the resume point in the status line, while the resume note says phases 1 to 26 are complete. | Resolved 2026-11-04: printing is done (`Modulus.Ui.Abstractions/Printing`, `PrintingTests`, the print sample pages); the status line now points at this section. | — |
+
+**C. Browser sweep of the 🟡 pages** (§3 to §6)
+
+| # | Item | Done when | Decision |
+|---|------|-----------|----------|
+| C1 | Pro pages written but not swept in the browser: sortable, inline player, WYSIWYG editor, map, map fullsize, map vector, tour, spreadsheet, document, charts advanced, color picker, date picker, lightbox, dropzone, code editor, image cropper, PDF, tree grid, advanced tables, calendar, users grid, changelog, icons, typography, colours and charts. | Done 2026-11-04: `tests/browser/sweep.py` opened 26 pages in each of the three samples at 1280 px, 390 px and in the dark colour scheme (234 page loads), and checked status, console errors, CSP violations and horizontal scroll on the phone. Three findings: the advanced tables toolbar was 196 to 300 px wider than the phone screen (fixed in `modulus-pages.css`: the toolbar wraps and the search takes the row, verified at 0 px in all three). The other pages passed. Not checked: visual review of the screenshots, and the external map tiles (stubbed). | — |
+| C2 | The Playwright run for the Fluid files (item 10 in §4). | Resolved 2026-11-04 with B3: the two files are gone, and the Fluid sample passes the smoke and parity gates. | — |
+
+**D. Modulus 2.0 and ERP follow-ups** (§7.1 and §7.3)
+
+| # | Item | Done when | Decision |
+|---|------|-----------|----------|
+| D1 | PivotGrid later items: "Compare" period, the graph view switch, "Insert in spreadsheet". | Built only if asked. Each has a sample in all three flavours. | **Decision:** whether any of them is asked for. |
+| D2 | Gantt (P1) is read-only: no drag to reschedule, no dependency links. | Resolved 2026-11-04: bars drag (pointer) or move with ArrowLeft/ArrowRight, the new dates post back, and a move that breaks a dependency is refused. Dependencies draw as arrows (red where the dates break them). Checked in the MVC sample in a browser; unit tests cover the model and the sample rules. | — |
+| D3 | PDF viewer does not select text. | Resolved 2026-11-05: pdf.js's `TextLayer` sits over each page's canvas at CSS scale, so the text selects and copies. Checked in the MVC sample in headless Chromium: page 1 and page 2 have their text spans, a select-all copies the page's text, no console errors. Not yet checked in the Blazor and Razor Pages samples (the viewer markup and script are shared). | — |
+| D4 | Dashboard tiles resize with buttons, not by pointer drag. | Pointer resize with keyboard equivalents, saved through `IUiStateStore`. | — |
+| D5 | P2 items: AI-assist hooks (a natural-language filter that compiles to the QueryBuilder model) and a chat UI. | Started 2026-11-04 and extended (§7.3.1, §7.3.2): the natural-language filter, the chat with sources, traces, tables and approvals, document upload, RAG, agents with approval-gated tools, a purchase-order approval process, and analytics and forecast tools; in all three samples. Still open: streaming answers, server-side history, a real model in the samples, and a statistical forecast. | **Decided:** start P2 now. |
+
+**E. CLI repository** (`modulus-framework/modulus`, same branch name)
+
+| # | Item | Done when | Decision |
+|---|------|-----------|----------|
+| E1 | The website's `npm ci` fails because the lock file is out of sync (this predates the workflow work). The build works with `npm install --no-package-lock --no-save`, which is not committed. | The lock file is regenerated and `npm ci` passes in CI. | — |
+| E2 | A workflow template for the runner (an optional `flow-runner` scaffold that wires a catalog and handlers). | Scaffold tests pass in all three engines; the CLI test count is recorded. | **Decision:** whether scaffolding the runner is wanted, or only the component. |
+
+**Order of work (proposed):** B1 and B6 first, because they tell us whether the branch is green. Then A5 and C1, which
+check what is already built. Then A1 to A4 once the providers are decided. B3 and B2 can go at any point. B5 waits for
+a release. Everything under D and A6 waits for a decision.
+
 ### 8. Change log
 
 | Date | Change |
 |---|---|
+| 2026-11-05 | **PDF text selection (D3).** The viewer draws each page's text layer (pdf.js `TextLayer`, already in `lib/pdfjs`) over the canvas, at CSS scale, in a `m-pdf-page` wrapper; the layer's CSS is in `modulus-pages.css` (pdf.js's `pdf_viewer.css` rules, not vendored). The sample copy now says text can be selected. Checked on the MVC sample: spans on pages 1 and 2, select-all returns the page text, no console errors. Not checked in the Blazor and Razor Pages samples. |
+| 2026-11-04 | **Gantt editing (D2).** `GanttTask` takes `DependsOn`; `GanttLink` draws each dependency as an arrow from the end of one bar to the start of the next, and `GanttModel.Conflicts` names the dependencies a schedule breaks (those arrows are red). `GanttMove` and `GanttDrawing.ParseMoves` read the moves a page posts (JSON in a hidden input). Drag and keyboard moves live in `modulus-plugins.js` (`initGantt`, `data-m-gantt`) with no inline handlers, so the strict CSP holds. The sample `GanttPage` keeps moved dates in memory and refuses a move that would make a dependent start before its dependency ends, in either direction. MVC posts to `/apps/gantt/move`; Razor Pages posts to `?handler=Move` (the shared partial reads the action from `ViewData["GanttMoveAction"]`); the Blazor sample applies the move through `OnMove`. Tests: 22 model and renderer cases, 4 `GanttPage` cases, MVC 261, Blazor 1005 green. Browser-checked in the MVC sample: 9 bars, 10 arrows, no CSP or console errors, and a keyboard move saved on the server. Not browser-checked here: the Razor Pages and Blazor samples, and the pointer drag. The sandbox's Production run still returns 500s for static assets, so CI is the authority for the Production gate. |
+| 2026-11-04 | **Browser checks of the workflow and the plugin pages.** `tests/browser/flow.py` (the workflow run on all three samples) found an inline script without the CSP nonce in the shared flash toast, which every MVC and Razor Pages page shows after a redirect; fixed. `tests/browser/sweep.py` checked 26 plugin and table pages in the three samples at 1280 px, 390 px and dark: the advanced tables toolbar overflowed the phone screen; fixed. CI gets the workflow gate; the sweep is run by hand. |
+| 2026-11-04 | **AI platform: uploads, RAG, agents with approvals, purchase orders, analytics.** `DocumentText`, `KnowledgeStore`, `RagAssistant`, `AgentRunner` with approval-gated tools, `ApprovalRequest` and its card in MVC and Blazor, `app-document-upload`, the chat's tables. The sample's purchase-order process is a workflow that waits for the buyer's decision. The loop node and the run history are built. Tests: Blazor 993, MVC 261, Connectors 12, Hosting 16, Fluid 13, CLI 680. Browser gates: the assistant gate (new), the workflow gate, smoke, and the page sweep. |
+| 2026-11-04 | **Decisions taken: connectors, secrets, P2 started.** `Modulus.Flow.Connectors` (Anthropic, OpenAI-compatible, SMTP, Slack webhook), `{{secret.name}}` from app configuration, `FilterAssistant` (a question becomes a QueryBuilder filter, kept within the builder), and the chat component (`app-chat`, `AppChat`) with `/tables/ask` in the three samples. PR #1 opened for the branch; the release (B5) waits for it to merge. Browser checks: the ask page answers and filters in all three samples; the page sweep (243 loads) and the smoke gate pass. |
+| 2026-11-04 | **CI and the plan.** CI on `main` was red (run 28). Two causes, both fixed on this branch: the build job used `dotnet test --solution`, which the CI SDK rejects, and `origin/main` loaded plugin libraries from a hardcoded `/_content/Modulus.Ui.Assets/` path (fixed on this branch in `2f3956d`). The branch also fixed two CSP violations (inline handlers on the tree and form pages). The smoke gate now answers external map tiles with a blank tile. Verified locally on a fresh Release clone: tests (13, 16, 256, 943), drift, budgets, smoke and parity all pass. Printing (phase 26) confirmed done. |
+| 2026-11-04 | **Workflow engine and the remaining-work plan.** `FlowRunner`, `FlowItem` and `FlowTemplate` in Abstractions (built-ins for triggers, if, switch, merge, wait, set fields and filter; per-node timeouts, item limits and cancellation; `ApplyTo` paints the statuses). 41 unit tests. The Blazor sample runs on the engine and was checked in a browser (5 nodes succeeded, no server exceptions); MVC and Razor Pages post the canvas to `/apps/flow/run` and were checked the same way, including save clearing the statuses. Sections 8 and 7.4 describe the engine, its limits and what is left, with decisions marked. The CLI is unchanged. Unit tests: Blazor 943, MVC 256, Hosting 16, Fluid 13, all passing. |
 | 2026-10-13 | **Blazor sign-in and CRUD against a live API.** Supersedes the Blazor limits in the 2026-10-12 rows below. `modulus app --ui-engine blazor --auth` (OpenIddict password) now generates the sign-in path: `Program.Blazor` configures cookies with `LoginPath = /account/login`, `AddModulusBff` with a default web client, `POST /account/login` and `GET /account/logout`; `Routes` uses `AuthorizeRouteView` with `RedirectToLogin` for anonymous users; the `Account/Login` page posts a native form with an antiforgery token and sits on a `BlankLayout`; the Home page carries `[Authorize]`. Sign-in was verified end to end with curl against a running OpenIddict API. The MVC app's CRUD (list, create, edit, delete) was run against the live API. The Blazor entity form saves through the generated typed client, but Blazor CRUD against a live API was not separately run. With `--auth`, the Blazor host also runs the startup security guard, like the MVC and Razor Pages hosts: the component endpoints require sign-in, the sign-in, sign-out, health and static-file endpoints carry `.Loosen(reason)`, and `security/loosening-allowlist.json` lists the routes. Checked by starting the generated host with `ASPNETCORE_ENVIRONMENT=Production`: the guard reports 0 findings, an anonymous `/` redirects to `/account/login`, and the sign-in page, health and a static file return 200. The generated Blazor host has a `wwwroot/.gitkeep`, so the static file middleware no longer warns about a missing web root. The Development settings set `Bff:RequireHttpsMetadata` to false (as the BFF host does), so a plain-HTTP issuer works in development. External providers: a Keycloak-style Blazor host, with its authority pointed at the local OpenIddict API, starts with 0 guard findings and redirects anonymous users to the issuer's `/connect/authorize` with the client ID, `/signin-oidc` redirect, PKCE S256, scope, nonce and state. The generated OpenIddict API is password-only by default, so the full code flow was run against a scratch copy of it with `Identity:AllowAuthorizationCodeFlow` on, a public client that redirects to `/signin-oidc`, a test user and a minimal login page (test code only, not in the templates). The whole flow completes: the host's sign-in redirect, the issuer's login, the authorization code posted to `/signin-oidc`, the token exchange at `/connect/token` (200), `/connect/userinfo` (200), and then the signed-in home page (200, showing the signed-in user). An anonymous visit still redirects to sign-in. Keycloak and Authentik themselves were not run here (they need their own servers). The CLI's 530 unit tests pass. |
 | 2026-10-12 | **CLI gaps closed.** `modulus app --ui-engine blazor` creates a Blazor app host (App, Routes, the shell layout from `AppShell`, a home page, the typed API clients); `--auth` other than `none` is refused for Blazor until its sign-in pages exist. `ui create-crud` works for MVC (Controllers/<Entities>Controller.cs with list, delete, create and edit, Views/<Entities>/Index and Edit, from the new `mvc/crud-*.cshtml.sbn` templates). `ui create-dashboard` writes a controller at the dashboard route that passes the figures from IMetricsSource or IAuditTrail, so the page renders. The Blazor entity form saves through the entity's typed client (`create-crud` first). Fixed on the way: Blazor admin pages injected services under their page's own name (CS0542); the Blazor UI packages were not referenced; the admin sign-in warning said pages would be refused when they are open. Verified: all three engines scaffold, build with 0 errors, and serve their generated routes (MVC and Razor Pages with no API running; Blazor pages render while the API is down and log the failed calls). CRUD against a running API is not yet tested. Modulus.Cli tests: 530 pass.
 | 2026-10-12 | **NuGet packages and CLI scaffolding.** The UI packages use the Modulus pattern `Synvro.<project>` (`src/Directory.Build.props`), version 0.9.0, Apache-2.0, author `synvro`; `dotnet pack` writes 8 packages (and symbol packages) to `nupkg/` (git-ignored). The static assets of `Synvro.Modulus.Ui.Assets` are served under `_content/Modulus.Ui.Assets` (pinned with `StaticWebAssetBasePath`, so project and package consumers get the same URL; the tag helpers write that prefix). Generated apps: `modulus app` (webapp+api, mvc or razor-pages) with `--package-source`; `add-module`, `generate-crud`, `ui add-component`, `ui add-admin`, `ui create-dashboard`, `ui create-form-from-entity`, and `ui create-crud` (razor-pages) all build with 0 errors. Fixed on the way: the Program template path for `ui create-form-from-entity` now references the module's Application project and imports its DTOs; `ApiClientExtensions` no longer imports a namespace that `--no-example` never creates; and `[Authorize]` appears in the generated pages only when the app signs users in (`use_auth`, read from the app's `Program.cs`), because without an auth scheme an authorized page answers 500. Known gaps: `ui create-crud` is refused for mvc and blazor has no app host in the CLI yet; `ui create-dashboard` writes a view with no action, so that page 404s until an action is added. Modulus.Cli tests: 530 pass.

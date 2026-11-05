@@ -150,3 +150,45 @@ public class ParetoChartTagHelper : ChartTagHelperBase
     public override void Process(TagHelperContext context, TagHelperOutput output) =>
         Emit(output, ChartHtml.Pareto(Items, Options(), ACut, BCut, ValueName));
 }
+
+/// <summary>Several measures on shared spokes: <c>&lt;app-radar-chart axes="Model.Axes" series="Model.Scores" max="5" /&gt;</c>.</summary>
+[HtmlTargetElement("app-radar-chart", TagStructure = TagStructure.WithoutEndTag)]
+public class RadarChartTagHelper : ChartTagHelperBase
+{
+    public IReadOnlyList<string> Axes { get; set; } = [];
+    public IReadOnlyList<ChartSeries> Series { get; set; } = [];
+    public double? Max { get; set; }
+
+    public override void Process(TagHelperContext context, TagHelperOutput output) =>
+        Emit(output, ChartHtml.Radar(Axes, Series, Options(), Max));
+}
+
+/// <summary>Open / high / low / close per period: <c>&lt;app-candlestick-chart candles="Model.Prices" prefix="$" /&gt;</c>.</summary>
+[HtmlTargetElement("app-candlestick-chart", TagStructure = TagStructure.WithoutEndTag)]
+public class CandlestickChartTagHelper : ChartTagHelperBase
+{
+    public IReadOnlyList<Candle> Candles { get; set; } = [];
+
+    public override void Process(TagHelperContext context, TagHelperOutput output) =>
+        Emit(output, ChartHtml.Candlestick(Candles, Options()));
+}
+
+/// <summary>Flows between nodes: <c>&lt;app-sankey-chart flows="Model.Flows" height="320" /&gt;</c>.</summary>
+[HtmlTargetElement("app-sankey-chart", TagStructure = TagStructure.WithoutEndTag)]
+public class SankeyChartTagHelper : ChartTagHelperBase
+{
+    public IReadOnlyList<SankeyLink> Flows { get; set; } = [];
+
+    public override void Process(TagHelperContext context, TagHelperOutput output) =>
+        Emit(output, ChartHtml.Sankey(Flows, Options()));
+}
+
+/// <summary>A reporting hierarchy: <c>&lt;app-org-chart nodes="Model.People" /&gt;</c>.</summary>
+[HtmlTargetElement("app-org-chart", TagStructure = TagStructure.WithoutEndTag)]
+public class OrgChartTagHelper : ChartTagHelperBase
+{
+    public IReadOnlyList<OrgNode> Nodes { get; set; } = [];
+
+    public override void Process(TagHelperContext context, TagHelperOutput output) =>
+        Emit(output, ChartHtml.OrgChart(Nodes, Options()));
+}

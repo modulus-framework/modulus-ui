@@ -35,6 +35,7 @@
  *   .m-resizable table     drag a header cell's right edge to resize the column (raises m-col-resize { key, width })
  *   .m-demo-nav            gets m-demo-nav-stuck while it sticks under the header
  *   input[data-m-mask]     fits typed text to its mask (AppMaskedInput / app-masked-input) before Blazor or Alpine read it
+ *   .m-tags[data-m-tags]   tag input: Enter or a separator adds a tag, Backspace removes the last
  *   .ant-otp               one-time code boxes: typing moves on, Backspace moves back, a paste fills every box
  *   .m-richtext            rich text toolbar commands, plain-text paste, and the value kept in step
  *   [data-m-lightbox]      image lightbox: [data-lightbox-index] opens the preview (zoom, rotate, pan, swipe, captions,
@@ -994,23 +995,29 @@
         return (sel && document.querySelector(sel)) || null;
     }
 
+    // The buttons are found when the DOM changes (the frame observer below), not on every scroll.
+    var backTops = [];
+    function refreshBackTops() { backTops = Array.prototype.slice.call(document.querySelectorAll('[data-m-back-top]')); }
     function syncBackTops() {
-        document.querySelectorAll('[data-m-back-top]').forEach(function (btn) {
+        backTops.forEach(function (btn) {
+            if (!btn.isConnected) return;
             var scroller = backTopScroller(btn);
             var top = scroller ? scroller.scrollTop : (window.scrollY || document.documentElement.scrollTop);
             var show = top >= (parseInt(btn.getAttribute('data-m-back-top'), 10) || 0);
-            if (show) btn.setAttribute('data-m-visible', ''); else btn.removeAttribute('data-m-visible');
+            if (show !== btn.hasAttribute('data-m-visible')) { if (show) btn.setAttribute('data-m-visible', ''); else btn.removeAttribute('data-m-visible'); }
         });
     }
 
-    document.addEventListener('scroll', syncBackTops, { capture: true, passive: true });
+    document.addEventListener('scroll', perFrame(syncBackTops), { capture: true, passive: true });
     document.addEventListener('click', function (e) {
         var btn = e.target instanceof Element && e.target.closest('[data-m-back-top]');
         if (!btn) return;
         var scroller = backTopScroller(btn);
         (scroller || window).scrollTo({ top: 0, behavior: 'smooth' });
     });
-    window.modulusShell.syncBackTops = syncBackTops;
+    window.modulusShell.syncBackTops = function () { refreshBackTops(); syncBackTops(); };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { refreshBackTops(); syncBackTops(); });
+    else { refreshBackTops(); syncBackTops(); }
 
     // Chart legend toggle (ChartOptions.LegendToggle): [data-m-legend] buttons hide and show the chart's
     // [data-s="<series>"] marks and tooltip rows. The last visible series can't be hidden.
@@ -1141,9 +1148,28 @@
     }
     window.modulusShell.placeDropdown = placeDropdown;
 
+    // At most one run per frame, before paint: scroll and resize fire far more often than a frame, and these handlers read layout.
+    function perFrame(fn) {
+        var queued = false;
+        return function () {
+            if (queued) return;
+            queued = true;
+            requestAnimationFrame(function () { queued = false; fn(); });
+        };
+    }
+    // Live collections: the engine keeps them current as classes change, so asking "is anything open?" on every scroll and
+    // resize costs next to nothing, where a selector query walks the whole document each time.
+    var openSelectClass = document.getElementsByClassName('ant-select-open');
+    var openLookupClass = document.getElementsByClassName('m-lookup-open');
+    var floatDropdowns = document.getElementsByClassName('m-dropdown-float');
     function placeSelects() {
-        document.querySelectorAll('.m-cselect.ant-select-open, .m-lookup.m-lookup-open').forEach(placeSelect);
-        document.querySelectorAll('.m-dropdown.m-dropdown-float').forEach(placeDropdown);
+        if (openSelectClass.length || openLookupClass.length) {
+            Array.prototype.concat.call(Array.prototype.slice.call(openSelectClass), Array.prototype.slice.call(openLookupClass))
+                .filter(function (el) { return el.matches('.m-cselect.ant-select-open, .m-lookup.m-lookup-open'); })
+                .forEach(placeSelect);
+        }
+        if (floatDropdowns.length)
+            Array.prototype.slice.call(floatDropdowns).filter(function (el) { return el.classList.contains('m-dropdown'); }).forEach(placeDropdown);
     }
 
     window.modulusShell.placeSelect = function (root) {
@@ -1166,12 +1192,15 @@
         selectsQueued.clear();
         rowsQueued.clear();
     }
-    function selectsNote(node) {
+    // A page has a handful of selects and lookups but a render can insert or restyle thousands of nodes, so the roots are
+    // collected once per batch and each node is only compared with them (contains), never searched.
+    function selectsNote(node, added, roots) {
         if (!(node instanceof Element)) return;
-        var root = node.closest('.m-cselect, .m-lookup');
+        var root = null, i;
+        for (i = 0; i < roots.length; i++) if (roots[i].contains(node)) { root = roots[i]; break; }
         if (!root) {
             // A whole select or lookup that appeared already open (an editable grid cell's editor).
-            node.querySelectorAll && node.querySelectorAll(OPEN_SELECT).forEach(function (r) { selectsQueued.add(r); });
+            if (added) for (i = 0; i < roots.length; i++) if (node.contains(roots[i]) && roots[i].matches(OPEN_SELECT)) selectsQueued.add(roots[i]);
             return;
         }
         if (node === root || node.parentElement === root || node.closest('.m-cselect-dropdown')) selectsQueued.add(root);
@@ -1181,10 +1210,13 @@
     }
     function watchSelects() {
         new MutationObserver(function (records) {
+            var list = document.querySelectorAll('.m-cselect, .m-lookup');
+            if (!list.length) return; // no select or lookup on the page: nothing to place
+            var roots = Array.prototype.slice.call(list);
             for (var i = 0; i < records.length; i++) {
                 var r = records[i];
-                if (r.type === 'attributes') selectsNote(r.target);
-                else for (var j = 0; j < r.addedNodes.length; j++) selectsNote(r.addedNodes[j].nodeType === 1 ? r.addedNodes[j] : r.target);
+                if (r.type === 'attributes') selectsNote(r.target, false, roots);
+                else for (var j = 0; j < r.addedNodes.length; j++) selectsNote(r.addedNodes[j].nodeType === 1 ? r.addedNodes[j] : r.target, true, roots);
             }
             if (selectsQueued.size || rowsQueued.size) selectsFlush();
         }).observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
@@ -1555,15 +1587,16 @@
         if (gridViewsQueued) return;
         gridViewsQueued = true;
         // Also re-applies hidden data-table columns after a Blazor render or navigation (a no-op when nothing changed).
-        requestAnimationFrame(function () { gridViewsQueued = false; watchGridViews(); applyAllHiddenCols(); });
+        requestAnimationFrame(function () { gridViewsQueued = false; watchGridViews(); applyAllHiddenCols(); refreshBackTops(); });
     }).observe(document.documentElement, { childList: true, subtree: true });
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watchGridViews); else watchGridViews();
 
-    window.addEventListener('resize', placeSelects);
+    var placeSelectsSoon = perFrame(placeSelects);
+    window.addEventListener('resize', placeSelectsSoon);
     document.addEventListener('scroll', function (e) {
         // Scrolling the option list itself must not move the dropdown.
         if (e.target instanceof Element && e.target.closest('.m-cselect-dropdown')) return;
-        placeSelects();
+        placeSelectsSoon();
     }, { capture: true, passive: true });
 
     // Arrow keys, Enter and Space on the trigger open and move through the list instead of scrolling the page.
@@ -1574,14 +1607,17 @@
     });
 
     // Sticky section navs (the component gallery pill) get a raised shadow once they stick under the header.
+    var demoNavs = document.getElementsByClassName('m-demo-nav');
     function syncStuck() {
-        document.querySelectorAll('.m-demo-nav').forEach(function (nav) {
+        if (!demoNavs.length) return;
+        Array.prototype.slice.call(demoNavs).forEach(function (nav) {
             var top = parseFloat(getComputedStyle(nav).top) || 0;
             nav.classList.toggle('m-demo-nav-stuck', window.scrollY > 0 && nav.getBoundingClientRect().top <= top + 0.5);
         });
     }
-    document.addEventListener('scroll', syncStuck, { capture: true, passive: true });
-    window.addEventListener('resize', syncStuck);
+    var syncStuckSoon = perFrame(syncStuck);
+    document.addEventListener('scroll', syncStuckSoon, { capture: true, passive: true });
+    window.addEventListener('resize', syncStuckSoon);
 
     // ---- Pivot table: scroll horizontally with mouse wheel, drag to pan ----
     document.addEventListener('wheel', function (e) {
@@ -1959,6 +1995,86 @@
         var el = e.target;
         // select() would also focus the box, so skip it once the focus has moved on (fast typing).
         if (el instanceof HTMLInputElement && el.classList.contains('ant-otp-input')) setTimeout(function () { if (document.activeElement === el) el.select(); });
+    });
+
+    // ---- Tag input (.m-tags[data-m-tags]: app-tag-input) ----
+    // Enter or a separator turns the typed text into a tag, Backspace in the empty field removes the last one, a paste is split
+    // at the separators and leaving the field keeps what was typed. Each tag carries its own hidden input (posted as a list).
+    // The rules are Modulus.Ui.Abstractions.Forms.TagInput.
+    function tagsRoot(el) { return el && el.closest ? el.closest('.m-tags[data-m-tags]') : null; }
+    function tagsList(root) { return Array.prototype.map.call(root.querySelectorAll('.m-tags-item input[type=hidden]'), function (i) { return i.value; }); }
+    function tagsEmit(root) { root.dispatchEvent(new CustomEvent('m-tags-change', { bubbles: true, detail: tagsList(root) })); }
+    function tagsAdd(root, raw) {
+        var tag = String(raw == null ? '' : raw).trim();
+        if (!tag) return false;
+        var max = parseInt(root.getAttribute('data-max'), 10) || 0, maxLen = parseInt(root.getAttribute('data-max-length'), 10) || 0;
+        var list = tagsList(root);
+        if (maxLen && tag.length > maxLen) return false;
+        if (max && list.length >= max) return false;
+        if (root.getAttribute('data-duplicates') !== 'true' && list.some(function (t) { return t.toLowerCase() === tag.toLowerCase(); })) return false;
+        var item = document.createElement('span');
+        item.className = 'm-tags-item';
+        item.setAttribute('role', 'listitem');
+        var text = document.createElement('span');
+        text.className = 'm-tags-text';
+        text.textContent = tag;
+        var remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'm-tags-remove';
+        remove.tabIndex = -1;
+        remove.setAttribute('aria-label', 'Remove ' + tag);
+        remove.textContent = '\u00d7';
+        var hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        if (root.getAttribute('data-m-tags')) hidden.name = root.getAttribute('data-m-tags');
+        hidden.value = tag;
+        item.appendChild(text); item.appendChild(remove); item.appendChild(hidden);
+        root.querySelector('.m-tags-list').insertBefore(item, root.querySelector('.m-tags-field'));
+        hidden.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+    }
+    function tagsCommit(root, field) {
+        var seps = root.getAttribute('data-separators') || ',;', added = false;
+        field.value.split(new RegExp('[' + seps.replace(/[\]\\^-]/g, '\\$&') + '\\n\\r\\t]')).forEach(function (part) { added = tagsAdd(root, part) || added; });
+        field.value = '';
+        if (added) tagsEmit(root);
+    }
+    document.addEventListener('keydown', function (e) {
+        var field = e.target, root = tagsRoot(field);
+        if (!root || !field.classList.contains('m-tags-field')) return;
+        var seps = root.getAttribute('data-separators') || ',;';
+        if (e.key === 'Enter' || (e.key.length === 1 && seps.indexOf(e.key) >= 0)) {
+            e.preventDefault();
+            tagsCommit(root, field);
+        } else if (e.key === 'Backspace' && !field.value) {
+            var items = root.querySelectorAll('.m-tags-item');
+            if (items.length) { items[items.length - 1].remove(); tagsEmit(root); }
+        }
+    });
+    // The Blazor AppTagInput adds the tag itself; here Enter and the separators are only kept out of the text (and the form).
+    document.addEventListener('keydown', function (e) {
+        var field = e.target, root = field && field.closest ? field.closest('.m-tags[data-m-tags-keys]') : null;
+        if (!root || !field.classList.contains('m-tags-field')) return;
+        if (e.key === 'Enter' || (e.key.length === 1 && root.getAttribute('data-m-tags-keys').indexOf(e.key) >= 0)) e.preventDefault();
+    }, true);
+    document.addEventListener('paste', function (e) {
+        var field = e.target, root = tagsRoot(field);
+        if (!root || !field.classList.contains('m-tags-field')) return;
+        e.preventDefault();
+        field.value += (e.clipboardData || window.clipboardData).getData('text');
+        tagsCommit(root, field);
+    });
+    document.addEventListener('focusout', function (e) {
+        var field = e.target, root = tagsRoot(field);
+        if (root && field.classList && field.classList.contains('m-tags-field') && field.value) tagsCommit(root, field);
+    });
+    document.addEventListener('click', function (e) {
+        var root = tagsRoot(e.target);
+        if (!root) return;
+        var remove = e.target.closest('.m-tags-remove');
+        if (remove) { remove.closest('.m-tags-item').remove(); tagsEmit(root); }
+        var field = root.querySelector('.m-tags-field');
+        if (field && !field.disabled) field.focus();
     });
 
     // ---- Lookup fields (.m-lookup): keys that must not scroll the page or submit the form while the list is open ----

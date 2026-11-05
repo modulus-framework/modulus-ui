@@ -1,0 +1,20 @@
+@* Time picker: Label, Format and Value *@
+
+<div class="ant-form-item m-field">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <div class="ant-form-item-label">
+            <label>@Label</label>
+        </div>
+    }
+    <div class="ant-form-item-control">
+        <AntDesign.TimePicker TValue="DateTime?" Value="Value" ValueChanged="ValueChanged" Format="@Format" Style="width:100%" />
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string Format { get; set; } = "HH:mm";
+    [Parameter] public DateTime? Value { get; set; }
+    [Parameter] public EventCallback<DateTime?> ValueChanged { get; set; }
+}

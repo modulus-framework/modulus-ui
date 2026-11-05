@@ -8,7 +8,7 @@
         </div>
     }
     <div class="ant-form-item-control">
-        <TextArea Value="@Value" ValueChanged="SetValue" Placeholder="@Placeholder" MinRows="Rows" MaxLength="MaxLength" ShowCount="ShowCount" Disabled="Disabled" />
+        <TextArea aria-label="@Label" Value="@Value" ValueChanged="SetValue" Placeholder="@Placeholder" MinRows="Rows" MaxLength="MaxLength" ShowCount="ShowCount" Disabled="Disabled" />
         @if (!string.IsNullOrEmpty(Help))
         {
             <div class="m-muted m-mt-4">@Help</div>

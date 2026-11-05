@@ -1,0 +1,6 @@
+@page "/apps/flow/{handler?}"
+@model FlowModel
+@{
+    ViewData["Title"] = "Workflow designer";
+}
+<partial name="Ui/Apps/Flow/Flow" model="Model.View" />

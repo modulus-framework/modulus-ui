@@ -11,7 +11,9 @@
     "src/Modulus.Ui.Assets/wwwroot/js/modulus-virtual.js": 3072,
     "src/Modulus.Ui.Assets/wwwroot/css/modulus.css": 49152,
     "src/Modulus.Ui.Assets/wwwroot/css/modulus-shell.css": 24576,
-    "src/Modulus.Ui.Assets/wwwroot/css/modulus-pages.css": 29696,
-    "src/Modulus.Ui.Assets/wwwroot/css/antd-dark-brand.css": 5120
+    "src/Modulus.Ui.Assets/wwwroot/css/modulus-pages.css": 33792,
+    "src/Modulus.Ui.Assets/wwwroot/css/antd-dark-brand.css": 5120,
+    "src/Modulus.Ui.Assets/wwwroot/js/modulus-flow.js": 13312,
+    "src/Modulus.Ui.Assets/wwwroot/css/modulus-flow.css": 4096
   }
 }

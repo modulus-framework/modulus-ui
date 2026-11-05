@@ -103,7 +103,7 @@ public class NestedGridTagHelper : TagHelper
         output.Attributes.SetAttribute("@grid-change.stop", "");
 
         var sb = new StringBuilder();
-        sb.Append($"""<form method="post" hx-post="{Html.E(NestedGridForm.Url(Url, r))}" hx-target="#{container}" hx-swap="outerHTML" onsubmit="event.stopPropagation()" novalidate>""");
+        sb.Append($"""<form method="post" hx-post="{Html.E(NestedGridForm.Url(Url, r))}" hx-target="#{container}" hx-swap="outerHTML" data-m-stop="submit" novalidate>""");
         foreach (var id in v.LoadedIds) sb.Append($"""<input type="hidden" name="{name}.loaded" value="{Html.E(id)}" />""");
         sb.Append(writer.ToString()).Append("</form>");
         output.Content.SetHtmlContent(sb.ToString());
@@ -131,7 +131,7 @@ public class NestedGridTagHelper : TagHelper
             var open = !string.IsNullOrEmpty(r.Keyword);
             sb.Append($"""<button type="button" class="ant-btn ant-btn-text ant-btn-icon-only m-table-search-toggle" aria-label="Search {Html.E(level.Title)}" title="Search (Ctrl+F)" data-m-search-toggle data-m-search-reveal{(open ? " hidden" : "")}>{AntIcons.Span("search")}</button>""");
             sb.Append($"""<span class="ant-input-affix-wrapper m-table-toolbar-search m-nested-search"{(open ? "" : " hidden")}><span class="ant-input-prefix">{AntIcons.Span("search")}</span>""");
-            sb.Append($"""<input class="ant-input" type="search" name="q" value="{Html.E(r.Keyword)}" placeholder="Search {Html.E(level.Title.ToLowerInvariant())}…" aria-label="Search {Html.E(level.Title)}" autocomplete="off" hx-get="{Html.E(url)}" hx-trigger="keyup[key=='Enter'], search" hx-include="this" {target}onkeydown="if (event.key === 'Enter') event.preventDefault()" /></span>""");
+            sb.Append($"""<input class="ant-input" type="search" name="q" value="{Html.E(r.Keyword)}" placeholder="Search {Html.E(level.Title.ToLowerInvariant())}…" aria-label="Search {Html.E(level.Title)}" autocomplete="off" hx-get="{Html.E(url)}" hx-trigger="keyup[key=='Enter'], search" hx-include="this" {target}data-m-no-enter /></span>""");
         }
         // One click clears the level's keyword, filters and column searches.
         if (r.Filtered)
@@ -150,7 +150,7 @@ public class NestedGridTagHelper : TagHelper
         {
             var current = r.Filters?.GetValueOrDefault(c.Key);
             var url = NestedGridForm.Url(Url, r.WithFilter(c.Key, null));
-            sb.Append($"""<select class="m-select" name="{NestedGridForm.FilterPrefix}{Html.E(c.Key)}" aria-label="{Html.E(c.Title)}" hx-get="{Html.E(url)}" hx-trigger="change" hx-include="this" hx-target="#{container}" hx-swap="outerHTML" onchange="event.stopPropagation()"><option value="">Any {Html.E(c.Title.ToLowerInvariant())}</option>""");
+            sb.Append($"""<select class="m-select" name="{NestedGridForm.FilterPrefix}{Html.E(c.Key)}" aria-label="{Html.E(c.Title)}" hx-get="{Html.E(url)}" hx-trigger="change" hx-include="this" hx-target="#{container}" hx-swap="outerHTML" data-m-stop="change"><option value="">Any {Html.E(c.Title.ToLowerInvariant())}</option>""");
             foreach (var o in GridSchema.FilterOptions(c))
                 sb.Append($"""<option value="{Html.E(o.Value)}"{(o.Value == current ? " selected" : "")}>{Html.E(o.Label)}</option>""");
             sb.Append("</select>");
@@ -195,7 +195,7 @@ public class NestedGridTagHelper : TagHelper
             : $"""<li class="ant-pagination-next ant-pagination-disabled" aria-disabled="true"><span class="ant-pagination-item-link">{AntIcons.Span("right")}</span></li>""");
         // Rows per page: the select's own value is the size= of the request (the URL leaves it out).
         var sizeUrl = NestedGridForm.Url(Url, r with { Page = 1 }, "size");
-        sb.Append($"""<li class="ant-pagination-options"><select class="m-select m-select-sm m-pager-size" name="size" aria-label="Rows per page" hx-get="{Html.E(sizeUrl)}" hx-trigger="change" hx-include="this" {target} onchange="event.stopPropagation()">""");
+        sb.Append($"""<li class="ant-pagination-options"><select class="m-select m-select-sm m-pager-size" name="size" aria-label="Rows per page" hx-get="{Html.E(sizeUrl)}" hx-trigger="change" hx-include="this" {target} data-m-stop="change">""");
         foreach (var size in Paging.SizesWith(levelSize))
             sb.Append($"""<option value="{size}"{(size == r.PageSize ? " selected" : "")}>{size} / page</option>""");
         return sb.Append("</select></li></ul>").ToString();

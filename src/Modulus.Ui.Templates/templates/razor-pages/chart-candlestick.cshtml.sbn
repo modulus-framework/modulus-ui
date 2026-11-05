@@ -1,0 +1,24 @@
+@* Candlestick chart: sample data below, replace it with your own (a query, an API call). *@
+@page "/charts/candlestick"
+{{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ end }}
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Charts
+@{
+    ViewData["Title"] = "Candlestick chart";
+    var prices = new[]
+    {
+        new Candle("Mon", 80, 83, 79, 82, 9000), new Candle("Tue", 82, 84, 80, 81, 11000),
+        new Candle("Wed", 81, 82, 77, 78, 15000), new Candle("Thu", 78, 81, 77, 80.5, 8000),
+        new Candle("Fri", 80.5, 85, 80, 84, 12000),
+    };
+}
+
+<app-page-header pretitle="Charts" title="Candlestick chart"></app-page-header>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">Candlestick chart</h2></div>
+    <div class="m-card-body">
+        <app-candlestick-chart candles="prices" prefix="$" value-format="N2" title="Price" />
+    </div>
+</div>

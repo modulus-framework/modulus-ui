@@ -1,0 +1,12 @@
+@* Conversation and question field: ViewBag.Turns, ViewBag.Filter (optional) and ViewBag.Placeholder; the form posts back to the same action. *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Chat
+@{
+    IEnumerable<ChatTurn> turns = ViewBag.Turns as IEnumerable<ChatTurn> ?? [];
+    string? filter = ViewBag.Filter as string;
+    string placeholder = ViewBag.Placeholder ?? "Ask a question";
+}
+
+<form method="post" asp-antiforgery="true" hx-boost="false">
+    <app-chat turns="turns" filter="filter" placeholder="placeholder" />
+</form>

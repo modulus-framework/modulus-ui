@@ -4,13 +4,15 @@
  * Like modulus-shell.js it works from the markup alone: event delegation on document, plus a MutationObserver
  * that starts the widgets which need a library (maps, editors, spreadsheet, documents) when their element appears, so Blazor re-renders,
  * enhanced navigation and htmx swaps all work without calls from the page. Libraries load on first use from
- * /_content/Modulus.Ui.Assets/lib (served locally, no CDN).
+ * /_content/Synvro.Modulus.Ui.Assets/lib (served locally, no CDN; the base comes from this script's own URL).
  *
  *   [data-m-sortable]      drag to reorder (pointer, touch and keyboard), between lists of the same data-m-sort-group.
  *                          The result goes to the list's [data-m-sort-result] input as JSON { id, from, to, index },
  *                          followed by a bubbling change event (Blazor @onchange, htmx hx-trigger="change").
  *                          data-m-sort-mode="event" (Blazor) leaves the DOM alone; otherwise the item moves and its
  *                          [data-m-sort-value] inputs take the new list's name, so a form posts the order.
+ *   [data-m-flow]          workflow designer (n8n style canvas): modulus-flow.js and modulus-flow.css load when one appears; the
+ *                          graph JSON goes to [data-m-flow-value] with a change event.
  *   [data-m-player]        custom controls for a <video> or <audio>: play, seek, time, mute, volume, speed,
  *                          captions (data-captions JSON cues), fullscreen and keyboard keys.
  *   [data-m-editor]        WYSIWYG editor on Tiptap; the HTML goes to [data-m-editor-value] with a change event.
@@ -36,7 +38,14 @@
 (function () {
     'use strict';
 
-    var LIB = '/_content/Modulus.Ui.Assets/lib/';
+    // The package's own URL, taken from where this script was loaded, so a renamed package (it is _content/Synvro.Modulus.Ui.Assets)
+    // or a path base never breaks the lazy loading of the libraries, styles and the flow editor.
+    var ASSETS = (function () {
+        var el = document.currentScript || document.querySelector('script[src*="modulus-plugins.js"]');
+        var m = el && el.src && /^(.*\/)js\/modulus-plugins\.js(?:[?#].*)?$/.exec(el.src);
+        return m ? m[1] : '/_content/Synvro.Modulus.Ui.Assets/';
+    })();
+    var LIB = ASSETS + 'lib/';
     var loading = {};
 
     function loadCss(href) {
@@ -45,7 +54,7 @@
         link.rel = 'stylesheet';
         link.href = href;
         // Before the Modulus stylesheets, so their overrides win.
-        var first = document.querySelector('link[href*="Modulus.Ui.Assets/css/"]');
+        var first = document.querySelector('link[href*="/css/modulus"]');
         document.head.insertBefore(link, first || null);
     }
 
@@ -1765,9 +1774,26 @@
             canvas.style.height = Math.floor(viewport.height / dpr) + 'px';
             canvas.setAttribute('role', 'img');
             canvas.setAttribute('aria-label', 'Page ' + s.page + ' of ' + s.doc.numPages);
-            return page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise.then(function () {
+            // The text layer sits over the canvas at CSS scale, so selected text lines up with the drawn glyphs.
+            var wrap = document.createElement('div');
+            wrap.className = 'm-pdf-page';
+            wrap.style.width = canvas.style.width;
+            wrap.style.height = canvas.style.height;
+            var layer = document.createElement('div');
+            layer.className = 'textLayer';
+            wrap.append(canvas, layer);
+            if (s.text) s.text.cancel();
+            var text = s.text = new s.lib.TextLayer({
+                textContentSource: page.streamTextContent(),
+                container: layer,
+                viewport: page.getViewport({ scale: css })
+            });
+            var drawn = page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+            // A text layer that fails leaves the page readable as a picture; it is not a reason to fail the page.
+            var layered = text.render().catch(function () {});
+            return Promise.all([drawn, layered]).then(function () {
                 if (token !== s.token || !document.contains(el)) return;
-                el.querySelector('[data-m-pdf-canvas]').replaceChildren(canvas);
+                el.querySelector('[data-m-pdf-canvas]').replaceChildren(wrap);
                 el.classList.remove('m-pdf-busy');
                 pdfSync(el);
             });
@@ -1800,6 +1826,7 @@
         });
         pdfSync(el);
         loadPdf().then(function (pdfjs) {
+            s.lib = pdfjs;
             return pdfjs.getDocument({ url: el.getAttribute('data-src'), withCredentials: false }).promise;
         }).then(function (doc) {
             if (!document.contains(el)) return;
@@ -1984,6 +2011,97 @@
     widget('[data-m-vector-map]', initVectorMap);
     widget('[data-m-pdf]', initPdf);
     widget('[data-m-uploader]', initUploader);
+    // The workflow designer (modulus-flow.js and its stylesheet) loads when an editor appears, so other pages never download it.
+    // The editor starts hidden (opacity 0) and shows once styled; if the files cannot load it is shown as the server drew it.
+    function initFlow(root) {
+        root.setAttribute('data-m-ready', '');
+        libs([ASSETS + 'css/modulus-flow.css'], [ASSETS + 'js/modulus-flow.js'])
+            .then(function () { window.modulusFlow.init(root); })
+            .catch(function (e) { root.style.opacity = ''; if (window.console) console.error(e); });
+    }
+    // ---- Markup behaviour without inline handlers (a strict Content-Security-Policy blocks onchange="...") -----------
+    // data-m-stop="change submit": the element stops these events from reaching its ancestors (a nested grid's filters).
+    widget('[data-m-stop]', function (el) {
+        el.setAttribute('data-m-ready', '');
+        el.getAttribute('data-m-stop').split(' ').forEach(function (type) {
+            if (type) el.addEventListener(type, function (e) { e.stopPropagation(); });
+        });
+    });
+    // data-m-submit-change: a change submits the form the field is in (the query builder's field and operator).
+    widget('[data-m-submit-change]', function (el) {
+        el.setAttribute('data-m-ready', '');
+        el.addEventListener('change', function () {
+            if (!el.form) return;
+            if (el.form.requestSubmit) el.form.requestSubmit(); else el.form.submit();
+        });
+    });
+    // ---- Gantt: drag a bar to another day, or move it with the arrow keys. The new dates go to the hidden field (a JSON array of
+    // {id, start, end}) and a change event is raised on it: a form posts it (data-m-submit-change), Blazor receives it (@onchange).
+    function initGantt(root) {
+        root.setAttribute('data-m-ready', '');
+        var days = Math.max(1, parseInt(root.getAttribute('data-days'), 10) || 1);
+        var input = root.querySelector('input[data-m-gantt-value]');
+        var drag = null;
+        function dayPx(bar) { return bar.parentElement.getBoundingClientRect().width / days; }
+        function shift(iso, n) { var d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+        function commit(bar, n) {
+            if (!input || !n) return;
+            input.value = JSON.stringify([{ id: parseInt(bar.getAttribute('data-m-task'), 10), start: shift(bar.getAttribute('data-start'), n), end: shift(bar.getAttribute('data-end'), n) }]);
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        function bar(e) { return e.target && e.target.closest ? e.target.closest('.m-gantt-bar[data-m-task]') : null; }
+        root.addEventListener('pointerdown', function (e) {
+            var b = bar(e);
+            if (!b || e.button !== 0) return;
+            drag = { bar: b, x: e.clientX, px: dayPx(b), days: 0, pid: e.pointerId };
+            b.setPointerCapture(e.pointerId);
+            b.classList.add('dragging');
+            e.preventDefault();
+        });
+        root.addEventListener('pointermove', function (e) {
+            if (!drag || e.pointerId !== drag.pid) return;
+            drag.days = Math.round((e.clientX - drag.x) / drag.px);
+            drag.bar.style.transform = 'translate(' + (drag.days * drag.px) + 'px, -50%)';
+        });
+        root.addEventListener('pointerup', function (e) {
+            if (!drag || e.pointerId !== drag.pid) return;
+            var d = drag;
+            drag = null;
+            d.bar.classList.remove('dragging');
+            d.bar.style.transform = '';
+            commit(d.bar, d.days);
+        });
+        root.addEventListener('pointercancel', function (e) {
+            if (!drag || e.pointerId !== drag.pid) return;
+            drag.bar.classList.remove('dragging');
+            drag.bar.style.transform = '';
+            drag = null;
+        });
+        root.addEventListener('keydown', function (e) {
+            var b = bar(e);
+            if (!b || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+            e.preventDefault();
+            commit(b, e.key === 'ArrowLeft' ? -1 : 1);
+        });
+    }
+    widget('[data-m-gantt]', initGantt);
+
+    // data-m-print: the element prints the page when it is clicked (a print link).
+    widget('[data-m-print]', function (el) {
+        el.setAttribute('data-m-ready', '');
+        el.addEventListener('click', function (e) { e.preventDefault(); window.print(); });
+    });
+    // data-m-swallow: a click on the element does nothing else (it is inside a clickable row, or a menu).
+    widget('[data-m-swallow]', function (el) {
+        el.setAttribute('data-m-ready', '');
+        el.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); });
+    });
+    // data-m-no-enter: Enter in the field does not submit the form (a search that filters as the page changes).
+    widget('[data-m-no-enter]', function (el) {
+        el.setAttribute('data-m-ready', '');
+        el.addEventListener('keydown', function (e) { if (e.key === 'Enter') e.preventDefault(); });
+    });
+    widget('[data-m-flow]', initFlow);
     widget('[data-m-cropper]', initCropper);
     widget('[data-m-code]', initCode);
     widget('[data-m-editor]', initEditor);

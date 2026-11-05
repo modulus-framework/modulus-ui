@@ -1,0 +1,8 @@
+@* Flows between nodes (material, cash, cost): <SankeyChart Flows="flows" Height="320" /> *@
+@inherits ChartBase
+@using Modulus.Ui.Abstractions.Charts
+@((MarkupString)ChartHtml.Sankey(Flows, Options()))
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<SankeyLink> Flows { get; set; } = [];
+}

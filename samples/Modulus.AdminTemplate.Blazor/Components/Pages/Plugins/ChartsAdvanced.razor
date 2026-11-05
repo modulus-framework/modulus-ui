@@ -8,6 +8,35 @@
     </Actions>
 </PageHeading>
 
+    <div class="m-row-cards">
+        <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Radar</h3><p class="m-card-subtitle">Supplier scorecard, 0 to 5</p></div></div>
+            <div class="m-card-body">
+                <RadarChart Axes="AdvancedChartsDemo.SupplierAxes" Series="AdvancedChartsDemo.SupplierScores" Max="5" Title="Supplier scorecard" Height="300" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Candlestick</h3><p class="m-card-subtitle">Commodity price with volume</p></div></div>
+            <div class="m-card-body">
+                <CandlestickChart Candles="AdvancedChartsDemo.Prices" Prefix="$" ValueFormat="N2" Title="Commodity price" Height="260" />
+            </div>
+        </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Sankey</h3><p class="m-card-subtitle">Material from suppliers through the plants to the market, in tonnes</p></div></div>
+            <div class="m-card-body">
+                <SankeyChart Flows="AdvancedChartsDemo.MaterialFlow" Suffix=" t" Title="Material flow" Height="320" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Org chart</h3><p class="m-card-subtitle">Reporting lines, with the number of direct reports</p></div></div>
+            <div class="m-card-body">
+                <OrgChart Nodes="AdvancedChartsDemo.Company" Title="Company structure" />
+            </div>
+        </div>
+    </div>
+
 <div class="m-row-cards">
     <div class="m-row-cards m-cols-2">
         <div class="m-card">

@@ -931,7 +931,13 @@ a.m-card, a.m-card:hover { color: inherit; }
 .m-pdf-zoom { min-width: 48px; text-align: center; font-size: 13px; }
 .m-pdf-scroll { position: relative; flex: 1; min-height: 0; overflow: auto; padding: 16px; background: var(--m-bg-subtle); }
 .m-pdf-canvas { display: flex; justify-content: center; }
-.m-pdf-canvas canvas { display: block; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .2); }
+.m-pdf-page { position: relative; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .2); }
+.m-pdf-page canvas { display: block; }
+/* pdf.js's text layer (pdf_viewer.css): transparent glyphs over the canvas, so the text can be selected and copied. */
+.m-pdf-page .textLayer { position: absolute; inset: 0; overflow: hidden; line-height: 1; text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; caret-color: CanvasText; z-index: 0; user-select: text; }
+.m-pdf-page .textLayer span, .m-pdf-page .textLayer br { color: transparent; position: absolute; white-space: pre; cursor: text; transform-origin: 0% 0%; }
+.m-pdf-page .textLayer span.markedContent { top: 0; height: 0; }
+.m-pdf-page .textLayer ::selection { background: rgba(0, 100, 255, .3); }
 /* A page turn or zoom keeps the current page on screen until the next one is drawn; a thin bar shows the work. */
 .m-pdf-toolbar { position: relative; }
 .m-pdf-busy .m-pdf-toolbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: linear-gradient(90deg, transparent, var(--m-primary), transparent); background-size: 40% 100%; background-repeat: no-repeat; animation: m-pdf-progress 0.9s linear infinite; }
@@ -1952,7 +1958,116 @@ select.m-select.m-select-multi option:checked { background: color-mix(in srgb, v
 /* Table toolbar stays on one line: the search box keeps a fixed width and the buttons sit beside it. */
 .m-table-toolbar-actions { flex-wrap: nowrap; align-items: center; }
 .m-table-toolbar-actions .ant-input-affix-wrapper, .m-table-toolbar-actions .ant-input-search, .m-table-toolbar-actions .ant-input-group-wrapper { width: 260px; flex: none; }
+/* On a phone the toolbar wraps: the search box takes the full row, so nothing sticks out of the screen. */
+@media (max-width: 600px) {
+  .m-table-toolbar-actions { flex-wrap: wrap; }
+  .m-table-toolbar-actions .ant-input-affix-wrapper, .m-table-toolbar-actions .ant-input-search, .m-table-toolbar-actions .ant-input-group-wrapper { width: 100%; flex: 1 1 100%; }
+}
 /* Right-aligned header cells (the Actions column) line up with their right-aligned cells. */
 .ant-table-thead > tr > th.m-text-right { text-align: right; }
 /* A tag with no colour (a plain "No" flag) keeps a visible neutral look instead of the theme's near-white one. */
 .ant-table .ant-tag:not([class*="ant-tag-"]) { color: var(--m-text-secondary); background: var(--m-bg-subtle); border-color: var(--m-border); }
+
+/* ---- Radar ---- */
+.m-radar-plot { position: relative; width: 100%; aspect-ratio: 1; margin: 0 auto; }
+.m-radar-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.m-radar-ring { fill: none; stroke: var(--m-grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.m-radar-spoke { stroke: var(--m-grid); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.m-radar-area { fill: color-mix(in oklab, var(--c) 14%, transparent); stroke: var(--c); stroke-width: 1.75; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.m-radar-axis, .m-radar-tick { position: absolute; transform: translate(-50%, -50%); font-size: 12px; line-height: 16px; white-space: nowrap; }
+.m-radar-axis { max-width: 150px; overflow: hidden; text-overflow: ellipsis; color: var(--m-text-secondary); }
+.m-radar-axis.m-radar-right { transform: translate(-8%, -50%); }
+.m-radar-axis.m-radar-left { transform: translate(-92%, -50%); }
+.m-radar-tick { transform: translate(4px, -50%); color: var(--m-text-quaternary); font-size: 11px; font-variant-numeric: tabular-nums; }
+.m-radar-pt { position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 2px var(--m-bg-container); }
+
+/* ---- Candlestick ---- */
+.m-candle-row { position: absolute; inset: 0; display: flex; }
+.m-candle-slot { position: relative; flex: 1 1 0; min-width: 0; height: 100%; }
+.m-candle-slot:hover { background: var(--m-fill-secondary); }
+.m-candle-wick, .m-candle-body { position: absolute; left: 50%; background: var(--c); transform: translateX(-50%); }
+.m-candle-wick { width: 1.5px; }
+.m-candle-body { width: max(3px, min(70%, 18px)); border-radius: 1px; }
+.m-candle-vol { display: flex; align-items: flex-end; gap: 2px; height: 44px; margin: 6px 0 0 44px; }
+.m-candle-vbar { flex: 1 1 0; min-width: 1px; background: color-mix(in oklab, var(--c) 45%, transparent); }
+.m-candle-x { display: flex; margin: 6px 0 0 44px; color: var(--m-text-tertiary); font-size: 12px; }
+.m-candle-x span { flex: 1 1 0; min-width: 0; overflow: visible; white-space: nowrap; text-align: center; }
+
+/* ---- Sankey ---- */
+.m-sk-plot { position: relative; width: 100%; }
+.m-sk-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.m-sk-link { fill: none; stroke: var(--c); stroke-opacity: 0.32; vector-effect: non-scaling-stroke; transition: stroke-opacity 0.15s; }
+.m-sk-link:hover { stroke-opacity: 0.6; }
+.m-sk-node { position: absolute; width: 2%; min-width: 6px; border-radius: 2px; background: var(--c); }
+.m-sk-label { position: absolute; max-width: 24%; margin-left: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; transform: translateY(-50%); color: var(--m-text-secondary); font-size: 12px; pointer-events: none; }
+.m-sk-label strong { color: var(--m-text); font-weight: 600; }
+.m-sk-label-left { margin: 0 6px 0 0; text-align: right; }
+
+/* ---- Org chart ---- */
+.m-orgchart { overflow-x: auto; padding: 4px 0 12px; }
+.m-org, .m-org ul { margin: 0; padding: 0; list-style: none; }
+.m-org { display: flex; justify-content: center; gap: 24px; width: max-content; min-width: 100%; }
+.m-org ul { position: relative; display: flex; justify-content: center; padding-top: 20px; }
+.m-org ul::before { content: ''; position: absolute; top: 0; left: 50%; height: 20px; border-left: 1px solid var(--m-border-strong); }
+.m-org li { position: relative; display: flex; flex-direction: column; align-items: center; padding: 20px 8px 0; }
+.m-org > li { padding-top: 0; }
+.m-org li::before, .m-org li::after { content: ''; position: absolute; top: 0; right: 50%; width: 50%; height: 20px; border-top: 1px solid var(--m-border-strong); }
+.m-org li::after { right: auto; left: 50%; border-left: 1px solid var(--m-border-strong); }
+.m-org > li::before, .m-org > li::after, .m-org li:only-child::before, .m-org li:only-child::after { display: none; }
+.m-org li:only-child { padding-top: 0; }
+.m-org li:first-child::before, .m-org li:last-child::after { border: 0 none; }
+.m-org li:last-child::before { border-right: 1px solid var(--m-border-strong); border-radius: 0 6px 0 0; }
+.m-org li:first-child::after { border-radius: 6px 0 0 0; }
+.m-org-node { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 132px; max-width: 200px; padding: 8px 12px; border: 1px solid var(--m-border); border-radius: var(--m-radius-lg, 8px); background: var(--m-bg-container); box-shadow: var(--m-shadow-card); text-align: center; }
+.m-org-title { color: var(--m-heading); font-weight: 600; font-size: 13px; line-height: 18px; overflow-wrap: anywhere; }
+a.m-org-title:hover { color: var(--m-primary); }
+.m-org-sub { color: var(--m-text-secondary); font-size: 12px; line-height: 16px; overflow-wrap: anywhere; }
+.m-org-meta { display: flex; gap: 6px; margin-top: 4px; }
+.m-org-badge, .m-org-count { padding: 0 8px; border-radius: 10px; background: color-mix(in oklab, var(--m-primary) 16%, transparent); color: var(--m-heading); font-size: 11px; line-height: 18px; font-variant-numeric: tabular-nums; }
+.m-org-count { background: var(--m-fill-secondary); color: var(--m-text-secondary); }
+
+/* Chat: the conversation log and the composer (Modulus.Ui.Abstractions/Chat). */
+.m-chat-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; max-height: 420px; overflow-y: auto; }
+.m-chat-turn { display: flex; flex-direction: column; max-width: 85%; gap: 4px; }
+.m-chat-user { align-self: flex-end; align-items: flex-end; }
+.m-chat-assistant { align-self: flex-start; }
+.m-chat-who { font-size: 12px; color: var(--m-text-secondary); }
+.m-chat-bubble { padding: 8px 12px; border-radius: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.m-chat-user .m-chat-bubble { background: var(--m-primary-bg); color: var(--m-text); }
+.m-chat-assistant .m-chat-bubble { background: var(--m-fill-quaternary, #f5f5f5); color: var(--m-text); }
+.m-chat-notes { margin: 0; padding-left: 18px; font-size: 12px; color: var(--m-text-secondary); }
+.m-chat-empty { list-style: none; text-align: center; padding: 24px 0; }
+.m-chat-composer { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-top: 12px; }
+.m-chat-label { flex: 0 0 100%; font-size: 13px; color: var(--m-text-secondary); }
+.m-chat-input { flex: 1 1 260px; min-width: 0; resize: vertical; }
+@media (max-width: 600px) { .m-chat-turn { max-width: 100%; } .m-chat-composer .ant-btn { width: 100%; } }
+/* Assistant: the approval card, the document upload field, and tables in the chat. */
+.m-approval { border: 1px solid var(--m-split); border-left: 3px solid var(--m-warning, #d48806); border-radius: 8px; padding: 10px 12px; margin-top: 8px; background: var(--m-bg-container, #fff); font-size: 13px; }
+.m-approval-approved { border-left-color: var(--m-success, #389e0d); }
+.m-approval-rejected { border-left-color: var(--m-error, #cf1322); }
+.m-approval-title { font-weight: 600; color: var(--m-heading); margin-bottom: 6px; }
+.m-approval-details { display: grid; grid-template-columns: max-content 1fr; gap: 2px 12px; margin: 0 0 6px; }
+.m-approval-details dt { color: var(--m-text-secondary); }
+.m-approval-details dd { margin: 0; overflow-wrap: anywhere; }
+.m-approval-status { font-size: 12px; color: var(--m-text-secondary); }
+.m-approval-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.m-upload { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.m-upload-label { flex: 0 0 100%; font-size: 13px; color: var(--m-text-secondary); }
+.m-upload-input { max-width: 100%; }
+.m-upload-list { flex: 0 0 100%; list-style: none; margin: 4px 0 0; padding: 0; font-size: 13px; display: flex; flex-direction: column; gap: 2px; }
+.m-upload-name { font-weight: 500; }
+.m-chat-table { width: 100%; margin-top: 8px; font-size: 12px; border-collapse: collapse; }
+.m-chat-table caption { caption-side: top; text-align: left; font-weight: 600; padding-bottom: 4px; }
+.m-chat-table .ant-table-cell { padding: 4px 8px; border-bottom: 1px solid var(--m-split); }
+@media (max-width: 600px) { .m-approval-details { grid-template-columns: 1fr; } }
+/* Gantt: fixed rows (so the dependency arrows line up), the arrows, and a bar being dragged. */
+.m-gantt-body { position: relative; }
+.m-gantt-row, .m-gantt-group { height: 52px; box-sizing: border-box; }
+.m-gantt-group { display: flex; align-items: center; }
+.m-gantt-row .m-gantt-track { height: 52px; min-height: 0; }
+.m-gantt-links { position: absolute; left: 240px; right: 0; top: 0; width: calc(100% - 240px); height: 100%; pointer-events: none; overflow: visible; }
+.m-gantt-link { fill: none; stroke: var(--m-text-tertiary); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.m-gantt-link.conflict { stroke: var(--m-error); stroke-dasharray: 4 3; }
+.m-gantt-bar[data-m-task] { cursor: grab; touch-action: none; }
+.m-gantt-bar.dragging { cursor: grabbing; opacity: .85; z-index: 2; }
+.m-gantt-bar:focus-visible { outline: 2px solid var(--m-primary); outline-offset: 2px; }

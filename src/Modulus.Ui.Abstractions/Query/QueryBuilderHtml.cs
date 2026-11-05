@@ -69,12 +69,12 @@ public static class QueryBuilderHtml
         sb.Append($"""<input type="hidden" name="{prefix}.kind" value="rule" />""");
 
         // A new field has its own operators, so the field and the operator submit at once to redraw the rule.
-        sb.Append($"""<select class="m-select m-qb-field" name="{prefix}.field" aria-label="Field" onchange="this.form.requestSubmit()">""");
+        sb.Append($"""<select class="m-select m-qb-field" name="{prefix}.field" aria-label="Field" data-m-submit-change>""");
         if (field is null) sb.Append("""<option value="" selected>Choose a field</option>""");
         foreach (var f in schema) sb.Append($"""<option value="{E(f.Key)}"{Selected(f.Key == rule.Field)}>{E(f.Title)}</option>""");
         sb.Append("</select>");
 
-        sb.Append($"""<select class="m-select m-qb-op" name="{prefix}.op" aria-label="Operator" onchange="this.form.requestSubmit()">""");
+        sb.Append($"""<select class="m-select m-qb-op" name="{prefix}.op" aria-label="Operator" data-m-submit-change>""");
         foreach (var op in ops) sb.Append($"""<option value="{op}"{Selected(op == rule.Operator)}>{E(QueryFieldOperators.Label(op))}</option>""");
         sb.Append("</select>");
 

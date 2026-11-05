@@ -1,0 +1,29 @@
+@* Org chart: sample data below, replace it with your own (a query, an API call). A node whose parent is null is a root. *@
+@page "/charts/org"
+{{ if use_auth }}@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+{{ end }}
+@using Modulus.Blazor.Components.Charts
+@using Modulus.Ui.Abstractions.Charts
+
+<PageTitle>Org chart</PageTitle>
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Charts</div><h1 class="m-page-title">Org chart</h1></div>
+</div>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">Org chart</h2></div>
+    <div class="m-card-body">
+        <OrgChart Nodes="_people" Title="Company structure" />
+    </div>
+</div>
+
+@code {
+    private readonly OrgNode[] _people =
+    [
+        new("1", null, "Ada Lovelace", "CEO"),
+        new("2", "1", "Grace Hopper", "Finance"),
+        new("3", "1", "Alan Turing", "Technology"),
+        new("4", "3", "Linus T.", "Platform"),
+    ];
+}

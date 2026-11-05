@@ -11,6 +11,7 @@ using Modulus.Ui.Abstractions.Shell;
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
+Modulus.Samples.Shared.AssistantPage.Configure(key => builder.Configuration[key]);
 
 // Validate from explicit [Required] attributes only, exactly like Blazor's DataAnnotations validator,
 // so the same model produces the same errors in every flavor.

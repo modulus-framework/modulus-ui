@@ -43,6 +43,9 @@
                     <FieldItem Label="Approval code" For="ApprovalCode" Required Help="The 6-digit code sent to the approver" Class="m-span-2" Errors="@Err(nameof(BusinessFormInput.ApprovalCode))">
                         <AppOtpInput Id="ApprovalCode" @bind-Value="_input.ApprovalCode" Length="6" Separator="3" AriaLabel="Approval code" Status="@St(nameof(BusinessFormInput.ApprovalCode))" />
                     </FieldItem>
+                    <FieldItem Label="Labels" For="Labels" Help="Type a label and press Enter; up to 5" Class="m-span-2" Errors="@Err(nameof(BusinessFormInput.Labels))">
+                        <AppTagInput Id="Labels" Value="_input.Labels" ValueChanged="@(v => _input.Labels = v.ToList())" Max="5" Placeholder="Add a label" AriaLabel="Labels" Status="@St(nameof(BusinessFormInput.Labels))" />
+                    </FieldItem>
                     <FieldItem Label="Terms and notes" Class="m-span-2" Errors="@Err(nameof(BusinessFormInput.Notes))">
                         <AppRichText @bind-Value="_input.Notes" Placeholder="Payment terms, delivery instructions…" AriaLabel="Terms and notes" Status="@St(nameof(BusinessFormInput.Notes))" />
                     </FieldItem>

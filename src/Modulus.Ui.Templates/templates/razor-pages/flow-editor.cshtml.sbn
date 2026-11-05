@@ -1,0 +1,13 @@
+@* Workflow designer: ViewBag.Name (the posted field), Height, ReadOnly, Graph (a FlowGraph; a two-node sample when omitted) *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Flow
+@{
+    string name = ViewBag.Name ?? "Workflow";
+    int height = ViewBag.Height ?? 560;
+    bool readOnly = ViewBag.ReadOnly == true;
+    FlowGraph graph = ViewBag.Graph as FlowGraph ?? new FlowGraph(
+        [new FlowNode("start", "trigger.manual", 60, 120), new FlowNode("ask", "ai.chat", 380, 120) { Title = "Ask the model" }],
+        [new FlowEdge("e1", "start", "ask")]);
+}
+
+<app-flow-editor graph="graph" name="@name" height="height" read-only="readOnly" label="Workflow editor" />

@@ -55,7 +55,7 @@
             <div class="m-card-body">
                 <FormItem Label="Select"><Select TItemValue="string" TItem="string" @bind-Value="_input.Topic" DataSource="FormElementsPage.Topics" Placeholder="Choose a topic" /></FormItem>
                 <FormItem Label="Datalist (suggestions as you type)"><AutoComplete TOption="string" @bind-Value="_input.Language" Options="FormElementsPage.Languages" Placeholder="Type a language" /></FormItem>
-                <FormItem Label="Multiple select"><Select Mode="SelectMode.Multiple" TItemValue="string" TItem="string" DataSource="FormElementsPage.Languages" Values="_chosen" ValuesChanged="v => _chosen = v.ToList()" Placeholder="Choose languages" /></FormItem>
+                <FormItem Label="Multiple select"><select class="ant-input" multiple size="4" name="languages" aria-label="Languages" @onchange="LanguagesChanged">@foreach (var language in FormElementsPage.Languages) { <option value="@language" selected="@_chosen.Contains(language)">@language</option> }</select></FormItem>
             </div>
         </div>
 
@@ -156,6 +156,9 @@
     private readonly FormElementsInput _input = new();
     private DateTime? _time = new DateTime(2026, 10, 15, 9, 30, 0);
     private List<string> _chosen = ["C#", "Go"];
+
+    /// <summary>A native multi-select: the browser's own control is used because AntDesign's multi-select markup needs inline handlers, which the strict CSP blocks.</summary>
+    private void LanguagesChanged(ChangeEventArgs e) => _chosen = e.Value is string[] values ? values.ToList() : new List<string>();
     private readonly CheckboxOption<string>[] _channelOptions =
         FormElementsPage.Channels.Select(c => new CheckboxOption<string> { Value = c, Label = c }).ToArray();
 

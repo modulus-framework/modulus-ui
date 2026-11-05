@@ -1,0 +1,9 @@
+@* Upload field of a knowledge base: ViewBag.Documents (IEnumerable<KnowledgeDocument>), ViewBag.Name (the file field, "documents"). Post in a multipart form. *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Assistant
+@{
+    IEnumerable<KnowledgeDocument> documents = ViewBag.Documents as IEnumerable<KnowledgeDocument> ?? [];
+    string fieldName = ViewBag.Name ?? "documents";
+}
+
+<app-document-upload documents="documents" name="fieldName" />

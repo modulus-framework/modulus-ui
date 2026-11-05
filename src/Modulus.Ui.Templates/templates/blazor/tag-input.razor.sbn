@@ -1,0 +1,26 @@
+@* Tag input: Label, Max, Placeholder and the tags as Tags *@
+
+<div class="ant-form-item m-field">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <div class="ant-form-item-label">
+            <label>@Label</label>
+        </div>
+    }
+    <div class="ant-form-item-control">
+        <Modulus.Blazor.Components.Fields.AppTagInput Value="Tags" ValueChanged="TagsChanged" Max="Max" Placeholder="@Placeholder" AriaLabel="@Label" />
+        @if (!string.IsNullOrEmpty(Help))
+        {
+            <div class="m-muted m-mt-4">@Help</div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Help { get; set; }
+    [Parameter] public int Max { get; set; }
+    [Parameter] public string? Placeholder { get; set; } = "Type and press Enter";
+    [Parameter] public IReadOnlyList<string>? Tags { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<string>> TagsChanged { get; set; }
+}

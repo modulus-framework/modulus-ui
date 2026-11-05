@@ -106,3 +106,29 @@ public class ChartGeometryTests
     public void Percent_IsClamped(double value, double max, string expected) =>
         Assert.Equal(expected, ChartGeometry.Percent(value, max));
 }
+
+/// <summary>The tag input rules shared by AppTagInput and app-tag-input.</summary>
+public class TagInputRulesTests
+{
+    [Fact]
+    public void Split_TrimsAndDropsBlanks_AtSeparatorsAndLineBreaks()
+    {
+        Assert.Equal(["a", "b", "c d", "e"], Modulus.Ui.Abstractions.Forms.TagInput.Split(" a, b ;; c d \n e ,"));
+        Assert.Empty(Modulus.Ui.Abstractions.Forms.TagInput.Split("  "));
+        Assert.Equal(["a,b"], Modulus.Ui.Abstractions.Forms.TagInput.Split("a,b", "|"));
+    }
+
+    [Fact]
+    public void TryAdd_RefusesBlankDuplicateLongAndFull()
+    {
+        var tags = new List<string>();
+        Assert.True(Modulus.Ui.Abstractions.Forms.TagInput.TryAdd(tags, " x ", max: 2, maxLength: 3));
+        Assert.False(Modulus.Ui.Abstractions.Forms.TagInput.TryAdd(tags, "X", max: 2));
+        Assert.False(Modulus.Ui.Abstractions.Forms.TagInput.TryAdd(tags, "   "));
+        Assert.False(Modulus.Ui.Abstractions.Forms.TagInput.TryAdd(tags, "long", maxLength: 3));
+        Assert.True(Modulus.Ui.Abstractions.Forms.TagInput.TryAdd(tags, "y", max: 2));
+        Assert.False(Modulus.Ui.Abstractions.Forms.TagInput.TryAdd(tags, "z", max: 2));
+        Assert.Equal(["x", "y"], tags);
+        Assert.True(Modulus.Ui.Abstractions.Forms.TagInput.TryAdd(tags, "x", allowDuplicates: true));
+    }
+}

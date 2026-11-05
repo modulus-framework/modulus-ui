@@ -20,8 +20,53 @@ Third-party libraries load only on the pages that use them. `modulus-plugins.js`
 | Code editor | `AppCodeEditor` | `app-code-editor` | CodeMirror 6, with highlighting, folding and search for JavaScript, TypeScript, JSON, CSS and HTML |
 | Media player | `AppMediaPlayer` | `app-media-player` | Video and audio, with custom controls, a poster and captions |
 | Sortable list | `AppSortable` | `app-sortable` | Reorder a list, drag between lists, with handles and keyboard moves. Posts the new order. |
+| Workflow designer | `AppFlowEditor` | `app-flow-editor` | An n8n style canvas for AI and automation flows: drag nodes, draw connections, undo, show run status. See [Workflow designer](#workflow-designer). |
 | Lightbox | `AppLightbox` | `app-lightbox` | Full-size image viewer |
 | Barcode | `AppBarcode` | `app-barcode` | Code 128 and EAN-13, drawn as SVG |
+
+## Workflow designer
+
+A canvas of nodes you drag and wire together, for AI agents, RAG pipelines, approval flows and ETL jobs. The workflow is a `FlowGraph` (nodes, connections, each node's settings), which saves as JSON and runs on the built-in `FlowRunner`.
+
+```razor
+<AppFlowEditor @bind-Graph="_graph" OnOpen="id => _open = _graph.Node(id)" Height="600" />
+```
+
+```html
+<form method="post" asp-antiforgery="true" action="/flows/save">
+  <app-flow-editor asp-for="Workflow" height="600" />
+  <button type="submit">Save</button>
+</form>
+```
+
+In MVC and Razor Pages the graph posts as JSON in one field: read it with `FlowGraph.TryParse`.
+
+### Running a workflow
+
+```csharp
+var runner = new FlowRunner()
+    .OnEach("ai.chat", async (ctx, item, ct) => item.With("reply", await model.CompleteAsync(ctx.Setting("prompt", item), ct)))
+    .OnEach("action.email", async (ctx, item, ct) => { await mail.SendAsync(ctx.Setting("to", item), ctx.Setting("subject", item), ct); return item; });
+
+var result = await runner.RunAsync(graph, [FlowItem.Of(("message", text))], new FlowRunOptions { OnStep = step => Task.CompletedTask });
+var statuses = result.ApplyTo(graph); // hand this to the editor to show each node's status
+```
+
+The built-in nodes (triggers, if, switch, merge, wait, set fields, filter) need no handler. Expressions use `{{path}}` and conditions such as `customer.tier == "gold"`; see the Workflow designer section of the documentation. The library has no model, mail or HTTP clients: your app supplies them, and loop nodes are not run. The palette comes from a `FlowCatalog`; `FlowCatalog.Default` has triggers (manual, webhook, schedule, chat), AI (chat model, agent, classifier, extractor, embeddings, vector search, human approval), logic (if, switch, merge, loop, wait), data (HTTP, set fields, code, database, filter) and actions (email, chat message, respond). Pass your own catalog for your node kinds.
+
+| You can | How |
+| --- | --- |
+| Add a node | click it in the palette, drag it onto the canvas, or search and press Enter |
+| Connect | drag from an output dot to a node; let go on empty canvas and the next node you pick is wired to it |
+| Move, select, delete | drag (snaps to a grid), Shift-click for several, Delete |
+| Undo and redo | Ctrl+Z, Ctrl+Shift+Z or the toolbar |
+| Pan and zoom | drag the background, Ctrl/Cmd and the wheel, pinch, or the toolbar; the wheel pans once the editor has focus |
+| Use the keyboard | Tab to a node, Enter opens it, arrows move it, **C** then Enter on another node connects them, **U** disconnects, **D** disables, Ctrl+D duplicates |
+| Open a node's settings | double-click or Enter raises `m-flow-open` (`OnOpen` in Blazor); `UpdateNodeAsync` or `modulusFlow.updateNode` writes the settings back without redrawing |
+| Show a run | `SetStatusAsync` or `modulusFlow.setStatus(editor, id, 'running' / 'success' / 'error' / 'waiting', note)` draws a ring and an icon on each node |
+| Check it | `graph.Validate(catalog)` finds unknown node kinds, broken connections, a missing trigger, nodes no trigger reaches and loops; `graph.ExecutionOrder(catalog)` gives a valid run order |
+
+`modulus-flow.js` (about 11 KB gzipped) and its stylesheet load only on a page that has a designer. The designer draws and edits workflows; `FlowRunner` runs them. See the "Workflow designer" sample.
 
 ## Notes on use
 

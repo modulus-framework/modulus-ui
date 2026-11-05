@@ -2904,3 +2904,27 @@ html[data-density='compact'] .m-settings-title { margin-bottom: 16px; font-size:
 .m-page-title.m-page-trail > .ant-breadcrumb { margin: 0; font-size: 14px; line-height: 22px; font-weight: 400; }
 .m-page-title.m-page-trail > .ant-breadcrumb [aria-current='page'] { font-weight: 600; }
 html[data-density='compact'] .m-page-title.m-page-trail > .ant-breadcrumb { font-size: 13px; line-height: 20px; }
+
+/* Popconfirm (app-popconfirm): the click popover with a question and OK / Cancel. */
+.m-popconfirm .ant-popover-message { display: block; max-width: 280px; padding: 4px 0 12px; }
+.m-popconfirm .ant-popover-message-title { display: block; font-weight: 500; color: var(--m-text); }
+.m-popconfirm .m-popconfirm-description { display: block; margin-top: 4px; color: var(--m-text-secondary); font-size: 13px; }
+.m-popconfirm .ant-popover-buttons { display: flex; justify-content: flex-end; gap: 8px; white-space: nowrap; }
+
+/* Tag input (app-tag-input / AppTagInput): tags in a bordered box with a free text field. */
+.m-tags { display: block; width: 100%; min-height: 32px; padding: 3px 7px; border: 1px solid var(--m-border-strong, var(--m-border)); border-radius: var(--m-radius); background: var(--m-bg-container); color: var(--m-text); cursor: text; transition: border-color 0.2s, box-shadow 0.2s; }
+.m-tags:hover { border-color: var(--m-primary-hover); }
+.m-tags:focus-within { border-color: var(--m-primary); box-shadow: var(--m-focus-ring); outline: 0; }
+.m-tags-sm { min-height: 24px; padding-top: 0; padding-bottom: 0; }
+.m-tags-lg { min-height: 40px; padding-top: 6px; padding-bottom: 6px; }
+.m-tags-status-error { border-color: var(--m-error); }
+.m-tags-status-warning { border-color: var(--m-warning); }
+.m-tags-disabled { background: var(--m-fill-secondary); color: var(--m-text-quaternary); cursor: not-allowed; }
+.m-tags-list { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.m-tags-item { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; height: 24px; padding: 0 4px 0 8px; border: 1px solid var(--m-border-secondary, var(--m-border)); border-radius: var(--m-radius-sm); background: var(--m-fill-secondary); font-size: 13px; line-height: 22px; }
+.m-tags-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-tags-remove { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--m-text-tertiary); font-size: 10px; cursor: pointer; }
+.m-tags-remove:hover { color: var(--m-text); background: var(--m-fill); }
+.m-tags-field { flex: 1 1 80px; min-width: 80px; height: 24px; padding: 0; border: 0; outline: 0; background: transparent; color: inherit; font: inherit; }
+.m-tags-field::placeholder { color: var(--m-text-quaternary); }
+.m-tags-disabled .m-tags-field { cursor: not-allowed; }

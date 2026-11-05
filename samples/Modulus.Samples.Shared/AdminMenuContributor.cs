@@ -37,6 +37,8 @@ public sealed class AdminMenuContributor : IMenuContributor
                 Link("kanban", "Project", "apps/kanban", "project"),
                 Link("gantt", "Gantt", "apps/gantt", "tb:timeline"),
                 Link("workflow", "Approvals", "apps/workflow", "tb:list-check"),
+                Link("flow", "Workflow designer", "apps/flow", "apartment"),
+                    Link("assistant", "AI assistant", "apps/assistant", "robot"),
                 Link("files", "Files", "apps/files", "folder")))
             .Add(Group("settings", "Settings", "setting", 40,
                 Link("account-settings", "General settings", "pages/account-settings", "setting"),
@@ -151,6 +153,7 @@ public sealed class AdminMenuContributor : IMenuContributor
                     Link("nested-grid", "Nested grid", "tables/nested", "tb:stack-2"),
                     Link("tree-grid", "Tree grid", "tables/tree", "tb:list-details"),
                     Link("query-builder", "Query builder", "tables/query", "filter"),
+                    Link("ask-data", "Ask your data", "tables/ask", "message"),
                     Link("import-data", "Import data", "tables/import", "upload"),
                     Link("printing", "Printing", "tables/print", "printer"),
                     Link("large-data", "Large data", "tables/large", "database"),

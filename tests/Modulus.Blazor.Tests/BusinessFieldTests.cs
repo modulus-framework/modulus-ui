@@ -236,6 +236,44 @@ public class BusinessFieldTests : AsyncBunitContext
         Assert.Equal("ABC", value);
     }
 
+    // ---- Tag input ----
+
+    [Fact]
+    public void TagInput_EnterAddsATag_BackspaceRemovesTheLast_DuplicatesAndLimitsAreRefused()
+    {
+        IReadOnlyList<string>? value = ["red"];
+        var cut = Bound<AppTagInput>(h => [("Value", value), ("ValueChanged", h.Set<IReadOnlyList<string>>(v => value = v)), ("Max", 3), ("Id", "tags")]);
+
+        Assert.Single(cut.FindAll(".m-tags-item"));
+        cut.Find("input#tags").Input("Green");
+        cut.Find("input#tags").KeyDown(new KeyboardEventArgs { Key = "Enter" });
+        Assert.Equal(["red", "Green"], value);
+
+        cut.Find("input#tags").Input("GREEN"); // a duplicate, without case
+        cut.Find("input#tags").KeyDown(new KeyboardEventArgs { Key = "Enter" });
+        Assert.Equal(2, value!.Count);
+
+        cut.Find("input#tags").Input("blue; amber");
+        cut.Find("input#tags").KeyDown(new KeyboardEventArgs { Key = "," });
+        Assert.Equal(["red", "Green", "blue"], value); // Max 3: amber is refused
+
+        cut.Find("input#tags").KeyDown(new KeyboardEventArgs { Key = "Backspace" });
+        Assert.Equal(["red", "Green"], value);
+    }
+
+    [Fact]
+    public void TagInput_RemoveButtonDropsATag_AndDisabledHasNoButtons()
+    {
+        IReadOnlyList<string>? value = ["a", "b"];
+        var cut = Bound<AppTagInput>(h => [("Value", value), ("ValueChanged", h.Set<IReadOnlyList<string>>(v => value = v))]);
+        cut.FindAll(".m-tags-remove")[0].Click();
+        Assert.Equal(["b"], value);
+
+        var disabled = Bound<AppTagInput>(h => [("Value", (IReadOnlyList<string>)["a"]), ("Disabled", true)]);
+        Assert.Empty(disabled.FindAll(".m-tags-remove"));
+        Assert.Contains("m-tags-disabled", disabled.Find(".m-tags").ClassName);
+    }
+
     // ---- Lookup ----
 
     private static readonly LookupItem[] Customers =

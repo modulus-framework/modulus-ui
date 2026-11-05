@@ -118,6 +118,14 @@ public class TablesController : SampleController
     [HttpGet("query")]
     public IActionResult Query() => Page("Query builder", "Tables/Query", QueryPageActions.Load(Request.Query));
 
+    /// <summary>Ask your data: a question in plain words becomes a filter on the shipments (the conversation rides in hidden fields).</summary>
+    [HttpGet("ask")]
+    public async Task<IActionResult> Ask() => Page("Ask your data", "Tables/Ask", await AskPage.AskAsync(null, null, null, AskPage.Model()));
+
+    [HttpPost("ask")]
+    public async Task<IActionResult> AskPost([FromForm] string? transcript, [FromForm] string? filter, [FromForm] string? question) =>
+        Page("Ask your data", "Tables/Ask", await AskPage.AskAsync(transcript, filter, question, AskPage.Model()));
+
     /// <summary>Tree grid: a bill of materials; expanded parts load their parts from tree/level.</summary>
     /// <summary>Printing: the overview with links to the two print views.</summary>
     [HttpGet("print")]

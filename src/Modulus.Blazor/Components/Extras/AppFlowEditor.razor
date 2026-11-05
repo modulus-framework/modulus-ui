@@ -1,0 +1,128 @@
+@* Visual workflow designer (an n8n or Zapier style canvas) for AI and automation flows: drag nodes from the palette, draw connections
+   from an output dot to an input dot, pan, zoom, undo. The markup is the shared FlowHtml renderer; modulus-flow.js (loaded when the
+   editor appears) does the interaction and reports each change as the graph JSON in a hidden input, which GraphChanged receives.
+   The page owns the graph: bind it with @bind-Graph. The canvas is left alone while the graph the page holds is the one the
+   editor already shows, so panning, zoom and selection survive an edit. The same editor is <app-flow-editor> in MVC and Razor Pages. *@
+@using Modulus.Ui.Abstractions.Flow
+@inject IJSRuntime JS
+
+<div @ref="_host" class="m-flow-wrap">
+    @* The key makes this a new element whenever the canvas is replaced. The script edits the DOM in the browser, so without it Blazor
+       compares the new markup with what it last rendered, sees no change, and leaves the edited canvas (and input values) in place. *@
+    <div @key="_version" class="m-flow-host">
+        @((MarkupString)_html)
+        @* Blazor delivers change only to a handler on the input itself, so these are Razor, not part of the markup string. *@
+        <input type="hidden" data-m-flow-value value="@_json" @onchange="Changed" />
+        <input type="hidden" data-m-flow-event @onchange="Changed" />
+    </div>
+</div>
+
+@code {
+    /// <summary>The workflow shown. Edits come back through <see cref="GraphChanged"/>; a different graph from the page replaces the canvas.</summary>
+    [Parameter] public FlowGraph Graph { get; set; } = FlowGraph.Empty;
+
+    [Parameter] public EventCallback<FlowGraph> GraphChanged { get; set; }
+
+    /// <summary>The node kinds the palette offers. <see cref="FlowCatalog.Default"/> is a set for AI and automation workflows.</summary>
+    [Parameter] public FlowCatalog Catalog { get; set; } = FlowCatalog.Default;
+
+    /// <summary>Canvas height in px.</summary>
+    [Parameter] public int Height { get; set; } = 560;
+
+    /// <summary>View and select only (to show the result of a run).</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
+    [Parameter] public bool ShowPalette { get; set; } = true;
+
+    [Parameter] public bool ShowToolbar { get; set; } = true;
+
+    /// <summary>Nodes snap to this many px; 0 for free placement.</summary>
+    [Parameter] public int Grid { get; set; } = 20;
+
+    [Parameter] public string Label { get; set; } = "Workflow editor";
+
+    [Parameter] public string? CssClass { get; set; }
+
+    /// <summary>A node was double-clicked, or Enter was pressed on it: open its settings. The value is the node id.</summary>
+    [Parameter] public EventCallback<string> OnOpen { get; set; }
+
+    /// <summary>The selection changed (a round trip per click, so it is only reported when something listens).</summary>
+    [Parameter] public EventCallback<FlowEvent> OnSelect { get; set; }
+
+    private ElementReference _host;
+    private string _html = "";
+    private string? _json;
+    private FlowOptions? _options;
+    private FlowCatalog? _catalog;
+    private bool _render = true;
+    private int _version;
+
+    protected override void OnParametersSet()
+    {
+        var graph = Graph ?? FlowGraph.Empty;
+        var json = graph.ToJson();
+        var options = new FlowOptions
+        {
+            Height = Height, ReadOnly = ReadOnly, ShowPalette = ShowPalette, ShowToolbar = ShowToolbar, Grid = Grid, Label = Label,
+            CssClass = CssClass, EmitSelection = OnSelect.HasDelegate, Inputs = false,
+        };
+        if (_html.Length > 0 && json == _json && options == _options && ReferenceEquals(Catalog, _catalog))
+        {
+            _render = false;
+            return;
+        }
+        _json = json;
+        _options = options;
+        _catalog = Catalog;
+        _html = FlowHtml.Editor(graph, Catalog, options);
+        _version++;
+        _render = true;
+    }
+
+    protected override bool ShouldRender() => _render;
+
+    protected override void OnAfterRender(bool firstRender) => _render = false;
+
+    private async Task Changed(ChangeEventArgs e)
+    {
+        var text = e.Value?.ToString();
+        if (FlowEvent.TryParse(text, out var flowEvent))
+        {
+            if (flowEvent.Type == "open" && flowEvent.Id is not null) await OnOpen.InvokeAsync(flowEvent.Id);
+            else if (flowEvent.Type == "select") await OnSelect.InvokeAsync(flowEvent);
+        }
+        else if (FlowGraph.TryParse(text, out var graph))
+        {
+            // The canvas already shows this graph: remember it so the page handing it back does not redraw the canvas.
+            _json = graph.ToJson();
+            await GraphChanged.InvokeAsync(graph);
+        }
+    }
+
+    /// <summary>
+    /// Shows how a node did in a run (a ring and an icon, with an optional note such as "3 items"), without redrawing the canvas.
+    /// Display only: it is not part of the graph the page holds. Does nothing until the editor has started.
+    /// </summary>
+    public async ValueTask SetStatusAsync(string nodeId, FlowStatus status, string? note = null)
+    {
+        try { await JS.InvokeVoidAsync("modulusFlow.setStatus", _host, nodeId, status.ToString().ToLowerInvariant(), note); }
+        catch (JSException) { /* modulus-flow.js has not loaded yet */ }
+    }
+
+    /// <summary>
+    /// Changes a node's title and settings from the page (a settings panel) without redrawing the canvas, as one undo step. The new
+    /// graph reaches <see cref="GraphChanged"/> like any edit. A null title or config leaves that part alone.
+    /// </summary>
+    public async ValueTask UpdateNodeAsync(string nodeId, string? title = null, IReadOnlyDictionary<string, string>? config = null)
+    {
+        try { await JS.InvokeVoidAsync("modulusFlow.updateNode", _host, nodeId, new { title = title, config = config }); }
+        catch (JSException) { /* not started yet */ }
+    }
+
+    /// <summary>Fits the whole workflow into view.</summary>
+    public async ValueTask FitAsync()
+    {
+        try { await JS.InvokeVoidAsync("modulusFlow.fit", _host); }
+        catch (JSException) { /* not started yet */ }
+    }
+}

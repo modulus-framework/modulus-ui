@@ -1,0 +1,13 @@
+@* Popconfirm: Title, Label and OnConfirm *@
+
+<AntDesign.Popconfirm Title="@Title" OkText="@OkText" CancelText="Cancel" OnConfirm="OnConfirm">
+    <AntDesign.Button Danger="Danger">@Label</AntDesign.Button>
+</AntDesign.Popconfirm>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Are you sure?";
+    [Parameter] public string Label { get; set; } = "Delete";
+    [Parameter] public string OkText { get; set; } = "OK";
+    [Parameter] public bool Danger { get; set; } = true;
+    [Parameter] public EventCallback OnConfirm { get; set; }
+}

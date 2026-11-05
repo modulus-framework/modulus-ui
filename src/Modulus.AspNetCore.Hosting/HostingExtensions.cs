@@ -22,8 +22,12 @@ public static class HostingExtensions
         var options = new ModulusHardeningOptions();
         configure?.Invoke(options);
         services.AddSingleton(options);
+        services.Configure<BrotliCompressionProviderOptions>(o => o.Level = options.CompressionLevel);
+        services.Configure<GzipCompressionProviderOptions>(o => o.Level = options.CompressionLevel);
         services.AddResponseCompression(o =>
         {
+            o.Providers.Add<BrotliCompressionProvider>();
+            o.Providers.Add<GzipCompressionProvider>();
             // Off over HTTPS by default: a compressed response that echoes a secret next to attacker text can leak it (BREACH).
             o.EnableForHttps = false;
             o.MimeTypes = CompressedTypes;

@@ -8,6 +8,35 @@
     <a class="ant-btn ant-btn-default" href="/ui/charts"><app-icon type="bar-chart" /><span>All chart types</span></a>
 </app-page-header>
 
+    <div class="m-row-cards">
+        <div class="m-row-cards m-cols-2">
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Radar</h3><p class="m-card-subtitle">Supplier scorecard, 0 to 5</p></div></div>
+            <div class="m-card-body">
+                <app-radar-chart axes="AdvancedChartsDemo.SupplierAxes" series="AdvancedChartsDemo.SupplierScores" max="5" title="Supplier scorecard" height="300" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Candlestick</h3><p class="m-card-subtitle">Commodity price with volume</p></div></div>
+            <div class="m-card-body">
+                <app-candlestick-chart candles="AdvancedChartsDemo.Prices" prefix="$" value-format="N2" title="Commodity price" height="260" />
+            </div>
+        </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Sankey</h3><p class="m-card-subtitle">Material from suppliers through the plants to the market, in tonnes</p></div></div>
+            <div class="m-card-body">
+                <app-sankey-chart flows="AdvancedChartsDemo.MaterialFlow" suffix=" t" title="Material flow" height="320" />
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><div><h3 class="m-card-title">Org chart</h3><p class="m-card-subtitle">Reporting lines, with the number of direct reports</p></div></div>
+            <div class="m-card-body">
+                <app-org-chart nodes="AdvancedChartsDemo.Company" title="Company structure" />
+            </div>
+        </div>
+    </div>
+
 <div class="m-row-cards">
     <div class="m-row-cards m-cols-2">
         <div class="m-card">

@@ -163,7 +163,7 @@
       },
       "TimePicker": {
         "status": "alias",
-        "mvc": "app-date-picker picker=\"time\""
+        "mvc": "app-time-picker"
       },
       "Form": {
         "status": "alias",
@@ -352,7 +352,7 @@
       },
       "Popconfirm": {
         "status": "alias",
-        "mvc": "hx-confirm (modulus confirm dialog)"
+        "mvc": "app-popconfirm"
       },
       "Progress": {
         "status": "alias",
@@ -387,7 +387,7 @@
       "Confirm": {
         "status": "service",
         "note": "Inject IConfirmService / ModalService; MVC: hx-confirm",
-        "mvc": "hx-confirm (modulus confirm dialog)"
+        "mvc": "app-popconfirm"
       }
     },
     "Other": {
@@ -500,6 +500,46 @@
         "note": "WaterfallChart (Components/Charts)",
         "mvc": "app-waterfall-chart"
       },
+      "RadarChart": {
+        "status": "modulus",
+        "note": "RadarChart (Components/Charts): several measures on shared spokes",
+        "mvc": "app-radar-chart"
+      },
+      "CandlestickChart": {
+        "status": "modulus",
+        "note": "CandlestickChart (Components/Charts): open, high, low, close with volume",
+        "mvc": "app-candlestick-chart"
+      },
+      "SankeyChart": {
+        "status": "modulus",
+        "note": "SankeyChart (Components/Charts): flows between nodes",
+        "mvc": "app-sankey-chart"
+      },
+      "OrgChart": {
+        "status": "modulus",
+        "note": "OrgChart (Components/Charts): reporting hierarchy as nested lists",
+        "mvc": "app-org-chart"
+      },
+      "FlowEditor": {
+        "status": "modulus",
+        "note": "AppFlowEditor (Components/Extras): n8n style workflow designer; modulus-flow.js loads when one appears",
+        "mvc": "app-flow-editor"
+      },
+      "Chat": {
+        "status": "modulus",
+        "note": "AppChat (Components/Extras): a conversation log and a question field; the same markup as ChatHtml (Abstractions/Chat)",
+        "mvc": "app-chat"
+      },
+      "ApprovalCard": {
+        "status": "modulus",
+        "note": "AppApprovalCard (Components/Extras): an approval waiting for a person, with approve and reject buttons (ApprovalHtml)",
+        "mvc": "app-approval-card"
+      },
+      "DocumentUpload": {
+        "status": "modulus",
+        "note": "AppDocumentUpload (Components/Extras): the upload field of a knowledge base, with the documents in it (UploadHtml)",
+        "mvc": "app-document-upload"
+      },
       "FunnelChart": {
         "status": "modulus",
         "note": "FunnelChart (Components/Charts)",
@@ -593,6 +633,11 @@
         "status": "modulus",
         "note": "AppOtpInput: Ant Design 5 Input.OTP; AntD Blazor 1.6.2 has none",
         "mvc": "app-otp-input"
+      },
+      "TagInput": {
+        "status": "modulus",
+        "note": "AppTagInput: free-form tags (Enter or a separator adds, Backspace removes); shared rules in Forms.TagInput",
+        "mvc": "app-tag-input"
       },
       "Lookup": {
         "status": "modulus",

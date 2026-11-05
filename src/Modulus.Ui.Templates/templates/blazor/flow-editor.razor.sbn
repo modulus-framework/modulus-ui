@@ -1,0 +1,15 @@
+@* Workflow designer: Graph, GraphChanged, Height, ReadOnly and OnOpen (a node was double-clicked: open its settings) *@
+@using Modulus.Ui.Abstractions.Flow
+
+<Modulus.Blazor.Components.Extras.AppFlowEditor Graph="Graph" GraphChanged="GraphChanged" Height="Height" ReadOnly="ReadOnly" OnOpen="OnOpen" Label="Workflow editor" />
+
+@code {
+    /// <summary>The workflow shown; a two-node sample when the page gives none.</summary>
+    [Parameter] public FlowGraph Graph { get; set; } = new(
+        [new FlowNode("start", "trigger.manual", 60, 120), new FlowNode("ask", "ai.chat", 380, 120) { Title = "Ask the model" }],
+        [new FlowEdge("e1", "start", "ask")]);
+    [Parameter] public EventCallback<FlowGraph> GraphChanged { get; set; }
+    [Parameter] public int Height { get; set; } = 560;
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public EventCallback<string> OnOpen { get; set; }
+}

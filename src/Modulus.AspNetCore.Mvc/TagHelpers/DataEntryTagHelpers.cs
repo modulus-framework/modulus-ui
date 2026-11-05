@@ -355,6 +355,23 @@ public class DatePickerTagHelper : BoundControlTagHelper
 }
 
 /// <summary>
+/// Time of day with Ant Design's hour, minute and second columns: <c>&lt;app-time-picker asp-for="Opens" format="HH:mm" /&gt;</c>.
+/// The same control as <c>&lt;app-date-picker picker="time"&gt;</c>, named like AntD Blazor's <c>TimePicker</c>.
+/// </summary>
+[HtmlTargetElement("app-time-picker", TagStructure = TagStructure.WithoutEndTag)]
+public class TimePickerTagHelper : DatePickerTagHelper
+{
+    public TimePickerTagHelper() => Picker = "time";
+
+    public override void Process(TagHelperContext context, TagHelperOutput output)
+    {
+        Picker = "time";
+        ShowTime = false;
+        base.Process(context, output);
+    }
+}
+
+/// <summary>
 /// Date range with Ant Design's two-month popup: <c>&lt;app-range-picker asp-for="Period" /&gt;</c> binds a two-item
 /// array/list, or use <c>name-from</c> / <c>name-to</c> with <c>value-from</c> / <c>value-to</c>. <c>presets</c> fills the
 /// popup footer with preset tags (AntD's <c>Ranges</c>); <c>min</c>, <c>max</c> and <c>disabled-days</c> disable dates.
