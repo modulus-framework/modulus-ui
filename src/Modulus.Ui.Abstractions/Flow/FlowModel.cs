@@ -31,7 +31,6 @@ public sealed record FlowNode(string Id, string Type, double X, double Y)
     public string? Note { get; init; }
 }
 
-/// <summary>A connection from output port <see cref="FromPort"/> of one node to the input of another.</summary>
 /// <summary>The loop node (<c>logic.loop</c>): its body is the chain from its "each item" output back into it, and its items leave on "done".</summary>
 public static class FlowLoop
 {
@@ -46,6 +45,7 @@ public static class FlowLoop
 /// <summary>One node of a loop body and the output port it hands items on to the next node (the last one hands them back to the loop).</summary>
 public sealed record FlowLoopStep(FlowNode Node, string Port);
 
+/// <summary>A connection from output port <see cref="FromPort"/> of one node to the input of another.</summary>
 public sealed record FlowEdge(string Id, string From, string To)
 {
     /// <summary>The output port of <see cref="From"/>; "out" for a node with one output.</summary>
@@ -151,7 +151,8 @@ public sealed record FlowGraph(IReadOnlyList<FlowNode> Nodes, IReadOnlyList<Flow
 
         if (HasLoop()) issues.Add(new(FlowIssueLevel.Warning, null, "The workflow contains a loop; make sure something ends it."));
         foreach (var loop in Nodes.Where(n => n.Type == FlowLoop.NodeType).DistinctBy(n => n.Id))
-            if (LoopBody(loop.Id, out var loopError) is null) issues.Add(new(FlowIssueLevel.Error, loop.Id, loopError));
+            if (LoopBody(loop.Id, out var loopError) is null)
+                issues.Add(new(FlowIssueLevel.Error, loop.Id, loopError ?? "The loop body is not valid."));
         return issues;
     }
 

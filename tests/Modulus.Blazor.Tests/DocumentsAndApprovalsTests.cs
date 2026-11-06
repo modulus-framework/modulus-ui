@@ -101,8 +101,6 @@ public class ApprovalAgentTests
 
 public class ApprovalAndTableHtmlTests
 {
-    private static readonly Modulus.Ui.Abstractions.Language.ILanguageModel Unused = null!;
-
     [Fact]
     public void ApprovalCard_HasApproveAndReject_WhilePending_AndPostsTheIdAndDecision()
     {
