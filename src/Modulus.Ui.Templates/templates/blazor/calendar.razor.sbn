@@ -1,6 +1,6 @@
 @* Calendar: Value, Fullscreen and OnSelect *@
 
-<AntDesign.Calendar TValue="DateTime" Value="@Value" Fullscreen="Fullscreen" OnSelect="Selected" />
+<AntDesign.Calendar TValue="DateTime" Value="@Value" Fullscreen="Fullscreen" OnChange="Selected" />
 
 @code {
     [Parameter] public DateTime Value { get; set; } = DateTime.Today;

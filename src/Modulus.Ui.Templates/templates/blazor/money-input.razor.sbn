@@ -8,7 +8,10 @@
         </div>
     }
     <div class="ant-form-item-control">
-        <AntDesign.InputNumber TValue="decimal" Value="@Value" ValueChanged="SetValue" Min="Min" Step="0.01m" Precision="2" Disabled="Disabled" Style="width:100%"><AddOnBefore>@Currency</AddOnBefore></AntDesign.InputNumber>
+        <div class="ant-input-group ant-input-group-compact" style="display:flex">
+            <span class="ant-input-group-addon">@Currency</span>
+            <AntDesign.InputNumber TValue="decimal" Value="@Value" ValueChanged="SetValue" Min="Min" Step="0.01m" Disabled="Disabled" Style="flex:1" />
+        </div>
         @if (!string.IsNullOrEmpty(Help))
         {
             <div class="m-muted m-mt-4">@Help</div>

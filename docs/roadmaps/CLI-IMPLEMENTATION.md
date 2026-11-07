@@ -114,7 +114,7 @@ public class UiAddChartCommand : UiAddCommand
         engine = await ResolveEngine(engine);
         
         // 2. Resolve template package
-        var templatePath = await ResolveTemplate("Modulus.Ui.Templates", "0.9.0", 
+        var templatePath = await ResolveTemplate("Modulus.Ui.Templates", "2.0.0", 
             $"charts/chart-{type}");
         
         // 3. Render template with context
@@ -353,7 +353,7 @@ public class UiCreateUserDashboardCommand : Command
         // 2. Render each template
         foreach (var template in templates)
         {
-            var path = await ResolveTemplate("Modulus.Ui.Templates", "0.9.0", template);
+            var path = await ResolveTemplate("Modulus.Ui.Templates", "2.0.0", template);
             await _templateEngine.RenderToFile(path, 
                 new { ModuleName = module }, 
                 outputPath);

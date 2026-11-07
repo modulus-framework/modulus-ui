@@ -1,6 +1,6 @@
 @* Skeleton: Loading, Rows and Avatar; the real content is the child content *@
 
-<AntDesign.Skeleton Active Loading="Loading" Avatar="Avatar" Paragraph="@(new SkeletonParagraph { Rows = Rows })">
+<AntDesign.Skeleton Active Loading="Loading" Avatar="Avatar" Paragraph ParagraphRows="Rows">
     @ChildContent
 </AntDesign.Skeleton>
 

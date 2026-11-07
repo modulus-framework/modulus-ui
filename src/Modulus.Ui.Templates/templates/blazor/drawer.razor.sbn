@@ -1,6 +1,6 @@
 @* Drawer: IsOpen, Title, Placement (Right, Left, Top, Bottom), Width, the body as child content and OnClose *@
 
-<AntDesign.Drawer Visible="IsOpen" Title="@Title" Placement="@Placement" Width="Width" Closable OnClose="OnClose">
+<AntDesign.Drawer Visible="IsOpen" Title="@Title" Placement="@PlacementValue" Width="@($"{Width}px")" Closable OnClose="OnClose">
     @ChildContent
 </AntDesign.Drawer>
 
@@ -11,4 +11,12 @@
     [Parameter] public int Width { get; set; } = 480;
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
+
+    private DrawerPlacement PlacementValue => Placement switch
+    {
+        "left" => DrawerPlacement.Left,
+        "top" => DrawerPlacement.Top,
+        "bottom" => DrawerPlacement.Bottom,
+        _ => DrawerPlacement.Right,
+    };
 }

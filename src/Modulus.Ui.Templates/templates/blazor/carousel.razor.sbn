@@ -1,9 +1,9 @@
 @* Carousel: Slides (a render fragment each), Autoplay and Dots *@
 
-<AntDesign.Carousel Autoplay="Autoplay" Dots="Dots" DotPosition="CarouselDotPosition.Bottom">
+<AntDesign.Carousel Autoplay="@(Autoplay ? TimeSpan.FromSeconds(3) : TimeSpan.Zero)" Dots="Dots" DotPosition="CarouselDotPosition.Bottom">
     @foreach (var slide in Slides)
     {
-        <CarouselSlick>@slide</CarouselSlick>
+        <div>@slide</div>
     }
 </AntDesign.Carousel>
 

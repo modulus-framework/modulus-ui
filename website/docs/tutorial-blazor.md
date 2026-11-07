@@ -8,7 +8,7 @@ You will build **Contoso Admin**: a dashboard, and a customer list with search, 
 
 :::note[Before you start]
 
-You need the .NET 10 SDK and the Modulus packages (see [Getting started](./getting-started.md)). The steps use the packages as `0.9.0`.
+You need the .NET 10 SDK and the Modulus packages (see [Getting started](./getting-started.md)). The steps use the packages as `2.0.0`.
 
 :::
 
@@ -41,9 +41,9 @@ cd ContosoAdmin
 Add the three packages every Blazor Modulus app uses. `Synvro.Modulus.Ui.Abstractions` comes with them as a dependency.
 
 ````bash
-dotnet add package Synvro.Modulus.Blazor --version 0.9.0
-dotnet add package Synvro.Modulus.Ui.Assets --version 0.9.0
-dotnet add package Synvro.Modulus.AspNetCore.Hosting --version 0.9.0
+dotnet add package Synvro.Modulus.Blazor --version 2.0.0
+dotnet add package Synvro.Modulus.Ui.Assets --version 2.0.0
+dotnet add package Synvro.Modulus.AspNetCore.Hosting --version 2.0.0
 ````
 
 :::tip[Packages not on nuget.org yet?]
@@ -65,9 +65,9 @@ The project file should now list the three packages:
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Synvro.Modulus.AspNetCore.Hosting" Version="0.9.0" />
-    <PackageReference Include="Synvro.Modulus.Blazor" Version="0.9.0" />
-    <PackageReference Include="Synvro.Modulus.Ui.Assets" Version="0.9.0" />
+    <PackageReference Include="Synvro.Modulus.AspNetCore.Hosting" Version="2.0.0" />
+    <PackageReference Include="Synvro.Modulus.Blazor" Version="2.0.0" />
+    <PackageReference Include="Synvro.Modulus.Ui.Assets" Version="2.0.0" />
   </ItemGroup>
 
 </Project>

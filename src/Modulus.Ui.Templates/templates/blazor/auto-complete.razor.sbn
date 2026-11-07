@@ -8,7 +8,12 @@
         </div>
     }
     <div class="ant-form-item-control">
-        <AntDesign.AutoComplete TOption="string" Value="@Value" ValueChanged="SetValue" Options="@Options.Select(o => new AutoCompleteOption(o, o)).ToList()" Placeholder="@Placeholder" Disabled="Disabled" />
+        <AntDesign.AutoComplete TOption="string" Value="@Value" ValueChanged="SetValue" Placeholder="@Placeholder" Disabled="Disabled">
+            @foreach (var option in Options)
+            {
+                <AutoCompleteOption Value="@option" Label="@option" />
+            }
+        </AntDesign.AutoComplete>
         @if (!string.IsNullOrEmpty(Help))
         {
             <div class="m-muted m-mt-4">@Help</div>

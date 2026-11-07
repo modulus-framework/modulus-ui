@@ -1,6 +1,6 @@
 @* Steps: Items (Title and Description), Current (0-based) and Vertical *@
 
-<AntDesign.Steps Current="Current" Direction="@(Vertical ? "vertical" : "horizontal")">
+<AntDesign.Steps Current="Current" Direction="@(Vertical ? StepsDirection.Vertical : StepsDirection.Horizontal)">
     @foreach (var item in Items)
     {
         <Step Title="@item.Title" Description="@item.Description" />

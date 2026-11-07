@@ -1,4 +1,5 @@
 @* Colour picker: Label, Value (#RRGGBB) and ValueChanged *@
+@using Modulus.Blazor.Components.Extras
 
 <div class="ant-form-item m-field">
     @if (!string.IsNullOrEmpty(Label))
@@ -8,7 +9,7 @@
         </div>
     }
     <div class="ant-form-item-control">
-        <AntDesign.ColorPicker Value="@Value" ValueChanged="SetValue" ShowText Disabled="Disabled" />
+        <AppColorPicker Value="@Value" ValueChanged="SetValue" ShowText Disabled="Disabled" />
         @if (!string.IsNullOrEmpty(Help))
         {
             <div class="m-muted m-mt-4">@Help</div>

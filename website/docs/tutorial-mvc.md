@@ -8,7 +8,7 @@ You will build **Contoso Admin** on ASP.NET Core MVC: a dashboard, and a custome
 
 :::note[Before you start]
 
-You need the .NET 10 SDK and the Modulus packages (see [Getting started](./getting-started.md)). The steps use the packages as `0.9.0`. The same steps work for Razor Pages with the changes listed at the end of this page.
+You need the .NET 10 SDK and the Modulus packages (see [Getting started](./getting-started.md)). The steps use the packages as `2.0.0`. The same steps work for Razor Pages with the changes listed at the end of this page.
 
 :::
 
@@ -42,9 +42,9 @@ In PowerShell, use `Remove-Item -Recurse -Force wwwroot/lib, wwwroot/css, wwwroo
 An MVC app needs the MVC package, the assets (styles and scripts) and the hosting defaults. The Abstractions package comes with the MVC package.
 
 ````bash
-dotnet add package Synvro.Modulus.AspNetCore.Mvc --version 0.9.0
-dotnet add package Synvro.Modulus.Ui.Assets --version 0.9.0
-dotnet add package Synvro.Modulus.AspNetCore.Hosting --version 0.9.0
+dotnet add package Synvro.Modulus.AspNetCore.Mvc --version 2.0.0
+dotnet add package Synvro.Modulus.Ui.Assets --version 2.0.0
+dotnet add package Synvro.Modulus.AspNetCore.Hosting --version 2.0.0
 ````
 
 If the packages are not on nuget.org yet, add `--source "path/to/modulus-ui/nupkg"` to each command.

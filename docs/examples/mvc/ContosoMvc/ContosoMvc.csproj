@@ -7,9 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Synvro.Modulus.AspNetCore.Hosting" Version="0.9.0" />
-    <PackageReference Include="Synvro.Modulus.AspNetCore.Mvc" Version="0.9.0" />
-    <PackageReference Include="Synvro.Modulus.Ui.Assets" Version="0.9.0" />
+    <PackageReference Include="Synvro.Modulus.AspNetCore.Hosting" Version="2.0.0" />
+    <PackageReference Include="Synvro.Modulus.AspNetCore.Mvc" Version="2.0.0" />
+    <PackageReference Include="Synvro.Modulus.Ui.Assets" Version="2.0.0" />
   </ItemGroup>
 
 </Project>

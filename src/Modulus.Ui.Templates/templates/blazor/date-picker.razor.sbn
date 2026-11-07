@@ -8,7 +8,7 @@
         </div>
     }
     <div class="ant-form-item-control">
-        <AntDesign.DatePicker TValue="DateTime?" Value="@Value" ValueChanged="SetValue" Picker="@Picker" ShowTime="ShowTime" Placeholder="@Placeholder" Disabled="Disabled" Style="width:100%" />
+        <AntDesign.DatePicker TValue="DateTime?" Value="@Value" ValueChanged="SetValue" Picker="@PickerType" ShowTime="ShowTime" Placeholder="@Placeholder" Disabled="Disabled" Style="width:100%" />
         @if (!string.IsNullOrEmpty(Help))
         {
             <div class="m-muted m-mt-4">@Help</div>
@@ -26,6 +26,8 @@
     [Parameter] public string Picker { get; set; } = "date";
     [Parameter] public bool ShowTime { get; set; }
     [Parameter] public string? Placeholder { get; set; }
+    private DatePickerType PickerType => Enum.TryParse<DatePickerType>(Picker, ignoreCase: true, out var type) ? type : DatePickerType.Date;
+
     private async Task SetValue(DateTime? v)
     {
         Value = v;

@@ -1,9 +1,9 @@
 @* Space: the elements as child content, Size (Small, Middle, Large) and Vertical *@
 
-<AntDesign.Space Size="@Size" Direction="@(Vertical ? DirectionVHType.Vertical : DirectionVHType.Horizontal)" Wrap>
+<AntDesign.Space Size="@Size" Direction="@(Vertical ? SpaceDirection.Vertical : SpaceDirection.Horizontal)" Wrap>
     @foreach (var item in Items)
     {
-        <SpaceItem>@item</SpaceItem>
+        <AntDesign.SpaceItem>@item</AntDesign.SpaceItem>
     }
 </AntDesign.Space>
 

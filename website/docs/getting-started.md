@@ -14,7 +14,7 @@ In this page you check the prerequisites, install the packages, and see the four
 
 ## Get the packages
 
-Modulus ships as NuGet packages, all at the same version. This documentation uses `0.9.0`.
+Modulus ships as NuGet packages, all at the same version. This documentation uses `2.0.0`.
 
 | Package | Use it for |
 | --- | --- |
@@ -32,7 +32,7 @@ Install from nuget.org, or from a local copy of the packages. To build your own 
 dotnet pack Modulus.slnx -c Release -o artifacts/packages
 ````
 
-Then add that folder as a source to any command, for example `dotnet add package Synvro.Modulus.Blazor --version 0.9.0 --source ./artifacts/packages`.
+Then add that folder as a source to any command, for example `dotnet add package Synvro.Modulus.Blazor --version 2.0.0 --source ./artifacts/packages`.
 
 ## The four pieces every app has
 

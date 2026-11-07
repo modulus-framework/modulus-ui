@@ -1,10 +1,17 @@
 @* Divider: Text (optional), Orientation (left, center, right), Dashed and Vertical *@
 
-<AntDesign.Divider Text="@Text" Orientation="@Orientation" Dashed="Dashed" Type="@(Vertical ? DirectionVHType.Vertical : DirectionVHType.Horizontal)" />
+<AntDesign.Divider Text="@Text" Orientation="@OrientationValue" Dashed="Dashed" Type="@(Vertical ? DividerType.Vertical : DividerType.Horizontal)" />
 
 @code {
     [Parameter] public string? Text { get; set; }
     [Parameter] public string Orientation { get; set; } = "center";
     [Parameter] public bool Dashed { get; set; }
     [Parameter] public bool Vertical { get; set; }
+
+    private DividerOrientation OrientationValue => Orientation switch
+    {
+        "left" => DividerOrientation.Left,
+        "right" => DividerOrientation.Right,
+        _ => DividerOrientation.Center,
+    };
 }

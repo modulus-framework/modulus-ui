@@ -1,6 +1,6 @@
 @* Result: Status (success, info, warning, error, 404, 403, 500), Title, SubTitle and the actions as child content *@
 
-<AntDesign.Result Status="@Status" Title="@Title" SubTitle="@SubTitle">
+<AntDesign.Result Status="@StatusValue" Title="@Title" SubTitle="@SubTitle">
     <Extra>@ChildContent</Extra>
 </AntDesign.Result>
 
@@ -9,4 +9,15 @@
     [Parameter] public string? Title { get; set; }
     [Parameter] public string? SubTitle { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private ResultStatus StatusValue => Status switch
+    {
+        "info" => ResultStatus.Info,
+        "warning" => ResultStatus.Warning,
+        "error" => ResultStatus.Error,
+        "404" => ResultStatus.Http404,
+        "403" => ResultStatus.Http403,
+        "500" => ResultStatus.Http500,
+        _ => ResultStatus.Success,
+    };
 }

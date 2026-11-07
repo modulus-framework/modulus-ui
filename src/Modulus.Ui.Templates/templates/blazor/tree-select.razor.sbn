@@ -8,7 +8,7 @@
         </div>
     }
     <div class="ant-form-item-control">
-        <AntDesign.TreeSelect TItem="TreeOption" DataSource="@Options" Value="@Value" ValueChanged="SetValue" Placeholder="@Placeholder" ShowSearch AllowClear TreeDefaultExpandAll Disabled="Disabled"
+        <AntDesign.TreeSelect TItem="TreeOption" TItemValue="string" DataSource="@Options" Value="@Value" ValueChanged="SetValue" Placeholder="@Placeholder" EnableSearch AllowClear TreeDefaultExpandAll Disabled="Disabled"
                     TitleExpression="x => x.DataItem.Title" KeyExpression="x => x.DataItem.Value" ChildrenExpression="x => x.DataItem.Children" IsLeafExpression="x => x.DataItem.IsLeaf" />
         @if (!string.IsNullOrEmpty(Help))
         {

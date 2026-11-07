@@ -8,7 +8,7 @@
         </div>
     }
     <div class="ant-form-item-control">
-        <AntDesign.CheckboxGroup TValue="string" Options="_options" Value="@Values" ValueChanged="SetValues" Disabled="Disabled" />
+        <AntDesign.CheckboxGroup TValue="string" Options="_options.ToArray()" Value="@Values" ValueChanged="SetValues" Disabled="Disabled" />
         @if (!string.IsNullOrEmpty(Help))
         {
             <div class="m-muted m-mt-4">@Help</div>

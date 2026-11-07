@@ -1,7 +1,7 @@
 @* Splitter: Panels (Content; optional Size, Min and Max such as "30%") and Vertical *@
 
 <div style="height:@(Height)px">
-    <AntDesign.Splitter Layout="@(Vertical ? "vertical" : "horizontal")">
+    <AntDesign.Splitter Layout="@(Vertical ? SplitterLayout.Vertical : SplitterLayout.Horizontal)">
         @foreach (var panel in Panels)
         {
             <SplitterPanel DefaultSize="@panel.Size" Min="@panel.Min" Max="@panel.Max">@panel.Content</SplitterPanel>

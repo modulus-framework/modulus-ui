@@ -8,7 +8,7 @@
         </div>
     }
     <div class="ant-form-item-control">
-        <AntDesign.Segmented TValue="string" Options="@Options.Select(o => o.Value).ToArray()" Value="@Value" ValueChanged="SetValue" />
+        <AntDesign.Segmented TValue="string" Options="@SegmentOptions" Value="@Value" ValueChanged="SetValue" />
         @if (!string.IsNullOrEmpty(Help))
         {
             <div class="m-muted m-mt-4">@Help</div>
@@ -25,6 +25,7 @@
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
     [Parameter] public IEnumerable<Option> Options { get; set; } = [];
     public sealed record Option(string Value, string Label);
+    private IEnumerable<SegmentedOption<string>> SegmentOptions => Options.Select(o => new SegmentedOption<string> { Value = o.Value, Label = o.Label });
     private async Task SetValue(string v)
     {
         Value = v;

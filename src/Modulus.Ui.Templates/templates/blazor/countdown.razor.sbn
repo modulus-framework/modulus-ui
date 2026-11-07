@@ -1,6 +1,6 @@
 @* Countdown: Title, Target and Format; OnFinish runs at zero *@
 
-<AntDesign.Countdown Title="@Title" Value="@Target" Format="@Format" OnFinish="OnFinish" />
+<AntDesign.CountDown Title="@Title" Value="@Target" Format="@Format" OnFinish="OnFinish" />
 
 @code {
     [Parameter] public string? Title { get; set; }
