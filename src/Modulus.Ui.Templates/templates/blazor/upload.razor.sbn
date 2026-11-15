@@ -9,7 +9,7 @@
     }
     <div class="ant-form-item-control">
         <AntDesign.Upload Action="@Action" Name="@Name" Accept="@Accept" Multiple="Multiple" MaxCount="MaxCount" Disabled="Disabled">
-            <Button Icon="upload">@ButtonText</Button>
+            <AntDesign.Button Icon="upload">@ButtonText</AntDesign.Button>
         </AntDesign.Upload>
         @if (!string.IsNullOrEmpty(Help))
         {

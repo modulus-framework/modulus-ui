@@ -113,6 +113,23 @@ if (darkCss is null)
 else if (!File.Exists(darkBrandPath) || File.ReadAllText(darkBrandPath).ReplaceLineEndings("\n") != DarkBrandCss.Build(darkCss))
     darkProblems.Add("`antd-dark-brand.css` no longer matches the dark stylesheet; run `--write-dark-brand` and check any new blue shades against `AntDarkBrand.Sources`.");
 
+// Blazor wrapper classes that share a name with an AntDesign or Modulus.Blazor type. The CLI writes those wrappers
+// with a Modulus prefix, so the list in ui-kit.json must match the Blazor templates on disk, in both directions.
+var typeNames = antd.GetExportedTypes().Concat(modulus.GetExportedTypes())
+    .Select(t => BaseName(t.Name)).ToHashSet(StringComparer.Ordinal);
+var kitPath = Path.Combine(root, "src", "Modulus.Ui.Templates", "ui-kit.json");
+var prefixed = JsonNode.Parse(File.ReadAllText(kitPath))!["blazorPrefixed"]!.AsArray()
+    .Select(n => n!.GetValue<string>()).ToHashSet(StringComparer.Ordinal);
+var clashing = Directory.EnumerateFiles(Path.Combine(root, "src", "Modulus.Ui.Templates", "templates", "blazor"), "*.razor.sbn")
+    .Select(f => Path.GetFileName(f)[..^".razor.sbn".Length])
+    .Where(k => typeNames.Contains(string.Concat(k.Split('-').Select(w => char.ToUpperInvariant(w[0]) + w[1..]))))
+    .ToHashSet(StringComparer.Ordinal);
+var classProblems = clashing.Except(prefixed).Order()
+    .Select(k => $"`{k}` shares a class name with an AntDesign or Modulus.Blazor type but is not in `blazorPrefixed` (ui-kit.json).")
+    .Concat(prefixed.Except(clashing).Order()
+        .Select(k => $"`{k}` is in `blazorPrefixed` (ui-kit.json) but its Blazor template no longer clashes or does not exist."))
+    .ToList();
+
 var md = new StringBuilder()
     .AppendLine("# Ant Design drift report").AppendLine()
     .AppendLine($"- AntDesign referenced: **{antdVersion}** (baseline {manifest["antDesignVersion"]})")
@@ -125,7 +142,8 @@ Section("Component types removed upstream (aliases or samples may break)", remov
 Section("Alias problems", aliasProblems);
 Section("MVC tag helper problems", mvcProblems);
 Section("Dark brand stylesheet", darkProblems);
-if (added.Count + removed.Count + aliasProblems.Count + mvcProblems.Count + darkProblems.Count == 0)
+Section("Blazor class names clashing with a framework type", classProblems);
+if (added.Count + removed.Count + aliasProblems.Count + mvcProblems.Count + darkProblems.Count + classProblems.Count == 0)
     md.AppendLine("No drift. Modulus matches the pinned Ant Design Blazor surface.");
 
 Directory.CreateDirectory(reportsDir);

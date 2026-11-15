@@ -11,7 +11,7 @@
                 <AvatarTemplate>
                     @if (!string.IsNullOrEmpty(item.AvatarName))
                     {
-                        <Avatar Style="background-color:var(--ant-color-primary,#1677ff)">@item.AvatarName[..1].ToUpperInvariant()</Avatar>
+                        <AntDesign.Avatar Style="background-color:var(--ant-color-primary,#1677ff)">@item.AvatarName[..1].ToUpperInvariant()</AntDesign.Avatar>
                     }
                 </AvatarTemplate>
             </ListItemMeta>

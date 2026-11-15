@@ -40,7 +40,7 @@
 {{ if f.kind == "textarea" ~}}
                             <InputTextArea @bind-Value="form.{{ f.name }}" placeholder="Enter {{ f.label | string.downcase }}" class="ant-input" rows="4" />
 {{ else if f.kind == "number" ~}}
-                            <InputNumber @bind-Value="form.{{ f.name }}" placeholder="Enter {{ f.label | string.downcase }}" class="ant-input" />
+                            <AntDesign.InputNumber @bind-Value="form.{{ f.name }}" placeholder="Enter {{ f.label | string.downcase }}" class="ant-input" />
 {{ else if f.kind == "date" || f.kind == "datetime" ~}}
                             <InputDate @bind-Value="form.{{ f.name }}" placeholder="Enter {{ f.label | string.downcase }}" class="ant-input" />
 {{ else ~}}
