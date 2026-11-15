@@ -1089,6 +1089,8 @@ Known limits and ideas not done:
 - **Image cropper and PDF viewer.** Each shows a short placeholder ("No image yet.", "No document yet.") until its source is set. `app-pdf-button` still throws when no form id is given. That is deliberate: a missing id is a configuration error.
 - **Saved views.** Needs `AddModulusMvc()`, which registers `SavedViews`. The template header says so now.
 - **Button and popconfirm.** The `danger` flag is now written as `danger="@danger"`. This changes nothing: Razor reads an attribute on a non-string tag helper property as C#, so the earlier `danger="danger"` already bound the variable. The commit message overstates it as a bug fix.
+- **A variable name sent as text.** Razor passes an unquoted value to a string-typed parameter as the text of the value, so `Title="Title"` shows the word "Title", and `Action="Action"` hid every row of the audit trail. Fixed in the six ERP Blazor wrappers, in Blazor `chat` (`Placeholder`) and `form-input` (`Value`), and in MVC and Razor Pages `chat` (`filter`, `placeholder`), `approval-card` (`form`) and `document-upload` (`name`). `tools/antd-drift` now reports a MVC or Razor Pages template that does this.
+- **Rendered with sample data.** The six ERP Blazor wrappers were rendered in a Blazor host (the page showed the steps, the audit rows, the tiles and the table rows). The MVC partials were rendered with sample data for the approval timeline, audit trail, radio group, card, image cropper and chat; all show their data.
 - **Verification.** The browser gates (smoke, parity, flow, assistant, budgets, and the sweep over 252 pages) pass against the four samples in Release. Every MVC and Razor Pages component partial was rendered through a probe with empty inputs; all render except `_PdfButton`. Tests: `modulus-ui` Blazor 1,012 of 1,012 (3 new, for the modal and drawer forms), MVC 262 of 262; `modulus` CLI UI tests 219 of 219.
 - **Docs.** The `ui add-component` row in the CLI section lists all 137 components by group and names the 46 Blazor-only ones.
 
@@ -1098,9 +1100,9 @@ Known limits and ideas not done:
 |---|---|---|
 | 1 | Push `modulus-ui` and `modulus` to `origin/main`. Neither is pushed. | Your go-ahead |
 | 2 | Publish `Synvro.Modulus.Ui.Templates` 2.0.0 to nuget.org. The CLI pins it (`UiTemplatePackage.DefaultVersion` is `2.0.0`), and it exists only in the local feed, so a machine without that feed cannot scaffold the new components. | Your go-ahead |
-| 3 | Regression tests that render the scaffolded Razor partials: card, modal, image cropper, PDF viewer, radio group, approval timeline and audit trail. No test project renders a template; the probe was run by hand. | A fixture-based test project in CI |
-| 4 | Render the six new ERP Blazor wrappers with real data. They compile in the Blazor fixture but are not rendered. | None |
-| 5 | Render the MVC and Razor Pages partials with real data. The probe used empty inputs. | None |
+| 3 | Regression tests that render the scaffolded Razor partials. The drift check now catches one class of template bug without rendering: a variable name passed as text to a string tag helper property. Rendering the partials still needs a fixture-based test project in CI. | A fixture-based test project in CI |
+| 4 | Render the six ERP Blazor wrappers in CI, not only by hand. Rendered once on 2026-11-15 (section 10). | A CI host for the Blazor fixture |
+| 5 | Razor Pages partials rendered with sample data. The MVC partials were rendered with data on 2026-11-15 (section 10). | None |
 | 6 | 390 px layout check of the scaffolded pages (the browser gates check the samples, not the scaffolded templates). | None |
 | 7 | `app-pdf-button` throws without a form id. Decide whether it should show a placeholder like the cropper and the viewer. | Your decision |
 | 8 | The two Fluid `shared` templates (`table.sbn`, `form-input.sbn`) are not valid Liquid or Scriban. Fix or delete them with the Fluid decision (section 3, item 7). | Your decision on Fluid |
