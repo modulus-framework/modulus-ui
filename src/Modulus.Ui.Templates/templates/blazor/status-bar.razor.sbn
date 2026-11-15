@@ -1,0 +1,18 @@
+@* Status bar: a wrapper around Components.Fields.AppStatusBar. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Forms
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Fields.AppStatusBar
+    Stages="@Stages"
+    Value="@Value"
+    ValueChanged="@ValueChanged"
+    Clickable="@Clickable"
+    Disabled="@Disabled" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<WorkflowStage> Stages { get; set; } = new List<WorkflowStage>();
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public bool? Clickable { get; set; }
+    [Parameter] public bool Disabled { get; set; } = false;
+}

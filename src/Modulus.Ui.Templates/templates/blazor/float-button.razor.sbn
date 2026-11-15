@@ -1,0 +1,25 @@
+@* Float button: a wrapper around Components.Extras.AppFloatButton. Pass its parameters through; defaults match the framework. *@
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Extras.AppFloatButton
+    Icon="@Icon"
+    Description="@Description"
+    Tooltip="@Tooltip"
+    Type="@Type"
+    Shape="@Shape"
+    Href="@Href"
+    BadgeCount="@BadgeCount"
+    BadgeDot="@BadgeDot"
+    AriaLabel="@AriaLabel" />
+
+@code {
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public string? Tooltip { get; set; }
+    [Parameter] public string Type { get; set; } = "default";
+    [Parameter] public string Shape { get; set; } = "circle";
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public int? BadgeCount { get; set; }
+    [Parameter] public bool BadgeDot { get; set; } = false;
+    [Parameter] public string? AriaLabel { get; set; }
+}

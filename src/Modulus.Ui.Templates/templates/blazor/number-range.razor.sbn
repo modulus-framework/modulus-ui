@@ -1,0 +1,19 @@
+@* Number range: a wrapper around Components.Fields.AppNumberRange. Pass its parameters through; defaults match the framework. *@
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Fields.AppNumberRange
+    From="@From"
+    FromChanged="@FromChanged"
+    To="@To"
+    ToChanged="@ToChanged"
+    Decimals="@Decimals"
+    Suffix="@Suffix" />
+
+@code {
+    [Parameter] public decimal? From { get; set; }
+    [Parameter] public EventCallback<decimal?> FromChanged { get; set; }
+    [Parameter] public decimal? To { get; set; }
+    [Parameter] public EventCallback<decimal?> ToChanged { get; set; }
+    [Parameter] public int Decimals { get; set; } = 2;
+    [Parameter] public string? Suffix { get; set; }
+}

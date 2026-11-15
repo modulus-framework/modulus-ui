@@ -1,0 +1,4 @@
+@* Theme toggle: a wrapper around Theming.ThemeToggle. Pass its parameters through; defaults match the framework. *@
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Theming.ThemeToggle />

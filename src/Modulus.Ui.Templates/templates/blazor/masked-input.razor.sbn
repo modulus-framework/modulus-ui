@@ -1,0 +1,15 @@
+@* Masked input: a wrapper around Components.Fields.AppMaskedInput. Pass its parameters through; defaults match the framework. *@
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Fields.AppMaskedInput
+    Mask="@Mask"
+    Value="@Value"
+    ValueChanged="@ValueChanged"
+    Placeholder="@Placeholder" />
+
+@code {
+    [Parameter, EditorRequired] public string Mask { get; set; } = "";
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+}

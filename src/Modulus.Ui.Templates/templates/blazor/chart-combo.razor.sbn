@@ -1,0 +1,16 @@
+@* Combo chart: a wrapper around Components.Charts.ComboChart. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Charts
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Charts.ComboChart
+    Labels="@Labels"
+    Columns="@Columns"
+    Lines="@Lines"
+    Stacked="@Stacked" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<string> Labels { get; set; } = new List<string>();
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSeries> Columns { get; set; } = new List<ChartSeries>();
+    [Parameter] public IReadOnlyList<ChartSeries> Lines { get; set; } = new List<ChartSeries>();
+    [Parameter] public bool Stacked { get; set; } = false;
+}

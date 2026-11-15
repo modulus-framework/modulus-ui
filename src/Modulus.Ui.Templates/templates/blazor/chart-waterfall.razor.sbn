@@ -1,0 +1,9 @@
+@* Waterfall chart: a wrapper around Components.Charts.WaterfallChart. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Charts
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Charts.WaterfallChart Steps="@Steps" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<WaterfallStep> Steps { get; set; } = new List<WaterfallStep>();
+}

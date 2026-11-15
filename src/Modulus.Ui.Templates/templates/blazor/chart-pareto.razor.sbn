@@ -1,0 +1,16 @@
+@* Pareto chart: a wrapper around Components.Charts.ParetoChart. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Charts
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Charts.ParetoChart
+    Items="@Items"
+    ACut="@ACut"
+    BCut="@BCut"
+    ValueName="@ValueName" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSlice> Items { get; set; } = new List<ChartSlice>();
+    [Parameter] public double ACut { get; set; } = 80;
+    [Parameter] public double BCut { get; set; } = 95;
+    [Parameter] public string ValueName { get; set; } = "Share";
+}

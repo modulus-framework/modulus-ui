@@ -1,0 +1,22 @@
+@* Lookup: a wrapper around Components.Fields.AppLookup. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Forms
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Fields.AppLookup
+    Value="@Value"
+    ValueChanged="@ValueChanged"
+    Items="@Items"
+    Columns="@Columns"
+    Label="@Label"
+    Placeholder="@Placeholder"
+    AllowClear="@AllowClear" />
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public IReadOnlyList<LookupItem>? Items { get; set; }
+    [Parameter] public IReadOnlyList<LookupColumn>? Columns { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public bool AllowClear { get; set; } = true;
+}

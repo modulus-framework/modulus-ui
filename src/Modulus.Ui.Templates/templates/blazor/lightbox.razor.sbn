@@ -1,0 +1,16 @@
+@* Lightbox: a wrapper around Components.Extras.AppLightbox. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Extras.AppLightbox
+    Items="@Items"
+    MinWidth="@MinWidth"
+    Aspect="@Aspect"
+    Captions="@Captions" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<LightboxItem> Items { get; set; } = new List<LightboxItem>();
+    [Parameter] public int MinWidth { get; set; } = 180;
+    [Parameter] public string Aspect { get; set; } = "4 / 3";
+    [Parameter] public bool Captions { get; set; } = true;
+}

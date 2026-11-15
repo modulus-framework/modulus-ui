@@ -1,0 +1,20 @@
+@* Scatter chart: a wrapper around Components.Charts.ScatterChart. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Charts
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Charts.ScatterChart
+    Points="@Points"
+    Groups="@Groups"
+    XTitle="@XTitle"
+    YTitle="@YTitle"
+    SizeTitle="@SizeTitle"
+    Quadrants="@Quadrants" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ScatterPoint> Points { get; set; } = new List<ScatterPoint>();
+    [Parameter] public IReadOnlyList<string> Groups { get; set; } = new List<string>();
+    [Parameter] public string? XTitle { get; set; }
+    [Parameter] public string? YTitle { get; set; }
+    [Parameter] public string? SizeTitle { get; set; }
+    [Parameter] public bool Quadrants { get; set; } = false;
+}

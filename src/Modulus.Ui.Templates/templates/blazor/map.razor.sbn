@@ -1,0 +1,18 @@
+@* Map: a wrapper around Components.Extras.AppMap. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Plugins
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Extras.AppMap
+    Id="@Id"
+    Markers="@Markers"
+    Zoom="@Zoom"
+    Height="@Height"
+    Label="@Label" />
+
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+    [Parameter] public IReadOnlyList<MapMarker> Markers { get; set; } = new List<MapMarker>();
+    [Parameter] public int Zoom { get; set; } = 4;
+    [Parameter] public string Height { get; set; } = "360px";
+    [Parameter] public string? Label { get; set; }
+}

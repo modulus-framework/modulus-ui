@@ -1,0 +1,16 @@
+@* Stacked bar chart: a wrapper around Components.Charts.StackedBarChart. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Charts
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Charts.StackedBarChart
+    Rows="@Rows"
+    Series="@Series"
+    Normalize="@Normalize"
+    Ordinal="@Ordinal" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<string> Rows { get; set; } = new List<string>();
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSeries> Series { get; set; } = new List<ChartSeries>();
+    [Parameter] public bool Normalize { get; set; } = false;
+    [Parameter] public bool Ordinal { get; set; } = false;
+}

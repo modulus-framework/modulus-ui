@@ -1,0 +1,10 @@
+@* Variance chart: a wrapper around Components.Charts.VarianceChart. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Charts
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Charts.VarianceChart Items="@Items" PositiveIsFavorable="@PositiveIsFavorable" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSlice> Items { get; set; } = new List<ChartSlice>();
+    [Parameter] public bool PositiveIsFavorable { get; set; } = true;
+}

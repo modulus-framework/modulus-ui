@@ -1,0 +1,21 @@
+@* Query filter: a wrapper around Components.Pro.QueryFilter. Pass its parameters through; defaults match the framework. *@
+@using Microsoft.AspNetCore.Components
+@typeparam TModel
+
+<Modulus.Blazor.Components.Pro.QueryFilter
+    TModel="TModel"
+    Model="@Model"
+    ChildContent="@ChildContent"
+    Advanced="@Advanced"
+    OnSearch="@OnSearch"
+    OnReset="@OnReset"
+    Loading="@Loading" />
+
+@code {
+    [Parameter, EditorRequired] public TModel Model { get; set; } = default!;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Advanced { get; set; }
+    [Parameter] public EventCallback OnSearch { get; set; }
+    [Parameter] public EventCallback OnReset { get; set; }
+    [Parameter] public bool Loading { get; set; } = false;
+}

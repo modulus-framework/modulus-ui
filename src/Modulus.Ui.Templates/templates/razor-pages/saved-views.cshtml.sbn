@@ -1,0 +1,8 @@
+@* Saved views: ViewBag.Page (the page key the views belong to), Id *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string? pageKey = ViewBag.Page;
+    string id = ViewBag.Id ?? "views";
+}
+
+<app-saved-views page="@pageKey" id="@id" />

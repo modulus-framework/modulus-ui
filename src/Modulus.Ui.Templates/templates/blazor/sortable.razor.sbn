@@ -1,0 +1,28 @@
+@* Sortable list: a wrapper around Components.Extras.AppSortable. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Plugins
+@using Microsoft.AspNetCore.Components
+@typeparam TItem
+
+<Modulus.Blazor.Components.Extras.AppSortable
+    TItem="TItem"
+    Name="@Name"
+    Items="@Items"
+    IdOf="@IdOf"
+    ItemTemplate="@ItemTemplate"
+    LabelOf="@LabelOf"
+    Layout="@Layout"
+    Title="@Title"
+    EmptyText="@EmptyText"
+    OnSort="@OnSort" />
+
+@code {
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+    [Parameter, EditorRequired] public IReadOnlyList<TItem> Items { get; set; } = new List<TItem>();
+    [Parameter, EditorRequired] public Func<TItem, string> IdOf { get; set; } = default!;
+    [Parameter, EditorRequired] public RenderFragment<TItem> ItemTemplate { get; set; } = default!;
+    [Parameter] public Func<TItem, string>? LabelOf { get; set; }
+    [Parameter] public SortableLayout Layout { get; set; } = SortableLayout.Vertical;
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string EmptyText { get; set; } = "Drop items here";
+    [Parameter] public EventCallback<SortMove> OnSort { get; set; }
+}

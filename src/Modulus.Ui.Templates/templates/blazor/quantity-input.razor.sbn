@@ -1,0 +1,20 @@
+@* Quantity input: a wrapper around Components.Fields.AppQuantityInput. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Forms
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Fields.AppQuantityInput
+    Unit="@Unit"
+    UnitChanged="@UnitChanged"
+    Units="@Units"
+    Min="@Min"
+    Max="@Max"
+    Decimals="@Decimals" />
+
+@code {
+    [Parameter] public string? Unit { get; set; }
+    [Parameter] public EventCallback<string?> UnitChanged { get; set; }
+    [Parameter] public IReadOnlyList<UnitOfMeasure>? Units { get; set; }
+    [Parameter] public decimal? Min { get; set; } = 0;
+    [Parameter] public decimal? Max { get; set; }
+    [Parameter] public int? Decimals { get; set; }
+}

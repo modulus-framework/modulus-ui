@@ -1,0 +1,16 @@
+@* Nested grid: a wrapper around Components.Pro.NestedGrid. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Pro.NestedGrid
+    Settings="@Settings"
+    Load="@Load"
+    Save="@Save"
+    HeaderTitle="@HeaderTitle" />
+
+@code {
+    [Parameter, EditorRequired] public NestedGridSettings Settings { get; set; } = default!;
+    [Parameter, EditorRequired] public Func<NestedGridRequest, Task<NestedGridPage>> Load { get; set; } = default!;
+    [Parameter] public Func<NestedGridChanges, Task>? Save { get; set; }
+    [Parameter] public string? HeaderTitle { get; set; }
+}

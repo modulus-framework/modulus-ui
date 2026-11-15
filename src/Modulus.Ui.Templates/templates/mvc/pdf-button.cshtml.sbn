@@ -1,0 +1,9 @@
+@* PDF button: ViewBag.Form (the id of the form to send), ViewBag.Action (the URL that returns the PDF), Label *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string form = ViewBag.Form ?? "";
+    string action = ViewBag.Action ?? "";
+    string label = ViewBag.Label ?? "Download PDF";
+}
+
+<app-pdf-button form="@form" action="@action" label="@label" />

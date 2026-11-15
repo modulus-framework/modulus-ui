@@ -1,0 +1,12 @@
+@* Barcode: ViewBag.Value (required), Kind (Code128 or Ean13), Height, ShowText, AriaLabel *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Barcode
+@{
+    string value = ViewBag.Value ?? "";
+    BarcodeKind kind = ViewBag.Kind ?? BarcodeKind.Code128;
+    int height = ViewBag.Height ?? 80;
+    bool showText = ViewBag.ShowText ?? true;
+    string? label = ViewBag.AriaLabel;
+}
+
+<app-barcode value="@value" kind="@kind" height="@height" show-text="@showText" aria-label="@label" />

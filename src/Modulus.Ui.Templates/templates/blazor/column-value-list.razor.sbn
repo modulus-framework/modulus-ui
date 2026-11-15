@@ -1,0 +1,20 @@
+@* Column value list: a wrapper around Components.Pro.ColumnValueList. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Pro.ColumnValueList
+    Title="@Title"
+    Values="@Values"
+    Query="@Query"
+    OnApply="@OnApply"
+    OnReset="@OnReset"
+    OnClose="@OnClose" />
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter, EditorRequired] public IReadOnlyList<ColumnValue> Values { get; set; } = new List<ColumnValue>();
+    [Parameter] public string? Query { get; set; }
+    [Parameter] public EventCallback<string?> OnApply { get; set; }
+    [Parameter] public EventCallback OnReset { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+}

@@ -1,0 +1,10 @@
+@* Mini bar: a wrapper around Components.Charts.MiniBar. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Charts
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Charts.MiniBar Data="@Data" AriaLabel="@AriaLabel" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartPoint> Data { get; set; } = new List<ChartPoint>();
+    [Parameter] public string? AriaLabel { get; set; }
+}

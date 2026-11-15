@@ -1,0 +1,14 @@
+@* Image cropper: ViewBag.Src (required), Id, Alt, Name (the form field), Crop (JSON), Ratio, Height, Label *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@{
+    string id = ViewBag.Id ?? "cropper";
+    string src = ViewBag.Src ?? "";
+    string alt = ViewBag.Alt ?? "";
+    string name = ViewBag.Name ?? "crop";
+    string? crop = ViewBag.Crop;
+    string ratio = ViewBag.Ratio ?? "free";
+    string height = ViewBag.Height ?? "360px";
+    string? label = ViewBag.Label;
+}
+
+<app-image-cropper id="@id" src="@src" alt="@alt" name="@name" crop="@crop" ratio="@ratio" height="@height" label="@label" />

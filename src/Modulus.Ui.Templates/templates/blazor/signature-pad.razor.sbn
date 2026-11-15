@@ -1,0 +1,15 @@
+@* Signature pad: a wrapper around Components.Fields.AppSignaturePad. Pass its parameters through; defaults match the framework. *@
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Fields.AppSignaturePad
+    Value="@Value"
+    ValueChanged="@ValueChanged"
+    Height="@Height"
+    Hint="@Hint" />
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public int Height { get; set; } = 160;
+    [Parameter] public string Hint { get; set; } = "Sign here";
+}

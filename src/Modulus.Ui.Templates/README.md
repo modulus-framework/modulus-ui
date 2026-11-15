@@ -24,6 +24,15 @@ The templates are embedded in the package so the CLI always has a version-matche
 - `fluid`: Liquid templates with Modulus Fluid engine
 - `none`: API-only (no UI scaffolding)
 
+## Components
+
+`modulus ui add-component` copies a component from `templates/<engine>/`. The catalog is `cli/Services/UiComponents.cs` in the `modulus` repo, and each entry lists the engines it has a template for:
+
+- **mvc, razor-pages and blazor:** the 85 general components (inputs, data display, feedback, navigation, layout), plus `barcode`, `image-cropper`, `pdf-button` and `saved-views`, which have tag helpers.
+- **blazor only:** 42 components with no MVC or Razor Pages tag helper: the chart components (`chart-bar`, `chart-waterfall` and the rest of the `chart-*` set), the form fields (`lookup`, `masked-input`, `phone-input`, `signature-pad`, `status-bar` and the others), and the grid, print and navigation components.
+
+`add-component --engine mvc` refuses a Blazor-only component by name and skips it under `--all`. Fluid is not a scaffold target, so it has no component set in this README.
+
 ## Usage
 
 The Modulus CLI resolves this package by version and renders templates via `TemplateEngine` (Scriban).

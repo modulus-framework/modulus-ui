@@ -1,0 +1,13 @@
+@* Saved views: a wrapper around Components.Pro.AppSavedViews. Pass its parameters through; defaults match the framework. *@
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Pro.AppSavedViews
+    Page="@Page"
+    Id="@Id"
+    ApplyDefault="@ApplyDefault" />
+
+@code {
+    [Parameter] public string? Page { get; set; }
+    [Parameter] public string Id { get; set; } = "views";
+    [Parameter] public bool ApplyDefault { get; set; } = true;
+}

@@ -1,0 +1,20 @@
+@* Creatable select: a wrapper around Components.Extras.AppCreatableSelect. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Extras.AppCreatableSelect
+    Options="@Options"
+    OptionsChanged="@OptionsChanged"
+    Value="@Value"
+    ValueChanged="@ValueChanged"
+    Placeholder="@Placeholder"
+    AllowAdd="@AllowAdd" />
+
+@code {
+    [Parameter] public IReadOnlyList<GridOption> Options { get; set; } = new List<GridOption>();
+    [Parameter] public EventCallback<IReadOnlyList<GridOption>> OptionsChanged { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public bool AllowAdd { get; set; } = true;
+}

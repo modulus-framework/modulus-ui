@@ -1,0 +1,15 @@
+@* Phone input: a wrapper around Components.Fields.AppPhoneInput. Pass its parameters through; defaults match the framework. *@
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Fields.AppPhoneInput
+    Value="@Value"
+    ValueChanged="@ValueChanged"
+    DefaultCountry="@DefaultCountry"
+    Placeholder="@Placeholder" />
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public string DefaultCountry { get; set; } = "US";
+    [Parameter] public string? Placeholder { get; set; }
+}

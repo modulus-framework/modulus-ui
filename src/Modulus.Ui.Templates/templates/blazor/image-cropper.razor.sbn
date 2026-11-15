@@ -1,0 +1,24 @@
+@* Image cropper: a wrapper around Components.Extras.AppImageCropper. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Plugins
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Extras.AppImageCropper
+    Id="@Id"
+    Src="@Src"
+    Alt="@Alt"
+    Crop="@Crop"
+    CropChanged="@CropChanged"
+    Ratio="@Ratio"
+    Height="@Height"
+    Label="@Label" />
+
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+    [Parameter, EditorRequired] public string Src { get; set; } = "";
+    [Parameter] public string Alt { get; set; } = "";
+    [Parameter] public CropBox? Crop { get; set; }
+    [Parameter] public EventCallback<CropBox?> CropChanged { get; set; }
+    [Parameter] public string Ratio { get; set; } = "free";
+    [Parameter] public string Height { get; set; } = "360px";
+    [Parameter] public string? Label { get; set; }
+}

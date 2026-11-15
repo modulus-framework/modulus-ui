@@ -1,0 +1,20 @@
+@* Editable grid: a wrapper around Components.Pro.EditableGrid. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Pro.EditableGrid
+    Columns="@Columns"
+    Rows="@Rows"
+    HeaderTitle="@HeaderTitle"
+    AllowAddRow="@AllowAddRow"
+    AddRowText="@AddRowText"
+    AllowDeleteRow="@AllowDeleteRow" />
+
+@code {
+    [Parameter, EditorRequired] public List<GridColumn> Columns { get; set; } = new List<GridColumn>();
+    [Parameter, EditorRequired] public List<GridRecord> Rows { get; set; } = new List<GridRecord>();
+    [Parameter] public string? HeaderTitle { get; set; }
+    [Parameter] public bool AllowAddRow { get; set; } = true;
+    [Parameter] public string AddRowText { get; set; } = "Add row";
+    [Parameter] public bool AllowDeleteRow { get; set; } = true;
+}

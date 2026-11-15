@@ -1,0 +1,15 @@
+@* Duration input: a wrapper around Components.Fields.AppDurationInput. Pass its parameters through; defaults match the framework. *@
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Fields.AppDurationInput
+    Value="@Value"
+    ValueChanged="@ValueChanged"
+    Suffix="@Suffix"
+    Max="@Max" />
+
+@code {
+    [Parameter] public int? Value { get; set; }
+    [Parameter] public EventCallback<int?> ValueChanged { get; set; }
+    [Parameter] public string Suffix { get; set; } = "h";
+    [Parameter] public int Max { get; set; } = 1440;
+}

@@ -1,0 +1,9 @@
+@* Funnel chart: a wrapper around Components.Charts.FunnelChart. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Charts
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Charts.FunnelChart Stages="@Stages" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSlice> Stages { get; set; } = new List<ChartSlice>();
+}

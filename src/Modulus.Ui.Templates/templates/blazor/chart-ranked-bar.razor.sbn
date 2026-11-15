@@ -1,0 +1,14 @@
+@* Ranked bar chart: a wrapper around Components.Charts.RankedBarChart. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Charts
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Charts.RankedBarChart
+    Items="@Items"
+    Limit="@Limit"
+    ShowShare="@ShowShare" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSlice> Items { get; set; } = new List<ChartSlice>();
+    [Parameter] public int Limit { get; set; } = 0;
+    [Parameter] public bool ShowShare { get; set; } = false;
+}

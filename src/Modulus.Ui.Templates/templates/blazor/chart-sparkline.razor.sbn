@@ -1,0 +1,14 @@
+@* Sparkline: a wrapper around Components.Charts.Sparkline. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Charts
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Charts.Sparkline
+    Data="@Data"
+    Area="@Area"
+    AriaLabel="@AriaLabel" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartPoint> Data { get; set; } = new List<ChartPoint>();
+    [Parameter] public bool Area { get; set; } = true;
+    [Parameter] public string? AriaLabel { get; set; }
+}

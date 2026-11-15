@@ -1,0 +1,10 @@
+@* Label sheet: a wrapper around Components.Pro.LabelSheet. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Printing
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Pro.LabelSheet Items="@Items" Layout="@Layout" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<LabelItem> Items { get; set; } = new List<LabelItem>();
+    [Parameter] public LabelLayout Layout { get; set; } = LabelLayout.A4ThreeBySeven;
+}

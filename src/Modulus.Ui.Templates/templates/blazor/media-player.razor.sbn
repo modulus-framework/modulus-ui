@@ -1,0 +1,21 @@
+@* Media player: a wrapper around Components.Extras.AppMediaPlayer. Pass its parameters through; defaults match the framework. *@
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Extras.AppMediaPlayer
+    Src="@Src"
+    Video="@Video"
+    Poster="@Poster"
+    Title="@Title"
+    Subtitle="@Subtitle"
+    Loop="@Loop"
+    AspectRatio="@AspectRatio" />
+
+@code {
+    [Parameter, EditorRequired] public string Src { get; set; } = "";
+    [Parameter] public bool Video { get; set; } = true;
+    [Parameter] public string? Poster { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public bool Loop { get; set; } = false;
+    [Parameter] public string AspectRatio { get; set; } = "16 / 9";
+}

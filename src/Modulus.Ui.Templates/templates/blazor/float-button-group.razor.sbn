@@ -1,0 +1,19 @@
+@* Float button group: a wrapper around Components.Extras.AppFloatButtonGroup. Pass its parameters through; defaults match the framework. *@
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Extras.AppFloatButtonGroup
+    ChildContent="@ChildContent"
+    Trigger="@Trigger"
+    Open="@Open"
+    OpenChanged="@OpenChanged"
+    Icon="@Icon"
+    Tooltip="@Tooltip" />
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? Trigger { get; set; }
+    [Parameter] public bool Open { get; set; } = false;
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public string Icon { get; set; } = "plus";
+    [Parameter] public string? Tooltip { get; set; }
+}

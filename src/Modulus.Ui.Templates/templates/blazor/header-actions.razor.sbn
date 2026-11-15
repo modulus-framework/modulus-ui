@@ -1,0 +1,15 @@
+@* Header actions: a wrapper around Shell.HeaderActions. Pass its parameters through; defaults match the framework. *@
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Shell.HeaderActions
+    UserName="@UserName"
+    UserAvatar="@UserAvatar"
+    ChildContent="@ChildContent"
+    OnAccountAction="@OnAccountAction" />
+
+@code {
+    [Parameter] public string UserName { get; set; } = "Admin";
+    [Parameter] public string? UserAvatar { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback<string> OnAccountAction { get; set; }
+}

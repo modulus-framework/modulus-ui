@@ -1,0 +1,17 @@
+@* Gauge chart: a wrapper around Components.Charts.GaugeChart. Pass its parameters through; defaults match the framework. *@
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Charts.GaugeChart
+    Value="@Value"
+    Max="@Max"
+    Target="@Target"
+    Caption="@Caption"
+    Size="@Size" />
+
+@code {
+    [Parameter, EditorRequired] public double Value { get; set; } = 0;
+    [Parameter] public double Max { get; set; } = 100;
+    [Parameter] public double? Target { get; set; }
+    [Parameter] public string? Caption { get; set; }
+    [Parameter] public int Size { get; set; } = 200;
+}

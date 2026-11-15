@@ -1,0 +1,14 @@
+@* Print table: a wrapper around Components.Pro.PrintTable. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Printing
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Pro.PrintTable
+    Columns="@Columns"
+    Rows="@Rows"
+    Total="@Total" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<PrintColumn> Columns { get; set; } = new List<PrintColumn>();
+    [Parameter, EditorRequired] public IReadOnlyList<IReadOnlyList<string>> Rows { get; set; } = new List<IReadOnlyList<string>>();
+    [Parameter] public IReadOnlyList<string>? Total { get; set; }
+}

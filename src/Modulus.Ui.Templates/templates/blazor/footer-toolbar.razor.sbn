@@ -1,0 +1,9 @@
+@* Footer toolbar: a wrapper around Components.Pro.FooterToolbar. Pass its parameters through; defaults match the framework. *@
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Pro.FooterToolbar Extra="@Extra" ChildContent="@ChildContent" />
+
+@code {
+    [Parameter] public RenderFragment? Extra { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

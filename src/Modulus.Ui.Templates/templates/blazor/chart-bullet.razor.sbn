@@ -1,0 +1,9 @@
+@* Bullet chart: a wrapper around Components.Charts.BulletChart. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Charts
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Charts.BulletChart Items="@Items" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<BulletItem> Items { get; set; } = new List<BulletItem>();
+}

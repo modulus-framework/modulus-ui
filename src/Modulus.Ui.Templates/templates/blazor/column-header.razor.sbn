@@ -1,0 +1,26 @@
+@* Column header: a wrapper around Components.Pro.ColumnHeader. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Pro.ColumnHeader
+    Key="@Key"
+    Title="@Title"
+    Kind="@Kind"
+    Required="@Required"
+    Sortable="@Sortable"
+    Searchable="@Searchable"
+    Choices="@Choices"
+    Values="@Values"
+    ChildContent="@ChildContent" />
+
+@code {
+    [Parameter, EditorRequired] public string Key { get; set; } = "";
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public ColumnKind Kind { get; set; }
+    [Parameter] public bool Required { get; set; } = false;
+    [Parameter] public bool Sortable { get; set; } = true;
+    [Parameter] public bool Searchable { get; set; } = true;
+    [Parameter] public IReadOnlyList<ColumnChoice>? Choices { get; set; }
+    [Parameter] public IReadOnlyList<ColumnValue>? Values { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

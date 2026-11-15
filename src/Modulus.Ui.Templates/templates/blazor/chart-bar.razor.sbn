@@ -1,0 +1,16 @@
+@* Bar chart: a wrapper around Components.Charts.BarChart. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Charts
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Charts.BarChart
+    Data="@Data"
+    Title="@Title"
+    Height="@Height"
+    MaxXLabels="@MaxXLabels" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartPoint> Data { get; set; } = new List<ChartPoint>();
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public int Height { get; set; } = 280;
+    [Parameter] public int MaxXLabels { get; set; } = 12;
+}

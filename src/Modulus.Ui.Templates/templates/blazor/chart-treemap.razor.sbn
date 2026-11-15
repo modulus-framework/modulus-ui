@@ -1,0 +1,10 @@
+@* Treemap chart: a wrapper around Components.Charts.TreemapChart. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Charts
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Charts.TreemapChart Items="@Items" Aspect="@Aspect" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChartSlice> Items { get; set; } = new List<ChartSlice>();
+    [Parameter] public double Aspect { get; set; } = 2.4;
+}

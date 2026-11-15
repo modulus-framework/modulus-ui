@@ -1,0 +1,18 @@
+@* Vector map: a wrapper around Components.Extras.AppVectorMap. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions.Plugins
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Extras.AppVectorMap
+    Id="@Id"
+    Data="@Data"
+    Label="@Label"
+    Height="@Height"
+    Map="@Map" />
+
+@code {
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+    [Parameter, EditorRequired] public Choropleth Data { get; set; } = default!;
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string Height { get; set; } = "420px";
+    [Parameter] public string Map { get; set; } = "world";
+}

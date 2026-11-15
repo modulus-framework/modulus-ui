@@ -1,0 +1,13 @@
+@* PDF button: a wrapper around Components.Extras.AppPdfButton. Pass its parameters through; defaults match the framework. *@
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Extras.AppPdfButton
+    FormId="@FormId"
+    Action="@Action"
+    Label="@Label" />
+
+@code {
+    [Parameter, EditorRequired] public string FormId { get; set; } = "";
+    [Parameter, EditorRequired] public string Action { get; set; } = "";
+    [Parameter] public string Label { get; set; } = "Download PDF";
+}

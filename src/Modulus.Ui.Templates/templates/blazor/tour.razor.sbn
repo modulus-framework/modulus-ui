@@ -1,0 +1,20 @@
+@* Tour: a wrapper around Components.Extras.AppTour. Pass its parameters through; defaults match the framework. *@
+@using Modulus.Ui.Abstractions
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Extras.AppTour
+    Steps="@Steps"
+    Open="@Open"
+    OpenChanged="@OpenChanged"
+    Current="@Current"
+    CurrentChanged="@CurrentChanged"
+    Mask="@Mask" />
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<TourStep> Steps { get; set; } = new List<TourStep>();
+    [Parameter] public bool Open { get; set; } = false;
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public int Current { get; set; } = 0;
+    [Parameter] public EventCallback<int> CurrentChanged { get; set; }
+    [Parameter] public bool Mask { get; set; } = true;
+}
