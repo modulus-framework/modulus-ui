@@ -1107,6 +1107,7 @@ Known limits and ideas not done:
 | 7 | `app-pdf-button` throws without a form id. Decide whether it should show a placeholder like the cropper and the viewer. | Your decision |
 | 8 | The two Fluid `shared` templates (`table.sbn`, `form-input.sbn`) are not valid Liquid or Scriban. Fix or delete them with the Fluid decision (section 3, item 7). | Your decision on Fluid |
 | 9 | `modulus` has uncommitted changes that belong to other work (messaging). They are not part of this UI work and are left alone. | The owner of that work |
+| 10 | The drift check reads only MVC and Razor Pages templates. Blazor component parameters (types from AntDesign and Modulus.Blazor) were reviewed by hand on 2026-11-15; a check for them would stop the same bug in Blazor. | Nothing blocks it |
 
 ## Plan and progress
 
