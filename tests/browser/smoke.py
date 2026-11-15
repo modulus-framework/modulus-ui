@@ -1,7 +1,7 @@
 """
 Browser smoke gate for the three admin templates (and the Liquid sample). Run it against samples that are already listening:
 
-    MODULUS_MVC=http://localhost:5100 MODULUS_RAZOR=http://localhost:5101 MODULUS_BLAZOR=http://localhost:5102 \
+    MODULUS_MVC=http://localhost:5101 MODULUS_RAZOR=http://localhost:5102 MODULUS_BLAZOR=http://localhost:5100 \
     MODULUS_FLUID=http://localhost:5103 python tests/browser/smoke.py
 
 It fails (exit 1) when a page does not answer 200, logs a console error, or the Content-Security-Policy reports a violation.

@@ -2,7 +2,7 @@
 Markup parity gate: the pivot table is drawn from one shared renderer, so its markup must be the same in the MVC, Razor Pages and
 Blazor samples. The script takes each app's rendered `.m-pivot` element and fails when they differ.
 
-    MODULUS_MVC=http://localhost:5100 MODULUS_RAZOR=http://localhost:5101 MODULUS_BLAZOR=http://localhost:5102 python tests/browser/parity.py
+    MODULUS_MVC=http://localhost:5101 MODULUS_RAZOR=http://localhost:5102 MODULUS_BLAZOR=http://localhost:5100 python tests/browser/parity.py
 """
 import hashlib
 import os
