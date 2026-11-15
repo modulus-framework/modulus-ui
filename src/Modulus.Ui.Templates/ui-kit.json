@@ -2,31 +2,40 @@
   "version": "2.0.0",
   "name": "Modulus UI Kit",
   "description": "Admin template and components for MVC, Razor Pages, Blazor, and Fluid.",
-  "engines": ["mvc", "razor-pages", "blazor", "fluid", "none"],
+  "engines": [
+    "mvc",
+    "razor-pages",
+    "blazor",
+    "fluid",
+    "none"
+  ],
   "features": {
     "shell": {
       "description": "Shell layout with header, navbar/sidebar, footer.",
-      "files": {
+      "packages": {
         "mvc": [
-          "Views/Shared/_Layout.cshtml",
-          "Views/Shared/Components/Shell/Default.cshtml"
+          "Synvro.Modulus.AspNetCore.Mvc",
+          "Synvro.Modulus.Ui.Assets",
+          "Synvro.Modulus.Ui.Abstractions",
+          "Synvro.Modulus.AspNetCore.Hosting"
         ],
         "razor-pages": [
-          "Pages/Shared/_Layout.cshtml",
-          "Pages/Shared/Components/Shell/Default.cshtml"
+          "Synvro.Modulus.AspNetCore.Mvc",
+          "Synvro.Modulus.Ui.Assets",
+          "Synvro.Modulus.Ui.Abstractions",
+          "Synvro.Modulus.AspNetCore.Hosting"
         ],
         "blazor": [
-          "Components/Layout/AppShell.razor"
+          "Synvro.Modulus.Blazor",
+          "Synvro.Modulus.Ui.Assets",
+          "Synvro.Modulus.Ui.Abstractions",
+          "Synvro.Modulus.AspNetCore.Hosting"
         ],
         "fluid": [
-          "Templates/_layout.liquid"
+          "Synvro.Modulus.AspNetCore.Fluid",
+          "Synvro.Modulus.Ui.Assets",
+          "Synvro.Modulus.AspNetCore.Hosting"
         ]
-      },
-      "packages": {
-        "mvc": ["Synvro.Modulus.AspNetCore.Mvc", "Synvro.Modulus.Ui.Assets", "Synvro.Modulus.Ui.Abstractions", "Synvro.Modulus.AspNetCore.Hosting"],
-        "razor-pages": ["Synvro.Modulus.AspNetCore.Mvc", "Synvro.Modulus.Ui.Assets", "Synvro.Modulus.Ui.Abstractions", "Synvro.Modulus.AspNetCore.Hosting"],
-        "blazor": ["Synvro.Modulus.Blazor", "Synvro.Modulus.Ui.Assets", "Synvro.Modulus.Ui.Abstractions", "Synvro.Modulus.AspNetCore.Hosting"],
-        "fluid": ["Synvro.Modulus.AspNetCore.Fluid", "Synvro.Modulus.Ui.Assets", "Synvro.Modulus.AspNetCore.Hosting"]
       }
     },
     "crud": {
@@ -36,90 +45,22 @@
           "Pages/[Entities]/Index.cshtml",
           "Pages/[Entities]/Index.cshtml.cs",
           "Pages/[Entities]/Edit.cshtml",
-          "Pages/[Entities]/Edit.cshtml.cs",
-          "ApiClients/[Entity]ApiClient.cs",
-          "Menu/[Entities]MenuContributor.cs"
+          "Pages/[Entities]/Edit.cshtml.cs"
         ],
         "blazor": [
           "Components/Pages/[Entities]/Index.razor",
-          "Components/Pages/[Entities]/Edit.razor",
-          "ApiClients/[Entity]ApiClient.cs",
-          "Menu/[Entities]MenuContributor.cs"
+          "Components/Pages/[Entities]/Edit.razor"
         ]
       },
       "packages": {
-        "razor-pages": ["Synvro.Modulus.AspNetCore.Mvc", "Synvro.Modulus.Ui.Abstractions"],
-        "blazor": ["Synvro.Modulus.Blazor", "Synvro.Modulus.Ui.Abstractions"]
-      }
-    },
-    "auth": {
-      "description": "Authentication pages: sign-in, sign-out, register.",
-      "files": {
-        "mvc": [
-          "Controllers/AuthController.cs",
-          "Views/Auth/Login.cshtml",
-          "Views/Auth/Register.cshtml"
-        ],
         "razor-pages": [
-          "Pages/Auth/Login.cshtml.cs",
-          "Pages/Auth/Login.cshtml",
-          "Pages/Auth/Register.cshtml.cs",
-          "Pages/Auth/Register.cshtml"
+          "Synvro.Modulus.AspNetCore.Mvc",
+          "Synvro.Modulus.Ui.Abstractions"
         ],
         "blazor": [
-          "Pages/Auth/Login.razor",
-          "Pages/Auth/Register.razor"
-        ],
-        "fluid": [
-          "Templates/login.liquid",
-          "Templates/register.liquid"
+          "Synvro.Modulus.Blazor",
+          "Synvro.Modulus.Ui.Abstractions"
         ]
-      },
-      "packages": {
-        "mvc": ["Synvro.Modulus.Ui.Abstractions"],
-        "razor-pages": ["Synvro.Modulus.Ui.Abstractions"],
-        "blazor": ["Synvro.Modulus.Ui.Abstractions"],
-        "fluid": []
-      }
-    },
-    "errors": {
-      "description": "Error pages: 404, 403, 500.",
-      "files": {
-        "mvc": [
-          "Views/Shared/Error.cshtml"
-        ],
-        "razor-pages": [
-          "Pages/Error.cshtml.cs",
-          "Pages/Error.cshtml"
-        ],
-        "blazor": [
-          "Components/Pages/Error.razor"
-        ],
-        "fluid": [
-          "Templates/error.liquid"
-        ]
-      },
-      "packages": {}
-    },
-    "state-store": {
-      "description": "UI state store for saved views.",
-      "files": {
-        "mvc": [
-          "Services/UiStateStore.cs"
-        ],
-        "razor-pages": [
-          "Services/UiStateStore.cs"
-        ],
-        "blazor": [
-          "Services/UiStateStore.cs"
-        ],
-        "fluid": []
-      },
-      "packages": {
-        "mvc": ["Synvro.Modulus.Ui.Abstractions"],
-        "razor-pages": ["Synvro.Modulus.Ui.Abstractions"],
-        "blazor": ["Synvro.Modulus.Ui.Abstractions"],
-        "fluid": []
       }
     },
     "admin": {
@@ -321,75 +262,6 @@
       "setup": [
         "builder.Services.AddModulusAdminUi();  // navigation; options.Pages limits it to the pages you scaffolded"
       ]
-    },
-    "notifications": {
-      "description": "Notification management: notification center and preferences. Required for ERP systems.",
-      "files": {
-        "mvc": [
-          "Views/Notifications/Center.cshtml",
-          "Views/Account/NotificationPreferences.cshtml"
-        ],
-        "razor-pages": [
-          "Pages/Notifications/Center.cshtml",
-          "Pages/Account/NotificationPreferences.cshtml"
-        ],
-        "blazor": [
-          "Components/Pages/NotificationCenter.razor",
-          "Components/Pages/NotificationPreferences.razor"
-        ]
-      },
-      "packages": {
-        "mvc": ["Synvro.Modulus.Ui.Abstractions"],
-        "razor-pages": ["Synvro.Modulus.Ui.Abstractions"],
-        "blazor": ["Synvro.Modulus.Ui.Abstractions"]
-      }
-    },
-    "tenant-management": {
-      "description": "Tenant management: list, settings, and members. Required for multi-tenant ERP systems.",
-      "files": {
-        "mvc": [
-          "Views/Admin/Tenants/List.cshtml",
-          "Views/Admin/Tenants/Settings.cshtml",
-          "Views/Admin/Tenants/Members.cshtml"
-        ],
-        "razor-pages": [
-          "Pages/Admin/Tenants/List.cshtml",
-          "Pages/Admin/Tenants/Settings.cshtml",
-          "Pages/Admin/Tenants/Members.cshtml"
-        ],
-        "blazor": [
-          "Components/Pages/Admin/TenantList.razor",
-          "Components/Pages/Admin/TenantSettings.razor",
-          "Components/Pages/Admin/TenantMembers.razor"
-        ]
-      },
-      "packages": {
-        "mvc": ["Synvro.Modulus.Ui.Abstractions"],
-        "razor-pages": ["Synvro.Modulus.Ui.Abstractions"],
-        "blazor": ["Synvro.Modulus.Ui.Abstractions"]
-      }
-    },
-    "user-management": {
-      "description": "User profile and role management. Required for identity and access control.",
-      "files": {
-        "mvc": [
-          "Views/Account/Profile.cshtml",
-          "Views/Admin/Roles/Manage.cshtml"
-        ],
-        "razor-pages": [
-          "Pages/Account/Profile.cshtml",
-          "Pages/Admin/Roles/Manage.cshtml"
-        ],
-        "blazor": [
-          "Components/Pages/Account/UserProfile.razor",
-          "Components/Pages/Admin/RoleManagement.razor"
-        ]
-      },
-      "packages": {
-        "mvc": ["Synvro.Modulus.Ui.Abstractions"],
-        "razor-pages": ["Synvro.Modulus.Ui.Abstractions"],
-        "blazor": ["Synvro.Modulus.Ui.Abstractions"]
-      }
     }
   },
   "templates": {

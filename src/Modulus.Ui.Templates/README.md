@@ -12,11 +12,9 @@ The templates are embedded in the package so the CLI always has a version-matche
 
 ## Features
 
-- **shell**: layout with header, navbar/sidebar, footer
-- **crud**: list, form, and detail pages driven by entity metadata
-- **auth**: login and register pages
-- **errors**: 404, 403, 500 error pages
-- **state-store**: UI state persistence for saved views
+- **shell**: layout package set (header, navbar/sidebar, footer come from `Modulus.AspNetCore.Mvc` and `Modulus.Blazor`)
+- **crud**: list, form, and detail pages driven by entity metadata (razor-pages, blazor)
+- **admin**: working admin pages for mvc, razor-pages and blazor (see below)
 
 ## Engines
 
