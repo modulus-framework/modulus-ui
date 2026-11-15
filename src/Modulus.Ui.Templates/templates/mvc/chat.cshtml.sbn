@@ -8,5 +8,5 @@
 }
 
 <form method="post" asp-antiforgery="true" hx-boost="false">
-    <app-chat turns="turns" filter="filter" placeholder="placeholder" />
+    <app-chat turns="turns" filter="@filter" placeholder="@placeholder" />
 </form>

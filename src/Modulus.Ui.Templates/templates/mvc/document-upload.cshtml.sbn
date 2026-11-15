@@ -6,4 +6,4 @@
     string fieldName = ViewBag.Name ?? "documents";
 }
 
-<app-document-upload documents="documents" name="fieldName" />
+<app-document-upload documents="documents" name="@fieldName" />

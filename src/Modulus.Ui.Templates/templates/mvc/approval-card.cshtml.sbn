@@ -6,4 +6,4 @@
     string? form = ViewBag.Form as string;
 }
 
-<app-approval-card request="request" form="form" />
+<app-approval-card request="request" form="@form" />
