@@ -2,7 +2,7 @@
 @using Modulus.Ui.Abstractions
 @using Modulus.Blazor.Components.Pro
 
-<EditableGrid Columns="Columns" Rows="Rows" HeaderTitle="@HeaderTitle" PageSize="PageSize" Searchable Selectable Exportable
+<Modulus.Blazor.Components.Pro.EditableGrid Columns="Columns" Rows="Rows" HeaderTitle="@HeaderTitle" PageSize="PageSize" Searchable Selectable Exportable
               OnSave="OnSave" OnDiscard="OnDiscard" OnChange="OnChange" />
 
 @code {

@@ -31,6 +31,7 @@ The templates are embedded in the package so the CLI always has a version-matche
 - **mvc, razor-pages and blazor:** the 85 general components (inputs, data display, feedback, navigation, layout), plus `barcode`, `image-cropper`, `pdf-button` and `saved-views`, which have tag helpers.
 - **blazor only:** 42 components with no MVC or Razor Pages tag helper: the chart components (`chart-bar`, `chart-waterfall` and the rest of the `chart-*` set), the form fields (`lookup`, `masked-input`, `phone-input`, `signature-pad`, `status-bar` and the others), and the grid, print and navigation components.
 
+`add-component` writes a wrapper named after the framework component (for example `EditableGrid` for `Modulus.Blazor.Components.Pro.EditableGrid`) into `Components/Shared`. A template that uses a framework component must therefore write its tag fully qualified, or the wrapper shadows it in that namespace.
 `add-component --engine mvc` refuses a Blazor-only component by name and skips it under `--all`. Fluid is not a scaffold target, so it has no component set in this README.
 
 ## Usage
