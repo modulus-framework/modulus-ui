@@ -1,0 +1,9 @@
+@* Approval timeline: ViewBag.Steps (name, state, who, when, note) in order, and AriaLabel *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Workflow
+@{
+    IEnumerable<ApprovalStep> steps = ViewBag.Steps ?? Array.Empty<ApprovalStep>();
+    string? label = ViewBag.AriaLabel;
+}
+
+<app-approval-timeline steps="@steps" aria-label="@label" />

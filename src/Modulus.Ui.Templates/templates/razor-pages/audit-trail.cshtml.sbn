@@ -1,0 +1,11 @@
+@* Audit trail: ViewBag.Entries (any order), ViewBag.Action (the filter, or null), ViewBag.Url (the page the filter links go to) and AriaLabel *@
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Modulus.Ui.Abstractions.Workflow
+@{
+    IEnumerable<AuditEntry> entries = ViewBag.Entries ?? Array.Empty<AuditEntry>();
+    string? action = ViewBag.Action;
+    string url = ViewBag.Url ?? "";
+    string? label = ViewBag.AriaLabel;
+}
+
+<app-audit-trail entries="@entries" action="@action" url="@url" aria-label="@label" />
