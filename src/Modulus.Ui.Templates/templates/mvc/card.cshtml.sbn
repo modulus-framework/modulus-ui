@@ -1,4 +1,4 @@
-@* Card: ViewBag.Title, ViewBag.CssClass, ViewBag.HeaderAction and ViewBag.Footer, and the body is the partial's content. *@
+@* Card: ViewBag.Title, ViewBag.CssClass, ViewBag.HeaderAction and ViewBag.Footer, and the body goes in ViewBag.Body. *@
 @* HeaderAction and Footer are encoded as text when they are strings; pass an IHtmlContent (for example a rendered partial) to insert markup. *@
 @{
     string? title = ViewBag.Title;
@@ -16,7 +16,7 @@
         </div>
     }
     <div class="m-card-body">
-        @RenderBody()
+        @ViewBag.Body
     </div>
     @if (ViewBag.Footer is not null)
     {

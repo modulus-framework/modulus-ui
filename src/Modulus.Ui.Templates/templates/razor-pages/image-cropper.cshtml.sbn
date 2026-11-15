@@ -1,4 +1,4 @@
-@* Image cropper: ViewBag.Src (required), Id, Alt, Name (the form field), Crop (JSON), Ratio, Height, Label *@
+@* Image cropper: ViewBag.Src (shows a placeholder until it is set), Id, Alt, Name (the form field), Crop (JSON), Ratio, Height, Label *@
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @{
     string id = ViewBag.Id ?? "cropper";
@@ -11,4 +11,11 @@
     string? label = ViewBag.Label;
 }
 
-<app-image-cropper id="@id" src="@src" alt="@alt" name="@name" crop="@crop" ratio="@ratio" height="@height" label="@label" />
+@if (src.Length > 0)
+{
+    <app-image-cropper id="@id" src="@src" alt="@alt" name="@name" crop="@crop" ratio="@ratio" height="@height" label="@label" />
+}
+else
+{
+    <div class="m-muted">No image yet.</div>
+}

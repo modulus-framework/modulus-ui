@@ -1,4 +1,4 @@
-@* PDF viewer: ViewBag.Url (the PDF), Id, Label, Page, Height *@
+@* PDF viewer: ViewBag.Url (shows a placeholder until it is set), Id, Label, Page, Height *@
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @{
     string url = ViewBag.Url ?? "";
@@ -8,4 +8,11 @@
     string height = ViewBag.Height ?? "640px";
 }
 
-<app-pdf id="@id" url="@url" label="@label" page="page" height="@height" />
+@if (url.Length > 0)
+{
+    <app-pdf id="@id" url="@url" label="@label" page="page" height="@height" />
+}
+else
+{
+    <div class="m-muted">No document yet.</div>
+}

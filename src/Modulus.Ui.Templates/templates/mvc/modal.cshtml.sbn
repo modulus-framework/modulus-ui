@@ -6,5 +6,5 @@
 }
 
 <app-modal name="@name" title="@((string?)ViewBag.Title)" width="width">
-    @RenderBody()
+    @ViewBag.Body
 </app-modal>

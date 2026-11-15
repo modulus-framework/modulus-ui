@@ -1,4 +1,4 @@
-@* Saved views: ViewBag.Page (the page key the views belong to), Id *@
+@* Saved views: ViewBag.Page (the page key the views belong to), Id. Needs AddModulusMvc() in Program.cs, which registers SavedViews. *@
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @{
     string? pageKey = ViewBag.Page;
