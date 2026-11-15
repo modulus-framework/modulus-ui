@@ -2,8 +2,8 @@
 @typeparam TModel
 @using Microsoft.AspNetCore.Components
 
-<Modulus.Blazor.Components.Pro.ModalForm TModel="TModel" Title="Title" Visible="Visible" VisibleChanged="VisibleChanged"
-    Model="Model" ChildContent="ChildContent" OnFinish="OnFinish" SubmitText="SubmitText" Width="Width" />
+<Modulus.Blazor.Components.Pro.ModalForm TModel="TModel" Title="@Title" Visible="@Visible" VisibleChanged="@VisibleChanged"
+    Model="@Model" ChildContent="@ChildContent" OnFinish="@OnFinish" SubmitText="@SubmitText" Width="@Width" />
 
 @code {
     /// <summary>The dialog title.</summary>

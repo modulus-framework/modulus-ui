@@ -2,9 +2,9 @@
 @typeparam TModel
 @using Microsoft.AspNetCore.Components
 
-<Modulus.Blazor.Components.Pro.DrawerForm TModel="TModel" Title="Title" Visible="Visible" VisibleChanged="VisibleChanged"
-    Model="Model" ChildContent="ChildContent" OnFinish="OnFinish" SubmitText="SubmitText" CancelText="CancelText"
-    FooterStart="FooterStart" FooterExtra="FooterExtra" Width="Width" />
+<Modulus.Blazor.Components.Pro.DrawerForm TModel="TModel" Title="@Title" Visible="@Visible" VisibleChanged="@VisibleChanged"
+    Model="@Model" ChildContent="@ChildContent" OnFinish="@OnFinish" SubmitText="@SubmitText" CancelText="@CancelText"
+    FooterStart="@FooterStart" FooterExtra="@FooterExtra" Width="@Width" />
 
 @code {
     /// <summary>The panel title.</summary>

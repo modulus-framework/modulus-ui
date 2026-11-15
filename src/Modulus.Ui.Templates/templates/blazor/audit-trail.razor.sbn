@@ -1,7 +1,7 @@
 @* Audit trail: Entries (who changed what, when, from and to), grouped by day, with an action filter. *@
 @using Modulus.Ui.Abstractions.Workflow
 
-<Modulus.Blazor.Components.Pro.AuditTrail Entries="Entries" Action="Action" ActionChanged="ActionChanged" AriaLabel="AriaLabel" />
+<Modulus.Blazor.Components.Pro.AuditTrail Entries="@Entries" Action="@Action" ActionChanged="@ActionChanged" AriaLabel="@AriaLabel" />
 
 @code {
     /// <summary>The entries to show.</summary>

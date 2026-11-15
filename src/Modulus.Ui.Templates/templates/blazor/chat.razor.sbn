@@ -1,7 +1,7 @@
 @* Conversation and question field: Turns, Busy (true while an answer is pending), Placeholder and OnAsk (called with the question) *@
 @using Modulus.Ui.Abstractions.Chat
 
-<Modulus.Blazor.Components.Extras.AppChat Turns="Turns" OnAsk="OnAsk" Busy="Busy" Placeholder="Placeholder" Label="Your question" Button="Ask" />
+<Modulus.Blazor.Components.Extras.AppChat Turns="Turns" OnAsk="OnAsk" Busy="Busy" Placeholder="@Placeholder" Label="Your question" Button="Ask" />
 
 @code {
     /// <summary>The conversation so far.</summary>

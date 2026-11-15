@@ -3,11 +3,11 @@
 @using Modulus.Ui.Abstractions
 @using Microsoft.AspNetCore.Components
 
-<Modulus.Blazor.Components.Pro.ProTable TItem="TItem" HeaderTitle="HeaderTitle" Request="Request" RowKey="RowKey"
-    Columns="Columns" Filters="Filters" ToolBar="ToolBar" BatchActions="BatchActions" RowDetail="RowDetail"
-    RowExpandable="RowExpandable" RowSelectable="RowSelectable" PageSize="PageSize" Selectable="Selectable"
-    FilterRow="FilterRow" FiltersActive="FiltersActive" OnClearFilters="OnClearFilters" ColumnSettings="ColumnSettings"
-    Exportable="Exportable" ExportFileName="ExportFileName" Id="Id" UrlState="UrlState" MultiSort="MultiSort" Resizable="Resizable" />
+<Modulus.Blazor.Components.Pro.ProTable TItem="TItem" HeaderTitle="@HeaderTitle" Request="@Request" RowKey="@RowKey"
+    Columns="@Columns" Filters="@Filters" ToolBar="@ToolBar" BatchActions="@BatchActions" RowDetail="@RowDetail"
+    RowExpandable="@RowExpandable" RowSelectable="@RowSelectable" PageSize="@PageSize" Selectable="@Selectable"
+    FilterRow="@FilterRow" FiltersActive="@FiltersActive" OnClearFilters="@OnClearFilters" ColumnSettings="@ColumnSettings"
+    Exportable="@Exportable" ExportFileName="@ExportFileName" Id="@Id" UrlState="@UrlState" MultiSort="@MultiSort" Resizable="@Resizable" />
 
 @code {
     /// <summary>The table title.</summary>

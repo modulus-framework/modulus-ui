@@ -6,7 +6,7 @@
         <label class="@(Required ? "ant-form-item-required" : "")">@Label</label>
     </div>
     <div class="ant-form-item-control">
-        <InputText Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression"
+        <InputText Value="@Value" ValueChanged="@ValueChanged" ValueExpression="@ValueExpression"
                    class="ant-input" placeholder="@Placeholder" type="@Type" />
         @if (!string.IsNullOrEmpty(HelpText))
         {
