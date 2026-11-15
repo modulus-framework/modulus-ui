@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>$(ModulusTargetFramework)</TargetFramework>
     <Description>Scriban page and component templates and the ui-kit.json manifest that the Modulus CLI renders to scaffold admin UI for MVC, Razor Pages, Blazor and Fluid.</Description>
     <!-- Content-only package: no assembly, the CLI unpacks templates/ and ui-kit.json from the .nupkg. -->
     <IncludeBuildOutput>false</IncludeBuildOutput>

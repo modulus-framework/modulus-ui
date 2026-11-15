@@ -3,7 +3,7 @@
   <!-- Server-rendered page bodies shared by the MVC and Razor Pages samples. Both apps serve the same
        URLs and render these partials; only the routing (controllers vs. page models) differs. -->
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>$(ModulusTargetFramework)</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AddRazorSupportForMvc>true</AddRazorSupportForMvc>

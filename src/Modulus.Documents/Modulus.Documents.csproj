@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>$(ModulusTargetFramework)</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Description>Office files for Modulus UI: xlsx in and out of the spreadsheet (ClosedXML), docx in and out of the document editor (Open XML SDK), PDF out of the document model (QuestPDF), and the editor-independent document model.</Description>
