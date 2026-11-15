@@ -9,6 +9,8 @@
 //   * every "alias" entry has an App* type that really derives from that AntDesign component;
 //   * every App* alias in Modulus.Blazor is listed in the manifest;
 //   * every app-* tag named in an "mvc" entry is a real tag helper in Modulus.AspNetCore.Mvc;
+//   * an MVC or Razor Pages template does not pass a bare variable name to a string tag helper property (that sends the text
+//     of the name, not the variable: placeholder="placeholder" instead of placeholder="@placeholder");
 //   * antd-dark-brand.css still matches the pinned dark stylesheet (the brand colour in dark mode).
 // Components from AntDesign.ProLayout live in another assembly and are not scanned.
 // A markdown report is written to drift-reports/ for CI to attach to a PR or issue.
@@ -107,6 +109,32 @@ var mvcProblems = entries
     .Select(x => $"`{x.Name}` maps to `<{x.Tag}>` but Modulus.AspNetCore.Mvc has no such tag helper.")
     .ToList();
 
+// Razor gives an unquoted value to a string-typed tag helper property as the text of the value, so placeholder="placeholder"
+// sends the word "placeholder". A template must write @name to pass its variable. A bare name that the template declares,
+// bound to a string property, is flagged.
+var stringProps = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+foreach (var helper in typeof(Modulus.AspNetCore.Mvc.TagHelpers.ButtonTagHelper).Assembly.GetExportedTypes())
+    foreach (var target in helper.GetCustomAttributes<HtmlTargetElementAttribute>())
+    {
+        if (!stringProps.TryGetValue(target.Tag, out var names)) stringProps[target.Tag] = names = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var prop in helper.GetProperties(BindingFlags.Public | BindingFlags.Instance).Where(p => p.CanWrite && p.PropertyType == typeof(string)))
+            names.Add(prop.GetCustomAttribute<HtmlAttributeNameAttribute>()?.Name
+                ?? Regex.Replace(prop.Name, "(?<=[a-z0-9])([A-Z])", "-$1").ToLowerInvariant());
+    }
+var bareProblems = new List<string>();
+var templateRoot = Path.Combine(root, "src", "Modulus.Ui.Templates", "templates");
+foreach (var engine in new[] { "mvc", "razor-pages" })
+    foreach (var file in Directory.EnumerateFiles(Path.Combine(templateRoot, engine), "*.sbn"))
+    {
+        var text = File.ReadAllText(file);
+        var declared = Regex.Matches(text, @"\b[A-Za-z_][\w<>\[\]?, ]*?\s+([a-z][A-Za-z0-9]*)\s*=(?!=)")
+            .Select(m => m.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
+        foreach (Match tag in Regex.Matches(text, @"<(app-[a-z0-9-]+)([^>]*)>"))
+            foreach (Match attr in Regex.Matches(tag.Groups[2].Value, @"([a-z][a-z0-9-]*)=""([A-Za-z][A-Za-z0-9]*)"""))
+                if (stringProps.TryGetValue(tag.Groups[1].Value, out var names) && names.Contains(attr.Groups[1].Value) && declared.Contains(attr.Groups[2].Value))
+                    bareProblems.Add($"`{Path.GetRelativePath(root, file)}` passes `{attr.Groups[2].Value}` to `{tag.Groups[1].Value} {attr.Groups[1].Value}` as text; write `{attr.Groups[1].Value}=\"@{attr.Groups[2].Value}\"`.");
+    }
+
 var darkProblems = new List<string>();
 if (darkCss is null)
     darkProblems.Add($"AntDesign {antdVersion} dark stylesheet not found in the NuGet cache; antd-dark-brand.css was not checked.");
@@ -143,7 +171,8 @@ Section("Alias problems", aliasProblems);
 Section("MVC tag helper problems", mvcProblems);
 Section("Dark brand stylesheet", darkProblems);
 Section("Blazor class names clashing with a framework type", classProblems);
-if (added.Count + removed.Count + aliasProblems.Count + mvcProblems.Count + darkProblems.Count + classProblems.Count == 0)
+Section("Template attributes that pass a variable name as text", bareProblems);
+if (added.Count + removed.Count + aliasProblems.Count + mvcProblems.Count + darkProblems.Count + classProblems.Count + bareProblems.Count == 0)
     md.AppendLine("No drift. Modulus matches the pinned Ant Design Blazor surface.");
 
 Directory.CreateDirectory(reportsDir);
@@ -152,7 +181,7 @@ File.WriteAllText(reportPath, md.ToString());
 Console.Write(md);
 Console.WriteLine($"Report: {Path.GetRelativePath(root, reportPath)}");
 
-return added.Count + removed.Count + aliasProblems.Count + mvcProblems.Count + darkProblems.Count == 0 ? 0 : 1;
+return added.Count + removed.Count + aliasProblems.Count + mvcProblems.Count + darkProblems.Count + classProblems.Count + bareProblems.Count == 0 ? 0 : 1;
 
 void Section(string title, IReadOnlyList<string> items)
 {
