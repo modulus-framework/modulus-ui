@@ -2,7 +2,7 @@
 
 <AntDesign.Popover Title="@Title" Content="@Content" Trigger="new[] { AntDesign.Trigger.Click }" Placement="Placement.Bottom">
     <Unbound>
-        <Button>@ChildContent</Button>
+        <AntDesign.Button>@ChildContent</AntDesign.Button>
     </Unbound>
 </AntDesign.Popover>
 
