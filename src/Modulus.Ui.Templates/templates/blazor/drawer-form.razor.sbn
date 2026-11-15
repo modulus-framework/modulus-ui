@@ -1,0 +1,42 @@
+@* Drawer form: a side panel holding a validated form, for editing a record without leaving the list. *@
+@typeparam TModel
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Pro.DrawerForm TModel="TModel" Title="Title" Visible="Visible" VisibleChanged="VisibleChanged"
+    Model="Model" ChildContent="ChildContent" OnFinish="OnFinish" SubmitText="SubmitText" CancelText="CancelText"
+    FooterStart="FooterStart" FooterExtra="FooterExtra" Width="Width" />
+
+@code {
+    /// <summary>The panel title.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Whether the panel is open.</summary>
+    [Parameter] public bool Visible { get; set; }
+
+    /// <summary>Called when the panel opens or closes.</summary>
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+
+    /// <summary>The model the form edits.</summary>
+    [Parameter, EditorRequired] public TModel Model { get; set; } = default!;
+
+    /// <summary>The form fields.</summary>
+    [Parameter] public RenderFragment<TModel>? ChildContent { get; set; }
+
+    /// <summary>Saves the model; return true to close the panel.</summary>
+    [Parameter] public Func<TModel, Task<bool>>? OnFinish { get; set; }
+
+    /// <summary>The save button text.</summary>
+    [Parameter] public string SubmitText { get; set; } = "Save";
+
+    /// <summary>The cancel button text.</summary>
+    [Parameter] public string CancelText { get; set; } = "Cancel";
+
+    /// <summary>Footer content on the left, such as a delete button.</summary>
+    [Parameter] public RenderFragment? FooterStart { get; set; }
+
+    /// <summary>Footer content on the right, beside the buttons.</summary>
+    [Parameter] public RenderFragment? FooterExtra { get; set; }
+
+    /// <summary>The panel width in pixels.</summary>
+    [Parameter] public string Width { get; set; } = "480";
+}

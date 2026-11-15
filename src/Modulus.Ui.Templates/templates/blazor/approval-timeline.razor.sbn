@@ -1,0 +1,12 @@
+@* Approval timeline: Steps in order (name, state, who, when, note), with a coloured dot for each stage. *@
+@using Modulus.Ui.Abstractions.Workflow
+
+<Modulus.Blazor.Components.Pro.ApprovalTimeline Steps="Steps" AriaLabel="AriaLabel" />
+
+@code {
+    /// <summary>The approval steps, in order.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<ApprovalStep> Steps { get; set; } = [];
+
+    /// <summary>A label for screen readers.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+}

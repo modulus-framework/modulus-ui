@@ -1,0 +1,15 @@
+@* Dashboard grid: tiles on a grid that the user can resize and reorder; the layout is kept under Id. *@
+@using Modulus.Ui.Abstractions.Dashboard
+
+<Modulus.Blazor.Components.Pro.DashboardGrid Id="Id" Tiles="Tiles" Tile="Tile" />
+
+@code {
+    /// <summary>A key for this dashboard's saved layout.</summary>
+    [Parameter, EditorRequired] public string Id { get; set; } = "";
+
+    /// <summary>The tiles, in their default order.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<DashboardTileSpec> Tiles { get; set; } = [];
+
+    /// <summary>Draws the content of one tile.</summary>
+    [Parameter] public RenderFragment<DashboardTileSpec>? Tile { get; set; }
+}

@@ -1,0 +1,18 @@
+@* Audit trail: Entries (who changed what, when, from and to), grouped by day, with an action filter. *@
+@using Modulus.Ui.Abstractions.Workflow
+
+<Modulus.Blazor.Components.Pro.AuditTrail Entries="Entries" Action="Action" ActionChanged="ActionChanged" AriaLabel="AriaLabel" />
+
+@code {
+    /// <summary>The entries to show.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<AuditEntry> Entries { get; set; } = [];
+
+    /// <summary>The action the list is filtered to, or null for all.</summary>
+    [Parameter] public string? Action { get; set; }
+
+    /// <summary>Called when the action filter changes.</summary>
+    [Parameter] public EventCallback<string?> ActionChanged { get; set; }
+
+    /// <summary>A label for screen readers.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+}

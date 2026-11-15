@@ -1,0 +1,78 @@
+@* Pro table: a server-paged table with filters, a toolbar, batch actions, row selection, row detail, export and URL-kept state. *@
+@typeparam TItem
+@using Modulus.Ui.Abstractions
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Pro.ProTable TItem="TItem" HeaderTitle="HeaderTitle" Request="Request" RowKey="RowKey"
+    Columns="Columns" Filters="Filters" ToolBar="ToolBar" BatchActions="BatchActions" RowDetail="RowDetail"
+    RowExpandable="RowExpandable" RowSelectable="RowSelectable" PageSize="PageSize" Selectable="Selectable"
+    FilterRow="FilterRow" FiltersActive="FiltersActive" OnClearFilters="OnClearFilters" ColumnSettings="ColumnSettings"
+    Exportable="Exportable" ExportFileName="ExportFileName" Id="Id" UrlState="UrlState" MultiSort="MultiSort" Resizable="Resizable" />
+
+@code {
+    /// <summary>The table title.</summary>
+    [Parameter] public string? HeaderTitle { get; set; }
+
+    /// <summary>Loads one page of rows for the request (paging, sorting and filters).</summary>
+    [Parameter, EditorRequired] public Func<ProTableRequest, Task<ProTableResponse<TItem>>> Request { get; set; } = default!;
+
+    /// <summary>The columns, drawn for each row.</summary>
+    [Parameter] public RenderFragment<TItem>? Columns { get; set; }
+
+    /// <summary>The filter fields above the table.</summary>
+    [Parameter] public RenderFragment? Filters { get; set; }
+
+    /// <summary>Buttons above the table.</summary>
+    [Parameter] public RenderFragment? ToolBar { get; set; }
+
+    /// <summary>Buttons for the selected rows.</summary>
+    [Parameter] public RenderFragment<IReadOnlyList<TItem>>? BatchActions { get; set; }
+
+    /// <summary>The content shown under an expanded row.</summary>
+    [Parameter] public RenderFragment<TItem>? RowDetail { get; set; }
+
+    /// <summary>Returns the rows that can be expanded.</summary>
+    [Parameter] public Func<TItem, bool>? RowExpandable { get; set; }
+
+    /// <summary>Returns the rows that can be selected.</summary>
+    [Parameter] public Func<TItem, bool>? RowSelectable { get; set; }
+
+    /// <summary>A unique key for each row.</summary>
+    [Parameter] public Func<TItem, object>? RowKey { get; set; }
+
+    /// <summary>Rows per page.</summary>
+    [Parameter] public int PageSize { get; set; } = 10;
+
+    /// <summary>Whether rows can be selected.</summary>
+    [Parameter] public bool Selectable { get; set; }
+
+    /// <summary>Whether a row of filter boxes sits above the header.</summary>
+    [Parameter] public bool FilterRow { get; set; }
+
+    /// <summary>Whether any filter is set, which shows the clear button.</summary>
+    [Parameter] public bool FiltersActive { get; set; }
+
+    /// <summary>Called when the user clears the filters.</summary>
+    [Parameter] public EventCallback OnClearFilters { get; set; }
+
+    /// <summary>Whether the user can show or hide columns.</summary>
+    [Parameter] public bool ColumnSettings { get; set; } = true;
+
+    /// <summary>Whether the table can be exported to a file.</summary>
+    [Parameter] public bool Exportable { get; set; } = true;
+
+    /// <summary>The name of the exported file, without the extension.</summary>
+    [Parameter] public string? ExportFileName { get; set; }
+
+    /// <summary>A key for this table's saved state.</summary>
+    [Parameter] public string? Id { get; set; }
+
+    /// <summary>Keeps the paging, sorting and filters in the address bar.</summary>
+    [Parameter] public bool UrlState { get; set; }
+
+    /// <summary>Allows sorting by more than one column.</summary>
+    [Parameter] public bool MultiSort { get; set; }
+
+    /// <summary>Whether columns can be resized.</summary>
+    [Parameter] public bool Resizable { get; set; } = true;
+}

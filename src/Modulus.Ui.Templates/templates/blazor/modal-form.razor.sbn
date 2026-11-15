@@ -1,0 +1,32 @@
+@* Modal form: a dialog holding a validated form. OnFinish returns true to close; the submit button shows a spinner meanwhile. *@
+@typeparam TModel
+@using Microsoft.AspNetCore.Components
+
+<Modulus.Blazor.Components.Pro.ModalForm TModel="TModel" Title="Title" Visible="Visible" VisibleChanged="VisibleChanged"
+    Model="Model" ChildContent="ChildContent" OnFinish="OnFinish" SubmitText="SubmitText" Width="Width" />
+
+@code {
+    /// <summary>The dialog title.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Whether the dialog is open.</summary>
+    [Parameter] public bool Visible { get; set; }
+
+    /// <summary>Called when the dialog opens or closes.</summary>
+    [Parameter] public EventCallback<bool> VisibleChanged { get; set; }
+
+    /// <summary>The model the form edits.</summary>
+    [Parameter, EditorRequired] public TModel Model { get; set; } = default!;
+
+    /// <summary>The form fields.</summary>
+    [Parameter] public RenderFragment<TModel>? ChildContent { get; set; }
+
+    /// <summary>Saves the model; return true to close the dialog.</summary>
+    [Parameter] public Func<TModel, Task<bool>>? OnFinish { get; set; }
+
+    /// <summary>The submit button text.</summary>
+    [Parameter] public string SubmitText { get; set; } = "Submit";
+
+    /// <summary>The dialog width, such as 560px.</summary>
+    [Parameter] public string Width { get; set; } = "560px";
+}
