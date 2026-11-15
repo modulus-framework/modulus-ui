@@ -119,7 +119,10 @@ public class SelectTagHelper : TagHelper
 [HtmlTargetElement("app-radio-group", TagStructure = TagStructure.WithoutEndTag)]
 public class RadioGroupTagHelper : TagHelper
 {
-    [HtmlAttributeName("asp-for")] public ModelExpression For { get; set; } = default!;
+    [HtmlAttributeName("asp-for")] public ModelExpression? For { get; set; }
+
+    /// <summary>Name when not bound with asp-for.</summary>
+    public string? Name { get; set; }
 
     public IEnumerable<SelectListItem> Items { get; set; } = [];
 
@@ -131,8 +134,8 @@ public class RadioGroupTagHelper : TagHelper
 
     public override void Process(TagHelperContext context, TagHelperOutput output)
     {
-        var name = For.Name;
-        var current = For.Model?.ToString();
+        var name = For?.Name ?? Name ?? "";
+        var current = For?.Model?.ToString();
         var buttons = ButtonStyle != "none";
         output.TagName = "div";
         output.TagMode = TagMode.StartTagAndEndTag;

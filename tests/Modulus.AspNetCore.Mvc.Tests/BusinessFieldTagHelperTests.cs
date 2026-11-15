@@ -162,6 +162,17 @@ public class BusinessFieldTagHelperTests
     }
 
     [Fact]
+    public async Task RadioGroup_WithoutAspFor_UsesTheNameAndMarksNothingWhenNoModel()
+    {
+        var items = new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> { new("Alpha", "a"), new("Beta", "b") };
+        var html = await RenderAsync(new RadioGroupTagHelper { Name = "tier", Items = items }, "app-radio-group");
+
+        Assert.Contains("name=\"tier\" value=\"Alpha\"", html);
+        Assert.Contains("name=\"tier\" value=\"Beta\"", html);
+        Assert.DoesNotContain(" checked", html);
+    }
+
+    [Fact]
     public async Task TimePicker_IsTheTimeFlavourOfTheDatePicker()
     {
         var html = await RenderAsync(new TimePickerTagHelper { For = For("Opens", "09:30:00"), ShowTime = true }, "app-time-picker");
