@@ -8,6 +8,6 @@
     bool danger = ViewBag.Danger != false;
 }
 
-<app-popconfirm title="@title" ok-text="@okText" ok-danger="danger" hx-delete="@url" hx-target="closest tr" hx-swap="outerHTML">
-    <app-button danger="danger">@label</app-button>
+<app-popconfirm title="@title" ok-text="@okText" ok-danger="@danger" hx-delete="@url" hx-target="closest tr" hx-swap="outerHTML">
+    <app-button danger="@danger">@label</app-button>
 </app-popconfirm>

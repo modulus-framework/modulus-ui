@@ -8,4 +8,4 @@
     bool danger = ViewBag.Danger == true;
 }
 
-<app-button type="@variant" size="@size" href="@href" html-type="@htmlType" danger="danger">@ViewBag.Label</app-button>
+<app-button type="@variant" size="@size" href="@href" html-type="@htmlType" danger="@danger">@ViewBag.Label</app-button>
