@@ -86,9 +86,9 @@ jobs:
 
     - name: Start the samples
       run: |
-        dotnet run --no-build --configuration Release --project samples/Modulus.AdminTemplate.Mvc --urls http://localhost:5100 > mvc.log 2>&1 &
-        dotnet run --no-build --configuration Release --project samples/Modulus.AdminTemplate.RazorPages --urls http://localhost:5101 > razor.log 2>&1 &
-        dotnet run --no-build --configuration Release --project samples/Modulus.AdminTemplate.Blazor --urls http://localhost:5102 > blazor.log 2>&1 &
+        dotnet run --no-build --configuration Release --project samples/Modulus.AdminTemplate.Mvc --urls http://localhost:5101 > mvc.log 2>&1 &
+        dotnet run --no-build --configuration Release --project samples/Modulus.AdminTemplate.RazorPages --urls http://localhost:5102 > razor.log 2>&1 &
+        dotnet run --no-build --configuration Release --project samples/Modulus.AdminTemplate.Blazor --urls http://localhost:5100 > blazor.log 2>&1 &
         dotnet run --no-build --configuration Release --project samples/Modulus.Samples.Fluid --urls http://localhost:5103 > fluid.log 2>&1 &
         for port in 5100 5101 5102 5103; do
           for attempt in $(seq 1 60); do
@@ -99,31 +99,31 @@ jobs:
 
     - name: Smoke gate
       env:
-        MODULUS_MVC: http://localhost:5100
-        MODULUS_RAZOR: http://localhost:5101
-        MODULUS_BLAZOR: http://localhost:5102
+        MODULUS_MVC: http://localhost:5101
+        MODULUS_RAZOR: http://localhost:5102
+        MODULUS_BLAZOR: http://localhost:5100
         MODULUS_FLUID: http://localhost:5103
       run: python3 tests/browser/smoke.py
 
     - name: Markup parity gate
       env:
-        MODULUS_MVC: http://localhost:5100
-        MODULUS_RAZOR: http://localhost:5101
-        MODULUS_BLAZOR: http://localhost:5102
+        MODULUS_MVC: http://localhost:5101
+        MODULUS_RAZOR: http://localhost:5102
+        MODULUS_BLAZOR: http://localhost:5100
       run: python3 tests/browser/parity.py
 
     - name: Workflow gate
       env:
-        MODULUS_MVC: http://localhost:5100
-        MODULUS_RAZOR: http://localhost:5101
-        MODULUS_BLAZOR: http://localhost:5102
+        MODULUS_MVC: http://localhost:5101
+        MODULUS_RAZOR: http://localhost:5102
+        MODULUS_BLAZOR: http://localhost:5100
       run: python3 tests/browser/flow.py
 
     - name: Assistant gate
       env:
-        MODULUS_MVC: http://localhost:5100
-        MODULUS_RAZOR: http://localhost:5101
-        MODULUS_BLAZOR: http://localhost:5102
+        MODULUS_MVC: http://localhost:5101
+        MODULUS_RAZOR: http://localhost:5102
+        MODULUS_BLAZOR: http://localhost:5100
       run: python3 tests/browser/assistant.py
 
     - name: Sample logs

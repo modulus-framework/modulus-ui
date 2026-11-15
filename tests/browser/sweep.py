@@ -12,7 +12,7 @@ PAGES = ["/plugins/charts-advanced","/plugins/code-editor","/plugins/color-picke
  "/plugins/map-vector","/plugins/player","/plugins/sortable","/plugins/spreadsheet","/plugins/tour","/plugins/pdf",
  "/tables/tree","/tables/advanced","/apps/calendar","/apps/users/grid","/pages/changelog","/ui/icons","/ui/typography","/ui/colors","/ui/charts","/tables/ask","/apps/assistant"]
 import os
-BASES = {"mvc": os.environ.get("MODULUS_MVC", "http://localhost:5100"), "razor": os.environ.get("MODULUS_RAZOR", "http://localhost:5101"), "blazor": os.environ.get("MODULUS_BLAZOR", "http://localhost:5102")}
+BASES = {"mvc": os.environ.get("MODULUS_MVC", "http://localhost:5101"), "razor": os.environ.get("MODULUS_RAZOR", "http://localhost:5102"), "blazor": os.environ.get("MODULUS_BLAZOR", "http://localhost:5100")}
 import base64
 BLANK = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=")
 results = []
