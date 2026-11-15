@@ -1,4 +1,4 @@
-@page "/apps/customers/{handler?}/{id:int?}"
+@page "/apps/customers/{handler:regex(^(form|save|delete)$)?}/{id:int?}"
 @model CustomerListModel
 @{
     ViewData["Title"] = "Customers";
