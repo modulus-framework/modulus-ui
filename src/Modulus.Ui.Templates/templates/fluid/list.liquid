@@ -9,7 +9,7 @@
         {% for item in items %}
         <li class="ant-list-item">
             {% if item.avatar_name %}
-            <div class="ant-list-item-meta-avatar"><span class="ant-avatar ant-avatar-default">{{ item.avatar_name | slice: 0 | upcase }}</span></div>
+            <div class="ant-list-item-meta-avatar"><span class="ant-avatar ant-avatar-circle"><span class="ant-avatar-string">{{ item.avatar_name | slice: 0 | upcase }}</span></span></div>
             {% endif %}
             <div class="ant-list-item-meta">
                 <div class="ant-list-item-meta-title">

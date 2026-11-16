@@ -1,0 +1,27 @@
+{% comment %} Two-factor sign-in for Fluid: code, error, antiforgery_token. Posts to /auth/two-factor. The sample accepts any 6-digit code. {% endcomment %}
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><h1 class="m-page-title">Two-factor authentication</h1></div>
+</div>
+
+{% if error and error != blank %}
+<div class="ant-alert ant-alert-error ant-alert-with-description m-mb-16" role="alert">
+    <div class="ant-alert-content"><div class="ant-alert-message">{{ error }}</div></div>
+</div>
+{% endif %}
+
+<div class="m-card">
+    <div class="m-card-body">
+        <p class="m-muted">Enter the 6-digit code from your authenticator app.</p>
+        <form method="post" action="/auth/two-factor" class="ant-form ant-form-vertical" novalidate>
+            <input type="hidden" name="__RequestVerificationToken" value="{{ antiforgery_token }}" />
+            <div class="ant-form-item">
+                <div class="ant-form-item-label"><label for="two-factor-code">Code</label></div>
+                <div class="ant-form-item-control"><input id="two-factor-code" name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" class="ant-input" required /></div>
+            </div>
+            <div class="m-form-actions m-mt-16">
+                <button type="submit" class="ant-btn ant-btn-primary"><span>Verify</span></button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -6,8 +6,8 @@
 </header>
 <div class="m-card">
     <div class="m-card-body">
-        <div class="m-liquid-scroll">
-            <table class="m-liquid-table">
+        <div class="ant-table-wrapper m-table-flush"><div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+            <table style="table-layout:auto">
             <thead><tr><th>Number</th><th>Client</th><th>Status</th><th class="m-num">Total</th></tr></thead>
             <tbody>
             {% for row in rows %}
@@ -20,6 +20,6 @@
             {% endfor %}
             </tbody>
         </table>
-        </div>
+        </div></div></div></div>
     </div>
 </div>

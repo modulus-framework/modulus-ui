@@ -1,0 +1,15 @@
+{% comment %} The chart pages of the Fluid sample: a link to each chart. {% endcomment %}
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Charts</div><h1 class="m-page-title">Charts</h1></div>
+</div>
+
+<div class="m-grid m-cols-2">
+    {% for chart in charts %}
+    <div class="m-card">
+        <div class="m-card-body">
+            <h2 class="m-card-title"><a href="/charts/{{ chart.slug }}">{{ chart.title }}</a></h2>
+        </div>
+    </div>
+    {% endfor %}
+</div>

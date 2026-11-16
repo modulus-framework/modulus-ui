@@ -1,0 +1,39 @@
+{% comment %} Sign-in for Fluid: email, password, remember, return_url, error, reset (a password was just reset), antiforgery_token. Posts to /auth/login. {% endcomment %}
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><h1 class="m-page-title">Sign in</h1></div>
+</div>
+
+{% if reset %}
+<div class="ant-alert ant-alert-success ant-alert-with-description m-mb-16" role="status">
+    <div class="ant-alert-content"><div class="ant-alert-message">Your password was reset. Sign in with it.</div></div>
+</div>
+{% endif %}
+
+{% if error and error != blank %}
+<div class="ant-alert ant-alert-error ant-alert-with-description m-mb-16" role="alert">
+    <div class="ant-alert-content"><div class="ant-alert-message">{{ error }}</div></div>
+</div>
+{% endif %}
+
+<div class="m-card">
+    <div class="m-card-body">
+        <form method="post" action="/auth/login" class="ant-form ant-form-vertical" novalidate>
+            <input type="hidden" name="__RequestVerificationToken" value="{{ antiforgery_token }}" />
+            <input type="hidden" name="return_url" value="{{ return_url }}" />
+            <div class="ant-form-item">
+                <div class="ant-form-item-label"><label for="login-email">Email</label></div>
+                <div class="ant-form-item-control"><input id="login-email" type="email" name="email" value="{{ email }}" autocomplete="username" class="ant-input" required /></div>
+            </div>
+            <div class="ant-form-item">
+                <div class="ant-form-item-label"><label for="login-password">Password</label></div>
+                <div class="ant-form-item-control"><input id="login-password" type="password" name="password" autocomplete="current-password" class="ant-input" required /></div>
+            </div>
+            <label class="ant-checkbox-wrapper"><input type="checkbox" class="ant-checkbox-input" name="remember" value="true" /><span>Keep me signed in</span></label>
+            <div class="m-form-actions m-mt-16">
+                <button type="submit" class="ant-btn ant-btn-primary"><span>Sign in</span></button>
+            </div>
+        </form>
+        <p class="m-mt-16"><a href="/auth/forgot-password">Forgot password?</a></p>
+    </div>
+</div>

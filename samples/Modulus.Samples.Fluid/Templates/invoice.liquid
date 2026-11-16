@@ -7,8 +7,8 @@
 </header>
 <div class="m-card">
     <div class="m-card-body">
-        <div class="m-liquid-scroll">
-            <table class="m-liquid-table">
+        <div class="ant-table-wrapper m-table-flush"><div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+            <table style="table-layout:auto">
             <thead><tr><th>Item</th><th>Description</th><th class="m-num">Qty</th><th class="m-num">Cost</th><th class="m-num">Total</th></tr></thead>
             <tbody>
             {% for line in invoice.Lines %}
@@ -22,7 +22,7 @@
             {% endfor %}
             </tbody>
         </table>
-        </div>
+        </div></div></div></div>
         <dl class="m-plain-list" style="margin-top: 16px;">
             <li><span class="m-muted">Subtotal</span><span>{{ invoice.Subtotal | money }}</span></li>
             <li><span class="m-muted">Discount</span><span>{{ invoice.Discount | money }}</span></li>

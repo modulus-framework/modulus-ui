@@ -1,0 +1,66 @@
+{% comment %} Customers list for the Fluid sample: search, a message after a save or delete, paging, edit and delete per row. {% endcomment %}
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Customers</div><h1 class="m-page-title">Customers</h1></div>
+    <div class="m-page-actions"><a class="ant-btn ant-btn-primary" href="/customers/new"><span>New customer</span></a></div>
+</div>
+
+{% if message and message != blank %}
+<div class="ant-alert ant-alert-success ant-alert-with-description m-mb-16" role="status">
+    <div class="ant-alert-content"><div class="ant-alert-message">{{ message }}</div></div>
+</div>
+{% endif %}
+
+<div class="m-card">
+    <div class="m-card-header">
+        <h2 class="m-card-title">{{ total }} customer{% if total != 1 %}s{% endif %}</h2>
+        <form method="get" action="/customers" class="m-card-actions">
+            <input class="ant-input" type="search" name="q" value="{{ keyword }}" placeholder="Search name, company or email" aria-label="Search customers" />
+        </form>
+    </div>
+    <div class="m-card-body m-card-body-flush">
+        {% if rows.size == 0 %}
+        <div class="m-empty">
+            <h3 class="m-empty-title">No customers found</h3>
+            <p class="m-empty-subtitle">Try another search, or create the first customer.</p>
+            <a class="ant-btn ant-btn-primary" href="/customers/new"><span>New customer</span></a>
+        </div>
+        {% else %}
+        <div class="ant-table-wrapper m-table-flush">
+            <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                <table style="table-layout:auto">
+                    <thead class="ant-table-thead"><tr><th class="ant-table-cell">Name</th><th class="ant-table-cell m-hide-sm">Company</th><th class="ant-table-cell m-hide-sm">Email</th><th class="ant-table-cell m-hide-sm">Tier</th><th class="ant-table-cell">Status</th><th class="ant-table-cell"></th></tr></thead>
+                    <tbody class="ant-table-tbody">
+                        {% for row in rows %}
+                        <tr class="ant-table-row">
+                            <td class="ant-table-cell"><strong>{{ row.name }}</strong></td>
+                            <td class="ant-table-cell m-hide-sm">{{ row.company }}</td>
+                            <td class="ant-table-cell m-hide-sm">{{ row.email }}</td>
+                            <td class="ant-table-cell m-hide-sm">{{ row.tier }}</td>
+                            <td class="ant-table-cell">{{ row.status }}</td>
+                            <td class="ant-table-cell">
+                                <form method="post" action="/customers/delete" class="m-flex">
+                                    <input type="hidden" name="__RequestVerificationToken" value="{{ antiforgery_token }}" />
+                                    <input type="hidden" name="id" value="{{ row.id }}" />
+                                    <a class="ant-btn ant-btn-text ant-btn-sm" href="/customers/{{ row.id }}/edit"><span>Edit</span></a>
+                                    <button type="submit" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous"><span>Delete</span></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div></div></div>
+        </div>
+        {% endif %}
+    </div>
+    {% if has_prev or has_next %}
+    <div class="m-card-footer m-flex m-between">
+        <span class="m-muted">Page {{ page }}</span>
+        <span class="m-flex">
+            {% if has_prev %}<a class="ant-btn ant-btn-default ant-btn-sm" href="/customers?p={{ prev_page }}&q={{ keyword | url_encode }}"><span>Previous</span></a>{% endif %}
+            {% if has_next %}<a class="ant-btn ant-btn-default ant-btn-sm" href="/customers?p={{ next_page }}&q={{ keyword | url_encode }}"><span>Next</span></a>{% endif %}
+        </span>
+    </div>
+    {% endif %}
+</div>

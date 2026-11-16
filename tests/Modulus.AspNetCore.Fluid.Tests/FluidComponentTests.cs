@@ -29,7 +29,7 @@ public class FluidComponentTests
     {
         var html = Render("badge", new { status = "Active", label = "<b>Live</b>" });
 
-        Assert.Contains("m-badge-success-lt", html);
+        Assert.Contains("ant-badge-status-success", html);
         Assert.Contains("&lt;b&gt;Live&lt;/b&gt;", html);
         Assert.DoesNotContain("<b>", html);
     }
@@ -108,8 +108,8 @@ public class FluidComponentTests
     {
         var html = Render("result", new { status = "404", title = "Page not found", action_text = "Home", action_url = "/" });
 
-        Assert.Contains("ant-result-error", html);
-        Assert.Contains("m-result-code", html);
+        Assert.Contains("ant-result-404", html);
+        Assert.Contains("ant-result-icon", html);
         Assert.Contains("Page not found", html);
         Assert.Contains("href=\"/\"", html);
     }
@@ -205,7 +205,7 @@ public class FluidComponentTests
 
         Assert.Contains("Revenue", html);
         Assert.Contains("1234", html);
-        Assert.Contains("m-stat-prefix", html);
-        Assert.Contains("m-stat-suffix", html);
+        Assert.Contains("ant-statistic-content-prefix", html);
+        Assert.Contains("ant-statistic-content-suffix", html);
     }
 }

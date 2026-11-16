@@ -1,10 +1,12 @@
-{% comment %} Statistic for Fluid: title, value, prefix, suffix, precision, value_color {% endcomment %}
+{% comment %} Statistic for Fluid: title, value, prefix, suffix, precision, value_color. The markup is the one <app-statistic> draws. {% endcomment %}
 {% assign shown = value | default: 0 %}
 {% if precision and precision != blank %}{% assign shown = shown | round: precision %}{% endif %}
 
-<div class="m-stat-card">
-    {% if title and title != blank %}<div class="m-stat-card-head"><span>{{ title }}</span></div>{% endif %}
-    <div class="m-stat-card-value"{% if value_color and value_color != blank %} style="color: {{ value_color }}"{% endif %}>
-        {% if prefix and prefix != blank %}<span class="m-stat-prefix">{{ prefix }}</span>{% endif %}{{ shown }}{% if suffix and suffix != blank %}<span class="m-stat-suffix">{{ suffix }}</span>{% endif %}
+<div class="ant-statistic">
+    {% if title and title != blank %}<div class="ant-statistic-title">{{ title }}</div>{% endif %}
+    <div class="ant-statistic-content"{% if value_color and value_color != blank %} style="color: {{ value_color }}"{% endif %}>
+        {% if prefix and prefix != blank %}<span class="ant-statistic-content-prefix">{{ prefix }}</span>{% endif %}
+        <span class="ant-statistic-content-value">{{ shown }}</span>
+        {% if suffix and suffix != blank %}<span class="ant-statistic-content-suffix">{{ suffix }}</span>{% endif %}
     </div>
 </div>

@@ -1,0 +1,13 @@
+{% comment %} One chart for the Fluid sample: chart_title and chart (the SVG the page drew on the server, printed as it is). {% endcomment %}
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Charts</div><h1 class="m-page-title">{{ chart_title }}</h1></div>
+    <div class="m-page-actions"><a class="ant-btn" href="/charts"><span>All charts</span></a></div>
+</div>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">{{ chart_title }}</h2></div>
+    <div class="m-card-body">
+        {{ chart }}
+    </div>
+</div>

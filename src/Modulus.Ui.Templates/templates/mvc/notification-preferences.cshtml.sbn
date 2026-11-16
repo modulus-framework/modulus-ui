@@ -112,8 +112,4 @@
     </div>
 </form>
 
-<style>
-    .m-checkbox-group { display: flex; flex-direction: column; gap: 12px; }
-    .ant-checkbox-wrapper { display: flex; align-items: center; margin: 0; }
-    .m-mt-24 { margin-top: 24px; }
-</style>
+

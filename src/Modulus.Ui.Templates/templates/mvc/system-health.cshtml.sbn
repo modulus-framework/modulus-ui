@@ -85,8 +85,4 @@
     </div>
 </div>
 
-<style>
-    .m-bars { display: flex; flex-direction: column; gap: 8px; }
-    .m-bar-row { display: grid; grid-template-columns: 64px 1fr 48px; gap: 12px; align-items: center; }
-    .m-bar-row progress { width: 100%; }
-</style>
+

@@ -1,6 +1,10 @@
-{% comment %} Avatar for Fluid: name, src (image), size (sm, md, lg). Without an image it shows the initial of the name. {% endcomment %}
-{% assign size_class = 'default' %}
-{% if size == 'sm' %}{% assign size_class = 'small' %}{% elsif size == 'lg' %}{% assign size_class = 'large' %}{% endif %}
+{% comment %} Avatar for Fluid: name, src (image), size (sm, md, lg). Without an image it shows the initial of the name. The markup is the one <app-avatar> draws. {% endcomment %}
+{% assign size_class = '' %}
+{% if size == 'sm' %}{% assign size_class = ' ant-avatar-sm' %}{% elsif size == 'lg' %}{% assign size_class = ' ant-avatar-lg' %}{% endif %}
 {% assign initial = name | slice: 0 | upcase %}
 
-<span class="ant-avatar ant-avatar-{{ size_class }}" title="{{ name }}">{% if src and src != blank %}<img src="{{ src }}" alt="{{ name }}" />{% else %}{{ initial }}{% endif %}</span>
+{% if src and src != blank %}
+<span class="ant-avatar ant-avatar-circle ant-avatar-image{{ size_class }}" title="{{ name }}"><img src="{{ src }}" alt="{{ name }}" /></span>
+{% else %}
+<span class="ant-avatar ant-avatar-circle{{ size_class }}" title="{{ name }}"><span class="ant-avatar-string">{{ initial }}</span></span>
+{% endif %}

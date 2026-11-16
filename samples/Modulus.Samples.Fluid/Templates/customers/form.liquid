@@ -1,0 +1,62 @@
+{% comment %} Customer form for the Fluid sample: create and edit. Errors are listed above the fields; the values come back as typed. {% endcomment %}
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Customers</div><h1 class="m-page-title">{{ title }}</h1></div>
+    <div class="m-page-actions"><a class="ant-btn" href="/customers"><span>Back to customers</span></a></div>
+</div>
+
+{% if errors.size > 0 %}
+<div class="ant-alert ant-alert-error ant-alert-with-description m-mb-16" role="alert">
+    <div class="ant-alert-content">
+        <div class="ant-alert-message">Check the form</div>
+        <ul class="ant-alert-description">
+            {% for error in errors %}<li>{{ error }}</li>{% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+<div class="m-card">
+    <div class="m-card-body">
+        <form method="post" action="{{ action }}" class="ant-form ant-form-vertical" novalidate>
+            <input type="hidden" name="__RequestVerificationToken" value="{{ antiforgery_token }}" />
+            <div class="m-form-grid">
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="customer-name">Name</label></div>
+                    <div class="ant-form-item-control"><input id="customer-name" name="name" value="{{ name }}" maxlength="80" class="ant-input" required /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="customer-company">Company</label></div>
+                    <div class="ant-form-item-control"><input id="customer-company" name="company" value="{{ company }}" maxlength="80" class="ant-input" required /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="customer-email">Email</label></div>
+                    <div class="ant-form-item-control"><input id="customer-email" type="email" name="email" value="{{ email }}" class="ant-input" required /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="customer-city">City</label></div>
+                    <div class="ant-form-item-control"><input id="customer-city" name="city" value="{{ city }}" maxlength="60" class="ant-input" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="customer-tier">Tier</label></div>
+                    <div class="ant-form-item-control">
+                        <select id="customer-tier" name="tier" class="ant-input">
+                            {% for option in tiers %}<option value="{{ option.value }}"{% if option.selected %} selected{% endif %}>{{ option.value }}</option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="customer-status">Status</label></div>
+                    <div class="ant-form-item-control">
+                        <select id="customer-status" name="status" class="ant-input">
+                            {% for option in statuses %}<option value="{{ option.value }}"{% if option.selected %} selected{% endif %}>{{ option.value }}</option>{% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="m-form-actions m-mt-16">
+                <button type="submit" class="ant-btn ant-btn-primary"><span>Save customer</span></button>
+            </div>
+        </form>
+    </div>
+</div>
