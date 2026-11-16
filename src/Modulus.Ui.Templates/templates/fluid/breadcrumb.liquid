@@ -1,0 +1,19 @@
+{% comment %} Breadcrumb for Fluid: items (each with label and url); the last item is the current page. With no items it shows Home. {% endcomment %}
+<nav class="ant-breadcrumb" aria-label="Breadcrumb">
+    <ol>
+        {% if items == blank %}
+        <li><span class="ant-breadcrumb-link">Home</span></li>
+        {% else %}
+        {% for item in items %}
+        <li>
+            {% if forloop.last %}
+            <span class="ant-breadcrumb-link" aria-current="page">{{ item.label }}</span>
+            {% else %}
+            <a class="ant-breadcrumb-link" href="{{ item.url }}">{{ item.label }}</a>
+            <span class="ant-breadcrumb-separator">/</span>
+            {% endif %}
+        </li>
+        {% endfor %}
+        {% endif %}
+    </ol>
+</nav>

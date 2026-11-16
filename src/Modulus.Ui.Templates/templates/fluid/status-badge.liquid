@@ -1,0 +1,4 @@
+{% comment %} Status badge for Fluid: text, tone (default, success, warning, danger, info) {% endcomment %}
+{% assign tone = tone | default: 'default' | downcase %}
+
+<span class="m-status-badge m-status-{{ tone }}">{{ text }}</span>

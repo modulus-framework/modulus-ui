@@ -1,0 +1,21 @@
+{% comment %} Timeline for Fluid: items (each with text, optional color, label), pending (text for the last open item), reverse {% endcomment %}
+<ul class="ant-timeline{% if reverse %} ant-timeline-reverse{% endif %}">
+    {% for item in items %}
+    {% assign dot = item.color | default: 'blue' %}
+    <li class="ant-timeline-item">
+        <div class="ant-timeline-item-tail"></div>
+        <div class="ant-timeline-item-head ant-timeline-item-head-{{ dot }}"></div>
+        <div class="ant-timeline-item-content">
+            {% if item.label %}<span class="m-timeline-label">{{ item.label }}</span>{% endif %}
+            {{ item.text }}
+        </div>
+    </li>
+    {% endfor %}
+    {% if pending %}
+    <li class="ant-timeline-item">
+        <div class="ant-timeline-item-tail"></div>
+        <div class="ant-timeline-item-head ant-timeline-item-head-gray"></div>
+        <div class="ant-timeline-item-content">{{ pending }}</div>
+    </li>
+    {% endif %}
+</ul>

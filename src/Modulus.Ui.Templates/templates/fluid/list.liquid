@@ -1,0 +1,25 @@
+{% comment %} List for Fluid: header, items (each with title; optional description, href, avatar_name), bordered, empty_text {% endcomment %}
+{% assign bordered_class = '' %}
+{% if bordered != false %}{% assign bordered_class = ' ant-list-bordered' %}{% endif %}
+{% assign empty_text = empty_text | default: 'Nothing here yet.' %}
+
+<div class="ant-list{{ bordered_class }} ant-list-split">
+    {% if header %}<div class="ant-list-header">{{ header }}</div>{% endif %}
+    <ul class="ant-list-items">
+        {% for item in items %}
+        <li class="ant-list-item">
+            {% if item.avatar_name %}
+            <div class="ant-list-item-meta-avatar"><span class="ant-avatar ant-avatar-default">{{ item.avatar_name | slice: 0 | upcase }}</span></div>
+            {% endif %}
+            <div class="ant-list-item-meta">
+                <div class="ant-list-item-meta-title">
+                    {% if item.href %}<a href="{{ item.href }}">{{ item.title }}</a>{% else %}{{ item.title }}{% endif %}
+                </div>
+                {% if item.description %}<div class="ant-list-item-meta-description">{{ item.description }}</div>{% endif %}
+            </div>
+        </li>
+        {% else %}
+        <li class="ant-list-empty-text">{{ empty_text }}</li>
+        {% endfor %}
+    </ul>
+</div>

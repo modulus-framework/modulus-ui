@@ -1,0 +1,42 @@
+{% comment %} Notification preferences for Fluid: a static form with sample choices. The form does not post; connect a preference store to save. {% endcomment %}
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Account</div><h1 class="m-page-title">Notification preferences</h1></div>
+</div>
+
+<div class="ant-alert ant-alert-info ant-alert-with-description m-mb-16" role="alert">
+    <div class="ant-alert-content">
+        <div class="ant-alert-message">Sample data</div>
+        <div class="ant-alert-description">This page shows built-in sample choices. Connect your preference store to save them.</div>
+    </div>
+</div>
+
+<form method="post" class="ant-form ant-form-vertical" novalidate>
+    <div class="m-card">
+        <div class="m-card-header"><h2 class="m-card-title">Email notifications</h2></div>
+        <div class="m-card-body">
+            <div class="m-checkbox-group">
+                <label class="ant-checkbox-wrapper"><input type="checkbox" class="ant-checkbox-input" name="email_activity_summary" value="true" checked /><span>Weekly activity summary</span></label>
+                <label class="ant-checkbox-wrapper"><input type="checkbox" class="ant-checkbox-input" name="email_security_alerts" value="true" checked /><span>Security alerts and login attempts</span></label>
+                <label class="ant-checkbox-wrapper"><input type="checkbox" class="ant-checkbox-input" name="email_product_updates" value="true" /><span>Product updates and announcements</span></label>
+                <label class="ant-checkbox-wrapper"><input type="checkbox" class="ant-checkbox-input" name="email_marketing" value="true" /><span>Marketing emails and promotions</span></label>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card m-mt-24">
+        <div class="m-card-header"><h2 class="m-card-title">In-app notifications</h2></div>
+        <div class="m-card-body">
+            <div class="m-checkbox-group">
+                <label class="ant-checkbox-wrapper"><input type="checkbox" class="ant-checkbox-input" name="notify_system_updates" value="true" checked /><span>System updates and maintenance</span></label>
+                <label class="ant-checkbox-wrapper"><input type="checkbox" class="ant-checkbox-input" name="notify_reports" value="true" checked /><span>Report generation and completion</span></label>
+                <label class="ant-checkbox-wrapper"><input type="checkbox" class="ant-checkbox-input" name="notify_collaboration" value="true" checked /><span>Collaboration and mentions</span></label>
+                <label class="ant-checkbox-wrapper"><input type="checkbox" class="ant-checkbox-input" name="notify_scheduled" value="true" /><span>Scheduled task reminders</span></label>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-form-actions m-mt-24">
+        <button type="submit" class="ant-btn ant-btn-primary"><span>Save preferences</span></button>
+    </div>
+</form>

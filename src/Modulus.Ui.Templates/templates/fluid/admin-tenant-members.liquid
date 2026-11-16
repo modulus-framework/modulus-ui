@@ -1,0 +1,47 @@
+{% comment %} Tenant members for Fluid: static sample members of the tenant in the route (id). The invite and remove controls do not post. {% endcomment %}
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Administration</div><h1 class="m-page-title">Tenant members</h1></div>
+    <div class="m-page-actions"><a class="ant-btn" href="/admin/tenants"><span>Back to tenants</span></a></div>
+</div>
+
+<div class="ant-alert ant-alert-info ant-alert-with-description m-mb-16" role="alert">
+    <div class="ant-alert-content">
+        <div class="ant-alert-message">Sample data</div>
+        <div class="ant-alert-description">This page shows built-in sample members for tenant {{ id }}. Connect your tenant directory to manage real members.</div>
+    </div>
+</div>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">Invite a member</h2></div>
+    <div class="m-card-body">
+        <form method="post" class="m-flex m-flex-wrap">
+            <input class="ant-input" type="email" name="email" placeholder="name@example.com" aria-label="Email address" required />
+            <select class="ant-input" name="role" aria-label="Role"><option>Member</option><option>Admin</option><option>Owner</option></select>
+            <button type="submit" class="ant-btn ant-btn-primary"><span>Invite</span></button>
+        </form>
+    </div>
+</div>
+
+<div class="m-card m-mt-24">
+    <div class="m-card-header">
+        <h2 class="m-card-title">Members</h2>
+        <form method="get" class="m-card-actions">
+            <input class="ant-input" type="search" name="q" placeholder="Search members..." aria-label="Search members" />
+        </form>
+    </div>
+    <div class="m-card-body m-card-body-flush">
+        <div class="ant-table-wrapper m-table-flush">
+            <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                <table style="table-layout:auto">
+                    <thead class="ant-table-thead"><tr><th class="ant-table-cell">Name</th><th class="ant-table-cell">Email</th><th class="ant-table-cell">Role</th><th class="ant-table-cell"></th></tr></thead>
+                    <tbody class="ant-table-tbody">
+                        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Asha Rahman</strong></td><td class="ant-table-cell">asha@example.com</td><td class="ant-table-cell">Owner</td><td class="ant-table-cell"><button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous"><span>Remove</span></button></td></tr>
+                        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Rafi Hasan</strong></td><td class="ant-table-cell">rafi@example.com</td><td class="ant-table-cell">Admin</td><td class="ant-table-cell"><button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous"><span>Remove</span></button></td></tr>
+                        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Nusrat Jahan</strong></td><td class="ant-table-cell">nusrat@example.com</td><td class="ant-table-cell">Member</td><td class="ant-table-cell"><button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous"><span>Remove</span></button></td></tr>
+                    </tbody>
+                </table>
+            </div></div></div>
+        </div>
+    </div>
+</div>

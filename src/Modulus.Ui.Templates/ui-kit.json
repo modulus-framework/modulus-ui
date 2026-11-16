@@ -317,6 +317,22 @@
             "path": "Components/Pages/Admin/Health.razor",
             "template": "system-health.razor.sbn"
           }
+        ],
+        "fluid": [
+          { "path": "Templates/dashboard.liquid", "template": "dashboard.liquid", "page": "Dashboard" },
+          { "path": "Templates/analytics.liquid", "template": "admin-analytics.liquid", "page": "Analytics" },
+          { "path": "Templates/reports.liquid", "template": "reports-dashboard.liquid", "page": "Reports" },
+          { "path": "Templates/admin/users.liquid", "template": "admin-users.liquid", "page": "Users" },
+          { "path": "Templates/admin/roles.liquid", "template": "admin-roles.liquid", "page": "Roles" },
+          { "path": "Templates/admin/tenants.liquid", "template": "admin-tenants.liquid", "page": "Tenants" },
+          { "path": "Templates/admin/tenants/[id]/settings.liquid", "template": "admin-tenant-settings.liquid", "page": "TenantSettings" },
+          { "path": "Templates/admin/tenants/[id]/members.liquid", "template": "admin-tenant-members.liquid", "page": "TenantMembers" },
+          { "path": "Templates/admin/settings.liquid", "template": "admin-settings.liquid", "page": "Settings" },
+          { "path": "Templates/audit.liquid", "template": "admin-audit.liquid", "page": "Audit" },
+          { "path": "Templates/system/health.liquid", "template": "admin-health.liquid", "page": "Health" },
+          { "path": "Templates/account/profile.liquid", "template": "admin-profile.liquid", "page": "Profile" },
+          { "path": "Templates/notifications.liquid", "template": "admin-notifications.liquid", "page": "Notifications" },
+          { "path": "Templates/account/notification-preferences.liquid", "template": "admin-notification-preferences.liquid", "page": "NotificationPreferences" }
         ]
       },
       "packages": {
@@ -343,6 +359,6 @@
     "mvc": "builder.Services.AddModulusMvc(theme => builder.Configuration.GetSection(\"Modulus:Theme\").Bind(theme));",
     "razor-pages": "builder.Services.AddModulusMvc(theme => builder.Configuration.GetSection(\"Modulus:Theme\").Bind(theme));",
     "blazor": "builder.Services.AddModulusBlazor(theme => builder.Configuration.GetSection(\"Modulus:Theme\").Bind(theme));",
-    "fluid": "builder.Services.AddSingleton(new ModulusLiquid(new ModulusLiquidOptions()));"
+    "fluid": "builder.Services.AddSingleton(new ModulusLiquid(new ModulusLiquidOptions { TemplatesRoot = Path.Combine(builder.Environment.ContentRootPath, \"Templates\") }));"
   }
 }

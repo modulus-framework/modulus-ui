@@ -1,0 +1,67 @@
+{% comment %} User profile for Fluid: a static profile with sample values. The form does not post; connect a user directory to save. {% endcomment %}
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Account</div><h1 class="m-page-title">Profile</h1></div>
+</div>
+
+<div class="ant-alert ant-alert-info ant-alert-with-description m-mb-16" role="alert">
+    <div class="ant-alert-content">
+        <div class="ant-alert-message">Sample data</div>
+        <div class="ant-alert-description">This page shows a built-in sample profile. Connect your user directory to show and save the real one.</div>
+    </div>
+</div>
+
+<div class="m-grid" style="display:grid;grid-template-columns:2fr 1fr;gap:24px">
+    <div class="m-card">
+        <div class="m-card-header"><h2 class="m-card-title">Profile information</h2></div>
+        <div class="m-card-body">
+            <form method="post" class="ant-form ant-form-vertical" novalidate>
+                <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px">
+                    <div style="display:flex;align-items:center;justify-content:center;border-radius:50%;background:#1677ff;color:#fff;font-weight:600;width:80px;height:80px;font-size:24px" aria-hidden="true">AR</div>
+                    <p style="margin:0;font-weight:600">Asha Rahman</p>
+                </div>
+
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="first-name">First name</label></div>
+                    <div class="ant-form-item-control"><input id="first-name" name="first_name" value="Asha" class="ant-input" required /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="last-name">Last name</label></div>
+                    <div class="ant-form-item-control"><input id="last-name" name="last_name" value="Rahman" class="ant-input" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="email">Email</label></div>
+                    <div class="ant-form-item-control"><input id="email" name="email" value="asha@example.com" type="email" class="ant-input" required /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="phone">Phone</label></div>
+                    <div class="ant-form-item-control"><input id="phone" name="phone" placeholder="e.g. +1 555 010 0100" value="+880 1700 000000" type="tel" class="ant-input" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="job-title">Job title</label></div>
+                    <div class="ant-form-item-control"><input id="job-title" name="job_title" value="Operations manager" class="ant-input" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="bio">Bio</label></div>
+                    <div class="ant-form-item-control"><textarea id="bio" name="bio" class="ant-input" rows="4">Leads the warehouse operations team.</textarea></div>
+                </div>
+
+                <div class="m-form-actions">
+                    <button type="submit" class="ant-btn ant-btn-primary"><span>Save profile</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="m-card-header"><h2 class="m-card-title">Account information</h2></div>
+        <div class="m-card-body">
+            <div class="m-info-group">
+                <div class="m-info-item"><p class="m-info-label">Member since</p><p class="m-info-value">2024-03-02</p></div>
+                <div class="m-info-item"><p class="m-info-label">Account type</p><p class="m-info-value">Business</p></div>
+                <div class="m-info-item"><p class="m-info-label">Last login</p><p class="m-info-value">2026-11-16 09:02</p></div>
+                <div class="m-info-item"><p class="m-info-label">Account status</p><p class="m-info-value">Active</p></div>
+            </div>
+        </div>
+    </div>
+</div>

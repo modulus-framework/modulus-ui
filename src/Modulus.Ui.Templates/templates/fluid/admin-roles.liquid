@@ -1,0 +1,46 @@
+{% comment %} Role management for Fluid: static sample roles. The create and delete controls do not post; connect a role directory to make them work. {% endcomment %}
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Administration</div><h1 class="m-page-title">Role management</h1></div>
+</div>
+
+<div class="ant-alert ant-alert-info ant-alert-with-description m-mb-16" role="alert">
+    <div class="ant-alert-content">
+        <div class="ant-alert-message">Sample data</div>
+        <div class="ant-alert-description">This page shows built-in sample roles. Connect your role directory to manage real roles.</div>
+    </div>
+</div>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">Create a role</h2></div>
+    <div class="m-card-body">
+        <form method="post" class="m-flex m-flex-wrap">
+            <input class="ant-input" name="name" placeholder="Role name" aria-label="Role name" required />
+            <input class="ant-input" name="description" placeholder="Description" aria-label="Description" />
+            <button type="submit" class="ant-btn ant-btn-primary"><span>Create role</span></button>
+        </form>
+    </div>
+</div>
+
+<div class="m-card m-mt-24">
+    <div class="m-card-header">
+        <h2 class="m-card-title">Roles</h2>
+        <form method="get" class="m-card-actions">
+            <input class="ant-input" type="search" name="q" placeholder="Search roles..." aria-label="Search roles" />
+        </form>
+    </div>
+    <div class="m-card-body m-card-body-flush">
+        <div class="ant-table-wrapper m-table-flush">
+            <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                <table style="table-layout:auto">
+                    <thead class="ant-table-thead"><tr><th class="ant-table-cell">Role</th><th class="ant-table-cell">Description</th><th class="ant-table-cell">Members</th><th class="ant-table-cell"></th></tr></thead>
+                    <tbody class="ant-table-tbody">
+                        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Admin</strong></td><td class="ant-table-cell">Full access to every module</td><td class="ant-table-cell">2</td><td class="ant-table-cell"><button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous"><span>Delete</span></button></td></tr>
+                        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Manager</strong></td><td class="ant-table-cell">Approves orders and reads reports</td><td class="ant-table-cell">5</td><td class="ant-table-cell"><button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous"><span>Delete</span></button></td></tr>
+                        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Viewer</strong></td><td class="ant-table-cell">Read-only access</td><td class="ant-table-cell">18</td><td class="ant-table-cell"><button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous"><span>Delete</span></button></td></tr>
+                    </tbody>
+                </table>
+            </div></div></div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,50 @@
+{% comment %} User management for Fluid: static sample users. The invite and remove controls do not post; connect a user directory to make them work. {% endcomment %}
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Administration</div><h1 class="m-page-title">User management</h1></div>
+</div>
+
+<div class="ant-alert ant-alert-info ant-alert-with-description m-mb-16" role="alert">
+    <div class="ant-alert-content">
+        <div class="ant-alert-message">Sample data</div>
+        <div class="ant-alert-description">This page shows built-in sample users. Connect your user directory to manage real accounts.</div>
+    </div>
+</div>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">Invite a user</h2></div>
+    <div class="m-card-body">
+        <form method="post" class="m-flex m-flex-wrap">
+            <input class="ant-input" type="email" name="email" placeholder="name@example.com" aria-label="Email address" required />
+            <select class="ant-input" name="role" aria-label="Role">
+                <option value="Admin">Admin</option>
+                <option value="Manager">Manager</option>
+                <option value="Viewer" selected>Viewer</option>
+            </select>
+            <button type="submit" class="ant-btn ant-btn-primary"><span>Invite</span></button>
+        </form>
+    </div>
+</div>
+
+<div class="m-card m-mt-24">
+    <div class="m-card-header">
+        <h2 class="m-card-title">Users</h2>
+        <form method="get" class="m-card-actions">
+            <input class="ant-input" type="search" name="q" placeholder="Search users..." aria-label="Search users" />
+        </form>
+    </div>
+    <div class="m-card-body m-card-body-flush">
+        <div class="ant-table-wrapper m-table-flush">
+            <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                <table style="table-layout:auto">
+                    <thead class="ant-table-thead"><tr><th class="ant-table-cell">Name</th><th class="ant-table-cell">Email</th><th class="ant-table-cell">Role</th><th class="ant-table-cell">Status</th><th class="ant-table-cell">Last active</th><th class="ant-table-cell"></th></tr></thead>
+                    <tbody class="ant-table-tbody">
+                        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Asha Rahman</strong></td><td class="ant-table-cell">asha@example.com</td><td class="ant-table-cell">Admin</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Active</span></td><td class="ant-table-cell">2026-11-16 09:12</td><td class="ant-table-cell"><button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous"><span>Remove</span></button></td></tr>
+                        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Rafi Hasan</strong></td><td class="ant-table-cell">rafi@example.com</td><td class="ant-table-cell">Manager</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Active</span></td><td class="ant-table-cell">2026-11-15 17:03</td><td class="ant-table-cell"><button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous"><span>Remove</span></button></td></tr>
+                        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Nusrat Jahan</strong></td><td class="ant-table-cell">nusrat@example.com</td><td class="ant-table-cell">Viewer</td><td class="ant-table-cell"><span class="m-badge m-badge-warning-lt">Invited</span></td><td class="ant-table-cell">—</td><td class="ant-table-cell"><button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous"><span>Remove</span></button></td></tr>
+                    </tbody>
+                </table>
+            </div></div></div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,6 @@
+{% comment %} Tag for Fluid: text, color (blue, green, red, orange, gold, purple, cyan, or a hex value), closable {% endcomment %}
+{% assign tag_color = color | default: '' %}
+{% assign is_hex = false %}
+{% if tag_color contains '#' %}{% assign is_hex = true %}{% endif %}
+
+<span class="m-tag{% if tag_color != '' and is_hex == false %} m-tag-{{ tag_color }}{% endif %}"{% if is_hex %} style="background: {{ tag_color }}; color: #fff"{% endif %}>{{ text }}{% if closable %}<button type="button" class="m-tag-close" aria-label="Remove">&times;</button>{% endif %}</span>

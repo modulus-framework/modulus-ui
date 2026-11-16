@@ -17,6 +17,12 @@ public sealed class ModulusLiquidOptions
     /// </summary>
     public TemplateOptions Template { get; } = new();
 
+    /// <summary>
+    /// The folder that <c>{% render 'name' %}</c> and <c>{% include 'name' %}</c> read from (a name is a path under it, with or
+    /// without <c>.liquid</c>). Null leaves render and include without files, so they fail on a template that uses them.
+    /// </summary>
+    public string? TemplatesRoot { get; set; }
+
     /// <summary>Lets templates read the public properties of <typeparamref name="T"/> (a model type, not a dictionary).</summary>
     public ModulusLiquidOptions Register<T>()
     {

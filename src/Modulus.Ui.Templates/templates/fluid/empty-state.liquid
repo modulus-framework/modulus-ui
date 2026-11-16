@@ -1,0 +1,13 @@
+{% comment %} Empty state for Fluid: title, message, action_text, action_url {% endcomment %}
+{% assign title = title | default: 'Nothing here yet' %}
+{% assign action_url = action_url | default: '#' %}
+
+<div class="m-empty">
+    <h3 class="m-empty-title">{{ title }}</h3>
+    {% if message and message != blank %}
+    <p class="m-empty-subtitle">{{ message }}</p>
+    {% endif %}
+    {% if action_text and action_text != blank %}
+    <a class="ant-btn ant-btn-primary" href="{{ action_url }}">{{ action_text }}</a>
+    {% endif %}
+</div>

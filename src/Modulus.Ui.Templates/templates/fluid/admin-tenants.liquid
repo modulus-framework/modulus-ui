@@ -1,0 +1,45 @@
+{% comment %} Tenant management for Fluid: static sample tenants. Each row links to the tenant's settings and members pages (route parameter id). {% endcomment %}
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Administration</div><h1 class="m-page-title">Tenant management</h1></div>
+</div>
+
+<div class="ant-alert ant-alert-info ant-alert-with-description m-mb-16" role="alert">
+    <div class="ant-alert-content">
+        <div class="ant-alert-message">Sample data</div>
+        <div class="ant-alert-description">This page shows built-in sample tenants. Connect your tenant directory to manage real tenants.</div>
+    </div>
+</div>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">Create a tenant</h2></div>
+    <div class="m-card-body">
+        <form method="post" class="m-flex m-flex-wrap">
+            <input class="ant-input" name="name" placeholder="Tenant name" aria-label="Tenant name" required />
+            <input class="ant-input" name="domain" placeholder="tenant.example.com" aria-label="Domain" required />
+            <button type="submit" class="ant-btn ant-btn-primary"><span>Create tenant</span></button>
+        </form>
+    </div>
+</div>
+
+<div class="m-card m-mt-24">
+    <div class="m-card-header">
+        <h2 class="m-card-title">Tenants</h2>
+        <form method="get" class="m-card-actions">
+            <input class="ant-input" type="search" name="q" placeholder="Search tenants..." aria-label="Search tenants" />
+        </form>
+    </div>
+    <div class="m-card-body m-card-body-flush">
+        <div class="ant-table-wrapper m-table-flush">
+            <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                <table style="table-layout:auto">
+                    <thead class="ant-table-thead"><tr><th class="ant-table-cell">Name</th><th class="ant-table-cell">Domain</th><th class="ant-table-cell">Plan</th><th class="ant-table-cell">Status</th><th class="ant-table-cell">Members</th><th class="ant-table-cell"></th></tr></thead>
+                    <tbody class="ant-table-tbody">
+                        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Acme Ltd</strong></td><td class="ant-table-cell">acme.example.com</td><td class="ant-table-cell">Business</td><td class="ant-table-cell">Active</td><td class="ant-table-cell">24</td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="/admin/tenants/1/settings"><span>Settings</span></a> <a class="ant-btn ant-btn-text ant-btn-sm" href="/admin/tenants/1/members"><span>Members</span></a></td></tr>
+                        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Northwind</strong></td><td class="ant-table-cell">northwind.example.com</td><td class="ant-table-cell">Starter</td><td class="ant-table-cell">Trial</td><td class="ant-table-cell">6</td><td class="ant-table-cell"><a class="ant-btn ant-btn-text ant-btn-sm" href="/admin/tenants/2/settings"><span>Settings</span></a> <a class="ant-btn ant-btn-text ant-btn-sm" href="/admin/tenants/2/members"><span>Members</span></a></td></tr>
+                    </tbody>
+                </table>
+            </div></div></div>
+        </div>
+    </div>
+</div>

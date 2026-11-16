@@ -1,0 +1,20 @@
+{% comment %} Pagination for Fluid: current_page, total_pages, base_url. Links are base_url?page=N. {% endcomment %}
+{% assign current_page = current_page | default: 1 %}
+{% assign total_pages = total_pages | default: 1 %}
+{% assign base_url = base_url | default: '' %}
+{% assign prev_page = current_page | minus: 1 %}
+{% assign next_page = current_page | plus: 1 %}
+
+<nav class="ant-pagination ant-pagination-simple" aria-label="Pagination">
+    {% if current_page > 1 %}
+    <a class="ant-pagination-prev" href="{{ base_url }}?page={{ prev_page }}" rel="prev" aria-label="Previous page">&lsaquo;</a>
+    {% else %}
+    <span class="ant-pagination-prev ant-pagination-disabled" aria-disabled="true">&lsaquo;</span>
+    {% endif %}
+    <span class="ant-pagination-simple-pager">{{ current_page }} / {{ total_pages }}</span>
+    {% if current_page < total_pages %}
+    <a class="ant-pagination-next" href="{{ base_url }}?page={{ next_page }}" rel="next" aria-label="Next page">&rsaquo;</a>
+    {% else %}
+    <span class="ant-pagination-next ant-pagination-disabled" aria-disabled="true">&rsaquo;</span>
+    {% endif %}
+</nav>

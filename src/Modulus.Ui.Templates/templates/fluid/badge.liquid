@@ -1,0 +1,7 @@
+{% comment %} Badge for Fluid: status (active, inactive, pending, error, or any other value), label {% endcomment %}
+{% assign status = status | default: 'default' | downcase %}
+{% assign kind = 'processing' %}
+{% if status == 'active' %}{% assign kind = 'success' %}{% elsif status == 'inactive' %}{% assign kind = 'default' %}{% elsif status == 'pending' %}{% assign kind = 'warning' %}{% elsif status == 'error' %}{% assign kind = 'error' %}{% endif %}
+{% assign text = label | default: status %}
+
+<span class="m-badge m-badge-{% if kind == 'success' %}success-lt{% elsif kind == 'warning' %}warning-lt{% elsif kind == 'error' %}danger-lt{% elsif kind == 'default' %}gray-lt{% else %}info-lt{% endif %}"><span class="m-badge-dot"></span>{{ text }}</span>

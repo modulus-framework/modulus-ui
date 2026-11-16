@@ -22,6 +22,8 @@ public sealed class ModulusLiquid
     {
         ArgumentNullException.ThrowIfNull(options);
         Options = options;
+        if (options.TemplatesRoot is { Length: > 0 } root)
+            options.Template.FileProvider = new FolderFileProvider(root);
         ModulusLiquidTags.Register(_parser, options);
         ModulusLiquidTags.RegisterFilters(options);
     }

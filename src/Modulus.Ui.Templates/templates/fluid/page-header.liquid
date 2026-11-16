@@ -1,0 +1,8 @@
+{% comment %} Page header for Fluid: title, subtitle, pretitle. Actions are not part of this template; add them in the page around it. {% endcomment %}
+<div class="m-page-header">
+    <div class="m-page-header-text">
+        {% if pretitle %}<div class="m-pretitle">{{ pretitle }}</div>{% endif %}
+        <h1 class="m-page-title">{{ title }}</h1>
+        {% if subtitle %}<div class="m-page-subtitle m-muted">{{ subtitle }}</div>{% endif %}
+    </div>
+</div>

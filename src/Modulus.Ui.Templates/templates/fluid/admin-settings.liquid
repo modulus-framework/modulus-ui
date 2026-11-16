@@ -1,0 +1,44 @@
+{% comment %} System settings for Fluid: a static form with sample values. The form does not post; connect a settings store to save. {% endcomment %}
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Administration</div><h1 class="m-page-title">System settings</h1></div>
+</div>
+
+<div class="ant-alert ant-alert-info ant-alert-with-description m-mb-16" role="alert">
+    <div class="ant-alert-content">
+        <div class="ant-alert-message">Sample data</div>
+        <div class="ant-alert-description">This page shows built-in sample values. Connect your settings store to save them.</div>
+    </div>
+</div>
+
+<div class="m-card">
+    <div class="m-card-header"><h2 class="m-card-title">General settings</h2></div>
+    <div class="m-card-body">
+        <form method="post" class="ant-form ant-form-vertical" novalidate>
+            <div class="m-form-grid">
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="app-name">Application name</label></div>
+                    <div class="ant-form-item-control"><input id="app-name" name="app_name" value="{{ app_name }}" class="ant-input" required /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="support-email">Support email</label></div>
+                    <div class="ant-form-item-control"><input id="support-email" name="support_email" placeholder="name@example.com" value="support@example.com" type="email" class="ant-input" /></div>
+                </div>
+                <div class="ant-form-item">
+                    <div class="ant-form-item-label"><label for="time-zone">Time zone</label></div>
+                    <div class="ant-form-item-control">
+                        <select id="time-zone" name="time_zone" class="ant-input">
+                            <option value="UTC" selected>UTC</option>
+                            <option value="Asia/Dhaka">Asia/Dhaka</option>
+                            <option value="Europe/London">Europe/London</option>
+                            <option value="America/New_York">America/New_York</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="m-form-actions">
+                <button type="submit" class="ant-btn ant-btn-primary"><span>Save changes</span></button>
+            </div>
+        </form>
+    </div>
+</div>

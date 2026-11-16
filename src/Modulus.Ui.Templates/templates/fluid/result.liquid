@@ -1,0 +1,13 @@
+{% comment %} Result for Fluid: status (success, info, warning, error, 404, 403, 500), title, sub_title, action_text and action_url (one link button) {% endcomment %}
+{% assign status = status | default: 'success' | downcase %}
+{% assign kind = 'info' %}
+{% if status == 'success' or status == 'info' or status == 'warning' or status == 'error' %}{% assign kind = status %}{% elsif status == '404' or status == '403' or status == '500' %}{% assign kind = 'error' %}{% endif %}
+
+<div class="ant-result ant-result-{{ kind }}" role="status">
+    {% if status == '404' or status == '403' or status == '500' %}
+    <div class="ant-result-icon"><div class="m-result-code">{{ status }}</div></div>
+    {% endif %}
+    {% if title %}<div class="ant-result-title">{{ title }}</div>{% endif %}
+    {% if sub_title %}<div class="ant-result-subtitle">{{ sub_title }}</div>{% endif %}
+    {% if action_text %}<div class="ant-result-extra"><a class="ant-btn ant-btn-primary" href="{{ action_url | default: '#' }}">{{ action_text }}</a></div>{% endif %}
+</div>

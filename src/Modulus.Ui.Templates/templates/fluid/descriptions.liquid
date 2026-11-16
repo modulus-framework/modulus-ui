@@ -1,0 +1,19 @@
+{% comment %} Descriptions for Fluid: title, items (each with label and value), bordered. Each item is one row. {% endcomment %}
+{% assign bordered_class = '' %}
+{% if bordered != false %}{% assign bordered_class = ' ant-descriptions-bordered' %}{% endif %}
+
+<div class="ant-descriptions{{ bordered_class }}">
+    {% if title %}<div class="ant-descriptions-title">{{ title }}</div>{% endif %}
+    <div class="ant-descriptions-view">
+        <table>
+            <tbody>
+                {% for item in items %}
+                <tr class="ant-descriptions-row">
+                    <th class="ant-descriptions-item-label">{{ item.label }}</th>
+                    <td class="ant-descriptions-item-content">{{ item.value }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

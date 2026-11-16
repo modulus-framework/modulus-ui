@@ -1,0 +1,51 @@
+{% comment %} System health for Fluid: sample figures, services and resource usage. Connect a metrics source to replace them. {% endcomment %}
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">System</div><h1 class="m-page-title">System health</h1></div>
+</div>
+
+<div class="ant-alert ant-alert-info ant-alert-with-description m-mb-16" role="alert">
+    <div class="ant-alert-content">
+        <div class="ant-alert-message">Sample data</div>
+        <div class="ant-alert-description">This page shows built-in sample data. Connect your health checks and metrics to replace it.</div>
+    </div>
+</div>
+
+<div class="m-row-cards">
+    <div class="m-grid m-cols-4">
+        <div class="m-card m-stat-card"><div class="m-card-body"><div class="m-stat-card-head"><span>Uptime</span></div><div class="m-stat-card-value">99.9%</div></div></div>
+        <div class="m-card m-stat-card"><div class="m-card-body"><div class="m-stat-card-head"><span>Requests / min</span></div><div class="m-stat-card-value">1,240</div></div></div>
+        <div class="m-card m-stat-card"><div class="m-card-body"><div class="m-stat-card-head"><span>Avg. latency</span></div><div class="m-stat-card-value">84 ms</div></div></div>
+        <div class="m-card m-stat-card"><div class="m-card-body"><div class="m-stat-card-head"><span>Errors (1 h)</span></div><div class="m-stat-card-value">3</div></div></div>
+    </div>
+
+    <div class="m-grid m-cols-main">
+        <div class="m-card">
+            <div class="m-card-header"><h2 class="m-card-title">Services</h2></div>
+            <div class="m-card-body m-card-body-flush">
+                <div class="ant-table-wrapper m-table-flush">
+                    <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                        <table style="table-layout:auto">
+                            <thead class="ant-table-thead"><tr><th class="ant-table-cell">Service</th><th class="ant-table-cell">Status</th><th class="ant-table-cell">Details</th></tr></thead>
+                            <tbody class="ant-table-tbody">
+                                <tr class="ant-table-row"><td class="ant-table-cell"><strong>API gateway</strong></td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Running</span></td><td class="ant-table-cell">Responding in 42 ms</td></tr>
+                                <tr class="ant-table-row"><td class="ant-table-cell"><strong>Database</strong></td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Connected</span></td><td class="ant-table-cell">Pool: 6 of 20 in use</td></tr>
+                                <tr class="ant-table-row"><td class="ant-table-cell"><strong>Cache</strong></td><td class="ant-table-cell"><span class="m-badge m-badge-warning-lt">Degraded</span></td><td class="ant-table-cell">Hit rate 61%</td></tr>
+                            </tbody>
+                        </table>
+                    </div></div></div>
+                </div>
+            </div>
+        </div>
+        <div class="m-card">
+            <div class="m-card-header"><h2 class="m-card-title">Resource usage</h2></div>
+            <div class="m-card-body">
+                <div style="display:flex;flex-direction:column;gap:8px">
+                    <label style="display:grid;grid-template-columns:64px 1fr 48px;gap:12px;align-items:center"><span>CPU</span><progress max="100" value="37" style="width:100%"></progress><span>37%</span></label>
+                    <label style="display:grid;grid-template-columns:64px 1fr 48px;gap:12px;align-items:center"><span>Memory</span><progress max="100" value="58" style="width:100%"></progress><span>58%</span></label>
+                    <label style="display:grid;grid-template-columns:64px 1fr 48px;gap:12px;align-items:center"><span>Disk</span><progress max="100" value="72" style="width:100%"></progress><span>72%</span></label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

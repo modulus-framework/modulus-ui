@@ -1,0 +1,36 @@
+{% comment %} Notifications for Fluid: static sample notifications. Mark-as-read does not post; connect a notification source to make it work. {% endcomment %}
+
+<div class="m-page-header">
+    <div class="m-page-header-text"><div class="m-pretitle">Account</div><h1 class="m-page-title">Notifications</h1></div>
+    <div class="m-page-actions"><button type="button" class="ant-btn"><span>Mark all as read</span></button></div>
+</div>
+
+<div class="ant-alert ant-alert-info ant-alert-with-description m-mb-16" role="alert">
+    <div class="ant-alert-content">
+        <div class="ant-alert-message">Sample data</div>
+        <div class="ant-alert-description">This page shows built-in sample notifications. Connect your notification source to show real ones.</div>
+    </div>
+</div>
+
+<div class="m-card">
+    <div class="m-card-header">
+        <h2 class="m-card-title">Notification center</h2>
+        <form method="get" class="m-card-actions">
+            <input class="ant-input" type="search" name="q" placeholder="Search notifications..." aria-label="Search notifications" />
+        </form>
+    </div>
+    <div class="m-card-body m-card-body-flush">
+        <div class="ant-table-wrapper m-table-flush">
+            <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
+                <table style="table-layout:auto">
+                    <thead class="ant-table-thead"><tr><th class="ant-table-cell"></th><th class="ant-table-cell">Notification</th><th class="ant-table-cell">When</th><th class="ant-table-cell"></th></tr></thead>
+                    <tbody class="ant-table-tbody">
+                        <tr class="ant-table-row"><td class="ant-table-cell">●</td><td class="ant-table-cell"><strong>Invoice 4988 is overdue</strong><div class="m-muted">Sent to the customer on 2026-11-01.</div></td><td class="ant-table-cell">2026-11-16 08:30</td><td class="ant-table-cell"><button type="button" class="ant-btn ant-btn-text ant-btn-sm"><span>Mark read</span></button></td></tr>
+                        <tr class="ant-table-row"><td class="ant-table-cell">●</td><td class="ant-table-cell"><strong>Order 1032 needs approval</strong><div class="m-muted">Awaiting a manager's sign-off.</div></td><td class="ant-table-cell">2026-11-16 07:55</td><td class="ant-table-cell"><button type="button" class="ant-btn ant-btn-text ant-btn-sm"><span>Mark read</span></button></td></tr>
+                        <tr class="ant-table-row"><td class="ant-table-cell"></td><td class="ant-table-cell"><span>Backup completed</span><div class="m-muted">Nightly backup finished without errors.</div></td><td class="ant-table-cell">2026-11-15 02:00</td><td class="ant-table-cell"></td></tr>
+                    </tbody>
+                </table>
+            </div></div></div>
+        </div>
+    </div>
+</div>
