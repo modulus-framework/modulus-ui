@@ -11,6 +11,7 @@
 //   * every app-* tag named in an "mvc" entry is a real tag helper in Modulus.AspNetCore.Mvc;
 //   * an MVC or Razor Pages template does not pass a bare variable name to a string tag helper property (that sends the text
 //     of the name, not the variable: placeholder="placeholder" instead of placeholder="@placeholder");
+//   * a Blazor template does not pass a bare variable name to a string component parameter (the same bug: Title="@Title");
 //   * antd-dark-brand.css still matches the pinned dark stylesheet (the brand colour in dark mode).
 // Components from AntDesign.ProLayout live in another assembly and are not scanned.
 // A markdown report is written to drift-reports/ for CI to attach to a PR or issue.
@@ -135,6 +136,41 @@ foreach (var engine in new[] { "mvc", "razor-pages" })
                     bareProblems.Add($"`{Path.GetRelativePath(root, file)}` passes `{attr.Groups[2].Value}` to `{tag.Groups[1].Value} {attr.Groups[1].Value}` as text; write `{attr.Groups[1].Value}=\"@{attr.Groups[2].Value}\"`.");
     }
 
+// The same bug in Blazor templates: <Tag Title="Title"> sends the word "Title", not the variable. The component is resolved
+// from the tag (a full name such as Modulus.Blazor.Components.Pro.AuditTrail, or a simple name such as AppChat or InputText
+// that matches exactly one component type), and the parameter must be a string property of that type. A bare name is
+// flagged only when the template declares it, so Blazor's own tag names (TModel="TModel") are not flagged.
+var blazorComponents = new[] { antd, modulus, typeof(Microsoft.AspNetCore.Components.Forms.InputText).Assembly, typeof(Microsoft.AspNetCore.Components.ComponentBase).Assembly }
+    .SelectMany(a => a.GetExportedTypes())
+    .Where(t => t is { IsClass: true, IsAbstract: false, IsNested: false } && typeof(IComponent).IsAssignableFrom(t))
+    .ToList();
+var byFullName = blazorComponents.Where(t => t.Namespace is not null)
+    .ToDictionary(t => $"{t.Namespace}.{BaseName(t.Name)}", t => t, StringComparer.Ordinal);
+var bySimpleName = blazorComponents.GroupBy(t => BaseName(t.Name), StringComparer.Ordinal)
+    .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.Ordinal);
+var blazorBareProblems = new List<string>();
+foreach (var file in Directory.EnumerateFiles(Path.Combine(templateRoot, "blazor"), "*.razor.sbn"))
+{
+    var text = File.ReadAllText(file);
+    var declared = Regex.Matches(text, @"\b[A-Za-z_][\w<>\[\]?,. ]*?\s+([A-Za-z_]\w*)\s*(?:\{|=(?!=)|;)")
+        .Select(m => m.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
+    foreach (Match tag in Regex.Matches(text, @"<([A-Z][A-Za-z0-9.]*)(\s[^>]*)?/?>"))
+    {
+        var tagName = tag.Groups[1].Value;
+        Type? component = null;
+        if (byFullName.TryGetValue(tagName, out var full)) component = full;
+        else if (bySimpleName.TryGetValue(tagName, out var simple) && simple.Count == 1) component = simple[0];
+        if (component is null) continue;
+        var stringParams = component.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.CanWrite && p.PropertyType == typeof(string) && p.GetCustomAttribute<ParameterAttribute>() is not null)
+            .Select(p => p.Name).ToHashSet(StringComparer.Ordinal);
+        // Preceded by whitespace, so @bind-Value="Password" (a bind takes a bare expression) is not read as Value="Password".
+        foreach (Match attr in Regex.Matches(tag.Groups[2].Value, @"(?<=\s)([A-Z][A-Za-z0-9]*)=""([A-Za-z_]\w*)"""))
+            if (stringParams.Contains(attr.Groups[1].Value) && declared.Contains(attr.Groups[2].Value))
+                blazorBareProblems.Add($"`{Path.GetRelativePath(root, file)}` passes `{attr.Groups[2].Value}` to `{tagName} {attr.Groups[1].Value}` as text; write `{attr.Groups[1].Value}=\"@{attr.Groups[2].Value}\"`.");
+    }
+}
+
 var darkProblems = new List<string>();
 if (darkCss is null)
     darkProblems.Add($"AntDesign {antdVersion} dark stylesheet not found in the NuGet cache; antd-dark-brand.css was not checked.");
@@ -172,7 +208,8 @@ Section("MVC tag helper problems", mvcProblems);
 Section("Dark brand stylesheet", darkProblems);
 Section("Blazor class names clashing with a framework type", classProblems);
 Section("Template attributes that pass a variable name as text", bareProblems);
-if (added.Count + removed.Count + aliasProblems.Count + mvcProblems.Count + darkProblems.Count + classProblems.Count + bareProblems.Count == 0)
+Section("Blazor template attributes that pass a variable name as text", blazorBareProblems);
+if (added.Count + removed.Count + aliasProblems.Count + mvcProblems.Count + darkProblems.Count + classProblems.Count + bareProblems.Count + blazorBareProblems.Count == 0)
     md.AppendLine("No drift. Modulus matches the pinned Ant Design Blazor surface.");
 
 Directory.CreateDirectory(reportsDir);
@@ -181,7 +218,7 @@ File.WriteAllText(reportPath, md.ToString());
 Console.Write(md);
 Console.WriteLine($"Report: {Path.GetRelativePath(root, reportPath)}");
 
-return added.Count + removed.Count + aliasProblems.Count + mvcProblems.Count + darkProblems.Count + classProblems.Count + bareProblems.Count == 0 ? 0 : 1;
+return added.Count + removed.Count + aliasProblems.Count + mvcProblems.Count + darkProblems.Count + classProblems.Count + bareProblems.Count + blazorBareProblems.Count == 0 ? 0 : 1;
 
 void Section(string title, IReadOnlyList<string> items)
 {

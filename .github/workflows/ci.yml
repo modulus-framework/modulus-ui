@@ -129,3 +129,49 @@ jobs:
     - name: Sample logs
       if: failure()
       run: tail -n 60 mvc.log razor.log blazor.log fluid.log
+
+  # The scaffold check: the CLI scaffolds one app per UI engine, each is built, run and crawled at phone and desktop widths.
+  # The CLI lives in the modulus repository, so it is checked out and built here. The packages come from a fresh feed and a fresh
+  # NuGet cache (tests/browser/scaffold/scaffold.sh), so no stale package is reused.
+  scaffold:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v7
+      with:
+        path: modulus-ui
+
+    - uses: actions/checkout@v7
+      with:
+        repository: modulus-framework/modulus
+        path: modulus
+
+    - uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: '10.0.x'
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Build the CLI
+      working-directory: modulus
+      run: dotnet build cli/Modulus.Cli.csproj -c Release
+
+    - name: Install a Chromium for the crawler
+      working-directory: modulus-ui/tests/browser/scaffold
+      run: |
+        npm install --no-audit --no-fund
+        npx playwright-core install chromium
+
+    - name: Scaffold, build and crawl each engine
+      working-directory: modulus-ui
+      env:
+        MODULUS_CLI: ${{ github.workspace }}/modulus/cli/bin/Release/net10.0/Modulus.Cli
+      run: tests/browser/scaffold/scaffold.sh
+
+    - name: Keep the failing apps' logs
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: scaffold-logs
+        path: modulus-ui/artifacts/scaffold-check

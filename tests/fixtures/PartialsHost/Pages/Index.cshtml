@@ -1,0 +1,58 @@
+@page
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Microsoft.AspNetCore.Mvc.ViewFeatures
+@using Microsoft.AspNetCore.Html
+@using Modulus.Ui.Abstractions.Chat
+@using Modulus.Ui.Abstractions.Workflow
+@{
+    Layout = null;
+    ViewDataDictionary With(params (string Key, object? Value)[] items)
+    {
+        var d = new ViewDataDictionary(ViewData);
+        foreach (var (k, v) in items) d[k] = v;
+        return d;
+    }
+    var steps = new[]
+    {
+        new ApprovalStep("Submitted", ApprovalState.Done, "Ana", new DateTime(2026, 11, 10, 9, 0, 0), null),
+        new ApprovalStep("Manager review", ApprovalState.Current, "Ben", null, "Waiting for a decision"),
+        new ApprovalStep("Finance", ApprovalState.Waiting, "Cara", null, null),
+    };
+    var entries = new[]
+    {
+        new AuditEntry(1, new DateTime(2026, 11, 14, 10, 30, 0), "Ana", "Edited", "Quantity", "2", "5"),
+        new AuditEntry(2, new DateTime(2026, 11, 13, 16, 5, 0), "Ben", "Approved", Note: "Within budget"),
+    };
+    var turns = new[]
+    {
+        new ChatTurn(ChatRole.User, "What is still open?"),
+        new ChatTurn(ChatRole.Assistant, "Three orders are waiting for approval."),
+    };
+    var items = new List<SelectListItem> { new("Low", "low"), new("Normal", "normal"), new("High", "high", true) };
+}
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Partials</title><link rel="icon" href="data:,"><modulus-head /></head>
+<body>
+<section id="approval-timeline"><h2>approval-timeline</h2>
+@await Html.PartialAsync("~/Pages/Partials/approval-timeline.cshtml", null, With(("Steps", steps), ("AriaLabel", "Approval steps")))
+</section>
+<section id="audit-trail"><h2>audit-trail</h2>
+@await Html.PartialAsync("~/Pages/Partials/audit-trail.cshtml", null, With(("Entries", entries), ("Action", null), ("Url", "/audit"), ("AriaLabel", "Audit trail")))
+</section>
+<section id="radio-group"><h2>radio-group</h2>
+@await Html.PartialAsync("~/Pages/Partials/radio-group.cshtml", null, With(("Name", "priority"), ("Label", "Priority"), ("Items", items), ("Buttons", true), ("Vertical", false), ("Help", "Sets the queue order")))
+</section>
+<section id="chat"><h2>chat</h2>
+@await Html.PartialAsync("~/Pages/Partials/chat.cshtml", null, With(("Turns", turns), ("Placeholder", "Ask about orders")))
+</section>
+<section id="image-cropper"><h2>image-cropper</h2>
+@await Html.PartialAsync("~/Pages/Partials/image-cropper.cshtml", null, With(("Id", "hero-crop"), ("Src", "data:image/gif;base64,R0lGODlhAQABAAAAACw="), ("Alt", "Hero"), ("Name", "crop"), ("Ratio", "16/9"), ("Label", "Hero image")))
+</section>
+<section id="card"><h2>card</h2>
+@await Html.PartialAsync("~/Pages/Partials/card.cshtml", null, With(("Title", "Sales"), ("Body", new HtmlString("<p>Body text</p>")), ("Footer", "Updated today")))
+</section>
+<modulus-scripts />
+</body>
+</html>

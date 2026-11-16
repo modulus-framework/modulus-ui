@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>$(ModulusTargetFramework)</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Pages/Partials/ holds copies of the scaffolded templates (below); the target adds them, so the default globs skip them. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);Pages/Partials/**;Pages/Auth/**</DefaultItemExcludes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Modulus.AspNetCore.Mvc\Modulus.AspNetCore.Mvc.csproj" />
+    <ProjectReference Include="..\..\..\src\Modulus.Ui.Assets\Modulus.Ui.Assets.csproj" />
+    <ProjectReference Include="..\..\..\src\Modulus.AspNetCore.Hosting\Modulus.AspNetCore.Hosting.csproj" />
+    <!-- The sample's _AuthLayout (Views/Shared) is the layout the plain auth pages use. -->
+    <ProjectReference Include="..\..\..\samples\Modulus.Samples.Web\Modulus.Samples.Web.csproj" />
+    <!-- The demo builders (gantt, kanban, calendar, pivot, form schema, flow) that the partial samples use. -->
+    <ProjectReference Include="..\..\..\samples\Modulus.Samples.Shared\Modulus.Samples.Shared.csproj" />
+  </ItemGroup>
+
+  <!--
+    The plain Razor Pages partials (plain-partials.txt: the templates with no Scriban markers) are copied from the templates
+    folder into Pages/Partials as .cshtml views, so the host compiles the same files the CLI writes. A test checks the list
+    against the templates on disk. Templates with Scriban markers ({{ }}) are rendered by the CLI, not here.
+  -->
+  <Target Name="CopyPlainPartials" BeforeTargets="ResolveRazorGenerateInputs">
+    <ReadLinesFromFile File="$(MSBuildProjectDirectory)/plain-partials.txt">
+      <Output TaskParameter="Lines" ItemName="_PlainPartial" />
+    </ReadLinesFromFile>
+    <ItemGroup>
+      <_PlainPartialSource Include="@(_PlainPartial)" Source="$(MSBuildThisFileDirectory)../../../src/Modulus.Ui.Templates/templates/razor-pages/%(_PlainPartial.Identity).cshtml.sbn" Dest="$(MSBuildProjectDirectory)/Pages/Partials/%(_PlainPartial.Identity).cshtml" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_PlainPartialSource->'%(Source)')" DestinationFiles="@(_PlainPartialSource->'%(Dest)')" SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <Content Include="@(_PlainPartialSource->'%(Dest)')" />
+    </ItemGroup>
+  </Target>
+
+  <!-- The two plain full pages (plain-pages.txt) are copied to Pages/Auth the same way. -->
+  <Target Name="CopyPlainPages" BeforeTargets="ResolveRazorGenerateInputs">
+    <ReadLinesFromFile File="$(MSBuildProjectDirectory)/plain-pages.txt">
+      <Output TaskParameter="Lines" ItemName="_PlainPage" />
+    </ReadLinesFromFile>
+    <ItemGroup>
+      <_PlainPageSource Include="@(_PlainPage)" Source="$(MSBuildThisFileDirectory)../../../src/Modulus.Ui.Templates/templates/razor-pages/%(_PlainPage.Identity).cshtml.sbn" Dest="$(MSBuildProjectDirectory)/Pages/Auth/%(_PlainPage.Identity).cshtml" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_PlainPageSource->'%(Source)')" DestinationFiles="@(_PlainPageSource->'%(Dest)')" SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <Content Include="@(_PlainPageSource->'%(Dest)')" />
+    </ItemGroup>
+  </Target>
+</Project>

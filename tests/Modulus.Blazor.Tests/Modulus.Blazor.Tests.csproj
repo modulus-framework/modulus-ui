@@ -5,7 +5,30 @@
     <IsTestProject>true</IsTestProject>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- ErpWrappers/ holds copies of the ERP Blazor templates (below); the target adds them, so the default glob must skip them. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);ErpWrappers/**</DefaultItemExcludes>
   </PropertyGroup>
+
+  <!-- The six ERP wrappers are scaffolded from these templates, so the tests compile the same files the CLI writes (as
+       Modulus<Name>, the names ui-kit.json lists in blazorPrefixed) and render them. -->
+  <ItemGroup>
+    <ErpWrapperTemplate Include="approval-timeline" Component="ModulusApprovalTimeline" />
+    <ErpWrapperTemplate Include="audit-trail" Component="ModulusAuditTrail" />
+    <ErpWrapperTemplate Include="dashboard-grid" Component="ModulusDashboardGrid" />
+    <ErpWrapperTemplate Include="pro-table" Component="ModulusProTable" />
+    <ErpWrapperTemplate Include="modal-form" Component="ModulusModalForm" />
+    <ErpWrapperTemplate Include="drawer-form" Component="ModulusDrawerForm" />
+  </ItemGroup>
+
+  <Target Name="CopyErpWrappers" BeforeTargets="ResolveRazorComponentInputs">
+    <ItemGroup>
+      <_ErpSource Include="$(MSBuildThisFileDirectory)../../src/Modulus.Ui.Templates/templates/blazor/%(ErpWrapperTemplate.Identity).razor.sbn" Component="%(ErpWrapperTemplate.Component)" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_ErpSource)" DestinationFiles="@(_ErpSource->'$(MSBuildThisFileDirectory)ErpWrappers/%(Component).razor')" SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <RazorComponent Include="@(_ErpSource->'$(MSBuildThisFileDirectory)ErpWrappers/%(Component).razor')" />
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />

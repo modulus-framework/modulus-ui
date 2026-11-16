@@ -1,3 +1,4 @@
+@using Modulus.Ui.Abstractions.Shell
 @* Default right-hand header: notifications, theme toggle and the account menu. *@
 @inject NavigationManager Navigation
 
@@ -53,29 +54,51 @@
 
     <ThemeToggle />
 
-    <Dropdown Placement="Placement.BottomRight" OverlayClassName="m-account-overlay">
-        <Overlay>
-            <Menu Selectable="false" OnMenuItemClicked="OnAccountItemClicked">
-                <MenuItem Key="profile"><Icon Type="user" /> Profile</MenuItem>
-                <MenuItem Key="settings"><Icon Type="setting" /> Settings</MenuItem>
-                <MenuDivider />
-                <MenuItem Key="logout"><Icon Type="logout" /> Sign out</MenuItem>
-            </Menu>
-        </Overlay>
-        <ChildContent>
-            <button type="button" class="m-header-action" aria-label="Account menu">
-                @if (UserAvatar is not null)
-                {
-                    <Avatar Size="AvatarSize.Small" Src="@UserAvatar" />
-                }
-                else
-                {
-                    <Avatar Size="AvatarSize.Small" Style="background: var(--m-primary);">@Initials</Avatar>
-                }
-                <span class="m-header-user-name">@UserName</span>
-            </button>
-        </ChildContent>
-    </Dropdown>
+    @if (HasAccountMenu)
+    {
+        <Dropdown Placement="Placement.BottomRight" OverlayClassName="m-account-overlay">
+            <Overlay>
+                <Menu Selectable="false" OnMenuItemClicked="OnAccountItemClicked">
+                    @foreach (var link in UserLinks)
+                    {
+                        <MenuItem Key="@link.Href">@if (link.Icon is not null) { <Icon Type="@link.Icon" /> } @link.Label</MenuItem>
+                    }
+                    @if (SignOutHref is not null)
+                    {
+                        <MenuDivider />
+                        <MenuItem Key="@SignOutHref"><Icon Type="logout" /> Sign out</MenuItem>
+                    }
+                </Menu>
+            </Overlay>
+            <ChildContent>
+                <button type="button" class="m-header-action" aria-label="Account menu">
+                    @if (UserAvatar is not null)
+                    {
+                        <Avatar Size="AvatarSize.Small" Src="@UserAvatar" />
+                    }
+                    else
+                    {
+                        <Avatar Size="AvatarSize.Small" Style="background: var(--m-primary);">@Initials</Avatar>
+                    }
+                    <span class="m-header-user-name">@UserName</span>
+                </button>
+            </ChildContent>
+        </Dropdown>
+    }
+    else
+    {
+        <span class="m-header-action m-header-user">
+            @if (UserAvatar is not null)
+            {
+                <Avatar Size="AvatarSize.Small" Src="@UserAvatar" />
+            }
+            else
+            {
+                <Avatar Size="AvatarSize.Small" Style="background: var(--m-primary);">@Initials</Avatar>
+            }
+            <span class="m-header-user-name">@UserName</span>
+        </span>
+    }
 </div>
 
 @code {
@@ -91,6 +114,14 @@
 
     /// <summary>Handles profile/settings/logout. Defaults to navigating to /profile, /settings, /logout.</summary>
     [Parameter] public EventCallback<string> OnAccountAction { get; set; }
+
+    /// <summary>Links in the user menu, from the app's ShellContent. Empty by default: the framework does not know the app's routes.</summary>
+    [Parameter] public IReadOnlyList<ShellLink> UserLinks { get; set; } = [];
+
+    /// <summary>The sign-out route. Null hides sign-out (the default: a sign-out needs a sign-in).</summary>
+    [Parameter] public string? SignOutHref { get; set; }
+
+    private bool HasAccountMenu => UserLinks.Count > 0 || SignOutHref is not null;
 
     private int _unread;
 

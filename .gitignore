@@ -24,3 +24,6 @@ drift-reports/
 
 # Packed NuGet output (dotnet pack -o nupkg)
 nupkg/
+tests/Modulus.Blazor.Tests/ErpWrappers/
+tests/fixtures/PartialsHost/Pages/Partials/
+tests/fixtures/PartialsHost/Pages/Auth/

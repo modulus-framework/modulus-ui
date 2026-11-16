@@ -24,7 +24,7 @@
         }
         else
         {
-            <HeaderActions />
+            <HeaderActions UserLinks="UserLinks" SignOutHref="SignOutHref" />
         }
     </RightContentRender>
     <ChildContent>
@@ -52,6 +52,11 @@
     [Parameter] public RenderFragment? Footer { get; set; }
 
     [Parameter] public LinkItem[] FooterLinks { get; set; } = [];
+
+    /// <summary>User-menu links (profile, settings) and the sign-out route. Empty by default; see HeaderActions.</summary>
+    [Parameter] public IReadOnlyList<Modulus.Ui.Abstractions.Shell.ShellLink> UserLinks { get; set; } = [];
+
+    [Parameter] public string? SignOutHref { get; set; }
 
     [Parameter] public bool Collapsed { get; set; }
 

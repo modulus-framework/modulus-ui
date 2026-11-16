@@ -1,10 +1,17 @@
-@* PDF button: a wrapper around Components.Extras.AppPdfButton. Pass its parameters through; defaults match the framework. *@
+@* PDF button: a wrapper around Components.Extras.AppPdfButton. Pass its parameters through; defaults match the framework. With no FormId yet the button is shown disabled, as the image cropper shows its placeholder. *@
 @using Microsoft.AspNetCore.Components
 
-<Modulus.Blazor.Components.Extras.AppPdfButton
-    FormId="@FormId"
-    Action="@Action"
-    Label="@Label" />
+@if (!string.IsNullOrWhiteSpace(FormId))
+{
+    <Modulus.Blazor.Components.Extras.AppPdfButton
+        FormId="@FormId"
+        Action="@Action"
+        Label="@Label" />
+}
+else
+{
+    <button type="button" class="ant-btn ant-btn-default" disabled><span>@Label</span></button>
+}
 
 @code {
     [Parameter, EditorRequired] public string FormId { get; set; } = "";

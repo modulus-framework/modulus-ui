@@ -88,14 +88,17 @@ public sealed class ShellContent
     /// <summary>"Open chat" link under the chat menu. Null hides it.</summary>
     public string? ChatsHref { get; set; }
 
-    public IReadOnlyList<ShellLink> UserLinks { get; set; } =
-    [
-        new("Profile", "profile", "user"),
-        new("Settings", "settings", "setting"),
-    ];
+    /// <summary>
+    /// Links in the user menu (profile, settings). Empty by default: the framework does not know an app's routes, and a
+    /// default link to a route the app does not have is a 404. An app sets its own, as the admin starter's pages do.
+    /// </summary>
+    public IReadOnlyList<ShellLink> UserLinks { get; set; } = [];
 
-    /// <summary>Sign-out link at the bottom of the user menu. Null hides it.</summary>
-    public string? SignOutHref { get; set; } = "logout";
+    /// <summary>
+    /// Sign-out link at the bottom of the user menu. Null (the default) hides it, because a sign-out needs a sign-in: an app with
+    /// sign-in sets its sign-out route (the generated identity apps serve <c>/account/logout</c>).
+    /// </summary>
+    public string? SignOutHref { get; set; }
 
     public IReadOnlyList<ShellLink> FooterLinks { get; set; } = [];
 

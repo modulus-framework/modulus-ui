@@ -1,0 +1,36 @@
+# MVC and Razor Pages template pairs that differ today (reviewed as a set on 2026-11-15; reasons are not recorded per name).
+# EngineTemplatePairTests fails when a pair starts or stops differing, so any new divergence is a reviewed change:
+# add the name here with a reason in the commit, or make the two files match. Remove a name once its pair is identical.
+admin-settings
+admin-users
+analytics
+audit-logs
+chart-candlestick
+chart-column
+chart-donut
+chart-heatmap
+chart-line
+chart-org
+chart-radar
+chart-sankey
+crud-create
+crud-edit
+crud-form
+crud-index
+dashboard
+entity-form
+forgot-password
+module-home
+notification-center
+notification-preferences
+permission-matrix
+reports-dashboard
+reset-password
+role-management
+session-manager
+system-health
+tenant-list
+tenant-members
+tenant-settings
+two-factor
+user-profile

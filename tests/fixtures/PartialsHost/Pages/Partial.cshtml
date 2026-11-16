@@ -1,0 +1,12 @@
+@page "/partial/{name}"
+@addTagHelper *, Modulus.AspNetCore.Mvc
+@model PartialModel
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>@Model.Name</title><modulus-head /></head>
+<body>
+@* Renders one partial with no ViewBag data: the empty-state path every template must survive. *@
+@await Html.PartialAsync("~/Pages/Partials/" + Model.Name + ".cshtml")
+<modulus-scripts />
+</body>
+</html>

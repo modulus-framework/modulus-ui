@@ -1,0 +1,9 @@
+{
+  "name": "modulus-scaffold-crawl",
+  "private": true,
+  "description": "Crawls the apps the Modulus CLI scaffolds, at phone and desktop widths. Run by tests/browser/scaffold/scaffold.sh.",
+  "type": "module",
+  "dependencies": {
+    "playwright-core": "1.56.0"
+  }
+}

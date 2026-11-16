@@ -1,4 +1,4 @@
-@* Code editor: ViewBag.Name, Label, Value, Language (sql, json, csharp, html, ...), ReadOnly, Height *@
+@* Code editor: ViewBag.Name, Label, Value, Language (javascript, typescript, json, css, html), ReadOnly, Height *@
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @{
     string name = ViewBag.Name ?? "code";

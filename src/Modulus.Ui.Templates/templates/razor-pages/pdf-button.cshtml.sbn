@@ -1,4 +1,4 @@
-@* PDF button: ViewBag.Form (the id of the form to send), ViewBag.Action (the URL that returns the PDF), Label *@
+@* PDF button: ViewBag.Form (the id of the form to send), ViewBag.Action (the URL that returns the PDF), Label. With no form yet the button is shown disabled, as the image cropper shows its placeholder. *@
 @addTagHelper *, Modulus.AspNetCore.Mvc
 @{
     string form = ViewBag.Form ?? "";
@@ -6,4 +6,11 @@
     string label = ViewBag.Label ?? "Download PDF";
 }
 
-<app-pdf-button form="@form" action="@action" label="@label" />
+@if (form.Length > 0)
+{
+    <app-pdf-button form="@form" action="@action" label="@label" />
+}
+else
+{
+    <button type="button" class="ant-btn ant-btn-default" disabled><span>@label</span></button>
+}
