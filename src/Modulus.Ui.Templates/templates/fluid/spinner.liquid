@@ -1,4 +1,4 @@
-{# Spinner/Loading indicator for Fluid: size (sm, lg), label #}
+{% comment %} Spinner/Loading indicator for Fluid: size (sm, lg), label {% endcomment %}
 <div class="ant-spin ant-spin-spinning{% if size == 'sm' %} ant-spin-sm{% elsif size == 'lg' %} ant-spin-lg{% endif %}" role="status" aria-live="polite">
     <span class="ant-spin-dot ant-spin-dot-spin"><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i><i class="ant-spin-dot-item"></i></span>
     {% if label %}

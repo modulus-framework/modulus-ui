@@ -1,0 +1,15 @@
+{% comment %} The page frame of a Liquid web host: the Modulus styles and scripts, then the page as `content`. Values are escaped by Fluid. {% endcomment %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title }} · {{ app_name }}</title>
+    {% modulus_head %}
+</head>
+<body>
+    <main style="max-width: 960px; margin: 0 auto; padding: 24px 16px;">
+        {{ content }}
+    </main>
+</body>
+</html>

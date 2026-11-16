@@ -1,4 +1,4 @@
-{# Alert component for Fluid: type (success, info, warning, danger), title, message, dismissible #}
+{% comment %} Alert component for Fluid: type (success, info, warning, danger), title, message, dismissible {% endcomment %}
 {% assign type = type | default: 'info' | downcase %}
 {% assign kind = 'info' %}
 {% if type == 'success' %}{% assign kind = 'success' %}{% elsif type == 'warning' %}{% assign kind = 'warning' %}{% elsif type == 'danger' or type == 'error' %}{% assign kind = 'error' %}{% endif %}

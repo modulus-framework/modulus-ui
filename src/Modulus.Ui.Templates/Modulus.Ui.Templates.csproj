@@ -24,7 +24,8 @@
 
   <ItemGroup>
     <None Include="ui-kit.json" Pack="true" PackagePath="/" />
-    <None Include="templates/**/*.sbn;templates/**/*.json" Pack="true" PackagePath="templates/" />
+    <!-- The Fluid pages and host pages are plain Liquid (*.liquid): the CLI copies them without Scriban. -->
+    <None Include="templates/**/*.sbn;templates/**/*.json;templates/**/*.liquid" Pack="true" PackagePath="templates/" />
   </ItemGroup>
 
 </Project>
