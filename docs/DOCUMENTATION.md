@@ -85,6 +85,94 @@ backend endpoints that do not exist yet. Self-service registration is not offere
 - The `_content` assets of the UI packages are served by `dotnet run` only in the Development environment; a published app carries them in `wwwroot`.
 
 <!-- source: docs/DOCUMENTATION.md#upgrading-ant-design-blazor-htmx-alpinejs-and-the-plugin-libraries -->
+## Release: versions, packages and code signing
+
+### Version
+
+- One version for the whole set. The source of truth is `VersionPrefix` in `src/Directory.Build.props`. The templates manifest
+  `src/Modulus.Ui.Templates/ui-kit.json` (`"version"`) must carry the same number.
+- Current version: **2.1.0** (set 2026-11-17). It is a minor bump: new components (`divider`, `skeleton` for Fluid) and the Fluid
+  sample's sign-in and CRUD.
+- Pinned elsewhere, to update when the release is published:
+  - `modulus` repo, `cli/Services/UiTemplatePackage.cs`: `DefaultVersion` is still `2.0.0`. The CLI cannot find the 2.1.0 templates
+    until it is bumped.
+  - Docs and examples still show `2.0.0`: `website/docs/getting-started.md`, `website/docs/tutorial-*.md`, and the `Version` in
+    `docs/examples/*/*.csproj` (AGENTS.md: keep the examples building).
+
+### Build and pack
+
+```bash
+dotnet build Modulus.slnx -c Release
+dotnet test Modulus.slnx -c Release --no-build
+dotnet pack Modulus.slnx -c Release --no-build -o artifacts/packages
+```
+
+The pack writes 17 files for 2.1.0: 9 `.nupkg` (`Synvro.Modulus.AspNetCore.Hosting`, `Synvro.Modulus.AspNetCore.Fluid`,
+`Synvro.Modulus.AspNetCore.Mvc`, `Synvro.Modulus.Blazor`, `Synvro.Modulus.Documents`, `Synvro.Modulus.Flow.Connectors`,
+`Synvro.Modulus.Ui.Abstractions`, `Synvro.Modulus.Ui.Assets`, `Synvro.Modulus.Ui.Templates`) and 8 `.snupkg` symbol packages (all
+except `Synvro.Modulus.Ui.Templates`). `artifacts/` is git-ignored. Packages are signed after packing and before publishing.
+
+The `dotnet pack` warnings "cannot be packaged" name the samples and test fixtures. They are not packable on purpose.
+
+### Code signing
+
+Packages are signed with an author signature from a code-signing certificate that a certificate authority (CA) issued. A
+self-signed certificate is only good for testing: `dotnet nuget verify` rejects it (`NU3018`, untrusted root), and the release
+rules forbid it for real releases.
+
+**Get the certificate**
+
+1. Buy an OV (organisation validation) code-signing certificate from a CA such as DigiCert, Sectigo, GlobalSign or SSL.com. Prices
+   and options change, so check the CA's current list.
+2. Complete identity validation. A company needs business checks (for example a D-U-N-S number). An individual gets a personal
+   certificate.
+3. Know where the private key lives. Since June 2023 the CA/Browser Forum requires code-signing keys on a hardware token or in a
+   cloud HSM, so many CAs no longer let you export a `.pfx`. Two ways to use the certificate:
+   - **Token or cloud signing** (DigiCert KeyLocker, SSL.com eSigner, or Azure Key Vault): sign with `dotnet nuget sign` and the
+     vault options shown by `dotnet nuget sign --help`.
+   - **PFX file** (only where the CA allows the export): sign with `--certificate-path` and `--certificate-password`, as below.
+
+**Sign and verify**
+
+```bash
+dotnet nuget sign artifacts/packages/*.nupkg \
+  --certificate-path cert.pfx \
+  --certificate-password "$SIGNING_PFX_PASSWORD" \
+  --timestamper http://timestamp.digicert.com \
+  --overwrite
+
+dotnet nuget verify artifacts/packages/*.nupkg --all
+```
+
+Use the CA's own timestamp server if it gives you one. The timestamp keeps the signature valid after the certificate expires.
+Verification passes only when the certificate chains to a root the machine trusts.
+
+**CI secrets** (the same names as `modulus/.github/workflows/release.yml`, which fails the release when they are missing):
+
+| Secret | Holds |
+|---|---|
+| `NUGET_SIGNING_PFX_BASE64` | The PFX file, base64-encoded (`base64 -w0 cert.pfx`) |
+| `NUGET_SIGNING_PFX_PASSWORD` | The PFX password |
+| `NUGET_TIMESTAMP_URL` (repository variable, optional) | The timestamp server; defaults to `http://timestamp.digicert.com` |
+
+**Test signing without a CA** (local checks only; never publish these packages)
+
+```bash
+openssl req -x509 -newkey rsa:2048 -nodes -keyout key.pem -out cert.pem -days 7 \
+  -subj "/CN=Modulus UI TEST ONLY" -addext "extendedKeyUsage=codeSigning"
+openssl pkcs12 -export -out test.pfx -inkey key.pem -in cert.pem -passout pass:testonly
+```
+
+Sign a copy, not the packages in `artifacts/packages`. `dotnet nuget verify` then reports `NU3018`, which is the expected result for
+a self-signed certificate.
+
+### Before publishing
+
+- [ ] `VersionPrefix` and `ui-kit.json` agree, and the CLI pin and the docs and examples are updated (see above).
+- [ ] Build, unit tests and pack pass with 0 warnings.
+- [ ] Packages are signed with the CA certificate, and `dotnet nuget verify --all` passes.
+- [ ] Packages are pushed to nuget.org, and `build/verify-published-packages.sh` (in the `modulus` repo) passes against them.
+
 ## Upgrading Ant Design Blazor, htmx, Alpine.js and the plugin libraries
 
 Modulus pins every third-party UI dependency in one place, so upgrades are deliberate and checked.
@@ -1105,7 +1193,7 @@ Status on 2026-11-16. Tasks 1 to 5 need a decision or an action from the owner. 
 | 4 | Verify the CI scaffold job on GitHub (`.github/workflows/ci.yml`). It has run only locally. | Access to `modulus-framework/modulus`, or `gh` |
 | 5 | `modulus` has uncommitted messaging changes that belong to other work. They are not part of this UI work and are left alone. | The owner of that work |
 | 6 | Sign-in on a Fluid host. Partly built (2026-11-16, in `modulus-ui` only): the Fluid sample (`samples/Modulus.Samples.Fluid`, port 5103) has sign-in, sign-out and the password pages, with the sample's cookie sign-in (`SampleAuth`, the same users and password as the other samples) and antiforgery on every POST. Shared class names (2026-11-16, the rule in memory: one class name, one meaning, in every UI engine). The Fluid templates now use the class names and markup that the MVC tag helpers draw (`ant-badge-status-*`, `ant-statistic-*`, `ant-result-{status}` with `{% icon %}`, `ant-avatar-*`), and the page frame uses the shell's `m-page`, `m-page-body` and `m-container`. The rules that the MVC analytics, system health, user profile and notification preferences pages defined in a local `<style>` block moved to `modulus-pages.css` (`m-bars`, `m-bar-row`, `m-profile-grid`, `m-avatar`, `m-info-*`, `m-checkbox-group` and the rest), and those blocks were removed. A class-name audit of the Fluid templates finds only Ant Design v4 classes and Modulus classes that MVC also uses. Known exception: `ant-avatar-circle` is emitted by MVC too but has no rule in the Ant Design v4 stylesheet, so it is unstyled in every engine. Phone sweep of every Fluid sample route (2026-11-16, 390 px, signed in where needed): no page overflows horizontally (home, invoice, charts, customers and the new-customer form, sessions, the sign-in, forgot, reset and two-factor pages). The candlestick and reset-password pages were checked by eye. Browser findings for the Fluid sample, fixed (2026-11-16): the customer list and the sessions table hid their less important columns below 576 px with the shared class `m-hide-sm` (defined in `modulus-pages.css`), so Edit, Delete and End session are on screen at 390 px. The dark-mode info alert had a background almost the page colour; `modulus-pages.css` gives it the brand tint in dark mode only. Checked in the browser with a signed-in cookie: no page overflow at 390 px or 1280 px. Browser check of the Fluid sample (2026-11-16): the sign-in, invoice, invoice list, line, sankey and org chart pages at 390 px and 1280 px, light and dark, with `scrollWidth` equal to the viewport on every page (no horizontal overflow). Measured through the DevTools protocol with the viewport set to 390 px. Note for the next check: `chrome --headless --window-size=390,…` renders at 500 px (the minimum headless width), so a screenshot taken that way looks like overflow when there is none. Chart pages on the same sample (2026-11-16): `ChartPages.cs` draws the eight charts of the MVC templates on the server with `ChartHtml` (line, column, donut, heatmap, radar, candlestick, sankey, org chart) and passes the markup as `LiquidHtml`, so Liquid prints it unescaped. Routes: `/charts` and `/charts/{slug}`. Checked with curl: each page holds its chart block, the markup is not escaped, and an unknown slug returns 404. The business charts in `ChartHtml.Business` (ranked bars, waterfall, gauge, funnel and so on) have no MVC template, so they are not in the sample. Customer CRUD on the same sample (2026-11-16, signed-in users only): `CustomerPages.cs` and `Templates/customers/index.liquid` and `form.liquid` give a searchable, paged list, create, edit and delete, with the same validation as the Blazor form. Checked with curl: create, edit, delete, search, and the invalid-email message. The generic `create-crud` for fluid is not built: the CLI copies `.liquid` files without rendering, so a generic Fluid CRUD needs a design decision (see task 7). The templates are `templates/fluid/auth-*.liquid`, also in the sample as `auth/login`, `auth/forgot-password` and `auth/reset-password`. Checked with curl: a good sign-in sets the cookie and follows a local return URL, `//host` falls back to `/`, a wrong password and a bad token are refused, the reset checks the length and the match. Also built (2026-11-16): two-factor (`/auth/two-factor`, any 6-digit code, as the other samples do) and sessions (`/account/sessions`, sample rows, signed-in only; a visitor is sent to `/auth/login?returnUrl=...` and back). Checked with curl, and the Fluid tests pass. Host sign-in (2026-11-16, `modulus` branch `fluid-engine`, commit a3d104fd): the generated Fluid host signs in through the BFF, as the Razor Pages host does (`--auth` is no longer refused). The Liquid login page posts to `/auth/login`, which calls the BFF client, and `/auth/logout` ends the session. Verified by generating a host with `--auth openiddict` and running it in Development and Production (the security guard starts with no findings; a bad token gets 400; with the BFF down the page says the sign-in service is not available). Still open: the forgot and reset pages on the generated host (they need the API account client), two-factor and sessions on the generated host, and `add-auth` for fluid (task 8). | The generated host and the CLI are in `modulus`; the rest is in `modulus-ui` |
-| 7 | The Fluid page set. Generic CRUD for Fluid (in progress, 2026-11-16): the design is the one you chose, the CLI writes the Liquid pages (list and form) from the entity fields, plus a generated endpoints file over the typed client. The Liquid writer (UiFluidCrud.cs) and the endpoints template (Templates/ui/CrudFluidEndpoints.sbn) exist, and the create-crud branch is written, but these changes are UNCOMMITTED in the modulus worktree (E:/Personal/framework/modulus-fluid, branch fluid-engine-2), which does not build yet (WireHost takes an engine argument that is not added). Waiting for the go-ahead to update the modulus repo.  About 125 pages exist in `mvc` and `razor-pages`. Batch 1 (2026-11-16) adds five Liquid components, `badge`, `tag`, `status-badge`, `empty-state` and `statistic`. Batch 2 adds `steps`, `timeline`, `result` and `descriptions`. Batch 3 adds `breadcrumb`, `pagination`, `page-header`, `list` and `avatar`. All 14 are rendered in `FluidComponentTests`. Admin starter: complete (14 of 14 pages, 2026-11-16) and wired in the manifest (`features.admin.files.fluid`, each entry names its page with `page`). Earlier notes: `admin-audit`, `admin-settings`, `admin-health` and `admin-tenant-settings` are done (static sample data, no form posts, the Fluid host has no controllers). The generated host now serves a route parameter: a `[name]` folder matches one segment and passes it to the page as `{{ name }}`, so `Templates/admin/tenants/[id]/settings.liquid` serves `/admin/tenants/7/settings` with `id` = `7` (a static name wins; checked by running the host: 200 for the parameter page, 404 for `/admin/tenants/7` and for `/Shared/...`). Also done: `admin-users`, `admin-tenants`, `admin-roles`, `admin-notifications` and `admin-profile`. The `dashboard` and `reports-dashboard` pages that were already in `fluid/` cover the admin dashboard and reports. Also done: the tenant members, notification preferences and analytics pages. The manifest's fluid entries are in, and the manifest's fluid entries wait until all 14 exist so `add-admin` never writes a partial set. Not built: `divider` and `skeleton` (their CSS is not in the shared stylesheets), the other components, the chart pages and the generic CRUD pages (the customer CRUD is built on the sample; see the Fluid sample line in task 6). The auth pages are in task 6. | Build, one batch at a time |
+| 7 | The Fluid page set. Generic CRUD for Fluid (in progress, 2026-11-16): the design is the one you chose, the CLI writes the Liquid pages (list and form) from the entity fields, plus a generated endpoints file over the typed client. The Liquid writer (UiFluidCrud.cs) and the endpoints template (Templates/ui/CrudFluidEndpoints.sbn) exist, and the create-crud branch is written, but these changes are UNCOMMITTED in the modulus worktree (E:/Personal/framework/modulus-fluid, branch fluid-engine-2), which does not build yet (WireHost takes an engine argument that is not added). Waiting for the go-ahead to update the modulus repo.  About 125 pages exist in `mvc` and `razor-pages`. Batch 1 (2026-11-16) adds five Liquid components, `badge`, `tag`, `status-badge`, `empty-state` and `statistic`. Batch 2 adds `steps`, `timeline`, `result` and `descriptions`. Batch 3 adds `breadcrumb`, `pagination`, `page-header`, `list` and `avatar`. All 14 are rendered in `FluidComponentTests`. Admin starter: complete (14 of 14 pages, 2026-11-16) and wired in the manifest (`features.admin.files.fluid`, each entry names its page with `page`). Earlier notes: `admin-audit`, `admin-settings`, `admin-health` and `admin-tenant-settings` are done (static sample data, no form posts, the Fluid host has no controllers). The generated host now serves a route parameter: a `[name]` folder matches one segment and passes it to the page as `{{ name }}`, so `Templates/admin/tenants/[id]/settings.liquid` serves `/admin/tenants/7/settings` with `id` = `7` (a static name wins; checked by running the host: 200 for the parameter page, 404 for `/admin/tenants/7` and for `/Shared/...`). Also done: `admin-users`, `admin-tenants`, `admin-roles`, `admin-notifications` and `admin-profile`. The `dashboard` and `reports-dashboard` pages that were already in `fluid/` cover the admin dashboard and reports. Also done: the tenant members, notification preferences and analytics pages. The manifest's fluid entries are in, and the manifest's fluid entries wait until all 14 exist so `add-admin` never writes a partial set. Built (2026-11-17, batch 4): `divider` and `skeleton`. Their rules are in the Ant Design stylesheet that `{% modulus_head %}` already loads, so no shared CSS was added; the markup matches `<app-divider>` and `<app-skeleton>`, and six tests in `FluidComponentTests` check it. Skeleton is a placeholder only: Liquid components take no block content, so a page renders it while it waits. Not built: the other components, the chart pages and the generic CRUD pages (the customer CRUD is built on the sample; see the Fluid sample line in task 6). The auth pages are in task 6. | Build, one batch at a time |
 | 8 | The `ui` commands that still refuse fluid: `add-auth`, `add-2fa`, `add-session-manager`, `add-chart`, `create-crud`, `create-form-from-entity`, `create-permission-matrix`, `add-assistant`. `create-dashboard` works for fluid for all four dashboards (overview, analytics, reports, audit), since 2026-11-16 (`modulus`, branch `fluid-engine`). `add-admin` works for fluid as of 2026-11-16 (14 pages, no menu wiring, checked in a scratch host: all 14 routes return 200). `add-component` works for fluid as of 2026-11-16: it copies the Liquid snippet to `Templates/Shared/Components/{key}.liquid`. It failed before because the CLI had no fluid output path (`modulus/cli/Services/UiComponents.cs`), which is now fixed. Verified in a generated Fluid host with the 14 components of batches 1 to 3. A page calls a component with `{% render 'Shared/Components/badge', status: 'active' %}`: `ModulusLiquidOptions.TemplatesRoot` (set by the generated host) reads the `Templates` folder, and the host does not serve `Shared` as pages. Tested in `FluidRenderTests`. Release coupling: the CLI host passes `TemplatesRoot`, so the CLI and `Synvro.Modulus.AspNetCore.Fluid` must ship together. A host built on the published 2.0.0 package does not compile with the new CLI output until the package is republished. The generated host was compiled against the local Fluid project; I did not run it in a browser. | Follows task 7 |
 
 Closed on 2026-11-16, for the record: task 9 (`ui create-dashboard --engine` help now lists fluid; the other UI commands keep their list because they still refuse fluid) and task 10 (the Fluid web-host line in `modulus/docs/DOCUMENTATION.md` is corrected); the dead MVC partials `_ModulusHeaderActions` and `_ModulusAccountMenu` are removed (they had no references); the Fluid host (`modulus app --ui-engine fluid --auth none`) is generated and was checked in Development and Production, with its 500 page; `EditableGridTagHelper.ProcessAsync` is split into section methods; the Fluid host routes folder paths to Liquid pages; `ui create-dashboard` writes fluid pages.
@@ -1618,6 +1706,7 @@ a release. Everything under D and A6 waits for a decision.
 
 | Date | Change |
 |---|---|
+| 2026-11-17 | **Version 2.1.0, packages and code signing.** Set `VersionPrefix` and the `ui-kit.json` version to 2.1.0. Packed the nine packages (17 files) into `artifacts/packages`; they are not signed yet. Added the `divider` and `skeleton` Liquid components (`FluidComponentTests`, 129 pass). New section "Release: versions, packages and code signing": the version rule, the build and pack commands, how to get and use a code-signing certificate, the CI secrets, and the publishing checklist. Fluid CRUD and `create-crud` for fluid are in the `modulus` repo (`fluid-engine` branch, not yet committed). |
 | 2026-11-16 | **Open tasks closed.** Task 6: the generated apps' parameter routes (tenant `{id}` pages, `/charts/{name}`, `/permissions/{name}`) are crawled with the ids and names the apps generate; the product edit page is reached through the list's `?id=` links. The crawl's report lists only counts, not URLs, so the link following is inferred from the list pages, not from a per-URL log. Dead MVC partials `_ModulusHeaderActions` and `_ModulusAccountMenu`: kept. Nothing in the repo renders them, but `_ModulusHeaderActions` is a documented override point (apps add a file with that name), so deleting it could break an app that depends on the name. Removing them is a public-surface change for the owner to decide. Still open, each needing a decision outside this work: task 1 (push) and task 2 (nuget publish), which need your explicit go-ahead; task 9 (someone else's messaging changes in `modulus`). |
 | 2026-11-15 | **Open tasks 10 to 12 closed.** 10: `ShellContent` defaults are now no user-menu links and no sign-out (`UserLinks` empty, `SignOutHref` null). The old defaults (`profile`, `settings`, `logout`) 404 in every generated app; an app with sign-in sets its own sign-out (the generated identity apps serve `/account/logout`). Pinned by `ShellDefaultsTests`. 11: the CLI's home-page templates (`cli/Templates/app/Index.Web` and `Index.Mvc`) show the "Your application" card only when the example module is included (`{{ if !no_example }}`); checked by scaffolding with and without `--with-example`. 12: `ui add-auth`, `add-2fa` and `add-session-manager` refuse an app whose API or web host registers no sign-in provider (the same probes as `modulus describe`), with the reason and the fix; checked on a no-auth app (refused) and an OpenIddict app (passes). The CLI changes are in the `modulus` repo, in `cli/Templates/app/Index.*`, `cli/Services/UiPageScaffold.cs` and `cli/Commands/UiAddAuthCommands.cs`. The CLI suite (`tests/unit/Modulus.Cli.Tests`) passes, 741 of 741, after repacking `Synvro.Modulus.Ui.Templates` 2.0.0 into `~/.modulus/feed` (the old copy was stale and failed the component tests; it is backed up in the session scratchpad). |
 | 2026-11-15 | **Framework review, items 1 and 2.** Defaults: the Blazor account menu (`HeaderActions`, used by `ModulusLayout`) hard-coded `profile`, `settings` and `logout`, the same dead links the MVC shell had. It now takes `UserLinks` and `SignOutHref` from its parameters (`ModulusLayout` forwards them), empty by default, and hides the menu when there is nothing to show; `HeaderActionsTests` covers it. The MVC account partials (`_ModulusHeaderActions`, `_ModulusAccountMenu`) hard-code `~/settings` and `~/login` but nothing renders them, so they are dead code and can go. Templates: `EngineTemplatePairTests` checks the MVC and Razor Pages templates that share a name against the reviewed list in `engine-divergence.txt` (33 pairs), so a new divergence fails the test. A probe confirmed it fails on a one-line drift. End to end: the scratch feed had been packed before the shell fix, and the NuGet cache still held the old 2.0.0 packages, so earlier crawls tested stale code. After clearing `~/.nuget/packages/synvro.modulus.*/2.0.0` and rebuilding, fresh Razor Pages and Blazor apps show no dead links. |

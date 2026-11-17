@@ -1,0 +1,8 @@
+{% comment %} Skeleton placeholder for Fluid: rows (default 3), avatar, active (default true), round, title (default true). Liquid components take no block content, so a page shows its real content when it has data and renders this component while it waits. The markup is the one <app-skeleton> draws. {% endcomment %}
+{% assign rows = rows | default: 3 | plus: 0 %}
+{% if rows < 1 %}{% assign rows = 1 %}{% endif %}
+{% if avatar %}{% assign width = 50 %}{% else %}{% assign width = 38 %}{% endif %}
+{% if title == false %}{% assign show_title = false %}{% else %}{% assign show_title = true %}{% endif %}
+{% capture classes %}ant-skeleton{% if avatar %} ant-skeleton-with-avatar{% endif %}{% if active != false %} ant-skeleton-active{% endif %}{% if round %} ant-skeleton-round{% endif %}{% endcapture %}
+
+<div class="{{ classes }}" aria-busy="true" aria-label="Loading">{% if avatar %}<div class="ant-skeleton-header"><span class="ant-skeleton-avatar ant-skeleton-avatar-lg ant-skeleton-avatar-circle"></span></div>{% endif %}<div class="ant-skeleton-content">{% if show_title %}<h3 class="ant-skeleton-title" style="width:{{ width }}%"></h3>{% endif %}<ul class="ant-skeleton-paragraph">{% for i in (1..rows) %}{% if i == rows and rows > 1 %}<li style="width:61%"></li>{% else %}<li></li>{% endif %}{% endfor %}</ul></div></div>
