@@ -1,0 +1,65 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Least privilege: the default token reads the repository. The job adds what it needs (the build provenance attestation and the
+# OIDC token for NuGet trusted publishing) and nothing else.
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write       # OIDC: NuGet trusted publishing, and the build provenance signature
+      attestations: write   # build provenance attestation of the packages
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore Modulus.slnx
+      # The version comes from the tag and is passed at build time, so the assemblies carry the package version.
+      - name: Build
+        run: dotnet build Modulus.slnx --no-restore --configuration Release -p:Version=${GITHUB_REF_NAME#v}
+      # One test project at a time: `dotnet test --solution` is not a switch in the .NET 10 SDK.
+      - name: Test
+        run: |
+          for project in tests/*/*.csproj; do
+            dotnet test "$project" --configuration Release --no-build
+          done
+      - name: Ant Design drift check
+        run: dotnet run --project tools/antd-drift --configuration Release --no-build
+      - name: Asset budgets
+        run: python3 tests/browser/budgets.py
+      - name: Pack
+        run: dotnet pack Modulus.slnx --no-build --configuration Release --output artifacts/packages -p:Version=${GITHUB_REF_NAME#v}
+      # Packages are not author-signed (owner decision): nuget.org adds its own repository signature to every package it accepts,
+      # and the build provenance attestation ties the packages to this workflow run.
+      - name: Build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'artifacts/packages/*.nupkg'
+      - name: Upload packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-${{ github.ref_name }}
+          path: artifacts/packages/
+          if-no-files-found: error
+      # NuGet trusted publishing: no long-lived API key in the repository. The owner configures the trusted publishing policy for
+      # this repository and the nuget.org user (NUGET_USER) once, on nuget.org; until then this step fails.
+      - name: NuGet login (trusted publishing)
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      - name: Publish to NuGet
+        run: |
+          for pkg in artifacts/packages/*.nupkg; do
+            dotnet nuget push "$pkg" --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+          done
