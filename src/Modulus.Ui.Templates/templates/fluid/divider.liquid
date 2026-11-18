@@ -1,0 +1,10 @@
+{% comment %} Divider for Fluid: type (horizontal, vertical), orientation (left, center, right), dashed, plain, text. The markup is the one <app-divider> draws. {% endcomment %}
+{% assign type = type | default: 'horizontal' %}
+{% assign orientation = orientation | default: 'center' %}
+{% assign has_text = false %}
+{% if text != blank and type != 'vertical' %}{% assign has_text = true %}{% endif %}
+{% assign tag = 'div' %}
+{% if type == 'vertical' %}{% assign tag = 'span' %}{% endif %}
+{% capture classes %}ant-divider ant-divider-{{ type }}{% if has_text %} ant-divider-with-text{% if orientation == 'center' %} ant-divider-with-text-center{% else %} ant-divider-with-text-{{ orientation }}{% endif %}{% endif %}{% if dashed %} ant-divider-dashed{% endif %}{% if plain and has_text %} ant-divider-plain{% endif %}{% endcapture %}
+
+<{{ tag }} class="{{ classes }}" role="separator">{% if has_text %}<span class="ant-divider-inner-text">{{ text }}</span>{% endif %}</{{ tag }}>

@@ -208,4 +208,73 @@ public class FluidComponentTests
         Assert.Contains("ant-statistic-content-prefix", html);
         Assert.Contains("ant-statistic-content-suffix", html);
     }
+
+    [Fact]
+    public void Divider_WithText_RendersTheTextInsideTheSeparator()
+    {
+        var html = Render("divider", new { text = "Billing", orientation = "left", dashed = true, plain = false, type = "horizontal" });
+
+        Assert.Contains("class=\"ant-divider ant-divider-horizontal ant-divider-with-text ant-divider-with-text-left ant-divider-dashed\"", html);
+        Assert.Contains("<span class=\"ant-divider-inner-text\">Billing</span>", html);
+        Assert.Contains("role=\"separator\"", html);
+    }
+
+    [Fact]
+    public void Divider_Vertical_IsASpanWithoutText()
+    {
+        var html = Render("divider", new { type = "vertical", text = "ignored" });
+
+        Assert.Contains("<span class=\"ant-divider ant-divider-vertical\" role=\"separator\"></span>", html);
+        Assert.DoesNotContain("ant-divider-inner-text", html);
+    }
+
+    [Fact]
+    public void Divider_EscapesItsText()
+    {
+        var html = Render("divider", new { text = "<i>x</i>" });
+
+        Assert.Contains("&lt;i&gt;x&lt;/i&gt;", html);
+        Assert.DoesNotContain("<i>", html);
+    }
+
+    [Fact]
+    public void Skeleton_DrawsTitleAndRows_WithTheLastRowShorter()
+    {
+        var html = Render("skeleton", new { rows = 3, avatar = false, active = true, round = false, title = true });
+
+        Assert.Contains("class=\"ant-skeleton ant-skeleton-active\"", html);
+        Assert.Contains("ant-skeleton-title", html);
+        Assert.Equal(3, CountOf(html, "<li"));
+        Assert.Contains("<li style=\"width:61%\"></li>", html);
+        Assert.DoesNotContain("ant-skeleton-avatar", html);
+    }
+
+    [Fact]
+    public void Skeleton_WithAvatar_AddsTheHeaderAndWidensTheTitle()
+    {
+        var html = Render("skeleton", new { rows = 2, avatar = true, active = false, title = true });
+
+        Assert.Contains("ant-skeleton-with-avatar", html);
+        Assert.Contains("ant-skeleton-avatar-circle", html);
+        Assert.Contains("width:50%", html);
+        Assert.DoesNotContain("ant-skeleton-active", html);
+    }
+
+    [Fact]
+    public void Skeleton_WithoutRowsOrTitle_UsesDefaultsAndNoTitle()
+    {
+        var defaults = Render("skeleton", new { });
+        Assert.Equal(3, CountOf(defaults, "<li"));
+
+        var noTitle = Render("skeleton", new { rows = 1, title = false });
+        Assert.DoesNotContain("ant-skeleton-title", noTitle);
+        Assert.Equal(1, CountOf(noTitle, "<li"));
+    }
+
+    private static int CountOf(string text, string needle)
+    {
+        var count = 0;
+        for (var i = text.IndexOf(needle, StringComparison.Ordinal); i >= 0; i = text.IndexOf(needle, i + needle.Length, StringComparison.Ordinal)) count++;
+        return count;
+    }
 }
