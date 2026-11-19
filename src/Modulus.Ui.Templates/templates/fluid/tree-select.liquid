@@ -1,0 +1,9 @@
+{% comment %} Tree select for Fluid: name, items (each with label, value, level (0 for the top), disabled), value, placeholder. The level shows as indentation in one select. {% endcomment %}
+<select class="ant-select-native ant-input ant-select-tree" name="{{ name }}" aria-label="{{ label | default: name }}">
+    {% if placeholder %}<option value="" disabled{% if value == blank %} selected{% endif %}>{{ placeholder }}</option>{% endif %}
+    {% for item in items %}
+    {% assign indent = '' %}
+    {% for i in (1..item.level) %}{% assign indent = indent | append: '— ' %}{% endfor %}
+    <option value="{{ item.value }}"{% if item.value == value %} selected{% endif %}{% if item.disabled %} disabled{% endif %}>{{ indent }}{{ item.label }}</option>
+    {% endfor %}
+</select>

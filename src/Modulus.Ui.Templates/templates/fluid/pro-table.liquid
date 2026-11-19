@@ -1,0 +1,18 @@
+{% comment %} Pro table for Fluid: title, columns (each with key and title), rows (objects keyed by the column keys), empty_text. The rows are read-only; use editable-grid to change them. {% endcomment %}
+<div class="m-card m-table-card m-pro-table">
+    {% if title %}<div class="m-card-header"><h3 class="m-card-title">{{ title }}</h3></div>{% endif %}
+    <div class="ant-table-wrapper">
+        <table class="ant-table">
+            <thead class="ant-table-thead">
+                <tr>{% for column in columns %}<th class="ant-table-cell" scope="col">{{ column.title }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody class="ant-table-tbody">
+                {% for row in rows %}
+                <tr class="ant-table-row">{% for column in columns %}<td class="ant-table-cell">{{ row[column.key] }}</td>{% endfor %}</tr>
+                {% else %}
+                <tr><td class="ant-table-cell" colspan="{{ columns | size }}"><div class="m-empty">{{ empty_text | default: 'No data' }}</div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

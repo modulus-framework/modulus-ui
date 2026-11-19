@@ -1,0 +1,16 @@
+{% comment %} Drawer for Fluid: open (drawn only when true), title, content (rendered HTML), footer (rendered HTML), placement (right, left), close_url. {% endcomment %}
+{% assign side = placement | default: 'right' %}
+{% if open %}
+<div class="ant-drawer ant-drawer-open ant-drawer-{{ side }}" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+    <div class="ant-drawer-mask"></div>
+    <div class="ant-drawer-content-wrapper">
+        <div class="ant-drawer-content">
+            <div class="ant-drawer-wrapper-body">
+                <div class="ant-drawer-header"><div class="ant-drawer-title" id="drawer-title">{{ title }}</div>{% if close_url and close_url != blank %}<a class="ant-drawer-close" href="{{ close_url }}" aria-label="Close">&times;</a>{% endif %}</div>
+                <div class="ant-drawer-body">{{ content }}</div>
+                {% if footer %}<div class="ant-drawer-footer">{{ footer }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}

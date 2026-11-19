@@ -1,0 +1,15 @@
+{% comment %} Cascader for Fluid: name, options (each with label, value and optional children, a list of label and value), value (the selected leaf value), placeholder. Two levels are shown as option groups in one select, so the choice is still one value. {% endcomment %}
+<select class="ant-select-native ant-input ant-cascader" name="{{ name }}" aria-label="{{ label | default: name }}">
+    {% if placeholder %}<option value="" disabled{% if value == blank %} selected{% endif %}>{{ placeholder }}</option>{% endif %}
+    {% for option in options %}
+    {% if option.children %}
+    <optgroup label="{{ option.label }}">
+        {% for child in option.children %}
+        <option value="{{ child.value }}"{% if child.value == value %} selected{% endif %}>{{ child.label }}</option>
+        {% endfor %}
+    </optgroup>
+    {% else %}
+    <option value="{{ option.value }}"{% if option.value == value %} selected{% endif %}>{{ option.label }}</option>
+    {% endif %}
+    {% endfor %}
+</select>

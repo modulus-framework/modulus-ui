@@ -1,0 +1,15 @@
+{% comment %} Transfer for Fluid: name (the field name posted for the chosen items), source (each with label and value, the items not chosen), target (the chosen items, each with label and value), source_title, target_title. The items are two lists of tick boxes; the chosen values are posted. {% endcomment %}
+<div class="m-transfer" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+    <div class="m-transfer-list m-transfer-source">
+        <div class="m-transfer-title">{{ source_title | default: 'Available' }}</div>
+        {% for item in source %}
+        <label class="ant-checkbox-wrapper"><span class="ant-checkbox"><input type="checkbox" class="ant-checkbox-input" name="{{ name }}" value="{{ item.value }}" /><span class="ant-checkbox-inner"></span></span> <span>{{ item.label }}</span></label>
+        {% endfor %}
+    </div>
+    <div class="m-transfer-list m-transfer-target">
+        <div class="m-transfer-title">{{ target_title | default: 'Chosen' }}</div>
+        {% for item in target %}
+        <label class="ant-checkbox-wrapper ant-checkbox-wrapper-checked"><span class="ant-checkbox ant-checkbox-checked"><input type="checkbox" class="ant-checkbox-input" name="{{ name }}" value="{{ item.value }}" checked /><span class="ant-checkbox-inner"></span></span> <span>{{ item.label }}</span></label>
+        {% endfor %}
+    </div>
+</div>

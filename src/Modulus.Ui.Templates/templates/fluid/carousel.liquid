@@ -1,0 +1,11 @@
+{% comment %} Carousel for Fluid: items (each with src, alt and caption). The slides sit side by side in a scrolling row, so they need no script. {% endcomment %}
+<div class="ant-carousel m-carousel" role="region" aria-roledescription="carousel" tabindex="0">
+    <div class="m-carousel-track" style="display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 8px;">
+        {% for item in items %}
+        <figure class="m-carousel-slide" role="group" aria-roledescription="slide" style="flex: 0 0 100%; scroll-snap-align: start; margin: 0;">
+            <img src="{{ item.src }}" alt="{{ item.alt }}" loading="lazy" style="width: 100%; height: auto;" />
+            {% if item.caption %}<figcaption>{{ item.caption }}</figcaption>{% endif %}
+        </figure>
+        {% endfor %}
+    </div>
+</div>

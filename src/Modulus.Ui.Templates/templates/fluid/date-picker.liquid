@@ -1,0 +1,10 @@
+{% comment %} Date picker for Fluid: name, value (yyyy-mm-dd), picker (date, month, week or year), min, max, disabled, label. The browser draws the calendar. {% endcomment %}
+{% assign input_type = 'date' %}
+{% case picker %}
+  {% when 'month' %}{% assign input_type = 'month' %}
+  {% when 'week' %}{% assign input_type = 'week' %}
+  {% when 'year' %}{% assign input_type = 'number' %}
+{% endcase %}
+<div class="ant-picker{% if disabled %} ant-picker-disabled{% endif %}">
+    <input type="{{ input_type }}" class="ant-picker-input" name="{{ name }}" value="{{ value }}"{% if min and min != blank %} min="{{ min }}"{% endif %}{% if max and max != blank %} max="{{ max }}"{% endif %}{% if input_type == 'number' %} min="1900" max="2999" step="1"{% endif %}{% if disabled %} disabled{% endif %} aria-label="{{ label | default: name }}" />
+</div>

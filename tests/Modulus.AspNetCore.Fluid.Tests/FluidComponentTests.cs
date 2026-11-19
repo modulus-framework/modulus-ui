@@ -271,6 +271,61 @@ public class FluidComponentTests
         Assert.Equal(1, CountOf(noTitle, "<li"));
     }
 
+    [Fact]
+    public void Checkbox_IsCheckedAndEscapesTheLabel()
+    {
+        var html = Render("checkbox", new { name = "terms", value = "yes", label = "<i>Agree</i>", @checked = true });
+
+        Assert.Contains("ant-checkbox-checked", html);
+        Assert.Contains("name=\"terms\"", html);
+        Assert.Contains(" checked", html);
+        Assert.Contains("&lt;i&gt;Agree&lt;/i&gt;", html);
+    }
+
+    [Fact]
+    public void Rate_FillsStarsUpToTheValue()
+    {
+        var html = Render("rate", new { name = "stars", value = 3, count = 5 });
+
+        Assert.Equal(3, CountOf(html, "ant-rate-star-full"));
+        Assert.Equal(2, CountOf(html, "ant-rate-star-zero"));
+    }
+
+    [Fact]
+    public void Tabs_MarksTheActiveTabAndPanel()
+    {
+        var html = Render("tabs", new
+        {
+            items = new[] { Row(("id", "a"), ("label", "First"), ("content", "one")), Row(("id", "b"), ("label", "Second"), ("content", "two")) },
+            active = "b",
+        });
+
+        Assert.Contains("href=\"#tab-b\"", html);
+        Assert.Contains("ant-tabs-tabpane-active", html);
+        Assert.Equal(1, CountOf(html, "ant-tabs-tab-active"));
+    }
+
+    [Fact]
+    public void Modal_IsDrawnOnlyWhenOpen()
+    {
+        Assert.DoesNotContain("ant-modal-root", Render("modal", new { open = false, title = "Hi" }));
+        Assert.Contains("ant-modal-root", Render("modal", new { open = true, title = "Hi", content = "body" }));
+    }
+
+    [Fact]
+    public void TreeSelect_IndentsByLevel()
+    {
+        var html = Render("tree-select", new
+        {
+            items = new[] { Row(("value", "1"), ("label", "Root"), ("level", 0)), Row(("value", "2"), ("label", "Child"), ("level", 1)) },
+            value = "2",
+        });
+
+        // The renderer escapes the dash as an entity; the browser shows the same character.
+        Assert.Contains("&#x2014; Child", html);
+        Assert.Contains("value=\"2\" selected", html);
+    }
+
     private static int CountOf(string text, string needle)
     {
         var count = 0;

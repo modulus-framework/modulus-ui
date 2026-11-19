@@ -1,0 +1,10 @@
+{% comment %} Popover for Fluid: trigger (the text of the button), title, content (rendered HTML). The panel opens from a native details element, so no script is needed. {% endcomment %}
+<details class="ant-popover-wrapper m-popover">
+    <summary class="ant-btn ant-btn-default"><span>{{ trigger }}</span></summary>
+    <div class="ant-popover ant-popover-placement-bottom" role="tooltip">
+        <div class="ant-popover-content"><div class="ant-popover-inner">
+            {% if title %}<div class="ant-popover-title">{{ title }}</div>{% endif %}
+            <div class="ant-popover-inner-content">{{ content }}</div>
+        </div></div>
+    </div>
+</details>

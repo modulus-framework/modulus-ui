@@ -1,0 +1,23 @@
+{% comment %} File manager for Fluid: path (the folder shown, for example /reports), items (each with name, kind (folder or file), size, modified, href), parent_url (the link to the folder above). {% endcomment %}
+<div class="m-card m-table-card m-file-manager">
+    <div class="m-card-header">
+        <nav class="m-file-manager-path" aria-label="Folder">{{ path | default: '/' }}</nav>
+        {% if parent_url and parent_url != blank %}<a class="ant-btn ant-btn-default ant-btn-sm" href="{{ parent_url }}"><span>Up</span></a>{% endif %}
+    </div>
+    <div class="ant-table-wrapper">
+        <table class="ant-table">
+            <thead class="ant-table-thead"><tr><th class="ant-table-cell" scope="col">Name</th><th class="ant-table-cell" scope="col">Size</th><th class="ant-table-cell" scope="col">Modified</th></tr></thead>
+            <tbody class="ant-table-tbody">
+                {% for item in items %}
+                <tr class="ant-table-row">
+                    <td class="ant-table-cell">{% if item.href and item.href != blank %}<a href="{{ item.href }}">{{ item.name }}</a>{% else %}{{ item.name }}{% endif %}{% if item.kind == 'folder' %} <span class="m-tag">Folder</span>{% endif %}</td>
+                    <td class="ant-table-cell">{{ item.size }}</td>
+                    <td class="ant-table-cell">{{ item.modified }}</td>
+                </tr>
+                {% else %}
+                <tr><td class="ant-table-cell" colspan="3"><div class="m-empty">This folder is empty.</div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

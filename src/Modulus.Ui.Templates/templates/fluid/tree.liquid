@@ -1,0 +1,9 @@
+{% comment %} Tree for Fluid: items (each with label, href and level (0 for the top)), selected (the label or value of the current node). The levels show as indentation; each node links to its href when there is one. {% endcomment %}
+<ul class="ant-tree m-tree" role="tree">
+    {% for item in items %}
+    {% assign is_selected = false %}{% if item.value == selected %}{% assign is_selected = true %}{% endif %}
+    <li class="ant-tree-treenode{% if is_selected %} ant-tree-treenode-selected{% endif %}" role="treeitem" aria-level="{{ item.level | default: 0 | plus: 1 }}" style="padding-left: {{ item.level | default: 0 | times: 16 }}px;"{% if is_selected %} aria-selected="true"{% endif %}>
+        {% if item.href and item.href != blank %}<a href="{{ item.href }}" class="ant-tree-node-content-wrapper">{{ item.label }}</a>{% else %}<span class="ant-tree-node-content-wrapper">{{ item.label }}</span>{% endif %}
+    </li>
+    {% endfor %}
+</ul>

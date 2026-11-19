@@ -1,0 +1,11 @@
+{% comment %} Calendar for Fluid: title (the month or range shown), items (each with date (yyyy-mm-dd), title, time). The events are listed by day, so the page needs no calendar script. {% endcomment %}
+<div class="m-calendar">
+    {% if title %}<div class="m-calendar-header"><span class="m-calendar-title">{{ title }}</span></div>{% endif %}
+    <ol class="m-calendar-agenda" role="list">
+        {% for item in items %}
+        <li class="m-calendar-event"><time datetime="{{ item.date }}" class="m-calendar-date">{{ item.date }}</time> <span class="m-calendar-time">{{ item.time }}</span> <span class="m-calendar-title-text">{{ item.title }}</span></li>
+        {% else %}
+        <li class="m-empty">No events in this period.</li>
+        {% endfor %}
+    </ol>
+</div>

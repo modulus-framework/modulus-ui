@@ -1,0 +1,13 @@
+{% comment %} Star rating for Fluid: name, value (0 to count), count (default 5), disabled. {% endcomment %}
+{% assign total = count | default: 5 | plus: 0 %}
+{% assign current = value | default: 0 | plus: 0 %}
+<ul class="ant-rate{% if disabled %} ant-rate-disabled{% endif %}" role="radiogroup" aria-label="{{ label | default: 'Rating' }}">
+    {% for i in (1..total) %}
+    <li class="ant-rate-star{% if i <= current %} ant-rate-star-full{% else %} ant-rate-star-zero{% endif %}">
+        <label>
+            <input type="radio" name="{{ name }}" value="{{ i }}"{% if i == current %} checked{% endif %}{% if disabled %} disabled{% endif %} aria-label="{{ i }} of {{ total }}" />
+            <span class="ant-rate-star-first" aria-hidden="true">&#9733;</span>
+        </label>
+    </li>
+    {% endfor %}
+</ul>

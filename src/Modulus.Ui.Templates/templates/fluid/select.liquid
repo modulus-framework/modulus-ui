@@ -1,0 +1,7 @@
+{% comment %} Select for Fluid: name, options (each with label and value), value (the selected value), placeholder, disabled, label. {% endcomment %}
+<select class="ant-select-native ant-input" name="{{ name }}" aria-label="{{ label | default: name }}"{% if disabled %} disabled{% endif %}>
+    {% if placeholder %}<option value="" disabled{% if value == blank %} selected{% endif %}>{{ placeholder }}</option>{% endif %}
+    {% for option in options %}
+    <option value="{{ option.value }}"{% if option.value == value %} selected{% endif %}{% if option.disabled %} disabled{% endif %}>{{ option.label }}</option>
+    {% endfor %}
+</select>

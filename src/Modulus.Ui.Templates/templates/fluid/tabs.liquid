@@ -1,0 +1,12 @@
+{% comment %} Tabs for Fluid: items (each with id, label and content), active (the id of the active tab, the first one when blank). The tab links point at each panel by its anchor, so they work without script. {% endcomment %}
+{% assign current = active | default: items[0].id %}
+<div class="ant-tabs ant-tabs-top">
+    <div class="ant-tabs-nav" role="tablist">
+        {% for item in items %}
+        <a href="#tab-{{ item.id }}" role="tab" class="ant-tabs-tab{% if item.id == current %} ant-tabs-tab-active{% endif %}" aria-selected="{% if item.id == current %}true{% else %}false{% endif %}">{{ item.label }}</a>
+        {% endfor %}
+    </div>
+    {% for item in items %}
+    <div id="tab-{{ item.id }}" role="tabpanel" class="ant-tabs-tabpane{% if item.id == current %} ant-tabs-tabpane-active{% endif %}">{{ item.content }}</div>
+    {% endfor %}
+</div>

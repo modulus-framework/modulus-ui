@@ -1,0 +1,9 @@
+{% comment %} Trend for Fluid: value (the change, for example 12.5), direction (up, down or flat, derived from value when blank), suffix (for example %), label (for example "vs last month"). {% endcomment %}
+{% assign current = value | default: 0 | plus: 0 %}
+{% assign dir = direction | default: 'flat' %}
+{% if direction == blank %}{% if current > 0 %}{% assign dir = 'up' %}{% elsif current < 0 %}{% assign dir = 'down' %}{% endif %}{% endif %}
+{% assign kind = 'default' %}
+{% if dir == 'up' %}{% assign kind = 'success' %}{% elsif dir == 'down' %}{% assign kind = 'error' %}{% endif %}
+{% assign arrow = '→' %}
+{% if dir == 'up' %}{% assign arrow = '↑' %}{% elsif dir == 'down' %}{% assign arrow = '↓' %}{% endif %}
+<span class="m-trend m-trend-{{ kind }}"><span class="m-trend-arrow" aria-hidden="true">{{ arrow }}</span> <span class="m-trend-value">{{ value | default: 0 }}{{ suffix }}</span>{% if label and label != blank %} <span class="m-trend-label">{{ label }}</span>{% endif %}</span>

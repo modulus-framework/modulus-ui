@@ -1,0 +1,9 @@
+{% comment %} Switch for Fluid: name, checked, disabled, label, checked_text, unchecked_text. {% endcomment %}
+{% assign on = false %}{% if checked %}{% assign on = true %}{% endif %}
+<label class="ant-switch-wrapper">
+    <button type="button" role="switch" aria-checked="{% if on %}true{% else %}false{% endif %}" class="ant-switch{% if on %} ant-switch-checked{% endif %}{% if disabled %} ant-switch-disabled{% endif %}"{% if disabled %} disabled{% endif %}>
+        <span class="ant-switch-inner">{% if on %}{{ checked_text | default: '' }}{% else %}{{ unchecked_text | default: '' }}{% endif %}</span>
+    </button>
+    {% if label and label != blank %}<span class="ant-switch-label">{{ label }}</span>{% endif %}
+    <input type="hidden" name="{{ name }}" value="{% if on %}true{% else %}false{% endif %}" />
+</label>

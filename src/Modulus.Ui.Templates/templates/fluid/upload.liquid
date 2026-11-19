@@ -1,0 +1,17 @@
+{% comment %} Upload for Fluid: name, label, accept (for example .pdf,image/*), multiple, hint, files (each with name and size, shown as the current files). {% endcomment %}
+<div class="ant-upload-wrapper">
+    <label class="ant-upload ant-upload-select{% if disabled %} ant-upload-disabled{% endif %}">
+        <span class="ant-upload-btn">
+            <span class="ant-upload-text">{{ label | default: 'Choose files' }}</span>
+            <input type="file" class="ant-upload-input" name="{{ name }}"{% if accept %} accept="{{ accept }}"{% endif %}{% if multiple %} multiple{% endif %}{% if disabled %} disabled{% endif %} />
+        </span>
+    </label>
+    {% if hint %}<p class="ant-upload-hint">{{ hint }}</p>{% endif %}
+    {% if files %}
+    <ul class="ant-upload-list">
+        {% for file in files %}
+        <li class="ant-upload-list-item ant-upload-list-item-done"><span class="ant-upload-list-item-name">{{ file.name }}</span>{% if file.size %} <span class="ant-upload-list-item-size">{{ file.size }}</span>{% endif %}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>

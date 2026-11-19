@@ -1,0 +1,6 @@
+{% comment %} Column value list for Fluid: items (the values shown as tags, each a string or an object with label), separator (default ', '). {% endcomment %}
+<span class="m-column-value-list">
+    {% for item in items %}
+    <span class="m-tag">{{ item.label | default: item }}</span>{% unless forloop.last %}{{ separator | default: ' ' }}{% endunless %}
+    {% endfor %}
+</span>

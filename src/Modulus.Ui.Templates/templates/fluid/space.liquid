@@ -1,0 +1,6 @@
+{% comment %} Space for Fluid: content (the children, already rendered), direction (horizontal or vertical), size (small, middle or large), wrap. {% endcomment %}
+{% assign direction = direction | default: 'horizontal' %}
+{% assign size = size | default: 'small' %}
+<div class="ant-space ant-space-{{ direction }} ant-space-align-center ant-space-gap-{{ size }}{% if wrap %} ant-space-wrap{% endif %}">
+    {{ content }}
+</div>

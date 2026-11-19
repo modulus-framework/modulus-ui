@@ -1,0 +1,16 @@
+{% comment %} Modal for Fluid: open (the modal is drawn only when true), title, content (rendered HTML), footer (rendered HTML), close_url (where the close button goes). It is a static dialog, so the page decides when it shows. {% endcomment %}
+{% if open %}
+<div class="ant-modal-root">
+    <div class="ant-modal-mask"></div>
+    <div class="ant-modal-wrap" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="ant-modal">
+            <div class="ant-modal-content">
+                <div class="ant-modal-header"><div class="ant-modal-title" id="modal-title">{{ title }}</div></div>
+                <div class="ant-modal-body">{{ content }}</div>
+                {% if footer %}<div class="ant-modal-footer">{{ footer }}</div>{% endif %}
+            </div>
+            {% if close_url and close_url != blank %}<a class="ant-modal-close" href="{{ close_url }}" aria-label="Close">&times;</a>{% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}

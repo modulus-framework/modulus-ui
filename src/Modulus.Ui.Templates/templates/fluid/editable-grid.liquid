@@ -1,0 +1,22 @@
+{% comment %} Editable grid for Fluid: action (the form's post URL), columns (each with key, title and type (text, number or date)), rows (objects keyed by the column keys, plus an id), submit_label. Each row is one form row; the page reads all of them on post. {% endcomment %}
+<form method="post" action="{{ action }}" class="m-card m-table-card m-editable-grid">
+    <div class="ant-table-wrapper">
+        <table class="ant-table">
+            <thead class="ant-table-thead">
+                <tr>{% for column in columns %}<th class="ant-table-cell" scope="col">{{ column.title }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody class="ant-table-tbody">
+                {% for row in rows %}
+                <tr class="ant-table-row">
+                    {% for column in columns %}
+                    <td class="ant-table-cell">
+                        <input class="ant-input" type="{{ column.type | default: 'text' }}" name="rows[{{ forloop.parentloop.index0 }}].{{ column.key }}" value="{{ row[column.key] }}" aria-label="{{ column.title }}" />
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="m-form-actions"><button type="submit" class="ant-btn ant-btn-primary"><span>{{ submit_label | default: 'Save' }}</span></button></div>
+</form>

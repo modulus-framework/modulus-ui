@@ -1,0 +1,8 @@
+{% comment %} Checkbox for Fluid: name, label, value, checked, disabled. The markup is the one <app-checkbox> draws. {% endcomment %}
+<label class="ant-checkbox-wrapper{% if checked %} ant-checkbox-wrapper-checked{% endif %}{% if disabled %} ant-checkbox-wrapper-disabled{% endif %}">
+    <span class="ant-checkbox{% if checked %} ant-checkbox-checked{% endif %}{% if disabled %} ant-checkbox-disabled{% endif %}">
+        <input type="checkbox" class="ant-checkbox-input" name="{{ name }}" value="{{ value | default: 'true' }}"{% if checked %} checked{% endif %}{% if disabled %} disabled{% endif %} />
+        <span class="ant-checkbox-inner"></span>
+    </span>
+    <span>{{ label }}</span>
+</label>

@@ -1,0 +1,16 @@
+{% comment %} Scheduler for Fluid: title (the period shown), days (each with date (yyyy-mm-dd), label, and items, a list of objects with time and title). Each day is a block, with its appointments under it. {% endcomment %}
+<div class="m-card m-scheduler">
+    {% if title %}<div class="m-card-header"><h3 class="m-card-title">{{ title }}</h3></div>{% endif %}
+    {% for day in days %}
+    <section class="m-scheduler-day" aria-label="{{ day.label }}">
+        <h4 class="m-scheduler-day-title"><time datetime="{{ day.date }}">{{ day.label | default: day.date }}</time></h4>
+        <ul class="m-scheduler-items" role="list">
+            {% for item in day.items %}
+            <li class="m-scheduler-item"><span class="m-scheduler-time">{{ item.time }}</span> {{ item.title }}</li>
+            {% else %}
+            <li class="m-scheduler-empty">Nothing planned.</li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endfor %}
+</div>

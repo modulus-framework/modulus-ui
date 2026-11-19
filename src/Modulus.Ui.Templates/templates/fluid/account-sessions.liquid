@@ -1,15 +1,14 @@
-{% comment %} Sessions for Fluid: the caller's signed-in sessions and recent sign-ins, as static sample rows. Connect an identity store to show real ones. {% endcomment %}
+{% comment %} Sessions for Fluid: sessions (each with id, type, client, created and expires: the signed-in user's active tokens, newest first), error (a message when the list could not be read), antiforgery_token. Each row ends its session by posting to /auth/sessions/end. {% endcomment %}
 
 <div class="m-page-header">
     <div class="m-page-header-text"><div class="m-pretitle">Account</div><h1 class="m-page-title">Sessions</h1></div>
 </div>
 
-<div class="ant-alert ant-alert-info ant-alert-with-description m-mb-16" role="alert">
-    <div class="ant-alert-content">
-        <div class="ant-alert-message">Sample data</div>
-        <div class="ant-alert-description">This page shows built-in sample sessions. Connect your identity store to show and end real ones.</div>
-    </div>
+{% if error and error != blank %}
+<div class="ant-alert ant-alert-error ant-alert-with-description m-mb-16" role="alert">
+    <div class="ant-alert-content"><div class="ant-alert-message">{{ error }}</div></div>
 </div>
+{% endif %}
 
 <div class="m-card">
     <div class="m-card-header"><h2 class="m-card-title">Active sessions</h2></div>
@@ -17,28 +16,25 @@
         <div class="ant-table-wrapper m-table-flush">
             <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
                 <table style="table-layout:auto">
-                    <thead class="ant-table-thead"><tr><th class="ant-table-cell">Device</th><th class="ant-table-cell m-hide-sm">Location</th><th class="ant-table-cell m-hide-sm">Last active</th><th class="ant-table-cell"></th></tr></thead>
+                    <thead class="ant-table-thead"><tr><th class="ant-table-cell">Type</th><th class="ant-table-cell">Client</th><th class="ant-table-cell m-hide-sm">Issued</th><th class="ant-table-cell m-hide-sm">Expires</th><th class="ant-table-cell"></th></tr></thead>
                     <tbody class="ant-table-tbody">
-                        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Chrome on Windows</strong> <span class="m-badge m-badge-success-lt">This device</span></td><td class="ant-table-cell m-hide-sm">Dhaka, Bangladesh</td><td class="ant-table-cell m-hide-sm">2026-11-16 09:02</td><td class="ant-table-cell"></td></tr>
-                        <tr class="ant-table-row"><td class="ant-table-cell"><strong>Safari on iPhone</strong></td><td class="ant-table-cell m-hide-sm">Dhaka, Bangladesh</td><td class="ant-table-cell m-hide-sm">2026-11-15 21:40</td><td class="ant-table-cell"><button type="button" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous"><span>End session</span></button></td></tr>
-                    </tbody>
-                </table>
-            </div></div></div>
-        </div>
-    </div>
-</div>
-
-<div class="m-card m-mt-24">
-    <div class="m-card-header"><h2 class="m-card-title">Recent sign-ins</h2></div>
-    <div class="m-card-body m-card-body-flush">
-        <div class="ant-table-wrapper m-table-flush">
-            <div class="ant-table"><div class="ant-table-container"><div class="ant-table-content">
-                <table style="table-layout:auto">
-                    <thead class="ant-table-thead"><tr><th class="ant-table-cell">When</th><th class="ant-table-cell">Result</th><th class="ant-table-cell">Device</th></tr></thead>
-                    <tbody class="ant-table-tbody">
-                        <tr class="ant-table-row"><td class="ant-table-cell">2026-11-16 09:02</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Signed in</span></td><td class="ant-table-cell">Chrome on Windows</td></tr>
-                        <tr class="ant-table-row"><td class="ant-table-cell">2026-11-15 21:40</td><td class="ant-table-cell"><span class="m-badge m-badge-success-lt">Signed in</span></td><td class="ant-table-cell">Safari on iPhone</td></tr>
-                        <tr class="ant-table-row"><td class="ant-table-cell">2026-11-14 08:11</td><td class="ant-table-cell"><span class="m-badge m-badge-danger-lt">Wrong password</span></td><td class="ant-table-cell">Unknown</td></tr>
+                        {% for session in sessions %}
+                        <tr class="ant-table-row">
+                            <td class="ant-table-cell">{{ session.type }}</td>
+                            <td class="ant-table-cell">{{ session.client }}</td>
+                            <td class="ant-table-cell m-hide-sm">{{ session.created }}</td>
+                            <td class="ant-table-cell m-hide-sm">{{ session.expires }}</td>
+                            <td class="ant-table-cell">
+                                <form method="post" action="/auth/sessions/end">
+                                    <input type="hidden" name="__RequestVerificationToken" value="{{ antiforgery_token }}" />
+                                    <input type="hidden" name="id" value="{{ session.id }}" />
+                                    <button type="submit" class="ant-btn ant-btn-text ant-btn-sm ant-btn-dangerous"><span>End session</span></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr class="ant-table-row"><td class="ant-table-cell" colspan="5"><div class="m-empty">No active sessions.</div></td></tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div></div></div>

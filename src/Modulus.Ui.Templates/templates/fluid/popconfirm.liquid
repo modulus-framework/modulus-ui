@@ -1,0 +1,17 @@
+{% comment %} Popconfirm for Fluid: trigger (the text of the button), title (the question), confirm_url and confirm_label, cancel_label. The question opens from a native details element; confirming posts to confirm_url. {% endcomment %}
+<details class="ant-popover-wrapper m-popconfirm">
+    <summary class="ant-btn ant-btn-default ant-btn-dangerous"><span>{{ trigger }}</span></summary>
+    <div class="ant-popover ant-popover-placement-top" role="dialog">
+        <div class="ant-popover-content"><div class="ant-popover-inner">
+            <div class="ant-popover-inner-content">
+                <div class="ant-popover-message">{{ title | default: 'Are you sure?' }}</div>
+                <div class="ant-popover-buttons">
+                    <button type="button" class="ant-btn ant-btn-default ant-btn-sm"><span>{{ cancel_label | default: 'Cancel' }}</span></button>
+                    <form method="post" action="{{ confirm_url }}" style="display: inline">
+                        <button type="submit" class="ant-btn ant-btn-primary ant-btn-dangerous ant-btn-sm"><span>{{ confirm_label | default: 'OK' }}</span></button>
+                    </form>
+                </div>
+            </div>
+        </div></div>
+    </div>
+</details>

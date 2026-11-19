@@ -1,0 +1,19 @@
+{% comment %} Drawer form for Fluid: open (drawn only when true), title, action (the form's post URL), fields (rendered HTML), submit_label, cancel_url, placement. {% endcomment %}
+{% assign side = placement | default: 'right' %}
+{% if open %}
+<div class="ant-drawer ant-drawer-open ant-drawer-{{ side }}" role="dialog" aria-modal="true" aria-labelledby="drawer-form-title">
+    <div class="ant-drawer-mask"></div>
+    <div class="ant-drawer-content-wrapper">
+        <div class="ant-drawer-content">
+            <form class="ant-form ant-form-vertical" method="post" action="{{ action }}">
+                <div class="ant-drawer-header"><div class="ant-drawer-title" id="drawer-form-title">{{ title }}</div></div>
+                <div class="ant-drawer-body">{{ fields }}</div>
+                <div class="ant-drawer-footer">
+                    {% if cancel_url and cancel_url != blank %}<a class="ant-btn ant-btn-default" href="{{ cancel_url }}"><span>Cancel</span></a>{% endif %}
+                    <button type="submit" class="ant-btn ant-btn-primary"><span>{{ submit_label | default: 'Save' }}</span></button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}

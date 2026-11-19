@@ -1,0 +1,10 @@
+{% comment %} Segmented control for Fluid: name, options (each with label and value), value (the selected value), disabled. {% endcomment %}
+<div class="ant-segmented{% if disabled %} ant-segmented-disabled{% endif %}" role="radiogroup">
+    {% for option in options %}
+    {% assign selected = false %}{% if option.value == value %}{% assign selected = true %}{% endif %}
+    <label class="ant-segmented-item{% if selected %} ant-segmented-item-selected{% endif %}">
+        <input type="radio" class="ant-segmented-item-input" name="{{ name }}" value="{{ option.value }}"{% if selected %} checked{% endif %}{% if disabled %} disabled{% endif %} />
+        <span class="ant-segmented-item-label">{{ option.label }}</span>
+    </label>
+    {% endfor %}
+</div>

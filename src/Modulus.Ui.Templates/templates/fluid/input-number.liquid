@@ -1,0 +1,4 @@
+{% comment %} Number field for Fluid: name, value, min, max, step, placeholder, disabled. {% endcomment %}
+<div class="ant-input-number{% if disabled %} ant-input-number-disabled{% endif %}">
+    <input type="number" class="ant-input-number-input" name="{{ name }}" value="{{ value }}"{% if min != blank %} min="{{ min }}"{% endif %}{% if max != blank %} max="{{ max }}"{% endif %}{% if step %} step="{{ step }}"{% else %} step="1"{% endif %}{% if placeholder %} placeholder="{{ placeholder }}"{% endif %}{% if disabled %} disabled{% endif %} aria-label="{{ label | default: name }}" />
+</div>

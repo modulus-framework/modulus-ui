@@ -1,0 +1,17 @@
+{% comment %} Approval timeline for Fluid: items (each with label, state (done, current or waiting), by, at, note). {% endcomment %}
+<ul class="ant-timeline m-approval-timeline" role="list">
+    {% for item in items %}
+    {% assign state = item.state | default: 'waiting' | downcase %}
+    {% assign kind = 'ant-timeline-item-wait' %}
+    {% if state == 'done' %}{% assign kind = 'ant-timeline-item-finish' %}{% elsif state == 'current' %}{% assign kind = 'ant-timeline-item-process' %}{% endif %}
+    <li class="ant-timeline-item {{ kind }}">
+        <div class="ant-timeline-item-tail"></div>
+        <div class="ant-timeline-item-head"></div>
+        <div class="ant-timeline-item-content">
+            <div class="m-approval-step-label">{{ item.label }}</div>
+            {% if item.by or item.at %}<div class="m-approval-step-meta">{{ item.by }}{% if item.by and item.at %} · {% endif %}{{ item.at }}</div>{% endif %}
+            {% if item.note %}<div class="m-approval-step-note">{{ item.note }}</div>{% endif %}
+        </div>
+    </li>
+    {% endfor %}
+</ul>

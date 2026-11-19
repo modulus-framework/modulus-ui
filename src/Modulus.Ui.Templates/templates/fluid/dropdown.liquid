@@ -1,0 +1,11 @@
+{% comment %} Dropdown for Fluid: trigger (the button text), items (each with label, href, disabled, danger). The menu opens from a native details element. {% endcomment %}
+<details class="ant-dropdown-wrapper m-dropdown">
+    <summary class="ant-btn ant-btn-default"><span>{{ trigger }}</span></summary>
+    <ul class="ant-dropdown-menu ant-dropdown-menu-root" role="menu">
+        {% for item in items %}
+        <li class="ant-dropdown-menu-item{% if item.disabled %} ant-dropdown-menu-item-disabled{% endif %}{% if item.danger %} ant-dropdown-menu-item-danger{% endif %}" role="menuitem">
+            {% if item.href and item.href != blank and item.disabled != true %}<a href="{{ item.href }}">{{ item.label }}</a>{% else %}<span>{{ item.label }}</span>{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</details>

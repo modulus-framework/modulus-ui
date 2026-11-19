@@ -1,0 +1,24 @@
+{% comment %} Query filter for Fluid: action (the GET URL the filter submits to), fields (each with name, label, type (text, select or date), options (for select: label and value), value), q (the free-text search). {% endcomment %}
+<form method="get" action="{{ action }}" class="m-card m-query-filter">
+    <div class="m-form-grid">
+        <label class="ant-form-item"><span class="ant-form-item-label">Search</span>
+            <input type="search" class="ant-input" name="q" value="{{ q }}" placeholder="Search..." />
+        </label>
+        {% for field in fields %}
+        <label class="ant-form-item"><span class="ant-form-item-label">{{ field.label }}</span>
+            {% if field.type == 'select' %}
+            <select class="ant-select-native ant-input" name="{{ field.name }}">
+                <option value="">All</option>
+                {% for option in field.options %}<option value="{{ option.value }}"{% if option.value == field.value %} selected{% endif %}>{{ option.label }}</option>{% endfor %}
+            </select>
+            {% else %}
+            <input type="{{ field.type | default: 'text' }}" class="ant-input" name="{{ field.name }}" value="{{ field.value }}" />
+            {% endif %}
+        </label>
+        {% endfor %}
+    </div>
+    <div class="m-form-actions">
+        <a class="ant-btn ant-btn-default" href="{{ action }}"><span>Reset</span></a>
+        <button type="submit" class="ant-btn ant-btn-primary"><span>Filter</span></button>
+    </div>
+</form>

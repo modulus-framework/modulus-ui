@@ -1,0 +1,8 @@
+{% comment %} Column header for Fluid: title, sort (asc, desc or none), sort_url (the link that changes the sort), filterable. The header is a table cell in the table's head. {% endcomment %}
+{% assign sort = sort | default: 'none' | downcase %}
+{% assign arrow = '' %}
+{% if sort == 'asc' %}{% assign arrow = '▲' %}{% elsif sort == 'desc' %}{% assign arrow = '▼' %}{% endif %}
+<th class="ant-table-column-has-sorters{% if sort != 'none' %} ant-table-column-sort{% endif %}" scope="col">
+    {% if sort_url and sort_url != blank %}<a href="{{ sort_url }}" class="ant-table-column-sorters">{{ title }} <span class="ant-table-column-sorter" aria-hidden="true">{{ arrow }}</span></a>{% else %}<span class="ant-table-column-sorters">{{ title }}</span>{% endif %}
+    {% if filterable %}<span class="ant-table-filter-trigger" aria-hidden="true">▾</span>{% endif %}
+</th>

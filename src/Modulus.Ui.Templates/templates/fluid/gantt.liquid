@@ -1,0 +1,16 @@
+{% comment %} Gantt for Fluid: items (each with name, start, end, percent (0 to 100), group), label (the header text). Each task shows its share of the work as a bar. {% endcomment %}
+<div class="m-card m-table-card m-gantt">
+    {% if label %}<div class="m-card-header"><h3 class="m-card-title">{{ label }}</h3></div>{% endif %}
+    <ul class="m-gantt-rows" role="list">
+        {% for item in items %}
+        {% assign done = item.percent | default: 0 | plus: 0 %}
+        <li class="m-gantt-row">
+            <div class="m-gantt-name">{{ item.name }} {% if item.group %}<span class="m-gantt-group">{{ item.group }}</span>{% endif %}</div>
+            <div class="m-gantt-dates">{{ item.start }} → {{ item.end }}</div>
+            <div class="m-gantt-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ done }}" aria-label="{{ item.name }}"><span class="m-gantt-bar" style="width: {{ done }}%"></span></div>
+        </li>
+        {% else %}
+        <li class="m-empty">No tasks.</li>
+        {% endfor %}
+    </ul>
+</div>

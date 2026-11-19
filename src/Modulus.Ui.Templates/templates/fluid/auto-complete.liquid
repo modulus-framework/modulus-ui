@@ -1,0 +1,10 @@
+{% comment %} Auto-complete for Fluid: name, value, options (strings or objects with value), placeholder, label. The browser's list suggests values while typing. {% endcomment %}
+{% assign list_id = name | default: 'autocomplete' | append: '-options' %}
+<div class="ant-select ant-select-auto-complete">
+    <input type="text" class="ant-input" name="{{ name }}" value="{{ value }}" placeholder="{{ placeholder }}" list="{{ list_id }}" autocomplete="off" aria-label="{{ label | default: name }}" />
+    <datalist id="{{ list_id }}">
+        {% for option in options %}
+        <option value="{{ option.value | default: option }}">{{ option.label | default: option }}</option>
+        {% endfor %}
+    </datalist>
+</div>

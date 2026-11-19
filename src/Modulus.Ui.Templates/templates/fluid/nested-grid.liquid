@@ -1,0 +1,20 @@
+{% comment %} Nested grid for Fluid: columns (each with key and title), rows (objects keyed by the column keys, each with children, a list of rows of the same shape, shown one level down). {% endcomment %}
+<div class="m-card m-table-card m-nested-grid">
+    <div class="ant-table-wrapper">
+        <table class="ant-table">
+            <thead class="ant-table-thead">
+                <tr>{% for column in columns %}<th class="ant-table-cell" scope="col">{{ column.title }}</th>{% endfor %}</tr>
+            </thead>
+            <tbody class="ant-table-tbody">
+                {% for row in rows %}
+                <tr class="ant-table-row ant-table-row-level-0">{% for column in columns %}<td class="ant-table-cell">{% if forloop.first and row.children %}<details><summary>{{ row[column.key] }}</summary>{% else %}{{ row[column.key] }}{% endif %}</td>{% endfor %}</tr>
+                {% if row.children %}
+                {% for child in row.children %}
+                <tr class="ant-table-row ant-table-row-level-1">{% for column in columns %}<td class="ant-table-cell">{% if forloop.first %}<span style="padding-left: 16px">{{ child[column.key] }}</span>{% else %}{{ child[column.key] }}{% endif %}</td>{% endfor %}</tr>
+                {% endfor %}
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

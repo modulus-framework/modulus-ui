@@ -1,0 +1,13 @@
+{% comment %} Audit trail for Fluid: items (each with who, action, at, detail). Newest first is the caller's choice; the rows are shown in the order given. {% endcomment %}
+<div class="m-card m-table-card">
+    <table class="ant-table m-audit-trail">
+        <thead><tr><th>When</th><th>Who</th><th>Action</th><th>Detail</th></tr></thead>
+        <tbody>
+        {% for item in items %}
+        <tr><td>{{ item.at }}</td><td>{{ item.who }}</td><td>{{ item.action }}</td><td>{{ item.detail }}</td></tr>
+        {% else %}
+        <tr><td colspan="4"><div class="m-empty">No activity recorded.</div></td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>

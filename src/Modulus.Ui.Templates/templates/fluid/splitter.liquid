@@ -1,0 +1,5 @@
+{% comment %} Splitter for Fluid: left (the left pane, rendered HTML), right (the right pane, rendered HTML), left_width (default 30%). {% endcomment %}
+<div class="m-splitter" style="display: grid; grid-template-columns: {{ left_width | default: '30%' }} 1fr; gap: 16px;">
+    <div class="m-splitter-pane m-splitter-left">{{ left }}</div>
+    <div class="m-splitter-pane m-splitter-right">{{ right }}</div>
+</div>

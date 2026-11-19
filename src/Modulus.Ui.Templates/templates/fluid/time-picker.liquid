@@ -1,0 +1,4 @@
+{% comment %} Time picker for Fluid: name, value (HH:mm), step (seconds, optional), min, max, disabled, label. {% endcomment %}
+<div class="ant-picker ant-picker-time{% if disabled %} ant-picker-disabled{% endif %}">
+    <input type="time" class="ant-picker-input" name="{{ name }}" value="{{ value }}"{% if min and min != blank %} min="{{ min }}"{% endif %}{% if max and max != blank %} max="{{ max }}"{% endif %}{% if step %} step="{{ step }}"{% endif %}{% if disabled %} disabled{% endif %} aria-label="{{ label | default: name }}" />
+</div>

@@ -1,0 +1,12 @@
+{% comment %} Print table for Fluid: title, columns (each with key and title), rows (objects keyed by the column keys). Styled for paper: no toolbars, no hover, repeated header. {% endcomment %}
+<table class="ant-table m-print-table" style="width: 100%; border-collapse: collapse;">
+    {% if title %}<caption style="text-align: left; font-weight: 600; padding: 4px 0;">{{ title }}</caption>{% endif %}
+    <thead style="display: table-header-group;">
+        <tr>{% for column in columns %}<th scope="col" style="border-bottom: 1px solid #000; text-align: left; padding: 4px;">{{ column.title }}</th>{% endfor %}</tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>{% for column in columns %}<td style="border-bottom: 1px solid #ddd; padding: 4px;">{{ row[column.key] }}</td>{% endfor %}</tr>
+        {% endfor %}
+    </tbody>
+</table>

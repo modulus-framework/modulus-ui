@@ -1,0 +1,8 @@
+{% comment %} Slider for Fluid: name, value, min (default 0), max (default 100), step (default 1), disabled, label. {% endcomment %}
+{% assign low = min | default: 0 %}
+{% assign high = max | default: 100 %}
+{% assign current = value | default: low %}
+<div class="ant-slider{% if disabled %} ant-slider-disabled{% endif %}">
+    <input type="range" class="ant-slider-input" name="{{ name }}" value="{{ current }}" min="{{ low }}" max="{{ high }}" step="{{ step | default: 1 }}"{% if disabled %} disabled{% endif %} aria-label="{{ label | default: name }}" aria-valuemin="{{ low }}" aria-valuemax="{{ high }}" aria-valuenow="{{ current }}" />
+    <output class="ant-slider-value">{{ current }}</output>
+</div>

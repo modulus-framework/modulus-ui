@@ -1,0 +1,28 @@
+{% comment %} Import wizard for Fluid: step (1 to 3: choose file, check rows, done), action (the upload's post URL), errors (list of messages), summary (list of messages for the done step), accept (for example .csv). Each step is one page of the wizard; the page sets step. {% endcomment %}
+{% assign current = step | default: 1 | plus: 0 %}
+<div class="m-card m-import-wizard">
+    <div class="ant-steps ant-steps-horizontal" role="list">
+        {% for label in (1..3) %}
+        {% assign state = 'wait' %}{% if label < current %}{% assign state = 'finish' %}{% elsif label == current %}{% assign state = 'process' %}{% endif %}
+        <span class="ant-steps-item ant-steps-item-{{ state }}" role="listitem"{% if label == current %} aria-current="step"{% endif %}><span class="ant-steps-icon">{{ label }}</span></span>
+        {% endfor %}
+    </div>
+    {% if errors %}
+    <ul class="m-import-errors" role="alert">{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>
+    {% endif %}
+    {% if current == 1 %}
+    <form method="post" action="{{ action }}" enctype="multipart/form-data" class="ant-form ant-form-vertical">
+        <label class="ant-form-item"><span class="ant-form-item-label">File to import</span>
+            <input type="file" class="ant-input" name="file"{% if accept %} accept="{{ accept }}"{% endif %} required />
+        </label>
+        <div class="m-form-actions"><button type="submit" class="ant-btn ant-btn-primary"><span>Check file</span></button></div>
+    </form>
+    {% elsif current == 2 %}
+    <div class="m-import-check">{{ content }}</div>
+    {% else %}
+    <div class="m-import-done">
+        <p>Import finished.</p>
+        {% for line in summary %}<p>{{ line }}</p>{% endfor %}
+    </div>
+    {% endif %}
+</div>

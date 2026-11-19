@@ -1,0 +1,9 @@
+{% comment %} Label sheet for Fluid: items (each with lines, a list of text), columns (default 3). The labels are laid out in a grid to print on a sheet. {% endcomment %}
+{% assign cols = columns | default: 3 %}
+<div class="m-label-sheet" style="display: grid; grid-template-columns: repeat({{ cols }}, 1fr); gap: 8px;">
+    {% for item in items %}
+    <div class="m-label" style="border: 1px dashed #999; padding: 8px; min-height: 64px;">
+        {% for line in item.lines %}<div class="m-label-line">{{ line }}</div>{% endfor %}
+    </div>
+    {% endfor %}
+</div>

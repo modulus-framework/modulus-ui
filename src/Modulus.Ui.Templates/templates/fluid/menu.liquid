@@ -1,0 +1,12 @@
+{% comment %} Menu for Fluid: items (each with label, href, active, and children as a list of label and href), mode (vertical or horizontal). {% endcomment %}
+{% assign mode = mode | default: 'vertical' %}
+<ul class="ant-menu ant-menu-{{ mode }} ant-menu-root" role="menu">
+    {% for item in items %}
+    <li class="ant-menu-item{% if item.active %} ant-menu-item-selected{% endif %}" role="menuitem"><a href="{{ item.href | default: '#' }}"{% if item.active %} aria-current="page"{% endif %}>{{ item.label }}</a></li>
+    {% if item.children %}
+    {% for child in item.children %}
+    <li class="ant-menu-item ant-menu-item-child{% if child.active %} ant-menu-item-selected{% endif %}" role="menuitem"><a href="{{ child.href | default: '#' }}"{% if child.active %} aria-current="page"{% endif %}>{{ child.label }}</a></li>
+    {% endfor %}
+    {% endif %}
+    {% endfor %}
+</ul>

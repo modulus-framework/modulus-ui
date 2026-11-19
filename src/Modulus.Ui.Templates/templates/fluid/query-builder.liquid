@@ -1,0 +1,24 @@
+{% comment %} Query builder for Fluid: action (the post URL), fields (each with name and label), rules (each with field, operator (equals, contains, greater, less), value), match ('all' or 'any'). Rules are sent as rules[i].field, rules[i].operator and rules[i].value; the page evaluates them. {% endcomment %}
+<form method="post" action="{{ action }}" class="m-card m-query-builder">
+    <div class="m-query-builder-match">
+        <label>Match <select class="ant-select-native ant-input" name="match">
+            <option value="all"{% if match != 'any' %} selected{% endif %}>all</option>
+            <option value="any"{% if match == 'any' %} selected{% endif %}>any</option>
+        </select></label> of the rules
+    </div>
+    {% for rule in rules %}
+    <div class="m-query-builder-rule" style="display: flex; gap: 8px; margin-bottom: 8px;">
+        <select class="ant-select-native ant-input" name="rules[{{ forloop.index0 }}].field" aria-label="Field">
+            {% for field in fields %}<option value="{{ field.name }}"{% if field.name == rule.field %} selected{% endif %}>{{ field.label }}</option>{% endfor %}
+        </select>
+        <select class="ant-select-native ant-input" name="rules[{{ forloop.index0 }}].operator" aria-label="Operator">
+            <option value="equals"{% if rule.operator == 'equals' %} selected{% endif %}>equals</option>
+            <option value="contains"{% if rule.operator == 'contains' %} selected{% endif %}>contains</option>
+            <option value="greater"{% if rule.operator == 'greater' %} selected{% endif %}>greater than</option>
+            <option value="less"{% if rule.operator == 'less' %} selected{% endif %}>less than</option>
+        </select>
+        <input type="text" class="ant-input" name="rules[{{ forloop.index0 }}].value" value="{{ rule.value }}" aria-label="Value" />
+    </div>
+    {% endfor %}
+    <div class="m-form-actions"><button type="submit" class="ant-btn ant-btn-primary"><span>Apply</span></button></div>
+</form>

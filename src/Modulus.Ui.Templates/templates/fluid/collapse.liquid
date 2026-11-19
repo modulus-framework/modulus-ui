@@ -1,0 +1,9 @@
+{% comment %} Collapse for Fluid: items (each with title, content and open). Each panel is a native details element, so it opens without script. {% endcomment %}
+<div class="ant-collapse" role="presentation">
+    {% for item in items %}
+    <details class="ant-collapse-item"{% if item.open %} open{% endif %}>
+        <summary class="ant-collapse-header">{{ item.title }}</summary>
+        <div class="ant-collapse-content"><div class="ant-collapse-content-box">{{ item.content }}</div></div>
+    </details>
+    {% endfor %}
+</div>

@@ -1,0 +1,5 @@
+{% comment %} Image for Fluid: src, alt, width, height, caption. The image is lazy-loaded; a caption goes under it. {% endcomment %}
+<figure class="ant-image m-image">
+    <img class="ant-image-img" src="{{ src }}" alt="{{ alt }}"{% if width %} width="{{ width }}"{% endif %}{% if height %} height="{{ height }}"{% endif %} loading="lazy" />
+    {% if caption %}<figcaption class="ant-image-caption">{{ caption }}</figcaption>{% endif %}
+</figure>

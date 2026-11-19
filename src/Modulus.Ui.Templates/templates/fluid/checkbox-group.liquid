@@ -1,0 +1,12 @@
+{% comment %} Checkbox group for Fluid: name, items (each with label, value, checked, disabled). {% endcomment %}
+<div class="ant-checkbox-group" role="group">
+    {% for item in items %}
+    <label class="ant-checkbox-group-item{% if item.disabled %} ant-checkbox-wrapper-disabled{% endif %}">
+        <span class="ant-checkbox{% if item.checked %} ant-checkbox-checked{% endif %}">
+            <input type="checkbox" class="ant-checkbox-input" name="{{ name }}" value="{{ item.value }}"{% if item.checked %} checked{% endif %}{% if item.disabled %} disabled{% endif %} />
+            <span class="ant-checkbox-inner"></span>
+        </span>
+        <span>{{ item.label }}</span>
+    </label>
+    {% endfor %}
+</div>

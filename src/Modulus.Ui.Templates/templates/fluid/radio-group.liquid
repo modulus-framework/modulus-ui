@@ -1,0 +1,17 @@
+{% comment %} Radio group for Fluid: name, items (each with label, value, disabled), value (the selected value), button (true for button-style tabs). {% endcomment %}
+{% assign wrapper = 'ant-radio-wrapper' %}
+{% assign group = 'ant-radio-group' %}
+{% if button %}{% assign wrapper = 'ant-radio-button-wrapper' %}{% assign group = 'ant-radio-group ant-radio-group-outline' %}{% endif %}
+<div class="{{ group }}" role="radiogroup">
+    {% for item in items %}
+    {% assign selected = false %}
+    {% if item.value == value %}{% assign selected = true %}{% endif %}
+    <label class="{{ wrapper }}{% if selected %} {{ wrapper }}-checked{% endif %}{% if item.disabled %} ant-radio-wrapper-disabled{% endif %}">
+        <span class="ant-radio{% if selected %} ant-radio-checked{% endif %}">
+            <input type="radio" class="ant-radio-input" name="{{ name }}" value="{{ item.value }}"{% if selected %} checked{% endif %}{% if item.disabled %} disabled{% endif %} />
+            <span class="ant-radio-inner"></span>
+        </span>
+        <span>{{ item.label }}</span>
+    </label>
+    {% endfor %}
+</div>
